@@ -23,14 +23,6 @@ export { DefiError, DefiErrorCode } from './defi/errors';
 export { SwapManager, SwapProvider, SwapError, SwapErrorCode } from './defi/swap';
 export { StakingManager, StakingProvider, StakingError, StakingErrorCode } from './defi/staking';
 export { GaslessManager, GaslessProvider, GaslessError } from './defi/gasless';
-export type {
-    GaslessConfig,
-    GaslessGasJetton,
-    GaslessEstimateParams,
-    GaslessEstimateResult,
-    GaslessSendParams,
-    GaslessSendResult,
-} from './defi/gasless';
 export { EventEmitter } from './core/EventEmitter';
 export type { EventListener, EventPayload, KitEvent } from './core/EventEmitter';
 export type { SharedKitEvents } from './types/emitter';
