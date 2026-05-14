@@ -44,8 +44,7 @@ export class AppKit {
         this.cache = config.cache ?? new LruAppKitCache();
 
         this.emitter = new EventEmitter<AppKitEvents>();
-        this.emitter.on(CONNECTOR_EVENTS.CONNECTED, this.updateWalletsFromConnectors.bind(this));
-        this.emitter.on(CONNECTOR_EVENTS.DISCONNECTED, this.updateWalletsFromConnectors.bind(this));
+        this.emitter.on(CONNECTOR_EVENTS.WALLETS_UPDATED, this.updateWalletsFromConnectors.bind(this));
 
         // Use provided networks config or default to mainnet
         const networks = config.networks ?? {
@@ -89,6 +88,8 @@ export class AppKit {
         }
 
         this.connectors.push(connector);
+        this.updateWalletsFromConnectors();
+        this.emitter.emit(CONNECTOR_EVENTS.ADDED, { connector }, 'appkit');
 
         return () => {
             this.removeConnector(connector);
@@ -105,6 +106,8 @@ export class AppKit {
         if (oldConnector) {
             oldConnector.destroy();
             this.connectors.splice(this.connectors.indexOf(oldConnector), 1);
+            this.updateWalletsFromConnectors();
+            this.emitter.emit(CONNECTOR_EVENTS.REMOVED, { connector: oldConnector }, 'appkit');
         }
     }
 
