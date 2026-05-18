@@ -20,11 +20,10 @@ import { CryptoOnrampError } from '../errors';
 import { createProvider } from '../../../types/factory';
 import type { LayerswapCreateSwapResponse, LayerswapGetSwapResponse } from './types';
 import {
-    ARBITRUM_CAIP2,
     ARBITRUM_USDT0_ADDRESS,
+    DEFAULT_LAYERSWAP_SUPPORTED_CHAINS,
     LAYERSWAP_DESTINATION_NETWORK,
     LAYERSWAP_DESTINATION_TOKEN,
-    LAYERSWAP_SOURCE_NETWORK,
     LAYERSWAP_SOURCE_TOKEN,
     TON_USDT_ADDRESS,
     formatBaseUnits,
@@ -48,6 +47,14 @@ export interface LayerswapProviderConfig {
      * Override the base API URL. Defaults to https://api.layerswap.io/api/v2
      */
     apiUrl?: string;
+
+    /**
+     * Mapping of CAIP-2 source chain identifiers to Layerswap network slugs
+     * (e.g. `'eip155:42161' → 'ARBITRUM_MAINNET'`). When omitted, defaults to
+     * {@link DEFAULT_LAYERSWAP_SUPPORTED_CHAINS}. Pass a full map (not a partial)
+     * — the override replaces the default. Spread the default to extend it.
+     */
+    supportedChains?: Record<string, string>;
 }
 
 /**
@@ -89,20 +96,24 @@ export class LayerswapCryptoOnrampProvider extends CryptoOnrampProvider<undefine
 
     private readonly apiKey: string | undefined;
     private readonly apiUrl: string;
+    private readonly supportedChains: Record<string, string>;
 
     constructor(config: LayerswapProviderConfig = {}) {
         super();
         this.apiKey = config.apiKey;
         this.apiUrl = config.apiUrl ?? LAYERSWAP_API_URL;
+        this.supportedChains = config.supportedChains ?? DEFAULT_LAYERSWAP_SUPPORTED_CHAINS;
     }
 
     async getQuote(params: CryptoOnrampQuoteParams<undefined>): Promise<CryptoOnrampQuote<LayerswapQuoteMetadata>> {
         const recipient = params.recipientAddress;
 
-        if (params.sourceChain !== ARBITRUM_CAIP2) {
+        const sourceNetworkSlug = this.supportedChains[params.sourceChain];
+        if (!sourceNetworkSlug) {
             throw new CryptoOnrampError(
-                `Layerswap: unsupported source chain "${params.sourceChain}" (only Arbitrum One / ${ARBITRUM_CAIP2} is supported)`,
-                CryptoOnrampError.INVALID_PARAMS,
+                `Layerswap: unsupported source chain "${params.sourceChain}"`,
+                CryptoOnrampError.UNSUPPORTED_SOURCE_CHAIN,
+                { supportedChains: Object.keys(this.supportedChains) },
             );
         }
 
@@ -138,7 +149,7 @@ export class LayerswapCryptoOnrampProvider extends CryptoOnrampProvider<undefine
 
         const body = {
             amount: amountDecimal,
-            source_network: LAYERSWAP_SOURCE_NETWORK,
+            source_network: sourceNetworkSlug,
             destination_network: LAYERSWAP_DESTINATION_NETWORK,
             source_token: LAYERSWAP_SOURCE_TOKEN,
             destination_token: LAYERSWAP_DESTINATION_TOKEN,
@@ -203,7 +214,7 @@ export class LayerswapCryptoOnrampProvider extends CryptoOnrampProvider<undefine
 
         return {
             sourceCurrencyAddress: params.sourceCurrencyAddress,
-            sourceChain: ARBITRUM_CAIP2,
+            sourceChain: params.sourceChain,
             targetCurrencyAddress: params.targetCurrencyAddress,
             sourceAmount: metadata.sourceAmountBaseUnits,
             targetAmount: metadata.targetAmountBaseUnits,

@@ -124,6 +124,7 @@ export default {
         refundAddressRequired: 'Refund address is required',
         skipRefundAddress: 'Skip',
         reversedAmountNotSupported: 'This provider only supports entering the source amount',
+        unsupportedSourceChain: 'Unsupported chain',
         invalidRefundAddress: 'Invalid refund address',
         refundAddressPlaceholder: 'Your address',
         yourBalance: 'Your balance',

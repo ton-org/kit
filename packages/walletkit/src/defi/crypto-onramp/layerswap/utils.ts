@@ -11,14 +11,29 @@ import type { LayerswapErrorResponse, LayerswapSwapStatus } from './types';
 
 const EVM_ADDRESS_REGEX = /^(0x)?[0-9a-fA-F]{40}$/;
 
-export const ARBITRUM_CAIP2 = 'eip155:42161';
 export const ARBITRUM_USDT0_ADDRESS = '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9';
 export const TON_USDT_ADDRESS = 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs';
 
-export const LAYERSWAP_SOURCE_NETWORK = 'ARBITRUM_MAINNET';
 export const LAYERSWAP_SOURCE_TOKEN = 'USDT0';
 export const LAYERSWAP_DESTINATION_NETWORK = 'TON_MAINNET';
 export const LAYERSWAP_DESTINATION_TOKEN = 'USDT';
+
+/**
+ * Default mapping of CAIP-2 source chains to Layerswap network slugs.
+ * Used by `LayerswapCryptoOnrampProvider` when no override is passed via config.
+ * Exported so consumers can spread/extend it rather than redefining from scratch.
+ */
+export const DEFAULT_LAYERSWAP_SUPPORTED_CHAINS: Record<string, string> = {
+    'eip155:1': 'ETHEREUM_MAINNET', // Ethereum
+    'eip155:10': 'OPTIMISM_MAINNET', // Optimism
+    'eip155:56': 'BSC_MAINNET', // BSC
+    'eip155:137': 'POLYGON_MAINNET', // Polygon
+    'eip155:8453': 'BASE_MAINNET', // Base
+    'eip155:42161': 'ARBITRUM_MAINNET', // Arbitrum One
+    'eip155:43114': 'AVALANCHE_MAINNET', // Avalanche
+    'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp': 'SOLANA_MAINNET', // Solana
+    'bip122:000000000019d6689c085ae165831e93': 'BITCOIN_MAINNET', // Bitcoin
+};
 
 export const isEvmAddress = (address: string): boolean => {
     return EVM_ADDRESS_REGEX.test(address);

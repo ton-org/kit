@@ -7,20 +7,24 @@
  */
 
 import type { CryptoOnrampStatus } from '../../../api/models';
-import { parseCaip2 } from '../caip2';
 import type { DecentErrorResponse } from './types';
 
 const EVM_ADDRESS_REGEX = /^(0x)?[0-9a-fA-F]{40}$/;
 
 /**
- * Extract a numeric EVM chain id from a CAIP-2 string. Returns `undefined`
- * for non-EVM (`namespace !== 'eip155'`) or malformed values.
+ * Default mapping of CAIP-2 source chains to Decent chain identifiers
+ * (numeric chain id for EVM, opaque numeric strings for non-EVM VMs).
+ * Used by `DecentCryptoOnrampProvider` when no override is passed via config.
+ * Exported so consumers can spread/extend it rather than redefining from scratch.
  */
-export const parseEvmChainIdFromCaip2 = (value: string): number | undefined => {
-    const parsed = parseCaip2(value);
-    if (!parsed || parsed.namespace !== 'eip155') return undefined;
-    const n = Number(parsed.reference);
-    return Number.isInteger(n) && n > 0 ? n : undefined;
+export const DEFAULT_DECENT_SUPPORTED_CHAINS: Record<string, string> = {
+    'eip155:1': '1', // Ethereum
+    'eip155:10': '10', // Optimism
+    'eip155:56': '56', // BSC
+    'eip155:137': '137', // Polygon
+    'eip155:8453': '8453', // Base
+    'eip155:42161': '42161', // Arbitrum One
+    'eip155:43114': '43114', // Avalanche
 };
 
 /**

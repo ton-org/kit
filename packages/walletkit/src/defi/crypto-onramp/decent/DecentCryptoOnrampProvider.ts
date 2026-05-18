@@ -19,7 +19,7 @@ import { CryptoOnrampProvider } from '../CryptoOnrampProvider';
 import { CryptoOnrampError } from '../errors';
 import { createProvider } from '../../../types/factory';
 import type { DecentGetActionResponse, DecentSwapDirection } from './types';
-import { evmChainIdToCaip2, isErrorResponse, isEvmAddress, mapStatus, parseEvmChainIdFromCaip2 } from './utils';
+import { DEFAULT_DECENT_SUPPORTED_CHAINS, evmChainIdToCaip2, isErrorResponse, isEvmAddress, mapStatus } from './utils';
 
 // Decent (formerly Swaps.xyz) — they rebranded but kept the existing API endpoints.
 const DECENT_API_URL = 'https://api-v2.swaps.xyz/api';
@@ -44,6 +44,14 @@ export interface DecentProviderConfig {
      * null address when omitted.
      */
     defaultSender?: string;
+
+    /**
+     * Mapping of CAIP-2 source chain identifiers to Decent chain identifiers
+     * (numeric chain id for EVM). When omitted, defaults to
+     * {@link DEFAULT_DECENT_SUPPORTED_CHAINS}. Pass a full map (not a partial)
+     * — the override replaces the default. Spread the default to extend it.
+     */
+    supportedChains?: Record<string, string>;
 }
 
 export interface DecentQuoteOptions {
@@ -85,12 +93,14 @@ export class DecentCryptoOnrampProvider extends CryptoOnrampProvider<DecentQuote
     private readonly apiKey: string;
     private readonly apiUrl: string;
     private readonly defaultSender: string;
+    private readonly supportedChains: Record<string, string>;
 
     constructor(config: DecentProviderConfig) {
         super();
         this.apiKey = config.apiKey;
         this.apiUrl = config.apiUrl ?? DECENT_API_URL;
         this.defaultSender = config.defaultSender ?? DEFAULT_SENDER;
+        this.supportedChains = config.supportedChains ?? DEFAULT_DECENT_SUPPORTED_CHAINS;
     }
 
     async getQuote(
@@ -99,11 +109,12 @@ export class DecentCryptoOnrampProvider extends CryptoOnrampProvider<DecentQuote
         const sender = params.refundAddress ?? this.defaultSender;
         const recipient = params.recipientAddress;
 
-        const srcChainId = parseEvmChainIdFromCaip2(params.sourceChain);
-        if (srcChainId === undefined) {
+        const srcChainId = this.supportedChains[params.sourceChain];
+        if (!srcChainId) {
             throw new CryptoOnrampError(
-                `Decent: sourceChain must be a CAIP-2 EVM chain (e.g. "eip155:1"), got "${params.sourceChain}"`,
-                CryptoOnrampError.INVALID_PARAMS,
+                `Decent: unsupported source chain "${params.sourceChain}"`,
+                CryptoOnrampError.UNSUPPORTED_SOURCE_CHAIN,
+                { supportedChains: Object.keys(this.supportedChains) },
             );
         }
 

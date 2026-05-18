@@ -23,18 +23,42 @@ export interface ChainInfo {
  * @see https://chainagnostic.org/CAIPs/caip-2
  */
 export const DEFAULT_CHAINS: Record<string, ChainInfo> = {
-    'eip155:1': { name: 'Ethereum' },
-    'eip155:10': { name: 'Optimism' },
-    'eip155:56': { name: 'BSC' },
-    'eip155:137': { name: 'Polygon' },
-    'eip155:8453': { name: 'Base' },
+    'eip155:1': {
+        name: 'Ethereum',
+        logo: 'https://cdn.layerswap.io/layerswap/networks/ethereum_mainnet.png',
+    },
+    'eip155:10': {
+        name: 'Optimism',
+        logo: 'https://cdn.layerswap.io/layerswap/networks/optimism_mainnet.png',
+    },
+    'eip155:56': {
+        name: 'BSC',
+        logo: 'https://cdn.layerswap.io/layerswap/networks/bsc_mainnet.png',
+    },
+    'eip155:137': {
+        name: 'Polygon',
+        logo: 'https://cdn.layerswap.io/layerswap/networks/polygon_mainnet.png',
+    },
+    'eip155:8453': {
+        name: 'Base',
+        logo: 'https://cdn.layerswap.io/layerswap/networks/base_mainnet.png',
+    },
     'eip155:42161': {
         name: 'Arbitrum One',
         logo: 'https://cdn.layerswap.io/layerswap/networks/arbitrum_mainnet.png',
     },
-    'eip155:43114': { name: 'Avalanche' },
-    'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp': { name: 'Solana' },
-    'bip122:000000000019d6689c085ae165831e93': { name: 'Bitcoin' },
+    'eip155:43114': {
+        name: 'Avalanche',
+        logo: 'https://cdn.layerswap.io/layerswap/networks/avax_mainnet.png',
+    },
+    'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp': {
+        name: 'Solana',
+        logo: 'https://cdn.layerswap.io/layerswap/networks/solana_mainnet.png',
+    },
+    'bip122:000000000019d6689c085ae165831e93': {
+        name: 'Bitcoin',
+        logo: 'https://cdn.layerswap.io/layerswap/networks/bitcoin_mainnet.png',
+    },
 };
 
 /**

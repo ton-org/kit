@@ -7,6 +7,7 @@
  */
 
 export * from './DecentCryptoOnrampProvider';
+export { DEFAULT_DECENT_SUPPORTED_CHAINS } from './utils';
 export type {
     DecentVmId,
     DecentSwapDirection,

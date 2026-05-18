@@ -7,6 +7,7 @@
  */
 
 export * from './LayerswapCryptoOnrampProvider';
+export { DEFAULT_LAYERSWAP_SUPPORTED_CHAINS } from './utils';
 export type {
     LayerswapToken,
     LayerswapNetwork,
