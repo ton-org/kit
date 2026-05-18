@@ -148,4 +148,8 @@
     width: 100%;
     min-height: 100vh;
   }
+
+  #tc-widget-root {
+    z-index: 9999;
+  }
 }
