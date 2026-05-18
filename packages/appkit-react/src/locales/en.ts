@@ -73,7 +73,7 @@ export default {
         buildTxFailed: "Couldn't build the swap transaction",
         selectToken: 'Select Token',
         searchToken: 'Search...',
-        settings: 'Swap settings',
+        settings: 'Settings',
         slippage: 'Slippage',
         slippageError: 'The maximum slippage tolerance cannot be more than 50%. The recommended range is 1%',
         slippageWarning: 'High slippage tolerance increases the risk of an unfavorable trade',
@@ -132,7 +132,7 @@ export default {
         statusFailed: 'Transfer failed',
         done: 'Done',
         close: 'Close',
-        settings: 'Crypto onramp settings',
+        settings: 'Settings',
         save: 'Save',
     },
 
@@ -177,7 +177,7 @@ export default {
         whenAvailableLimit: 'No limits',
         yourBalance: 'Your balance',
         provider: 'Provider',
-        settings: 'Staking settings',
+        settings: 'Settings',
         save: 'Save',
     },
 } as const;
