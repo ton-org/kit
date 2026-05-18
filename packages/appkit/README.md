@@ -1,4 +1,4 @@
-# TonAppKit
+# @ton/appkit
 
 A dApp-side integration layer for TON Connect with a unified asset API for TON, Jettons, and NFTs
 
