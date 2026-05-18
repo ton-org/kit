@@ -42,7 +42,7 @@ const mockMetadata = {
 
 const mockProviderInfo = {
     apy: 4.5,
-    exchangeRate: '1.05',
+    exchangeRate: '0.909090909',
     instantUnstakeAvailable: '10000000000',
 };
 

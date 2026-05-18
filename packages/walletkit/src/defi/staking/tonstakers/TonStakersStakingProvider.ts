@@ -391,10 +391,14 @@ export class TonStakersStakingProvider extends StakingProvider {
             const apy = await this.getApyFromTonApi(targetNetwork);
             const poolData = await contract.getPoolData();
 
-            // Compute exchange rate with 9-digit precision via bigint: (totalBalance * 10^9) / supply
-            const PRECISION = 1_000_000_000n;
-            const exchangeRate =
-                poolData.supply > 0n ? formatUnits((poolData.totalBalance * PRECISION) / poolData.supply, 9) : '1';
+            // Exchange rate is tsTON-per-TON — the amountOut of a stake quote for 1 TON.
+            // Mirrors the stake math in getQuote: rawAmountOut = rawAmountIn * projectedSupply / projectedBalance.
+            const rawAmountIn = parseUnits('1', 9);
+            const rawAmountOut =
+                poolData.projectedBalance > 0n
+                    ? (rawAmountIn * poolData.projectedSupply) / poolData.projectedBalance
+                    : rawAmountIn;
+            const exchangeRate = formatUnits(rawAmountOut, 9);
 
             return {
                 apy,
