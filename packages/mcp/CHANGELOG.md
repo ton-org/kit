@@ -1,5 +1,35 @@
 # @ton/mcp
 
+## 0.1.15-alpha.16
+
+### Patch Changes
+
+- 0995b96: Added emulate_transaction tool — dry-run any transaction before broadcasting to verify expected TON and jetton balance changes (uses wallet.getTransactionPreview)
+- 138b416: Added `--help` / `-h` flag to CLI — prints usage and exits instead of starting the stdio server
+- 4bab31c: Renamed `get_jetton_info` input param from `address` to `jettonAddress` for consistency with `get_jetton_balance` and other jetton tools. Updated all skill docs to match: fixed CLI arg names, added missing optional params, clarified xStocks API should use curl (not WebFetch), and specified `"TON"` as the literal fromToken string for native TON swaps.
+- 4e73308: Encrypt local TON config files on first read when an existing plaintext config is detected.
+- 0995b96: Added raw and human readable outputs for amounts in mcp
+- c67bb0e: Added emulation support to the TonAPI client and introduced provider-agnostic emulation domain models under `api/models/emulation` (`EmulationResult`, `EmulationResponse`, `EmulationTransaction`, `EmulationMessage`, `EmulationAction`, `EmulationTraceNode`, `EmulationAddressBookEntry`). `ApiClient.fetchEmulation` now returns `EmulationResult` instead of the toncenter-specific `ToncenterEmulationResult`, so callers get the same shape regardless of backend. Reorganized toncenter raw types under `clients/toncenter/types/*` (NFTs, jettons, DNS, metadata, raw emulation), moved the `ApiClient` interface to `api/interfaces`, removed legacy emulation parsing utilities (`utils/toncenterEmulation`, message/jetton parser handlers), and migrated optional NFT and DNS results from `null` to `undefined` across walletkit, appkit, and mcp.
+- 494250e: Added option to pass settlement options to Omniston provider. Added escrow settlement for mcp
+- d8e7aa5: Added option to generate TON Proof
+- 33f8bd3: Updated agentic dashboard URL from `agentic-wallets-dashboard.vercel.app` to `agents.ton.org`
+- Updated dependencies [b31befc]
+- Updated dependencies [db5c23b]
+- Updated dependencies [70efd43]
+- Updated dependencies [fd7e89f]
+- Updated dependencies [74e0b78]
+- Updated dependencies [0042cc9]
+- Updated dependencies [db5c23b]
+- Updated dependencies [1f552f7]
+- Updated dependencies [5b75f27]
+- Updated dependencies [50c5bf3]
+- Updated dependencies [c1f5243]
+- Updated dependencies [c1f5243]
+- Updated dependencies [c67bb0e]
+- Updated dependencies [494250e]
+- Updated dependencies [4a060fb]
+    - @ton/walletkit@1.0.0
+
 ## 0.1.15-alpha.15
 
 ### Patch Changes
