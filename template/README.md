@@ -2,18 +2,18 @@
 target: README.md
 ---
 
-# TON Connect Kit
+# AppKit, WalletKit and AgentKit monorepo
 
-`ton-connect/kit` is a TON developer toolkit monorepo for building dApps, wallets, and agent integrations around TON.
+This is a TON developer toolkit monorepo for building dApps, wallets, and agent integrations around TON.
 
 [![Release](https://github.com/ton-connect/kit/actions/workflows/release.yml/badge.svg?branch=release)](https://github.com/ton-connect/kit/actions/workflows/release.yml)
 [![Tests](https://github.com/ton-connect/kit/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/ton-connect/kit/actions/workflows/test.yml)
 
 ## Packages
 
-- **AppKit** (`@ton/appkit`, `@ton/appkit-react`) - dApp-side SDK for wallet connection, asset actions, swaps, staking, and React UI/hooks. Start with the [AppKit README](https://github.com/ton-connect/kit/blob/main/packages/appkit/README.md) and [AppKit React README](https://github.com/ton-connect/kit/blob/main/packages/appkit-react/README.md).
-- **WalletKit** (`@ton/walletkit`) - wallet-side SDK for handling TON Connect requests, previews, wallet state, bridge flows, and wallet app integrations. Start with the [WalletKit README](https://github.com/ton-connect/kit/blob/main/packages/walletkit/README.md).
-- **@ton/mcp** - MCP server and CLI for TON wallet operations, transfers, swaps, NFTs, DNS, TonProof, and agentic wallet workflows. Start with the [@ton/mcp README](https://github.com/ton-connect/kit/blob/main/packages/mcp/README.md).
+- **AppKit** (`@ton/appkit`, `@ton/appkit-react`) - the user-facing layer for integrating TON into Mini Apps and dApps. It provides primitives, typed React hooks, and drop-in components for wallet connection, Toncoin, Jettons, NFTs, TON DNS, swaps, and liquid staking, with TON Connect v3, embedded wallets, gasless flows, and widgets on the roadmap. Start with the [AppKit README](https://github.com/ton-connect/kit/blob/main/packages/appkit/README.md) and [AppKit React README](https://github.com/ton-connect/kit/blob/main/packages/appkit-react/README.md).
+- **WalletKit** (`@ton/walletkit`) - the wallet-side layer for custodial and non-custodial wallets. It handles TON Connect requests, sign-data, transactions, exact money-flow previews, asset reads/transfers, multi-wallet state, pluggable signers, web/mobile/extension integrations, and custodial backend use cases while keeping key-management control with the wallet. Start with the [WalletKit README](https://github.com/ton-connect/kit/blob/main/packages/walletkit/README.md).
+- **AgentKit** (`@ton/mcp`) - TON's entry point for machines. It exposes TON to LLM agents through the Model Context Protocol and also includes a CLI for direct tool execution, with one-line MCP client connection, on-chain actions, agentic wallet workflows, and reusable skills from the open repo. Start with the [@ton/mcp README](https://github.com/ton-connect/kit/blob/main/packages/mcp/README.md).
 
 ## Demos
 
