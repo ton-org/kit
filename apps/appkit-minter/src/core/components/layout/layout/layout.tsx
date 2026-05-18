@@ -7,7 +7,17 @@
  */
 
 import { TonConnectButton, useAddress } from '@ton/appkit-react';
-import { ArrowLeftRight, BookOpen, Coins, Bitcoin, ExternalLink, Github, ImageIcon, Sparkles, Wallet } from 'lucide-react';
+import {
+    ArrowLeftRight,
+    BookOpen,
+    Coins,
+    Bitcoin,
+    ExternalLink,
+    Github,
+    ImageIcon,
+    Sparkles,
+    Wallet,
+} from 'lucide-react';
 import { Link, NavLink } from 'react-router-dom';
 import type { ComponentType, FC, ReactNode } from 'react';
 

@@ -16,9 +16,11 @@ import { CenteredAmountInput } from '../../../../../components/ui/centered-amoun
 import { AmountPresets } from '../../../../../components/shared/amount-presets';
 import { TokenSelectModal } from '../../../../../components/shared/token-select-modal';
 import { AmountReversed } from '../../../../../components/ui/amount-reversed';
+import { SettingsButton } from '../../../../../components/shared/settings-button';
 import { CryptoMethodSelectModal } from '../crypto-method-select-modal';
 import { CryptoOnrampDepositModal } from '../crypto-onramp-deposit-modal';
 import { CryptoOnrampRefundAddressModal } from '../crypto-onramp-refund-address-modal';
+import { CryptoOnrampSettingsModal } from '../crypto-onramp-settings-modal';
 import { InfoBlock } from '../../../../../components/ui/info-block';
 import type { CryptoOnrampContextType } from '../crypto-onramp-widget-provider';
 import { getChainInfo } from '../utils/chains';
@@ -45,9 +47,11 @@ export const CryptoOnrampWidgetUI: FC<CryptoOnrampWidgetRenderProps> = ({
     setAmountInputMode,
     convertedAmount,
     presetAmounts,
+    provider,
+    providers,
+    setProviderId,
     quote,
     isLoadingQuote,
-    quoteProviderName,
     createDeposit,
     isCreatingDeposit,
     deposit,
@@ -71,6 +75,7 @@ export const CryptoOnrampWidgetUI: FC<CryptoOnrampWidgetRenderProps> = ({
     const [isMethodSelectOpen, setIsMethodSelectOpen] = useState(false);
     const [isRefundAddressOpen, setIsRefundAddressOpen] = useState(false);
     const [isDepositOpen, setIsDepositOpen] = useState(false);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
     const { t } = useI18n();
 
@@ -141,16 +146,19 @@ export const CryptoOnrampWidgetUI: FC<CryptoOnrampWidgetRenderProps> = ({
 
             <AmountPresets className={styles.presets} presets={presetAmounts} onPresetSelect={setAmount} />
 
-            <ButtonWithConnect
-                variant="fill"
-                size="l"
-                disabled={!canContinue || isCreatingDeposit}
-                loading={isCreatingDeposit}
-                onClick={handleContinue}
-                fullWidth
-            >
-                {quoteError ? t(quoteError) : t('cryptoOnramp.continue')}
-            </ButtonWithConnect>
+            <div className={styles.actions}>
+                <ButtonWithConnect
+                    variant="fill"
+                    size="l"
+                    disabled={!canContinue || isCreatingDeposit}
+                    loading={isCreatingDeposit}
+                    onClick={handleContinue}
+                    fullWidth
+                >
+                    {quoteError ? t(quoteError) : t('cryptoOnramp.continue')}
+                </ButtonWithConnect>
+                <SettingsButton onClick={() => setIsSettingsOpen(true)} />
+            </div>
 
             <InfoBlock.Container className={styles.info}>
                 <InfoBlock.Row>
@@ -200,11 +208,7 @@ export const CryptoOnrampWidgetUI: FC<CryptoOnrampWidgetRenderProps> = ({
 
                 <InfoBlock.Row>
                     <InfoBlock.Label>{t('cryptoOnramp.provider')}</InfoBlock.Label>
-                    {isLoadingQuote || !quoteProviderName ? (
-                        <InfoBlock.ValueSkeleton />
-                    ) : (
-                        <InfoBlock.Value>{quoteProviderName}</InfoBlock.Value>
-                    )}
+                    <InfoBlock.Value>{provider?.getMetadata().name ?? ''}</InfoBlock.Value>
                 </InfoBlock.Row>
             </InfoBlock.Container>
 
@@ -251,6 +255,14 @@ export const CryptoOnrampWidgetUI: FC<CryptoOnrampWidgetRenderProps> = ({
                 onConfirm={handleConfirmRefundAddress}
                 isLoading={isCreatingDeposit}
                 error={depositError ? t(depositError) : null}
+            />
+
+            <CryptoOnrampSettingsModal
+                open={isSettingsOpen}
+                onClose={() => setIsSettingsOpen(false)}
+                provider={provider}
+                providers={providers}
+                onProviderChange={setProviderId}
             />
         </div>
     );

@@ -7,7 +7,7 @@
  */
 
 import { createContext, useContext } from 'react';
-import type { CryptoOnrampDeposit, CryptoOnrampQuote, CryptoOnrampStatus } from '@ton/appkit';
+import type { CryptoOnrampDeposit, CryptoOnrampProvider, CryptoOnrampQuote, CryptoOnrampStatus } from '@ton/appkit';
 
 import { CRYPTO_ONRAMP_TARGET_TOKENS } from '../../../mock-data/crypto-onramp-tokens';
 import { CRYPTO_PAYMENT_METHODS } from '../../../mock-data/crypto-payment-methods';
@@ -53,14 +53,19 @@ export interface CryptoOnrampContextType {
     convertedAmount: string;
     presetAmounts: OnrampAmountPreset[];
 
+    /** Currently selected crypto-onramp provider (defaults to the first registered one) */
+    provider: CryptoOnrampProvider | undefined;
+    /** All registered crypto-onramp providers */
+    providers: CryptoOnrampProvider[];
+    /** Updates the selected crypto-onramp provider */
+    setProviderId: (providerId: string) => void;
+
     /** Current quote from provider */
     quote: CryptoOnrampQuote | null;
     /** Whether quote is being fetched */
     isLoadingQuote: boolean;
     /** Error from quote fetch (i18n key) */
     quoteError: string | null;
-    /** Display name of the provider behind the current quote, when one is available. */
-    quoteProviderName: string | null;
 
     /** Current deposit offer from provider */
     deposit: CryptoOnrampDeposit | null;
@@ -114,10 +119,13 @@ const defaultContext: CryptoOnrampContextType = {
     convertedAmount: '',
     presetAmounts: DEFAULT_ONRAMP_PRESETS,
 
+    provider: undefined,
+    providers: [],
+    setProviderId: () => {},
+
     quote: null,
     isLoadingQuote: false,
     quoteError: null,
-    quoteProviderName: null,
 
     deposit: null,
     isCreatingDeposit: false,

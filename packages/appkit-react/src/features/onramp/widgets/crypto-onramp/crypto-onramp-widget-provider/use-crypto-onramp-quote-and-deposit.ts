@@ -11,7 +11,7 @@ import { formatUnits, parseUnits } from '@ton/appkit';
 import { keepPreviousData } from '@tanstack/react-query';
 
 import { useCreateCryptoOnrampDeposit } from '../../../hooks/use-create-crypto-onramp-deposit';
-import { useCryptoOnrampProvider } from '../../../hooks/use-crypto-onramp-provider';
+import { useCryptoOnrampProviderById } from '../../../hooks/use-crypto-onramp-provider-by-id';
 import { useCryptoOnrampQuote } from '../../../hooks/use-crypto-onramp-quote';
 import { useCryptoOnrampStatus } from '../../../hooks/use-crypto-onramp-status';
 import { useDebounceValue } from '../../../../../hooks/use-debounce-value';
@@ -27,6 +27,7 @@ interface UseCryptoOnrampQuoteAndDepositOptions {
     amount: string;
     amountInputMode: CryptoAmountInputMode;
     userAddress: string | undefined;
+    providerId: string | undefined;
 }
 
 export const useCryptoOnrampQuoteAndDeposit = ({
@@ -35,6 +36,7 @@ export const useCryptoOnrampQuoteAndDeposit = ({
     amount,
     amountInputMode,
     userAddress,
+    providerId,
 }: UseCryptoOnrampQuoteAndDepositOptions) => {
     const [refundAddress, setRefundAddress] = useState('');
     const [amountDebounced] = useDebounceValue(amount, QUOTE_DEBOUNCE_MS);
@@ -58,6 +60,7 @@ export const useCryptoOnrampQuoteAndDeposit = ({
         targetCurrencyAddress: selectedToken?.address ?? '',
         recipientAddress: userAddress ?? '',
         isSourceAmount: amountInputMode === 'method',
+        providerId,
         query: {
             enabled: !!requestAmountBase && !!selectedToken && !!userAddress && parseFloat(amountDebounced) > 0,
             retry: false,
@@ -66,11 +69,10 @@ export const useCryptoOnrampQuoteAndDeposit = ({
         },
     });
 
-    const quoteProvider = useCryptoOnrampProvider({ id: quoteQuery.data?.providerId });
-    const quoteProviderMetadata = quoteProvider?.getMetadata();
-    const quoteProviderName = quoteProviderMetadata?.name ?? null;
-    const isRefundAddressRequired = quoteProviderMetadata?.isRefundAddressRequired ?? false;
-    const isReversedAmountSupported = quoteProviderMetadata?.isReversedAmountSupported ?? true;
+    const selectedProvider = useCryptoOnrampProviderById({ id: providerId });
+    const selectedProviderMetadata = selectedProvider?.getMetadata();
+    const isRefundAddressRequired = selectedProviderMetadata?.isRefundAddressRequired ?? false;
+    const isReversedAmountSupported = selectedProviderMetadata?.isReversedAmountSupported ?? true;
 
     const createDepositMutation = useCreateCryptoOnrampDeposit();
 
@@ -128,7 +130,6 @@ export const useCryptoOnrampQuoteAndDeposit = ({
         quote: quoteQuery.data ?? null,
         quoteError: quoteQuery.error,
         isQuoteFetching: quoteQuery.isFetching,
-        quoteProviderName,
         isRefundAddressRequired,
         isReversedAmountSupported,
         deposit: createDepositMutation.data ?? null,

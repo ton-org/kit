@@ -14,6 +14,10 @@ export * from './widgets/crypto-onramp/crypto-onramp-widget-provider';
 export * from './widgets/ton-pay-widget';
 
 export { useCryptoOnrampProvider, type UseCryptoOnrampProviderReturnType } from './hooks/use-crypto-onramp-provider';
+export {
+    useCryptoOnrampProviderById,
+    type UseCryptoOnrampProviderByIdReturnType,
+} from './hooks/use-crypto-onramp-provider-by-id';
 export { useCryptoOnrampProviders, type UseCryptoOnrampProvidersReturnType } from './hooks/use-crypto-onramp-providers';
 export {
     useCryptoOnrampQuote,

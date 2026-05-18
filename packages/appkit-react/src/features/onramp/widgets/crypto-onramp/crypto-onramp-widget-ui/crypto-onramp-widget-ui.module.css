@@ -26,3 +26,9 @@
 .presets {
     margin-bottom: 16px;
 }
+
+.actions {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+}

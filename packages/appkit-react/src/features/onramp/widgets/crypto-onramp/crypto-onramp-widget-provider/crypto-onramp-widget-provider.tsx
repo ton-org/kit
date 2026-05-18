@@ -10,6 +10,8 @@ import { useEffect, useMemo } from 'react';
 import type { FC, PropsWithChildren } from 'react';
 
 import { useAddress } from '../../../../wallets';
+import { useCryptoOnrampProvider } from '../../../hooks/use-crypto-onramp-provider';
+import { useCryptoOnrampProviders } from '../../../hooks/use-crypto-onramp-providers';
 import { CRYPTO_ONRAMP_TARGET_TOKENS } from '../../../mock-data/crypto-onramp-tokens';
 import { CRYPTO_PAYMENT_METHODS } from '../../../mock-data/crypto-payment-methods';
 import { DEFAULT_ONRAMP_PRESETS } from '../../../constants';
@@ -66,6 +68,8 @@ export const CryptoOnrampWidgetProvider: FC<CryptoOnrampProviderProps> = ({
 
     // 2. Queries and external readers
     const userAddress = useAddress();
+    const [provider, setProviderId] = useCryptoOnrampProvider();
+    const providers = useCryptoOnrampProviders();
     const { targetBalance, isLoadingTargetBalance } = useCryptoOnrampBalance({ selectedToken, userAddress });
 
     // 4. Mutations (quote query + deposit mutation + status query coordinated together)
@@ -74,7 +78,6 @@ export const CryptoOnrampWidgetProvider: FC<CryptoOnrampProviderProps> = ({
         quote,
         quoteError,
         isQuoteFetching,
-        quoteProviderName,
         isRefundAddressRequired,
         isReversedAmountSupported,
         deposit,
@@ -93,6 +96,7 @@ export const CryptoOnrampWidgetProvider: FC<CryptoOnrampProviderProps> = ({
         amount,
         amountInputMode,
         userAddress,
+        providerId: provider?.providerId,
     });
 
     // 3. Derivations
@@ -139,10 +143,12 @@ export const CryptoOnrampWidgetProvider: FC<CryptoOnrampProviderProps> = ({
             setAmountInputMode,
             convertedAmount,
             presetAmounts: DEFAULT_ONRAMP_PRESETS,
+            provider,
+            providers,
+            setProviderId,
             quote,
             isLoadingQuote,
             quoteError: validationQuoteError,
-            quoteProviderName,
             isRefundAddressRequired,
             isReversedAmountSupported,
             deposit,
@@ -174,10 +180,12 @@ export const CryptoOnrampWidgetProvider: FC<CryptoOnrampProviderProps> = ({
             amountInputMode,
             setAmountInputMode,
             convertedAmount,
+            provider,
+            providers,
+            setProviderId,
             quote,
             isLoadingQuote,
             validationQuoteError,
-            quoteProviderName,
             isRefundAddressRequired,
             isReversedAmountSupported,
             deposit,

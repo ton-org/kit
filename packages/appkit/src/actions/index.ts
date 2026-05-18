@@ -71,6 +71,11 @@ export {
     type GetCryptoOnrampStatusOptions,
     type GetCryptoOnrampStatusReturnType,
 } from './crypto-onramp/get-crypto-onramp-status';
+export {
+    setDefaultCryptoOnrampProvider,
+    type SetDefaultCryptoOnrampProviderParameters,
+    type SetDefaultCryptoOnrampProviderReturnType,
+} from './crypto-onramp/set-default-crypto-onramp-provider';
 
 // Jettons
 export { getJettonInfo, type GetJettonInfoOptions, type GetJettonInfoReturnType } from './jettons/get-jetton-info';

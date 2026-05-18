@@ -72,11 +72,11 @@ export interface SwapContextType {
     /** Slippage tolerance in basis points (100 = 1%) */
     slippage: number;
     /** Currently selected swap provider (defaults to the first registered one) */
-    swapProvider: SwapProvider | undefined;
+    provider: SwapProvider | undefined;
     /** All registered swap providers */
-    swapProviders: SwapProvider[];
+    providers: SwapProvider[];
     /** Updates the selected swap provider */
-    setSwapProviderId: (providerId: string) => void;
+    setProviderId: (providerId: string) => void;
     /** Updates the source token */
     setFromToken: (token: AppkitUIToken) => void;
     /** Updates the target token */
@@ -122,9 +122,9 @@ export const SwapContext = createContext<SwapContextType>({
     isQuoteLoading: false,
     error: null,
     slippage: 50,
-    swapProvider: undefined,
-    swapProviders: [],
-    setSwapProviderId: () => {},
+    provider: undefined,
+    providers: [],
+    setProviderId: () => {},
     setFromToken: () => {},
     setToToken: () => {},
     setFromAmount: () => {},
@@ -201,8 +201,8 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
     const [fromAmountDebounced] = useDebounceValue(fromAmount, 500);
     const [pendingSwap, setPendingSwap] = useState<TonShortfall | undefined>(undefined);
     const address = useAddress();
-    const [swapProvider, setSwapProviderId] = useSwapProvider();
-    const swapProviders = useSwapProviders();
+    const [provider, setProviderId] = useSwapProvider();
+    const providers = useSwapProviders();
 
     // Stabilized query inputs — kept next to the query that consumes them.
     const fromTokenParam = useMemo(
@@ -226,9 +226,8 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
     );
 
     const isNetworkSupported = useMemo(
-        () =>
-            !swapProvider || !network || swapProvider.getSupportedNetworks().some((n) => n.chainId === network.chainId),
-        [swapProvider, network],
+        () => !provider || !network || provider.getSupportedNetworks().some((n) => n.chainId === network.chainId),
+        [provider, network],
     );
 
     const {
@@ -241,7 +240,7 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
         amount: fromAmountDebounced,
         network,
         slippageBps: slippage,
-        providerId: swapProvider?.providerId,
+        providerId: provider?.providerId,
         query: { enabled: isNetworkSupported },
     });
     // Also show "loading" while the user is still typing (debounce in-flight) so the UI doesn't flash
@@ -332,9 +331,9 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
             isQuoteLoading,
             error,
             slippage,
-            swapProvider,
-            swapProviders,
-            setSwapProviderId,
+            provider,
+            providers,
+            setProviderId,
             setFromToken,
             setToToken,
             setFromAmount,
@@ -366,9 +365,9 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
             isQuoteLoading,
             error,
             slippage,
-            swapProvider,
-            swapProviders,
-            setSwapProviderId,
+            provider,
+            providers,
+            setProviderId,
             setFromToken,
             setToToken,
             setFromAmount,

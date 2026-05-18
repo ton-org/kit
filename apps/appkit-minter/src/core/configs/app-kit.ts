@@ -18,8 +18,9 @@ import { createDeDustProvider } from '@ton/appkit/swap/dedust';
 import { createOmnistonProvider } from '@ton/appkit/swap/omniston';
 import { createTonstakersProvider } from '@ton/appkit/staking/tonstakers';
 import { createLayerswapProvider } from '@ton/appkit/crypto-onramp/layerswap';
+import { createSwapsXyzProvider } from '@ton/appkit/crypto-onramp/swaps-xyz';
 
-import { ENV_TON_API_KEY_TESTNET, ENV_TON_API_KEY_MAINNET } from '@/core/configs/env';
+import { ENV_TON_API_KEY_TESTNET, ENV_TON_API_KEY_MAINNET, ENV_SWAPS_XYZ_API_KEY } from '@/core/configs/env';
 
 const mainnetApiClient = new ApiClientToncenter({
     network: Network.mainnet(),
@@ -54,6 +55,7 @@ export const appKit = new AppKit({
         createDeDustProvider(),
         createTonstakersProvider(),
         createLayerswapProvider(),
+        createSwapsXyzProvider({ apiKey: ENV_SWAPS_XYZ_API_KEY }),
     ],
 });
 

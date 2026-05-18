@@ -42,9 +42,9 @@ export const SwapWidgetUI: FC<SwapWidgetRenderProps> = ({
     isQuoteLoading,
     error,
     slippage,
-    swapProvider,
-    swapProviders,
-    setSwapProviderId,
+    provider,
+    providers,
+    setProviderId,
     onFlip,
     onMaxClick,
     setFromAmount,
@@ -133,9 +133,9 @@ export const SwapWidgetUI: FC<SwapWidgetRenderProps> = ({
                 onClose={() => setIsSettingsOpen(false)}
                 slippage={slippage}
                 onSlippageChange={setSlippage}
-                provider={swapProvider}
-                providers={swapProviders}
-                onProviderChange={setSwapProviderId}
+                provider={provider}
+                providers={providers}
+                onProviderChange={setProviderId}
             />
 
             <LowBalanceModal
@@ -161,7 +161,7 @@ export const SwapWidgetUI: FC<SwapWidgetRenderProps> = ({
 
             <SwapInfo
                 quote={quote}
-                provider={swapProvider}
+                provider={provider}
                 toToken={toToken}
                 slippage={slippage}
                 isQuoteLoading={isQuoteLoading}

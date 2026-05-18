@@ -131,6 +131,8 @@ export default {
         statusFailed: 'Transfer failed',
         done: 'Done',
         close: 'Close',
+        settings: 'Crypto onramp settings',
+        save: 'Save',
     },
 
     // Onramp

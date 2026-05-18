@@ -7,21 +7,22 @@
  */
 
 import { useSyncExternalStore, useCallback } from 'react';
-import { getCryptoOnrampProvider, watchCryptoOnrampProviders } from '@ton/appkit';
-import type { GetCryptoOnrampProviderOptions, GetCryptoOnrampProviderReturnType } from '@ton/appkit';
+import { getCryptoOnrampProvider, setDefaultCryptoOnrampProvider, watchCryptoOnrampProviders } from '@ton/appkit';
+import type { GetCryptoOnrampProviderReturnType } from '@ton/appkit';
 
 import { useAppKit } from '../../settings/hooks/use-app-kit';
 
-export type UseCryptoOnrampProviderReturnType = GetCryptoOnrampProviderReturnType;
+export type UseCryptoOnrampProviderReturnType = readonly [
+    GetCryptoOnrampProviderReturnType | undefined,
+    (providerId: string) => void,
+];
 
 /**
- * Hook to get a registered crypto-onramp provider by id, or the default one when no id is given.
+ * Hook to get and set the currently selected crypto-onramp provider.
+ * Mirrors the tuple shape of `useSwapProvider`.
  */
-export const useCryptoOnrampProvider = (
-    options: GetCryptoOnrampProviderOptions = {},
-): UseCryptoOnrampProviderReturnType | undefined => {
+export const useCryptoOnrampProvider = (): UseCryptoOnrampProviderReturnType => {
     const appKit = useAppKit();
-    const { id } = options;
 
     const subscribe = useCallback(
         (onChange: () => void) => {
@@ -32,11 +33,20 @@ export const useCryptoOnrampProvider = (
 
     const getSnapshot = useCallback(() => {
         try {
-            return getCryptoOnrampProvider(appKit, { id });
+            return getCryptoOnrampProvider(appKit);
         } catch {
             return undefined;
         }
-    }, [appKit, id]);
+    }, [appKit]);
 
-    return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+    const provider = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+
+    const setProviderId = useCallback(
+        (providerId: string) => {
+            setDefaultCryptoOnrampProvider(appKit, { providerId });
+        },
+        [appKit],
+    );
+
+    return [provider, setProviderId] as const;
 };
