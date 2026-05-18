@@ -1600,7 +1600,7 @@ function postProcessDiscriminatedUnions(schema) {
             // The template will override the type to use the nested enum name
             Object.keys(propDef).forEach((k) => delete propDef[k]);
             propDef.type = 'object';
-            propDef['x-interface-union'] = true;
+            propDef['x-inline-interface-union'] = true;
         }
     }
 }
