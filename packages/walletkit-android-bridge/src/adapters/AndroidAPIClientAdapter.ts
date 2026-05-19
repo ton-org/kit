@@ -40,6 +40,8 @@ import { error } from '../utils/logger';
 
 type AndroidAPIClientBridge = {
     apiGetNetworks: () => string;
+    // Optional: older native bridges don't expose this; callers must fall back.
+    apiGetNetworkForChainId?: (chainId: string) => string;
     apiSendBoc: (networkJson: string, boc: string) => string;
     apiRunGetMethod: (
         networkJson: string,
@@ -63,6 +65,7 @@ type AndroidWindow = Window & {
  */
 export class AndroidAPIClientAdapter implements ApiClient {
     private androidBridge: AndroidAPIClientBridge;
+    private readonly registeredChainId: string;
     private network: Network;
 
     constructor(network: Network) {
@@ -71,10 +74,22 @@ export class AndroidAPIClientAdapter implements ApiClient {
             throw new Error('WalletKitNative bridge not available');
         }
         this.androidBridge = androidWindow.WalletKitNative;
+        this.registeredChainId = network.chainId;
         this.network = network;
     }
 
     getNetwork(): Network {
+        const lookup = this.androidBridge.apiGetNetworkForChainId;
+        if (typeof lookup === 'function') {
+            try {
+                const json = lookup(this.registeredChainId);
+                const network = JSON.parse(json) as Network;
+                this.network = network;
+                return network;
+            } catch (err) {
+                error('[AndroidAPIClientAdapter] getNetwork live lookup failed, using cache:', err);
+            }
+        }
         return this.network;
     }
 
