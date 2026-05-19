@@ -15,6 +15,7 @@ export type {
     SwapAPI,
     SwapQuote,
     SwapQuoteParams,
+    SwapProviderMetadata,
     DefiManagerAPI,
     DefiProvider,
 } from '@ton/walletkit';

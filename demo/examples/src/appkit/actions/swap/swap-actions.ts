@@ -12,6 +12,8 @@ import {
     getSwapManager,
     getSwapProvider,
     getSwapProviders,
+    getSwapProviderMetadata,
+    getSwapSupportedNetworks,
     setDefaultSwapProvider,
     watchSwapProviders,
     getSwapQuote,
@@ -35,6 +37,16 @@ export const swapExample = async (appKit: AppKit) => {
         swapProviders.map((p) => p.providerId),
     );
     // SAMPLE_END: GET_SWAP_PROVIDERS
+
+    // SAMPLE_START: GET_SWAP_PROVIDER_METADATA
+    const swapMetadata = await getSwapProviderMetadata(appKit, { providerId: 'stonfi' });
+    console.log('Swap provider metadata:', swapMetadata);
+    // SAMPLE_END: GET_SWAP_PROVIDER_METADATA
+
+    // SAMPLE_START: GET_SWAP_SUPPORTED_NETWORKS
+    const swapSupportedNetworks = await getSwapSupportedNetworks(appKit, { providerId: 'stonfi' });
+    console.log('Swap supported networks:', swapSupportedNetworks);
+    // SAMPLE_END: GET_SWAP_SUPPORTED_NETWORKS
 
     // SAMPLE_START: SET_DEFAULT_SWAP_PROVIDER
     setDefaultSwapProvider(appKit, { providerId: 'stonfi' });

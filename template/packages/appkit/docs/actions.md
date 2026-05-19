@@ -256,6 +256,18 @@ Get all registered swap providers. The returned array keeps a stable reference u
 
 %%demo/examples/src/appkit/actions/swap#GET_SWAP_PROVIDERS%%
 
+### `getSwapProviderMetadata`
+
+Get static metadata for a single swap provider.
+
+%%demo/examples/src/appkit/actions/swap#GET_SWAP_PROVIDER_METADATA%%
+
+### `getSwapSupportedNetworks`
+
+Get the list of networks a swap provider can operate on.
+
+%%demo/examples/src/appkit/actions/swap#GET_SWAP_SUPPORTED_NETWORKS%%
+
 ### `setDefaultSwapProvider`
 
 Set the default swap provider. Subsequent quote and swap-transaction calls will use this provider when none is specified.
@@ -287,6 +299,12 @@ Build (assemble) a swap transaction based on a quote. After the transaction is b
 Get all available staking provider IDs.
 
 %%demo/examples/src/appkit/actions/staking#GET_STAKING_PROVIDERS%%
+
+### `getStakingSupportedNetworks`
+
+Get the list of networks a staking provider can operate on.
+
+%%demo/examples/src/appkit/actions/staking#GET_STAKING_SUPPORTED_NETWORKS%%
 
 ### `getStakingProviderInfo`
 

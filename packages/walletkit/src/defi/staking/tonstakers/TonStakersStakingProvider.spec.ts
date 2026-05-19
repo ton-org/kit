@@ -346,8 +346,8 @@ describe('TonStakersStakingProvider', () => {
     });
 
     describe('getStakingProviderMetadata', () => {
-        it('should return supported unstake modes', () => {
-            const metadata = provider.getStakingProviderMetadata(Network.mainnet());
+        it('should return supported unstake modes', async () => {
+            const metadata = await provider.getStakingProviderMetadata(Network.mainnet());
             expect(metadata.supportedUnstakeModes).toEqual([
                 UnstakeMode.INSTANT,
                 UnstakeMode.WHEN_AVAILABLE,
@@ -355,8 +355,8 @@ describe('TonStakersStakingProvider', () => {
             ]);
         });
 
-        it('should return provider metadata with token info', () => {
-            const metadata = provider.getStakingProviderMetadata(Network.mainnet());
+        it('should return provider metadata with token info', async () => {
+            const metadata = await provider.getStakingProviderMetadata(Network.mainnet());
             expect(metadata.stakeToken.ticker).toBe('TON');
             expect(metadata.stakeToken.decimals).toBe(9);
             expect(metadata.receiveToken?.ticker).toBe('tsTON');
@@ -364,14 +364,14 @@ describe('TonStakersStakingProvider', () => {
             expect(metadata.supportsReversedQuote).toBe(true);
         });
 
-        it('should use default receiveToken address from DEFAULT_METADATA for mainnet', () => {
-            const metadata = provider.getStakingProviderMetadata(Network.mainnet());
+        it('should use default receiveToken address from DEFAULT_METADATA for mainnet', async () => {
+            const metadata = await provider.getStakingProviderMetadata(Network.mainnet());
             expect(metadata.receiveToken?.address).toBe(
                 DEFAULT_METADATA[Network.mainnet().chainId].receiveToken?.address,
             );
         });
 
-        it('should use default receiveToken address from DEFAULT_METADATA for testnet', () => {
+        it('should use default receiveToken address from DEFAULT_METADATA for testnet', async () => {
             const mockNetworkManager: NetworkManager = {
                 getClient: () => mockApiClient as unknown as ApiClient,
                 hasNetwork: () => true,
@@ -382,13 +382,13 @@ describe('TonStakersStakingProvider', () => {
                 networkManager: mockNetworkManager,
             } as ProviderFactoryContext);
 
-            const metadata = testnetProvider.getStakingProviderMetadata(Network.testnet());
+            const metadata = await testnetProvider.getStakingProviderMetadata(Network.testnet());
             expect(metadata.receiveToken?.address).toBe(
                 DEFAULT_METADATA[Network.testnet().chainId].receiveToken?.address,
             );
         });
 
-        it('should prefer receiveToken from config metadata over the default', () => {
+        it('should prefer receiveToken from config metadata over the default', async () => {
             const customAddress = 'EQCustomReceiveToken' as UserFriendlyAddress;
             const mockNetworkManager: NetworkManager = {
                 getClient: () => mockApiClient as unknown as ApiClient,
@@ -402,13 +402,13 @@ describe('TonStakersStakingProvider', () => {
                 },
             })({ networkManager: mockNetworkManager } as ProviderFactoryContext);
 
-            const metadata = customProvider.getStakingProviderMetadata(Network.mainnet());
+            const metadata = await customProvider.getStakingProviderMetadata(Network.mainnet());
             expect(metadata.receiveToken?.address).toBe(customAddress);
             expect(metadata.receiveToken?.ticker).toBe('CUSTOM');
         });
 
-        it('should throw when metadata is not available for the network', () => {
-            expect(() => provider.getStakingProviderMetadata(Network.testnet())).toThrow();
+        it('should throw when metadata is not available for the network', async () => {
+            await expect(provider.getStakingProviderMetadata(Network.testnet())).rejects.toThrow();
         });
 
         it('should throw on construction when custom network has incomplete metadata', () => {
@@ -431,7 +431,7 @@ describe('TonStakersStakingProvider', () => {
             ).toThrow('Invalid metadata configuration');
         });
 
-        it('should succeed with complete custom network metadata', () => {
+        it('should succeed with complete custom network metadata', async () => {
             const customNetwork = Network.custom('custom-chain-id');
             const customNetworkManager: NetworkManager = {
                 getClient: () => mockApiClient as unknown as ApiClient,
@@ -451,7 +451,7 @@ describe('TonStakersStakingProvider', () => {
                 },
             })({ networkManager: customNetworkManager } as ProviderFactoryContext);
 
-            const metadata = customProvider.getStakingProviderMetadata(customNetwork);
+            const metadata = await customProvider.getStakingProviderMetadata(customNetwork);
             expect(metadata.stakeToken.ticker).toBe('TON');
             expect(metadata.receiveToken).toBeUndefined();
         });

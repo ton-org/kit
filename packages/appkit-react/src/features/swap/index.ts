@@ -17,3 +17,5 @@ export * from './hooks/use-swap-quote';
 export * from './hooks/use-build-swap-transaction';
 export * from './hooks/use-swap-provider';
 export * from './hooks/use-swap-providers';
+export * from './hooks/use-swap-provider-metadata';
+export * from './hooks/use-swap-supported-networks';

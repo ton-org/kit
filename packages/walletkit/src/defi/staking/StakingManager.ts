@@ -118,18 +118,36 @@ export class StakingManager extends DefiManager<StakingProviderInterface> implem
      * @param network - Network to query
      * @param providerId - Optional provider id to use
      */
-    getStakingProviderMetadata(network?: Network, providerId?: string): StakingProviderMetadata {
+    async getStakingProviderMetadata(network?: Network, providerId?: string): Promise<StakingProviderMetadata> {
         log.debug('Getting staking metadata', {
             network,
             provider: providerId || this.defaultProviderId,
         });
 
         try {
-            return this.getProvider(providerId).getStakingProviderMetadata(network);
+            return await this.getProvider(providerId).getStakingProviderMetadata(network);
         } catch (error) {
             throw this.createError('Failed to get staking metadata', StakingErrorCode.InvalidParams, {
                 error,
                 network,
+            });
+        }
+    }
+
+    /**
+     * Get networks supported by a staking provider
+     * @param providerId - Optional provider id to use
+     */
+    async getSupportedNetworks(providerId?: string): Promise<Network[]> {
+        log.debug('Getting staking supported networks', {
+            provider: providerId || this.defaultProviderId,
+        });
+
+        try {
+            return await this.getProvider(providerId).getSupportedNetworks();
+        } catch (error) {
+            throw this.createError('Failed to get staking supported networks', StakingErrorCode.InvalidParams, {
+                error,
             });
         }
     }

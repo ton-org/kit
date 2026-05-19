@@ -16,12 +16,12 @@ export type GetStakingProviderMetadataOptions = {
     providerId?: string;
 };
 
-export type GetStakingProviderMetadataReturnType = StakingProviderMetadata;
+export type GetStakingProviderMetadataReturnType = Promise<StakingProviderMetadata>;
 
 /**
  * Get staking provider static metadata
  */
-export const getStakingProviderMetadata = (
+export const getStakingProviderMetadata = async (
     appKit: AppKit,
     options: GetStakingProviderMetadataOptions = {},
 ): GetStakingProviderMetadataReturnType => {

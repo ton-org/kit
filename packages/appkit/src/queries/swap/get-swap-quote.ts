@@ -62,7 +62,7 @@ export type GetSwapQuoteData = GetSwapQuoteQueryFnData;
 export const getSwapQuoteQueryKey = (
     options: Compute<ExactPartial<GetSwapQuoteOptions>> = {},
 ): GetSwapQuoteQueryKey => {
-    return ['swapQuote', filterQueryOptions(options as unknown as Record<string, unknown>)] as const;
+    return ['swapQuote', filterQueryOptions(options)] as const;
 };
 
 export type GetSwapQuoteQueryKey = readonly ['swapQuote', Compute<ExactPartial<GetSwapQuoteOptions>>];

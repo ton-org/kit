@@ -30,7 +30,7 @@ export abstract class StakingProvider implements StakingProviderInterface {
         this.providerId = providerId;
     }
 
-    abstract getSupportedNetworks(): Network[];
+    abstract getSupportedNetworks(): Promise<Network[]>;
 
     /**
      * Get a quote for staking or unstaking
@@ -61,7 +61,7 @@ export abstract class StakingProvider implements StakingProviderInterface {
     /**
      * Get staking provider metadata
      * @param network - Optional network to fetch info for
-     * @returns Staking provider metadata
+     * @returns Promise resolving to staking provider metadata
      */
-    abstract getStakingProviderMetadata(network?: Network): StakingProviderMetadata;
+    abstract getStakingProviderMetadata(network?: Network): Promise<StakingProviderMetadata>;
 }

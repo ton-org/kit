@@ -33,6 +33,9 @@ import { useStakingProvider } from '../../hooks/use-staking-provider';
 import { useStakingProviders } from '../../hooks/use-staking-providers';
 import { useStakingProviderInfo } from '../../hooks/use-staking-provider-info';
 import { useStakingProviderMetadata } from '../../hooks/use-staking-provider-metadata';
+import { useStakingSupportedNetworks } from '../../hooks/use-staking-supported-networks';
+import { useStakingProvidersWithMetadata } from './use-staking-providers-with-metadata';
+import type { StakingProvidersMetadata } from './use-staking-providers-with-metadata';
 import { useStakedBalance } from '../../hooks/use-staked-balance';
 import { useBuildStakeTransaction } from '../../hooks/use-build-stake-transaction';
 import { useAddress } from '../../../wallets';
@@ -55,6 +58,8 @@ export interface StakingContextType {
     quote: StakingQuote | undefined;
     /** True while the stake quote is being fetched */
     isQuoteLoading: boolean;
+    /** True while the provider's supported-networks list is being resolved */
+    isNetworkSupportLoading: boolean;
     /** Current validation/fetch error for staking, null when everything is ok */
     error: string | null;
     /** Staking provider dynamic info (APY, instant unstake availability, etc.) */
@@ -63,8 +68,12 @@ export interface StakingContextType {
     providerMetadata: StakingProviderMetadata | undefined;
     /** Currently selected staking provider (defaults to the first registered one) */
     stakingProvider: StakingProvider | undefined;
-    /** All registered staking providers */
+    /** All registered staking providers (raw list, available synchronously). */
     stakingProviders: StakingProvider[];
+    /** Resolved metadata for each provider, keyed by `providerId`. Entry is `undefined` while loading or on error. */
+    stakingProvidersMetadata: StakingProvidersMetadata;
+    /** True while any provider's metadata query is in its first load. */
+    isStakingProvidersMetadataLoading: boolean;
     /** Updates the selected staking provider */
     setStakingProviderId: (providerId: string) => void;
     /** Network the widget is operating on (resolved from prop or wallet) */
@@ -118,11 +127,14 @@ export const StakingContext = createContext<StakingContextType>({
     canSubmit: false,
     quote: undefined,
     isQuoteLoading: false,
+    isNetworkSupportLoading: false,
     error: null,
     providerInfo: undefined,
     providerMetadata: undefined,
     stakingProvider: undefined,
     stakingProviders: [],
+    stakingProvidersMetadata: {},
+    isStakingProvidersMetadataLoading: false,
     setStakingProviderId: () => {},
     network: undefined,
     direction: 'stake',
@@ -181,6 +193,8 @@ export const StakingWidgetProvider: FC<StakingProviderProps> = ({ children, netw
     const appKit = useAppKit();
     const stakingProvider = useStakingProvider();
     const stakingProviders = useStakingProviders();
+    const { metadataByProviderId: stakingProvidersMetadata, isLoading: isStakingProvidersMetadataLoading } =
+        useStakingProvidersWithMetadata(networkProp);
     const setStakingProviderId = useCallback(
         (providerId: string) => {
             setDefaultStakingProvider(appKit, { providerId });
@@ -188,16 +202,18 @@ export const StakingWidgetProvider: FC<StakingProviderProps> = ({ children, netw
         [appKit],
     );
 
-    const isNetworkSupported = useMemo(
-        () =>
-            !stakingProvider ||
-            !network ||
-            stakingProvider.getSupportedNetworks().some((n) => n.chainId === network.chainId),
-        [stakingProvider, network],
-    );
+    const { data: supportedNetworks, isLoading: isNetworkSupportLoading } = useStakingSupportedNetworks({
+        providerId: stakingProvider?.providerId,
+        query: { enabled: !!stakingProvider },
+    });
+    const isNetworkSupported = useMemo(() => {
+        if (!stakingProvider || !network) return true;
+        if (!supportedNetworks) return false;
+        return supportedNetworks.some((n) => n.chainId === network.chainId);
+    }, [stakingProvider, network, supportedNetworks]);
 
     const { data: providerInfo, isLoading: isProviderInfoLoading } = useStakingProviderInfo({ network });
-    const providerMetadata = useStakingProviderMetadata({ network });
+    const { data: providerMetadata } = useStakingProviderMetadata({ network });
 
     const isNativeTon = providerMetadata?.stakeToken.address === 'ton';
 
@@ -343,6 +359,7 @@ export const StakingWidgetProvider: FC<StakingProviderProps> = ({ children, netw
         isReversed,
         amountDecimals,
         isNetworkSupported,
+        isNetworkSupportLoading,
     });
 
     const value = useMemo(
@@ -352,11 +369,14 @@ export const StakingWidgetProvider: FC<StakingProviderProps> = ({ children, netw
             direction,
             quote,
             isQuoteLoading: isQuoteLoading || isProviderInfoLoading || amount !== quoteParamsDebounced.amount,
+            isNetworkSupportLoading,
             error,
             providerInfo,
             providerMetadata,
             stakingProvider,
             stakingProviders,
+            stakingProvidersMetadata,
+            isStakingProvidersMetadataLoading,
             setStakingProviderId,
             network,
             isProviderInfoLoading,
@@ -387,11 +407,14 @@ export const StakingWidgetProvider: FC<StakingProviderProps> = ({ children, netw
             direction,
             quote,
             isQuoteLoading,
+            isNetworkSupportLoading,
             error,
             providerInfo,
             providerMetadata,
             stakingProvider,
             stakingProviders,
+            stakingProvidersMetadata,
+            isStakingProvidersMetadataLoading,
             setStakingProviderId,
             network,
             isProviderInfoLoading,

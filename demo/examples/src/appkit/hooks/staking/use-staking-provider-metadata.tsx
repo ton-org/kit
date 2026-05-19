@@ -10,7 +10,7 @@ import { useStakingProviderMetadata } from '@ton/appkit-react';
 
 export const UseStakingProviderMetadataExample = () => {
     // SAMPLE_START: USE_STAKING_PROVIDER_METADATA
-    const metadata = useStakingProviderMetadata();
+    const { data: metadata } = useStakingProviderMetadata();
     return <div>Receive Token: {metadata?.receiveToken?.ticker}</div>;
     // SAMPLE_END: USE_STAKING_PROVIDER_METADATA
 };

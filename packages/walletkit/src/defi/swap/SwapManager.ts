@@ -6,9 +6,9 @@
  *
  */
 
-import type { TransactionRequest } from '../../api/models';
+import type { Network, TransactionRequest } from '../../api/models';
 import type { SwapAPI, SwapProviderInterface } from '../../api/interfaces';
-import type { SwapQuoteParams, SwapQuote, SwapParams } from '../../api/models';
+import type { SwapQuoteParams, SwapQuote, SwapParams, SwapProviderMetadata } from '../../api/models';
 import type { SwapErrorCode } from './errors';
 import { SwapError } from './errors';
 import { globalLogger } from '../../core/Logger';
@@ -85,6 +85,40 @@ export class SwapManager extends DefiManager<SwapProviderInterface> implements S
             return transaction;
         } catch (error) {
             log.error('Failed to build swap transaction', { error, params });
+            throw error;
+        }
+    }
+
+    /**
+     * Get static metadata for a swap provider
+     * @param providerId - Optional provider id to use
+     */
+    async getMetadata(providerId?: string): Promise<SwapProviderMetadata> {
+        log.debug('Getting swap metadata', {
+            provider: providerId || this.defaultProviderId,
+        });
+
+        try {
+            return await this.getProvider(providerId).getMetadata();
+        } catch (error) {
+            log.error('Failed to get swap metadata', { error });
+            throw error;
+        }
+    }
+
+    /**
+     * Get networks supported by a swap provider
+     * @param providerId - Optional provider id to use
+     */
+    async getSupportedNetworks(providerId?: string): Promise<Network[]> {
+        log.debug('Getting swap supported networks', {
+            provider: providerId || this.defaultProviderId,
+        });
+
+        try {
+            return await this.getProvider(providerId).getSupportedNetworks();
+        } catch (error) {
+            log.error('Failed to get swap supported networks', { error });
             throw error;
         }
     }

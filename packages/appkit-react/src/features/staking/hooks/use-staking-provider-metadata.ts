@@ -6,29 +6,41 @@
  *
  */
 
-import { getStakingProviderMetadata, resolveNetwork } from '@ton/appkit';
-import type { GetStakingProviderMetadataOptions, GetStakingProviderMetadataReturnType } from '@ton/appkit';
-import { useMemo } from 'react';
+import { getStakingProviderMetadataQueryOptions } from '@ton/appkit/queries';
+import type {
+    GetStakingProviderMetadataData,
+    GetStakingProviderMetadataErrorType,
+    GetStakingProviderMetadataQueryConfig,
+} from '@ton/appkit/queries';
 
 import { useAppKit } from '../../settings';
+import { useQuery } from '../../../libs/query';
+import type { UseQueryReturnType } from '../../../libs/query';
+import { useNetwork } from '../../network';
 import { useStakingProvider } from './use-staking-provider';
 
-export type UseStakingProviderMetadataParameters = GetStakingProviderMetadataOptions;
-export type UseStakingProviderMetadataReturnType = GetStakingProviderMetadataReturnType;
+export type UseStakingProviderMetadataParameters<selectData = GetStakingProviderMetadataData> =
+    GetStakingProviderMetadataQueryConfig<selectData>;
+export type UseStakingProviderMetadataReturnType<selectData = GetStakingProviderMetadataData> = UseQueryReturnType<
+    selectData,
+    GetStakingProviderMetadataErrorType
+>;
 
 /**
  * Hook to get static staking provider metadata
  */
-export const useStakingProviderMetadata = (parameters: UseStakingProviderMetadataParameters = {}) => {
+export const useStakingProviderMetadata = <selectData = GetStakingProviderMetadataData>(
+    parameters: UseStakingProviderMetadataParameters<selectData> = {},
+): UseStakingProviderMetadataReturnType<selectData> => {
     const appKit = useAppKit();
+    const walletNetwork = useNetwork();
     const provider = useStakingProvider({ id: parameters.providerId });
-    const network = resolveNetwork(appKit, parameters.network);
 
-    return useMemo(() => {
-        try {
-            return getStakingProviderMetadata(appKit, { ...parameters, network });
-        } catch {
-            return undefined;
-        }
-    }, [appKit, network, parameters.providerId, provider?.providerId]);
+    return useQuery(
+        getStakingProviderMetadataQueryOptions(appKit, {
+            providerId: provider?.providerId,
+            ...parameters,
+            network: parameters.network ?? walletNetwork,
+        }),
+    );
 };

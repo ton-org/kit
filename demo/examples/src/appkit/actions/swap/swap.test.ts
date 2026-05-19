@@ -44,6 +44,8 @@ describe('Swap Actions Examples', () => {
         // @ts-expect-error - internal access
         vi.spyOn(appKit.swapManager, 'buildSwapTransaction').mockImplementation(mockBuildSwapTransaction);
         vi.spyOn(appKit.swapManager, 'setDefaultProvider').mockImplementation(() => {});
+        vi.spyOn(appKit.swapManager, 'getMetadata').mockResolvedValue({ name: 'DeDust' });
+        vi.spyOn(appKit.swapManager, 'getSupportedNetworks').mockResolvedValue([]);
     });
 
     afterEach(() => {

@@ -44,9 +44,9 @@ export abstract class SwapProvider<
 
     /**
      * Get supported networks for this provider
-     * @returns Array of networks supported by this provider
+     * @returns Promise resolving to array of networks supported by this provider
      */
-    abstract getSupportedNetworks(): Network[];
+    abstract getSupportedNetworks(): Promise<Network[]>;
 
     /**
      * Get a quote for swapping tokens
@@ -64,6 +64,7 @@ export abstract class SwapProvider<
 
     /**
      * Get provider metadata
+     * @returns Promise resolving to provider metadata
      */
-    abstract getMetadata(): SwapProviderMetadata;
+    abstract getMetadata(): Promise<SwapProviderMetadata>;
 }

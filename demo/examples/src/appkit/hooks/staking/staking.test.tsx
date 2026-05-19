@@ -16,6 +16,7 @@ import { UseStakingQuoteExample } from './use-staking-quote';
 import { UseStakedBalanceExample } from './use-staked-balance';
 import { UseStakingProviderInfoExample } from './use-staking-provider-info';
 import { UseStakingProviderMetadataExample } from './use-staking-provider-metadata';
+import { UseStakingSupportedNetworksExample } from './use-staking-supported-networks';
 import { UseBuildStakeTransactionExample } from './use-build-stake-transaction';
 
 vi.mock('@ton/appkit-react', async () => {
@@ -28,6 +29,7 @@ vi.mock('@ton/appkit-react', async () => {
         useStakedBalance: vi.fn(),
         useStakingProviderInfo: vi.fn(),
         useStakingProviderMetadata: vi.fn(),
+        useStakingSupportedNetworks: vi.fn(),
         useBuildStakeTransaction: vi.fn(),
         useSendTransaction: vi.fn(),
     };
@@ -117,11 +119,23 @@ describe('Staking Hooks Examples', () => {
     describe('UseStakingProviderMetadataExample', () => {
         it('should render receive token ticker', () => {
             vi.mocked(AppKitReact.useStakingProviderMetadata).mockReturnValue({
-                receiveToken: { ticker: 'tsTON' },
+                data: { receiveToken: { ticker: 'tsTON' } },
             } as unknown as AppKitReact.UseStakingProviderMetadataReturnType);
 
             render(<UseStakingProviderMetadataExample />);
             expect(screen.getByText('Receive Token: tsTON')).toBeDefined();
+        });
+    });
+
+    describe('UseStakingSupportedNetworksExample', () => {
+        it('should render the list of supported chain ids', () => {
+            vi.mocked(AppKitReact.useStakingSupportedNetworks).mockReturnValue({
+                data: [{ chainId: '-239' }, { chainId: '-3' }],
+            } as unknown as AppKitReact.UseStakingSupportedNetworksReturnType);
+
+            render(<UseStakingSupportedNetworksExample />);
+            expect(screen.getByText('-239')).toBeDefined();
+            expect(screen.getByText('-3')).toBeDefined();
         });
     });
 

@@ -23,6 +23,7 @@ interface UseStakingValidationOptions {
     isReversed: boolean;
     stakedBalance?: string;
     isNetworkSupported: boolean;
+    isNetworkSupportLoading: boolean;
 }
 
 export const useStakingValidation = ({
@@ -36,9 +37,10 @@ export const useStakingValidation = ({
     isReversed,
     stakedBalance,
     isNetworkSupported,
+    isNetworkSupportLoading,
 }: UseStakingValidationOptions) => {
     const error: string | null = useMemo(() => {
-        if (!isNetworkSupported) return 'defi.unsupportedNetwork';
+        if (!isNetworkSupported && !isNetworkSupportLoading) return 'defi.unsupportedNetwork';
 
         if ((parseFloat(amount) || 0) <= 0) return null;
 
@@ -62,6 +64,7 @@ export const useStakingValidation = ({
         return null;
     }, [
         isNetworkSupported,
+        isNetworkSupportLoading,
         amount,
         balance,
         quoteError,

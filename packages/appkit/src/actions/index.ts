@@ -133,6 +133,16 @@ export {
     type BuildSwapTransactionOptions,
     type BuildSwapTransactionReturnType,
 } from './swap/build-swap-transaction';
+export {
+    getSwapProviderMetadata,
+    type GetSwapProviderMetadataOptions,
+    type GetSwapProviderMetadataReturnType,
+} from './swap/get-swap-provider-metadata';
+export {
+    getSwapSupportedNetworks,
+    type GetSwapSupportedNetworksOptions,
+    type GetSwapSupportedNetworksReturnType,
+} from './swap/get-swap-supported-networks';
 
 // Staking
 export { getStakingManager, type GetStakingManagerReturnType } from './staking/get-staking-manager';
@@ -177,6 +187,11 @@ export {
     type GetStakingProviderMetadataOptions,
     type GetStakingProviderMetadataReturnType,
 } from './staking/get-staking-provider-metadata';
+export {
+    getStakingSupportedNetworks,
+    type GetStakingSupportedNetworksOptions,
+    type GetStakingSupportedNetworksReturnType,
+} from './staking/get-staking-supported-networks';
 
 // Transactions
 export {

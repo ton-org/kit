@@ -6,7 +6,14 @@
  *
  */
 
-import type { SwapParams, SwapQuote, SwapQuoteParams, TransactionRequest, SwapProviderMetadata } from '../models';
+import type {
+    Network,
+    SwapParams,
+    SwapQuote,
+    SwapQuoteParams,
+    TransactionRequest,
+    SwapProviderMetadata,
+} from '../models';
 import type { DefiManagerAPI } from './DefiManagerAPI';
 import type { DefiProvider } from './DefiProvider';
 
@@ -28,6 +35,20 @@ export interface SwapAPI extends DefiManagerAPI<SwapProviderInterface> {
      * @returns A promise that resolves to a TransactionRequest
      */
     buildSwapTransaction(params: SwapParams): Promise<TransactionRequest>;
+
+    /**
+     * Get static metadata for a swap provider
+     * @param providerId Provider identifier (optional, uses default if not specified)
+     * @returns A promise that resolves to provider metadata
+     */
+    getMetadata(providerId?: string): Promise<SwapProviderMetadata>;
+
+    /**
+     * Get networks supported by a swap provider
+     * @param providerId Provider identifier (optional, uses default if not specified)
+     * @returns A promise that resolves to array of supported networks
+     */
+    getSupportedNetworks(providerId?: string): Promise<Network[]>;
 }
 
 /**
@@ -43,9 +64,9 @@ export interface SwapProviderInterface<TQuoteOptions = unknown, TSwapOptions = u
 
     /**
      * Provider metadata
-     * @returns Metadata of the provider
+     * @returns A promise that resolves to metadata of the provider
      */
-    getMetadata(): SwapProviderMetadata;
+    getMetadata(): Promise<SwapProviderMetadata>;
 
     /**
      * Get a quote for swapping tokens

@@ -131,7 +131,7 @@ export class TonStakersStakingProvider extends StakingProvider {
             isReversed: params.isReversed,
         });
 
-        const contract = this.getContract(params.network);
+        const contract = await this.getContract(params.network);
         const poolData = await contract.getPoolData();
         const network = params.network ?? Network.mainnet();
         const unstakeMode = params.unstakeMode ?? UnstakeMode.INSTANT;
@@ -220,11 +220,11 @@ export class TonStakersStakingProvider extends StakingProvider {
         }
 
         const network = params.quote.network;
-        const contractAddress = this.getStakingContractAddress(network);
+        const contractAddress = await this.getStakingContractAddress(network);
         const amount = BigInt(params.quote.rawAmountIn);
         const totalAmount = amount + CONTRACT.STAKE_FEE_RES;
 
-        const contract = this.getContract(network);
+        const contract = await this.getContract(network);
         const payload = contract.buildStakePayload(1n);
 
         const message = {
@@ -307,7 +307,7 @@ export class TonStakersStakingProvider extends StakingProvider {
                 break;
         }
 
-        const contract = this.getContract(network);
+        const contract = await this.getContract(network);
         const message = await contract.buildUnstakeMessage({
             amount,
             userAddress: params.userAddress,
@@ -340,7 +340,7 @@ export class TonStakersStakingProvider extends StakingProvider {
             let stakedBalance = '0';
             let instantUnstakeAvailable = 0n;
 
-            const contract = this.getContract(targetNetwork);
+            const contract = await this.getContract(targetNetwork);
 
             try {
                 stakedBalance = await contract.getStakedBalance(userAddress);
@@ -386,7 +386,7 @@ export class TonStakersStakingProvider extends StakingProvider {
         const cacheKey = `staking-info:${targetNetwork.chainId}`;
 
         return await this.cache.get(cacheKey, async () => {
-            const contract = this.getContract(targetNetwork);
+            const contract = await this.getContract(targetNetwork);
             const instantLiquidity = await contract.getPoolBalance();
             const apy = await this.getApyFromTonApi(targetNetwork);
             const poolData = await contract.getPoolData();
@@ -409,7 +409,7 @@ export class TonStakersStakingProvider extends StakingProvider {
         });
     }
 
-    getSupportedNetworks(): Network[] {
+    async getSupportedNetworks(): Promise<Network[]> {
         return Object.keys(this.chainConfig).map((chainId) => {
             switch (chainId) {
                 case Network.mainnet().chainId:
@@ -422,7 +422,7 @@ export class TonStakersStakingProvider extends StakingProvider {
         });
     }
 
-    getStakingProviderMetadata(network?: Network): StakingProviderMetadata {
+    async getStakingProviderMetadata(network?: Network): Promise<StakingProviderMetadata> {
         const targetNetwork = network ?? Network.mainnet();
         const metadata = this.metadataByNetwork[targetNetwork.chainId];
 
@@ -445,9 +445,9 @@ export class TonStakersStakingProvider extends StakingProvider {
         this.cache.clear();
     }
 
-    private getStakingContractAddress(network?: Network): string {
+    private async getStakingContractAddress(network?: Network): Promise<string> {
         const targetNetwork = network ?? Network.mainnet();
-        const metadata = this.getStakingProviderMetadata(targetNetwork);
+        const metadata = await this.getStakingProviderMetadata(targetNetwork);
 
         if (!metadata.contractAddress) {
             throw new StakingError(
@@ -460,10 +460,10 @@ export class TonStakersStakingProvider extends StakingProvider {
         return metadata.contractAddress;
     }
 
-    private getContract(network?: Network): PoolContract {
+    private async getContract(network?: Network): Promise<PoolContract> {
         const targetNetwork = network ?? Network.mainnet();
         const apiClient = this.getApiClient(targetNetwork);
-        const contractAddress = this.getStakingContractAddress(targetNetwork);
+        const contractAddress = await this.getStakingContractAddress(targetNetwork);
         return new PoolContract(contractAddress, apiClient);
     }
 
@@ -479,7 +479,7 @@ export class TonStakersStakingProvider extends StakingProvider {
 
     private async getApyFromTonApi(network: Network): Promise<number> {
         const token = this.chainConfig[network.chainId]?.tonApiToken;
-        const address = this.getStakingContractAddress(network);
+        const address = await this.getStakingContractAddress(network);
         const client = new ApiClientTonApi({ network, apiKey: token });
 
         const poolInfo = await client.getJson<{ pool: { apy: number } }>(`/v2/staking/pool/${address}`);

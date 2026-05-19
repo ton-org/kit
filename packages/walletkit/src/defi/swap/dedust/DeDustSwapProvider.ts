@@ -109,11 +109,11 @@ export class DeDustSwapProvider extends SwapProvider<DeDustProviderOptions, DeDu
         });
     }
 
-    getMetadata(): SwapProviderMetadata {
+    async getMetadata(): Promise<SwapProviderMetadata> {
         return this.metadata;
     }
 
-    getSupportedNetworks(): Network[] {
+    async getSupportedNetworks(): Promise<Network[]> {
         return [Network.mainnet()];
     }
 

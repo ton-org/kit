@@ -7,7 +7,7 @@
  */
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { SwapProvider, SwapQuote } from '@ton/appkit';
+import type { SwapQuote } from '@ton/appkit';
 
 import { SwapInfo } from './swap-info';
 import type { AppkitUIToken } from '../../../../types/appkit-ui-token';
@@ -33,14 +33,10 @@ const quote = {
     providerId: 'stonfi',
 } as unknown as SwapQuote;
 
-const provider = {
-    getMetadata: () => ({ name: 'STON.fi' }),
-} as unknown as SwapProvider;
-
 export const Default: Story = {
     args: {
         quote,
-        provider,
+        providerName: 'STON.fi',
         toToken,
         slippage: 100,
         isQuoteLoading: false,
@@ -52,5 +48,6 @@ export const Loading: Story = {
         toToken: null,
         slippage: 100,
         isQuoteLoading: true,
+        isProviderNameLoading: true,
     },
 };

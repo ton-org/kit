@@ -10,6 +10,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { FC } from 'react';
 import type { Network, StakingProvider } from '@ton/appkit';
 
+import type { StakingProvidersMetadata } from '../staking-widget-provider/use-staking-providers-with-metadata';
 import { Modal } from '../../../../components/ui/modal/modal';
 import { Button } from '../../../../components/ui/button';
 import { OptionSwitcher } from '../../../../components/shared/option-switcher';
@@ -21,25 +22,20 @@ export interface StakingSettingsModalProps {
     onClose: () => void;
     provider: StakingProvider | undefined;
     providers: StakingProvider[];
+    providersMetadata?: StakingProvidersMetadata;
+    isProvidersMetadataLoading?: boolean;
     onProviderChange: (providerId: string) => void;
     network?: Network;
 }
-
-const getProviderName = (provider: StakingProvider, network?: Network): string => {
-    try {
-        return provider.getStakingProviderMetadata(network).name;
-    } catch {
-        return provider.providerId;
-    }
-};
 
 export const StakingSettingsModal: FC<StakingSettingsModalProps> = ({
     open,
     onClose,
     provider,
     providers,
+    providersMetadata,
+    isProvidersMetadataLoading,
     onProviderChange,
-    network,
 }) => {
     const { t } = useI18n();
 
@@ -50,8 +46,12 @@ export const StakingSettingsModal: FC<StakingSettingsModalProps> = ({
     }, [open, provider?.providerId]);
 
     const providerOptions = useMemo(
-        () => providers.map((p) => ({ value: p.providerId, label: getProviderName(p, network) })),
-        [providers, network],
+        () =>
+            providers.map((p) => ({
+                value: p.providerId,
+                label: providersMetadata?.[p.providerId]?.name ?? p.providerId,
+            })),
+        [providers, providersMetadata],
     );
 
     const handleSave = () => {
@@ -64,7 +64,12 @@ export const StakingSettingsModal: FC<StakingSettingsModalProps> = ({
             <div className={styles.rows}>
                 <div className={styles.row}>
                     <span className={styles.label}>{t('staking.provider')}</span>
-                    <OptionSwitcher value={stagedProviderId} options={providerOptions} onChange={setStagedProviderId} />
+                    <OptionSwitcher
+                        value={stagedProviderId}
+                        options={providerOptions}
+                        onChange={setStagedProviderId}
+                        loading={isProvidersMetadataLoading && !providersMetadata?.[stagedProviderId ?? '']}
+                    />
                 </div>
             </div>
 

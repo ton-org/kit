@@ -18,8 +18,11 @@ import { calcMaxSpendable } from '@ton/appkit';
 
 import { useSwapQuote } from '../../hooks/use-swap-quote';
 import { useSwapProvider } from '../../hooks/use-swap-provider';
-import { useSwapProviders } from '../../hooks/use-swap-providers';
+import { useSwapSupportedNetworks } from '../../hooks/use-swap-supported-networks';
 import { useBuildSwapTransaction } from '../../hooks/use-build-swap-transaction';
+import { useSwapProvidersWithMetadata } from './use-swap-providers-with-metadata';
+import type { SwapProvidersMetadata } from './use-swap-providers-with-metadata';
+import { useSwapProviders } from '../../hooks/use-swap-providers';
 import { useAddress } from '../../../wallets';
 import { useBalance } from '../../../balances/hooks/use-balance';
 import { useNetwork } from '../../../network';
@@ -64,14 +67,20 @@ export interface SwapContextType {
     quote: GetSwapQuoteData | undefined;
     /** True while the quote is being fetched from the API */
     isQuoteLoading: boolean;
+    /** True while the provider's supported-networks list is being resolved */
+    isNetworkSupportLoading: boolean;
     /** Current validation or fetch error, null when everything is ok */
     error: string | null;
     /** Slippage tolerance in basis points (100 = 1%) */
     slippage: number;
     /** Currently selected swap provider (defaults to the first registered one) */
     swapProvider: SwapProvider | undefined;
-    /** All registered swap providers */
+    /** All registered swap providers (raw list, available synchronously). */
     swapProviders: SwapProvider[];
+    /** Resolved metadata for each provider, keyed by `providerId`. Entry is `undefined` while loading or on error. */
+    swapProvidersMetadata: SwapProvidersMetadata;
+    /** True while any provider's metadata query is in its first load. */
+    isSwapProvidersMetadataLoading: boolean;
     /** Updates the selected swap provider */
     setSwapProviderId: (providerId: string) => void;
     /** Updates the source token */
@@ -116,10 +125,13 @@ export const SwapContext = createContext<SwapContextType>({
     canSubmit: false,
     quote: undefined,
     isQuoteLoading: false,
+    isNetworkSupportLoading: false,
     error: null,
     slippage: 50,
     swapProvider: undefined,
     swapProviders: [],
+    swapProvidersMetadata: {},
+    isSwapProvidersMetadataLoading: false,
     setSwapProviderId: () => {},
     setFromToken: () => {},
     setToToken: () => {},
@@ -195,6 +207,8 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
     const address = useAddress();
     const [swapProvider, setSwapProviderId] = useSwapProvider();
     const swapProviders = useSwapProviders();
+    const { metadataByProviderId: swapProvidersMetadata, isLoading: isSwapProvidersMetadataLoading } =
+        useSwapProvidersWithMetadata();
 
     // Stabilized query inputs — kept next to the query that consumes them.
     const fromTokenParam = useMemo(
@@ -217,11 +231,15 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
         [toToken],
     );
 
-    const isNetworkSupported = useMemo(
-        () =>
-            !swapProvider || !network || swapProvider.getSupportedNetworks().some((n) => n.chainId === network.chainId),
-        [swapProvider, network],
-    );
+    const { data: supportedNetworks, isLoading: isNetworkSupportLoading } = useSwapSupportedNetworks({
+        providerId: swapProvider?.providerId,
+        query: { enabled: !!swapProvider },
+    });
+    const isNetworkSupported = useMemo(() => {
+        if (!swapProvider || !network) return true;
+        if (!supportedNetworks) return false;
+        return supportedNetworks.some((n) => n.chainId === network.chainId);
+    }, [swapProvider, network, supportedNetworks]);
 
     const {
         data: quote,
@@ -257,6 +275,7 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
         fromBalance,
         quoteError,
         isNetworkSupported,
+        isNetworkSupportLoading,
     });
     const isLowBalanceWarningOpen = pendingSwap !== undefined;
     const lowBalanceMode: 'reduce' | 'topup' = pendingSwap?.mode ?? 'reduce';
@@ -321,10 +340,13 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
             canSubmit,
             quote,
             isQuoteLoading,
+            isNetworkSupportLoading,
             error,
             slippage,
             swapProvider,
             swapProviders,
+            swapProvidersMetadata,
+            isSwapProvidersMetadataLoading,
             setSwapProviderId,
             setFromToken,
             setToToken,
@@ -354,10 +376,13 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
             canSubmit,
             quote,
             isQuoteLoading,
+            isNetworkSupportLoading,
             error,
             slippage,
             swapProvider,
             swapProviders,
+            swapProvidersMetadata,
+            isSwapProvidersMetadataLoading,
             setSwapProviderId,
             setFromToken,
             setToToken,

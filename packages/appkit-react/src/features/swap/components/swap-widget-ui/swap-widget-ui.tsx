@@ -43,6 +43,8 @@ export const SwapWidgetUI: FC<SwapWidgetRenderProps> = ({
     slippage,
     swapProvider,
     swapProviders,
+    swapProvidersMetadata,
+    isSwapProvidersMetadataLoading,
     setSwapProviderId,
     onFlip,
     onMaxClick,
@@ -80,6 +82,8 @@ export const SwapWidgetUI: FC<SwapWidgetRenderProps> = ({
         if (canSubmit) return t('swap.continue');
         return t('swap.enterAmount');
     }, [error, fromToken, toToken, canSubmit, t]);
+
+    const swapProviderName = swapProvider ? swapProvidersMetadata[swapProvider.providerId]?.name : undefined;
 
     return (
         <div className={clsx(styles.widget, className)} {...props}>
@@ -132,6 +136,8 @@ export const SwapWidgetUI: FC<SwapWidgetRenderProps> = ({
                 onSlippageChange={setSlippage}
                 provider={swapProvider}
                 providers={swapProviders}
+                providersMetadata={swapProvidersMetadata}
+                isProvidersMetadataLoading={isSwapProvidersMetadataLoading}
                 onProviderChange={setSwapProviderId}
             />
 
@@ -158,7 +164,8 @@ export const SwapWidgetUI: FC<SwapWidgetRenderProps> = ({
 
             <SwapInfo
                 quote={quote}
-                provider={swapProvider}
+                providerName={swapProviderName}
+                isProviderNameLoading={isSwapProvidersMetadataLoading && !swapProviderName}
                 toToken={toToken}
                 slippage={slippage}
                 isQuoteLoading={isQuoteLoading}

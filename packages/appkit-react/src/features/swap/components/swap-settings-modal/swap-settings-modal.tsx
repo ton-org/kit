@@ -10,6 +10,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { FC } from 'react';
 import type { SwapProvider } from '@ton/appkit';
 
+import type { SwapProvidersMetadata } from '../swap-widget-provider/use-swap-providers-with-metadata';
 import { Modal } from '../../../../components/ui/modal/modal';
 import { Button } from '../../../../components/ui/button';
 import { OptionSwitcher } from '../../../../components/shared/option-switcher';
@@ -30,6 +31,8 @@ export interface SwapSettingsModalProps {
     onSlippageChange: (bps: number) => void;
     provider: SwapProvider | undefined;
     providers: SwapProvider[];
+    providersMetadata?: SwapProvidersMetadata;
+    isProvidersMetadataLoading?: boolean;
     onProviderChange: (providerId: string) => void;
 }
 
@@ -40,6 +43,8 @@ export const SwapSettingsModal: FC<SwapSettingsModalProps> = ({
     onSlippageChange,
     provider,
     providers,
+    providersMetadata,
+    isProvidersMetadataLoading,
     onProviderChange,
 }) => {
     const { t } = useI18n();
@@ -57,8 +62,12 @@ export const SwapSettingsModal: FC<SwapSettingsModalProps> = ({
     }, [open, provider?.providerId, slippage]);
 
     const providerOptions = useMemo(
-        () => providers.map((p) => ({ value: p.providerId, label: p.getMetadata().name })),
-        [providers],
+        () =>
+            providers.map((p) => ({
+                value: p.providerId,
+                label: providersMetadata?.[p.providerId]?.name ?? p.providerId,
+            })),
+        [providers, providersMetadata],
     );
 
     const handleSave = () => {
@@ -72,7 +81,12 @@ export const SwapSettingsModal: FC<SwapSettingsModalProps> = ({
             <div className={styles.rows}>
                 <div className={styles.row}>
                     <span className={styles.label}>{t('swap.provider')}</span>
-                    <OptionSwitcher value={stagedProviderId} options={providerOptions} onChange={setStagedProviderId} />
+                    <OptionSwitcher
+                        value={stagedProviderId}
+                        options={providerOptions}
+                        onChange={setStagedProviderId}
+                        loading={isProvidersMetadataLoading && !providersMetadata?.[stagedProviderId ?? '']}
+                    />
                 </div>
                 <div className={styles.row}>
                     <span className={styles.label}>{t('swap.slippage')}</span>

@@ -61,9 +61,16 @@ export interface StakingAPI extends DefiManagerAPI<StakingProviderInterface> {
      * Get static metadata for a staking provider
      * @param network Network to query (optional)
      * @param providerId Provider identifier (optional, uses default if not specified)
-     * @returns Synchronous Provider Metadata
+     * @returns A promise that resolves to provider metadata
      */
-    getStakingProviderMetadata(network?: Network, providerId?: string): StakingProviderMetadata;
+    getStakingProviderMetadata(network?: Network, providerId?: string): Promise<StakingProviderMetadata>;
+
+    /**
+     * Get networks supported by a staking provider
+     * @param providerId Provider identifier (optional, uses default if not specified)
+     * @returns A promise that resolves to array of supported networks
+     */
+    getSupportedNetworks(providerId?: string): Promise<Network[]>;
 }
 
 /**
@@ -109,7 +116,7 @@ export interface StakingProviderInterface extends DefiProvider {
     /**
      * Get static metadata for this staking provider
      * @param network Network to query (optional)
-     * @returns Synchronous Provider Metadata
+     * @returns A promise that resolves to provider metadata
      */
-    getStakingProviderMetadata(network?: Network): StakingProviderMetadata;
+    getStakingProviderMetadata(network?: Network): Promise<StakingProviderMetadata>;
 }

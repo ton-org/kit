@@ -30,6 +30,11 @@ export {
     type UseStakingProviderMetadataParameters,
     type UseStakingProviderMetadataReturnType,
 } from './hooks/use-staking-provider-metadata';
+export {
+    useStakingSupportedNetworks,
+    type UseStakingSupportedNetworksParameters,
+    type UseStakingSupportedNetworksReturnType,
+} from './hooks/use-staking-supported-networks';
 export { useBuildStakeTransaction, type UseBuildStakeTransactionReturnType } from './hooks/use-build-stake-transaction';
 
 export * from './components/staking-widget';

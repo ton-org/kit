@@ -514,6 +514,28 @@ console.log(
 );
 ```
 
+### `getSwapProviderMetadata`
+
+Get static metadata for a single swap provider.
+
+```ts
+const swapMetadata = await getSwapProviderMetadata(appKit, {
+    providerId: 'stonfi',
+});
+console.log('Swap provider metadata:', swapMetadata);
+```
+
+### `getSwapSupportedNetworks`
+
+Get the list of networks a swap provider can operate on.
+
+```ts
+const swapSupportedNetworks = await getSwapSupportedNetworks(appKit, {
+    providerId: 'stonfi',
+});
+console.log('Swap supported networks:', swapSupportedNetworks);
+```
+
 ### `setDefaultSwapProvider`
 
 Set the default swap provider. Subsequent quote and swap-transaction calls will use this provider when none is specified.
@@ -575,6 +597,17 @@ const providers = await getStakingProviders(appKit);
 console.log('Available Staking Providers:', providers);
 ```
 
+### `getStakingSupportedNetworks`
+
+Get the list of networks a staking provider can operate on.
+
+```ts
+const stakingSupportedNetworks = await getStakingSupportedNetworks(appKit, {
+    providerId: 'tonstakers',
+});
+console.log('Staking supported networks:', stakingSupportedNetworks);
+```
+
 ### `getStakingProviderInfo`
 
 Get dynamic information about a specific staking provider (e.g. APY, rate).
@@ -591,7 +624,7 @@ console.log('Provider Info:', providerInfo);
 Get static metadata about a specific staking provider.
 
 ```ts
-const providerMetadata = getStakingProviderMetadata(appKit, {
+const providerMetadata = await getStakingProviderMetadata(appKit, {
     providerId: 'tonstakers',
 });
 console.log('Provider Metadata:', providerMetadata);

@@ -194,6 +194,18 @@ Hook to get all registered swap providers. The returned array keeps a stable ref
 
 %%demo/examples/src/appkit/hooks/swap#USE_SWAP_PROVIDERS%%
 
+### `useSwapProviderMetadata`
+
+Hook to get static metadata for a single swap provider.
+
+%%demo/examples/src/appkit/hooks/swap#USE_SWAP_PROVIDER_METADATA%%
+
+### `useSwapSupportedNetworks`
+
+Hook to get the networks a swap provider can operate on.
+
+%%demo/examples/src/appkit/hooks/swap#USE_SWAP_SUPPORTED_NETWORKS%%
+
 ## Staking
 
 ### `useStakingProviders`
@@ -201,6 +213,12 @@ Hook to get all registered swap providers. The returned array keeps a stable ref
 Hook to get all registered staking providers. The returned array keeps a stable reference until the provider list changes.
 
 %%demo/examples/src/appkit/hooks/staking#USE_STAKING_PROVIDERS%%
+
+### `useStakingSupportedNetworks`
+
+Hook to get the networks a staking provider can operate on.
+
+%%demo/examples/src/appkit/hooks/staking#USE_STAKING_SUPPORTED_NETWORKS%%
 
 ### `useStakingProvider`
 

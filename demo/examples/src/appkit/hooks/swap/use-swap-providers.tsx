@@ -14,7 +14,7 @@ export const UseSwapProvidersExample = () => {
     return (
         <ul>
             {providers.map((p) => (
-                <li key={p.providerId}>{p.getMetadata().name}</li>
+                <li key={p.providerId}>{p.providerId}</li>
             ))}
         </ul>
     );

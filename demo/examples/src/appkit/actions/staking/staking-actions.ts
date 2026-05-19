@@ -14,6 +14,7 @@ import {
     getStakingProviders,
     getStakingProviderInfo,
     getStakingProviderMetadata,
+    getStakingSupportedNetworks,
 } from '@ton/appkit';
 
 export const stakingExample = async (appKit: AppKit) => {
@@ -32,11 +33,16 @@ export const stakingExample = async (appKit: AppKit) => {
     // SAMPLE_END: GET_STAKING_PROVIDER_INFO
 
     // SAMPLE_START: GET_STAKING_PROVIDER_METADATA
-    const providerMetadata = getStakingProviderMetadata(appKit, {
+    const providerMetadata = await getStakingProviderMetadata(appKit, {
         providerId: 'tonstakers',
     });
     console.log('Provider Metadata:', providerMetadata);
     // SAMPLE_END: GET_STAKING_PROVIDER_METADATA
+
+    // SAMPLE_START: GET_STAKING_SUPPORTED_NETWORKS
+    const stakingSupportedNetworks = await getStakingSupportedNetworks(appKit, { providerId: 'tonstakers' });
+    console.log('Staking supported networks:', stakingSupportedNetworks);
+    // SAMPLE_END: GET_STAKING_SUPPORTED_NETWORKS
 
     // SAMPLE_START: GET_STAKING_QUOTE
     const quote = await getStakingQuote(appKit, {

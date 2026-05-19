@@ -85,11 +85,11 @@ export class OmnistonSwapProvider extends SwapProvider<OmnistonProviderOptions> 
         });
     }
 
-    getSupportedNetworks(): Network[] {
+    async getSupportedNetworks(): Promise<Network[]> {
         return [Network.mainnet()];
     }
 
-    getMetadata(): SwapProviderMetadata {
+    async getMetadata(): Promise<SwapProviderMetadata> {
         return this.metadata;
     }
 

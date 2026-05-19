@@ -164,6 +164,26 @@ export {
     type BuildSwapTransactionMutateAsync,
     type BuildSwapTransactionVariables,
 } from './swap/build-swap-transaction';
+export {
+    getSwapProviderMetadataQueryOptions,
+    getSwapProviderMetadataQueryKey,
+    type GetSwapProviderMetadataQueryConfig,
+    type GetSwapProviderMetadataQueryOptions,
+    type GetSwapProviderMetadataData,
+    type GetSwapProviderMetadataErrorType,
+    type GetSwapProviderMetadataQueryFnData,
+    type GetSwapProviderMetadataQueryKey,
+} from './swap/get-swap-provider-metadata';
+export {
+    getSwapSupportedNetworksQueryOptions,
+    getSwapSupportedNetworksQueryKey,
+    type GetSwapSupportedNetworksQueryConfig,
+    type GetSwapSupportedNetworksQueryOptions,
+    type GetSwapSupportedNetworksData,
+    type GetSwapSupportedNetworksErrorType,
+    type GetSwapSupportedNetworksQueryFnData,
+    type GetSwapSupportedNetworksQueryKey,
+} from './swap/get-swap-supported-networks';
 
 // Staking
 export {
@@ -194,6 +214,26 @@ export {
     type BuildStakeTransactionMutationOptions,
     type BuildStakeTransactionVariables,
 } from './staking/build-stake-transaction';
+export {
+    getStakingProviderMetadataQueryOptions,
+    getStakingProviderMetadataQueryKey,
+    type GetStakingProviderMetadataQueryConfig,
+    type GetStakingProviderMetadataQueryOptions,
+    type GetStakingProviderMetadataData,
+    type GetStakingProviderMetadataErrorType,
+    type GetStakingProviderMetadataQueryFnData,
+    type GetStakingProviderMetadataQueryKey,
+} from './staking/get-staking-provider-metadata';
+export {
+    getStakingSupportedNetworksQueryOptions,
+    getStakingSupportedNetworksQueryKey,
+    type GetStakingSupportedNetworksQueryConfig,
+    type GetStakingSupportedNetworksQueryOptions,
+    type GetStakingSupportedNetworksData,
+    type GetStakingSupportedNetworksErrorType,
+    type GetStakingSupportedNetworksQueryFnData,
+    type GetStakingSupportedNetworksQueryKey,
+} from './staking/get-staking-supported-networks';
 
 // Transaction
 export {

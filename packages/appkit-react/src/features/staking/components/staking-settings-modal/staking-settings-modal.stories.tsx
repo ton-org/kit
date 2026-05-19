@@ -10,16 +10,21 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { StakingProvider } from '@ton/appkit';
 
 import { StakingSettingsModal } from './staking-settings-modal';
+import type { StakingProvidersMetadata } from '../staking-widget-provider/use-staking-providers-with-metadata';
 
-const makeProvider = (id: string, name: string): StakingProvider =>
+const makeProvider = (id: string): StakingProvider =>
     ({
         providerId: id,
         type: 'staking',
-        getStakingProviderMetadata: () => ({ name }),
     }) as unknown as StakingProvider;
 
-const tonstakers = makeProvider('tonstakers', 'Tonstakers');
-const bemo = makeProvider('bemo', 'bemo');
+const tonstakers = makeProvider('tonstakers');
+const bemo = makeProvider('bemo');
+
+const metadata: StakingProvidersMetadata = {
+    tonstakers: { name: 'Tonstakers' } as StakingProvidersMetadata['tonstakers'],
+    bemo: { name: 'bemo' } as StakingProvidersMetadata['bemo'],
+};
 
 const meta: Meta<typeof StakingSettingsModal> = {
     title: 'Features/Staking/Internal/StakingSettingsModal',
@@ -34,6 +39,7 @@ export const Default: Story = {
         open: true,
         provider: tonstakers,
         providers: [tonstakers, bemo],
+        providersMetadata: metadata,
         onClose: () => {},
         onProviderChange: () => {},
     },
@@ -44,6 +50,31 @@ export const SingleProvider: Story = {
         open: true,
         provider: tonstakers,
         providers: [tonstakers],
+        providersMetadata: { tonstakers: metadata.tonstakers },
+        onClose: () => {},
+        onProviderChange: () => {},
+    },
+};
+
+export const MetadataPartiallyLoaded: Story = {
+    args: {
+        open: true,
+        provider: tonstakers,
+        providers: [tonstakers, bemo],
+        // Only one provider has resolved metadata — the other shows its providerId as fallback.
+        providersMetadata: { tonstakers: metadata.tonstakers },
+        onClose: () => {},
+        onProviderChange: () => {},
+    },
+};
+
+export const MetadataLoading: Story = {
+    args: {
+        open: true,
+        provider: tonstakers,
+        providers: [tonstakers, bemo],
+        providersMetadata: {},
+        isProvidersMetadataLoading: true,
         onClose: () => {},
         onProviderChange: () => {},
     },

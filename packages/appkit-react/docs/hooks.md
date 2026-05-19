@@ -711,7 +711,31 @@ const providers = useSwapProviders();
 return (
     <ul>
         {providers.map((p) => (
-            <li key={p.providerId}>{p.getMetadata().name}</li>
+            <li key={p.providerId}>{p.providerId}</li>
+        ))}
+    </ul>
+);
+```
+
+### `useSwapProviderMetadata`
+
+Hook to get static metadata for a single swap provider.
+
+```tsx
+const { data: metadata } = useSwapProviderMetadata({ providerId: 'stonfi' });
+return <div>Swap provider name: {metadata?.name}</div>;
+```
+
+### `useSwapSupportedNetworks`
+
+Hook to get the networks a swap provider can operate on.
+
+```tsx
+const { data: networks } = useSwapSupportedNetworks({ providerId: 'stonfi' });
+return (
+    <ul>
+        {networks?.map((n) => (
+            <li key={n.chainId}>{n.chainId}</li>
         ))}
     </ul>
 );
@@ -729,6 +753,23 @@ return (
     <ul>
         {providers.map((p) => (
             <li key={p.providerId}>{p.providerId}</li>
+        ))}
+    </ul>
+);
+```
+
+### `useStakingSupportedNetworks`
+
+Hook to get the networks a staking provider can operate on.
+
+```tsx
+const { data: networks } = useStakingSupportedNetworks({
+    providerId: 'tonstakers',
+});
+return (
+    <ul>
+        {networks?.map((n) => (
+            <li key={n.chainId}>{n.chainId}</li>
         ))}
     </ul>
 );
@@ -796,7 +837,7 @@ return <div>APY: {info?.apy}</div>;
 Hook to get static metadata about a staking provider (name, receive token, etc.).
 
 ```tsx
-const metadata = useStakingProviderMetadata();
+const { data: metadata } = useStakingProviderMetadata();
 return <div>Receive Token: {metadata?.receiveToken?.ticker}</div>;
 ```
 

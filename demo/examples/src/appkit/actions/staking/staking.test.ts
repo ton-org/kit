@@ -40,13 +40,14 @@ describe('Staking Actions Examples', () => {
             (id) =>
                 ({
                     providerId: id || 'tonstakers',
-                    getStakingProviderMetadata: () => ({
+                    getStakingProviderMetadata: async () => ({
                         name: 'Tonstakers',
                         receiveToken: { ticker: 'tsTON', decimals: 9, address: 'ton' },
                     }),
                 }) as never,
         );
         vi.spyOn(appKit.stakingManager, 'getProviders').mockReturnValue([]);
+        vi.spyOn(appKit.stakingManager, 'getSupportedNetworks').mockResolvedValue([]);
         // @ts-expect-error - internal access
         vi.spyOn(appKit.stakingManager, 'getQuote').mockImplementation(mockGetQuote);
         // @ts-expect-error - internal access
