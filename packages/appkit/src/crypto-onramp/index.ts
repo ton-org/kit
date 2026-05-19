@@ -19,4 +19,7 @@ export type {
     CryptoOnrampDepositParams,
     CryptoOnrampStatus,
     CryptoOnrampStatusParams,
+    CryptoOnrampSourceCurrency,
+    CryptoOnrampDestinationCurrency,
+    CryptoOnrampSupportedCurrencies,
 } from '@ton/walletkit';

@@ -6,42 +6,82 @@
  *
  */
 
-import { useCallback, useState } from 'react';
-import { validateNumericString } from '@ton/appkit';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { tryToBounceableAddress, validateNumericString } from '@ton/appkit';
+import type { CryptoOnrampDestinationCurrency, CryptoOnrampSourceCurrency } from '@ton/appkit';
 
-import { CRYPTO_PAYMENT_METHODS } from '../../../mock-data/crypto-payment-methods';
-import type { CryptoOnrampToken, CryptoPaymentMethod } from '../../../types';
 import type { CryptoAmountInputMode } from './crypto-onramp-context';
 
 interface UseCryptoOnrampTokenStateOptions {
-    tokens: CryptoOnrampToken[];
-    paymentMethods: CryptoPaymentMethod[];
-    defaultTokenId?: string;
-    defaultMethodId?: string;
+    tokens: CryptoOnrampDestinationCurrency[];
+    paymentMethods: CryptoOnrampSourceCurrency[];
+    defaultDestination?: { address: string };
+    defaultSource?: { chain: string; address: string };
 }
 
-const pickToken = (tokens: CryptoOnrampToken[], defaultId?: string): CryptoOnrampToken | null =>
-    tokens.find((t) => t.id === defaultId) ?? tokens[0] ?? null;
+// Source currencies live on EVM-style chains — addresses are case-insensitive hex.
+const sourceKey = (s: { chain: string; address: string }): string => `${s.chain}:${s.address.toLowerCase()}`;
 
-const pickMethod = (methods: CryptoPaymentMethod[], defaultId?: string): CryptoPaymentMethod =>
-    methods.find((m) => m.id === defaultId) ?? methods[0] ?? CRYPTO_PAYMENT_METHODS[0]!;
+// Destination currencies live on TON — normalize to bounceable form so the same
+// jetton master always maps to the same key regardless of how the caller wrote it.
+// Falls back to the raw address for non-TON-shaped inputs (e.g. native zero address).
+const destinationKey = (d: { address: string }): string => tryToBounceableAddress(d.address) ?? d.address;
+
+const pickToken = (
+    tokens: CryptoOnrampDestinationCurrency[],
+    key: string | undefined,
+): CryptoOnrampDestinationCurrency | null => tokens.find((t) => destinationKey(t) === key) ?? tokens[0] ?? null;
+
+const pickMethod = (
+    methods: CryptoOnrampSourceCurrency[],
+    key: string | undefined,
+): CryptoOnrampSourceCurrency | null => methods.find((m) => sourceKey(m) === key) ?? methods[0] ?? null;
 
 export const useCryptoOnrampTokenState = ({
     tokens,
     paymentMethods,
-    defaultTokenId,
-    defaultMethodId,
+    defaultDestination,
+    defaultSource,
 }: UseCryptoOnrampTokenStateOptions) => {
-    const [selectedToken, setSelectedToken] = useState<CryptoOnrampToken | null>(() =>
-        pickToken(tokens, defaultTokenId),
+    const [selectedTokenKey, setSelectedTokenKey] = useState<string | undefined>(() =>
+        defaultDestination ? destinationKey(defaultDestination) : undefined,
     );
-    const [selectedMethod, setSelectedMethod] = useState<CryptoPaymentMethod>(() =>
-        pickMethod(paymentMethods, defaultMethodId),
+    const [selectedMethodKey, setSelectedMethodKey] = useState<string | undefined>(() =>
+        defaultSource ? sourceKey(defaultSource) : undefined,
     );
     const [amount, setAmountRaw] = useState('');
     const [amountInputMode, setAmountInputMode] = useState<CryptoAmountInputMode>('method');
 
-    const amountDecimals = amountInputMode === 'method' ? selectedMethod.decimals : (selectedToken?.decimals ?? 0);
+    const selectedToken = useMemo(() => pickToken(tokens, selectedTokenKey), [tokens, selectedTokenKey]);
+    const selectedMethod = useMemo(
+        () => pickMethod(paymentMethods, selectedMethodKey),
+        [paymentMethods, selectedMethodKey],
+    );
+
+    // If the current selection is no longer present in the list (provider switch,
+    // discovery refresh), snap the stored key to whatever pick* fell back to.
+    useEffect(() => {
+        if (selectedToken && destinationKey(selectedToken) !== selectedTokenKey) {
+            setSelectedTokenKey(destinationKey(selectedToken));
+        }
+    }, [selectedToken, selectedTokenKey]);
+    useEffect(() => {
+        if (selectedMethod && sourceKey(selectedMethod) !== selectedMethodKey) {
+            setSelectedMethodKey(sourceKey(selectedMethod));
+        }
+    }, [selectedMethod, selectedMethodKey]);
+
+    const setSelectedToken = useCallback(
+        (token: CryptoOnrampDestinationCurrency) => setSelectedTokenKey(destinationKey(token)),
+        [],
+    );
+    const setSelectedMethod = useCallback(
+        (method: CryptoOnrampSourceCurrency) => setSelectedMethodKey(sourceKey(method)),
+        [],
+    );
+
+    const amountDecimals =
+        amountInputMode === 'method' ? (selectedMethod?.decimals ?? 0) : (selectedToken?.decimals ?? 0);
 
     const setAmount = useCallback(
         (value: string) => {

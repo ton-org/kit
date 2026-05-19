@@ -71,6 +71,35 @@ export interface DecentGetActionResponse {
     executionsType: 'DEFAULT' | 'GASLESS';
 }
 
+/**
+ * Token info entry as returned in `paths[].tokens` from `/getPaths`.
+ */
+export interface DecentTokenInfo {
+    chainId: number;
+    address: string;
+    name: string;
+    symbol: string;
+    decimals: number;
+    isNative: boolean;
+    logo: string | null;
+    swapsXyzCode?: string;
+}
+
+export interface DecentChainPath {
+    chainId: number;
+    /** Either the literal string `'all'` or a concrete list of supported tokens. */
+    tokens: 'all' | DecentTokenInfo[];
+    supportsExactAmountIn?: boolean;
+    supportsExactAmountOut?: boolean;
+}
+
+export interface DecentGetPathsResponse {
+    srcChainId: number;
+    srcToken: DecentTokenInfo;
+    paths: DecentChainPath[];
+    timestamp: string;
+}
+
 export interface DecentErrorResponse {
     success: false;
     error: {

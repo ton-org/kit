@@ -12,15 +12,8 @@ import type { FC, PropsWithChildren } from 'react';
 import { useAddress } from '../../../../wallets';
 import { useCryptoOnrampProvider } from '../../../hooks/use-crypto-onramp-provider';
 import { useCryptoOnrampProviders } from '../../../hooks/use-crypto-onramp-providers';
-import { CRYPTO_ONRAMP_TARGET_TOKENS } from '../../../mock-data/crypto-onramp-tokens';
-import { CRYPTO_PAYMENT_METHODS } from '../../../mock-data/crypto-payment-methods';
+import { useCryptoOnrampSupportedCurrencies } from '../../../hooks/use-crypto-onramp-supported-currencies';
 import { DEFAULT_ONRAMP_PRESETS } from '../../../constants';
-import type {
-    CryptoOnrampToken,
-    CryptoOnrampTokenSectionConfig,
-    CryptoPaymentMethod,
-    PaymentMethodSectionConfig,
-} from '../../../types';
 import type { ChainInfo } from '../utils/chains';
 import { DEFAULT_CHAINS } from '../utils/chains';
 import { CryptoOnrampContext } from './crypto-onramp-context';
@@ -30,30 +23,37 @@ import { useCryptoOnrampTokenState } from './use-crypto-onramp-token-state';
 import { useCryptoOnrampValidation } from './use-crypto-onramp-validation';
 
 export interface CryptoOnrampProviderProps extends PropsWithChildren {
-    tokens?: CryptoOnrampToken[];
-    tokenSections?: CryptoOnrampTokenSectionConfig[];
-    paymentMethods?: CryptoPaymentMethod[];
-    methodSections?: PaymentMethodSectionConfig[];
     /**
      * Custom CAIP-2 → chain display info overrides. Merged on top of the
      * built-in defaults, so consumers only need to provide what they want to
      * override or add (e.g. `{ 'eip155:42161': { name: 'Arbitrum', logo: '...' } }`).
      */
     chains?: Record<string, ChainInfo>;
-    defaultTokenId?: string;
-    defaultMethodId?: string;
+    /** Pre-select a destination (TON-side) token by address. */
+    defaultDestination?: { address: string };
+    /** Pre-select a source currency by chain + address. */
+    defaultSource?: { chain: string; address: string };
 }
 
 export const CryptoOnrampWidgetProvider: FC<CryptoOnrampProviderProps> = ({
     children,
-    tokens = CRYPTO_ONRAMP_TARGET_TOKENS,
-    tokenSections,
-    paymentMethods = CRYPTO_PAYMENT_METHODS,
-    methodSections,
     chains: chainsOverride,
-    defaultTokenId,
-    defaultMethodId,
+    defaultDestination,
+    defaultSource,
 }) => {
+    // 2. Queries and external readers
+    const userAddress = useAddress();
+    const [provider, setProviderId] = useCryptoOnrampProvider();
+    const providers = useCryptoOnrampProviders();
+
+    const { data: supportedCurrencies } = useCryptoOnrampSupportedCurrencies({
+        providerId: provider?.providerId,
+        query: { enabled: !!provider },
+    });
+
+    const tokens = useMemo(() => supportedCurrencies?.destination ?? [], [supportedCurrencies]);
+    const paymentMethods = useMemo(() => supportedCurrencies?.source ?? [], [supportedCurrencies]);
+
     // 1. Local state
     const {
         selectedToken,
@@ -64,12 +64,8 @@ export const CryptoOnrampWidgetProvider: FC<CryptoOnrampProviderProps> = ({
         setAmount,
         amountInputMode,
         setAmountInputMode,
-    } = useCryptoOnrampTokenState({ tokens, paymentMethods, defaultTokenId, defaultMethodId });
+    } = useCryptoOnrampTokenState({ tokens, paymentMethods, defaultDestination, defaultSource });
 
-    // 2. Queries and external readers
-    const userAddress = useAddress();
-    const [provider, setProviderId] = useCryptoOnrampProvider();
-    const providers = useCryptoOnrampProviders();
     const { targetBalance, isLoadingTargetBalance } = useCryptoOnrampBalance({ selectedToken, userAddress });
 
     // 4. Mutations (quote query + deposit mutation + status query coordinated together)
@@ -127,11 +123,9 @@ export const CryptoOnrampWidgetProvider: FC<CryptoOnrampProviderProps> = ({
     const value = useMemo(
         () => ({
             tokens,
-            tokenSections,
             selectedToken,
             setSelectedToken,
             paymentMethods,
-            methodSections,
             selectedMethod,
             setSelectedMethod,
             chains,
@@ -163,11 +157,9 @@ export const CryptoOnrampWidgetProvider: FC<CryptoOnrampProviderProps> = ({
         }),
         [
             tokens,
-            tokenSections,
             selectedToken,
             setSelectedToken,
             paymentMethods,
-            methodSections,
             selectedMethod,
             setSelectedMethod,
             chains,

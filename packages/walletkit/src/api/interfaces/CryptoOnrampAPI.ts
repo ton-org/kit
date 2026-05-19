@@ -14,6 +14,7 @@ import type {
     CryptoOnrampQuoteParams,
     CryptoOnrampStatus,
     CryptoOnrampStatusParams,
+    CryptoOnrampSupportedCurrencies,
 } from '../models';
 import type { DefiManagerAPI } from './DefiManagerAPI';
 import type { DefiProvider } from './DefiProvider';
@@ -44,6 +45,15 @@ export interface CryptoOnrampAPI extends DefiManagerAPI<CryptoOnrampProviderInte
      * @returns Promise resolving to the deposit status
      */
     getStatus(params: CryptoOnrampStatusParams, providerId?: string): Promise<CryptoOnrampStatus>;
+
+    /**
+     * Discover supported source/destination currencies for a provider.
+     * Source currencies are tokens the user can spend; destination currencies are TON-side
+     * tokens the user can receive.
+     * @param providerId Provider identifier (optional, uses default if not specified)
+     * @returns Promise resolving to the supported currencies for both directions
+     */
+    getSupportedCurrencies(providerId?: string): Promise<CryptoOnrampSupportedCurrencies>;
 }
 
 /**
@@ -85,4 +95,11 @@ export interface CryptoOnrampProviderInterface<
      * @returns Promise resolving to the deposit status
      */
     getStatus(params: CryptoOnrampStatusParams): Promise<CryptoOnrampStatus>;
+
+    /**
+     * Discover supported source/destination currencies. May involve network calls
+     * (e.g. fetching the provider's `/sources` or `/paths` endpoint), or return a
+     * statically-curated list when the provider has no enumeration API.
+     */
+    getSupportedCurrencies(): Promise<CryptoOnrampSupportedCurrencies>;
 }

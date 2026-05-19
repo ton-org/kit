@@ -6,17 +6,13 @@
  *
  */
 
-import type { CryptoOnrampStatus } from '../../../api/models';
+import type { CryptoOnrampStatus, CryptoOnrampSupportedCurrencies } from '../../../api/models';
+import { CryptoOnrampError } from '../errors';
 import type { LayerswapErrorResponse, LayerswapSwapStatus } from './types';
 
 const EVM_ADDRESS_REGEX = /^(0x)?[0-9a-fA-F]{40}$/;
 
-export const ARBITRUM_USDT0_ADDRESS = '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9';
-export const TON_USDT_ADDRESS = 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs';
-
-export const LAYERSWAP_SOURCE_TOKEN = 'USDT0';
 export const LAYERSWAP_DESTINATION_NETWORK = 'TON_MAINNET';
-export const LAYERSWAP_DESTINATION_TOKEN = 'USDT';
 
 /**
  * Default mapping of CAIP-2 source chains to Layerswap network slugs.
@@ -35,6 +31,32 @@ export const DEFAULT_LAYERSWAP_SUPPORTED_CHAINS: Record<string, string> = {
     'bip122:000000000019d6689c085ae165831e93': 'BITCOIN_MAINNET', // Bitcoin
 };
 
+/**
+ * Default supported-currencies list returned by {@link LayerswapCryptoOnrampProvider.getDefaultSupportedCurrencies}.
+ * Used as `placeholderData` by the appkit-react hook while live discovery resolves.
+ */
+export const DEFAULT_LAYERSWAP_SUPPORTED_CURRENCIES: CryptoOnrampSupportedCurrencies = {
+    source: [
+        {
+            chain: 'eip155:42161',
+            address: '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9',
+            symbol: 'USDT0',
+            name: 'Tether USD0',
+            decimals: 6,
+            logo: 'https://cdn.layerswap.io/layerswap/currencies/usdt0.png',
+        },
+    ],
+    destination: [
+        {
+            address: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs',
+            symbol: 'USDT',
+            name: 'Tether',
+            decimals: 6,
+            logo: 'https://pretty-picture-g2.s3.eu-central-1.amazonaws.com/usdt20_9a8c677b99_c67aed2f04.svg',
+        },
+    ],
+};
+
 export const isEvmAddress = (address: string): boolean => {
     return EVM_ADDRESS_REGEX.test(address);
 };
@@ -46,6 +68,19 @@ export const isErrorResponse = (body: unknown): body is LayerswapErrorResponse =
         typeof (body as { error?: unknown }).error === 'object' &&
         (body as { error: { message?: unknown } }).error !== null
     );
+};
+
+/**
+ * Translate a Layerswap-specific API error code into a provider-agnostic CryptoOnrampError code.
+ * Falls back to the original code when there is no known mapping.
+ */
+export const mapLayerswapErrorCode = (apiCode: string | undefined, fallback: string): string => {
+    switch (apiCode) {
+        case 'ROUTE_NOT_FOUND_ERROR':
+            return CryptoOnrampError.ROUTE_NOT_FOUND;
+        default:
+            return apiCode ?? fallback;
+    }
 };
 
 export const mapStatus = (status: LayerswapSwapStatus | string): CryptoOnrampStatus => {

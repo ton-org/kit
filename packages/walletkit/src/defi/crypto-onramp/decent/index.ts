@@ -7,7 +7,7 @@
  */
 
 export * from './DecentCryptoOnrampProvider';
-export { DEFAULT_DECENT_SUPPORTED_CHAINS } from './utils';
+export { DEFAULT_DECENT_SUPPORTED_CHAINS, DEFAULT_DECENT_SUPPORTED_CURRENCIES } from './utils';
 export type {
     DecentVmId,
     DecentSwapDirection,
@@ -16,4 +16,7 @@ export type {
     DecentBridgeRouteStep,
     DecentGetActionResponse,
     DecentErrorResponse,
+    DecentTokenInfo,
+    DecentChainPath,
+    DecentGetPathsResponse,
 } from './types';

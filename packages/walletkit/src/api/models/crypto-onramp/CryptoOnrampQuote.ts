@@ -6,34 +6,30 @@
  *
  */
 
+import type { CryptoOnrampDestinationCurrency, CryptoOnrampSourceCurrency } from './CryptoOnrampCurrency';
+
 /**
- * Crypto onramp quote response with pricing information
+ * Crypto onramp quote response with pricing information.
  */
 export interface CryptoOnrampQuote<TMetadata = unknown> {
     /**
-     * Source crypto currency address (contract address or 0x0... for native)
+     * Source currency that will be spent. Mirrors the `sourceCurrency` from quote params,
+     * possibly normalised by the provider.
      */
-    sourceCurrencyAddress: string;
+    sourceCurrency: CryptoOnrampSourceCurrency;
 
     /**
-     * Source chain identifier in CAIP-2 format (e.g. 'eip155:42161').
-     *
-     * @see https://chainagnostic.org/CAIPs/caip-2
+     * Target currency on TON the user receives.
      */
-    sourceChain: string;
+    targetCurrency: CryptoOnrampDestinationCurrency;
 
     /**
-     * Target crypto currency address on TON (contract address or 0x0... for native)
-     */
-    targetCurrencyAddress: string;
-
-    /**
-     * Amount of source crypto to send
+     * Amount of source crypto to send (in base units of `sourceCurrency.decimals`).
      */
     sourceAmount: string;
 
     /**
-     * Amount of target crypto to receive
+     * Amount of target crypto to receive (in base units of `targetCurrency.decimals`).
      */
     targetAmount: string;
 

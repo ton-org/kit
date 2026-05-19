@@ -16,6 +16,9 @@ export class CryptoOnrampError extends DefiError {
     static readonly INVALID_REFUND_ADDRESS = 'INVALID_REFUND_ADDRESS';
     static readonly REVERSED_AMOUNT_NOT_SUPPORTED = 'REVERSED_AMOUNT_NOT_SUPPORTED';
     static readonly UNSUPPORTED_SOURCE_CHAIN = 'UNSUPPORTED_SOURCE_CHAIN';
+    static readonly UNSUPPORTED_SOURCE_TOKEN = 'UNSUPPORTED_SOURCE_TOKEN';
+    static readonly UNSUPPORTED_DESTINATION_TOKEN = 'UNSUPPORTED_DESTINATION_TOKEN';
+    static readonly ROUTE_NOT_FOUND = 'ROUTE_NOT_FOUND';
 
     constructor(message: string, code: string, details?: unknown) {
         super(message, code, details);

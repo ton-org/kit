@@ -13,13 +13,20 @@ import type {
     CryptoOnrampQuoteParams,
     CryptoOnrampStatus,
     CryptoOnrampStatusParams,
+    CryptoOnrampSupportedCurrencies,
 } from '../../../api/models';
 import { Network } from '../../../api/models';
 import { CryptoOnrampProvider } from '../CryptoOnrampProvider';
 import { CryptoOnrampError } from '../errors';
 import { createProvider } from '../../../types/factory';
 import type { DecentGetActionResponse, DecentSwapDirection } from './types';
-import { DEFAULT_DECENT_SUPPORTED_CHAINS, evmChainIdToCaip2, isErrorResponse, isEvmAddress, mapStatus } from './utils';
+import {
+    DEFAULT_DECENT_SUPPORTED_CHAINS,
+    DEFAULT_DECENT_SUPPORTED_CURRENCIES,
+    isErrorResponse,
+    isEvmAddress,
+    mapStatus,
+} from './utils';
 
 // Decent (formerly Swaps.xyz) — they rebranded but kept the existing API endpoints.
 const DECENT_API_URL = 'https://api-v2.swaps.xyz/api';
@@ -52,6 +59,13 @@ export interface DecentProviderConfig {
      * — the override replaces the default. Spread the default to extend it.
      */
     supportedChains?: Record<string, string>;
+
+    /**
+     * Curated supported-currencies list. Decent's API has no enumeration endpoint,
+     * so the list is bundled statically. When omitted, defaults to
+     * {@link DEFAULT_DECENT_SUPPORTED_CURRENCIES}. Spread the default to extend it.
+     */
+    supportedCurrencies?: CryptoOnrampSupportedCurrencies;
 }
 
 export interface DecentQuoteOptions {
@@ -94,6 +108,7 @@ export class DecentCryptoOnrampProvider extends CryptoOnrampProvider<DecentQuote
     private readonly apiUrl: string;
     private readonly defaultSender: string;
     private readonly supportedChains: Record<string, string>;
+    private readonly supportedCurrencies: CryptoOnrampSupportedCurrencies;
 
     constructor(config: DecentProviderConfig) {
         super();
@@ -101,18 +116,19 @@ export class DecentCryptoOnrampProvider extends CryptoOnrampProvider<DecentQuote
         this.apiUrl = config.apiUrl ?? DECENT_API_URL;
         this.defaultSender = config.defaultSender ?? DEFAULT_SENDER;
         this.supportedChains = config.supportedChains ?? DEFAULT_DECENT_SUPPORTED_CHAINS;
+        this.supportedCurrencies = config.supportedCurrencies ?? DEFAULT_DECENT_SUPPORTED_CURRENCIES;
     }
 
     async getQuote(
         params: CryptoOnrampQuoteParams<DecentQuoteOptions>,
     ): Promise<CryptoOnrampQuote<DecentQuoteMetadata>> {
+        const { sourceCurrency, targetCurrency, recipientAddress } = params;
         const sender = params.refundAddress ?? this.defaultSender;
-        const recipient = params.recipientAddress;
 
-        const srcChainId = this.supportedChains[params.sourceChain];
+        const srcChainId = this.supportedChains[sourceCurrency.chain];
         if (!srcChainId) {
             throw new CryptoOnrampError(
-                `Decent: unsupported source chain "${params.sourceChain}"`,
+                `Decent: unsupported source chain "${sourceCurrency.chain}"`,
                 CryptoOnrampError.UNSUPPORTED_SOURCE_CHAIN,
                 { supportedChains: Object.keys(this.supportedChains) },
             );
@@ -132,13 +148,13 @@ export class DecentCryptoOnrampProvider extends CryptoOnrampProvider<DecentQuote
         url.searchParams.set('actionType', 'swap-action');
         url.searchParams.set('sender', sender);
         url.searchParams.set('srcChainId', String(srcChainId));
-        url.searchParams.set('srcToken', params.sourceCurrencyAddress);
+        url.searchParams.set('srcToken', sourceCurrency.address);
         url.searchParams.set('dstChainId', String(TON_CHAIN_ID));
-        url.searchParams.set('dstToken', params.targetCurrencyAddress);
+        url.searchParams.set('dstToken', targetCurrency.address);
         url.searchParams.set('amount', params.amount);
         url.searchParams.set('swapDirection', swapDirection);
         url.searchParams.set('slippage', String(params.providerOptions?.slippageBps ?? DEFAULT_SLIPPAGE_BPS));
-        url.searchParams.set('recipient', recipient);
+        url.searchParams.set('recipient', recipientAddress);
         url.searchParams.set('returnDepositAddress', 'true');
 
         let response: Response;
@@ -177,13 +193,12 @@ export class DecentCryptoOnrampProvider extends CryptoOnrampProvider<DecentQuote
         const metadata: DecentQuoteMetadata = { sender, response: body };
 
         return {
-            sourceCurrencyAddress: params.sourceCurrencyAddress,
-            sourceChain: evmChainIdToCaip2(body.amountIn.chainId),
-            targetCurrencyAddress: params.targetCurrencyAddress,
+            sourceCurrency,
+            targetCurrency,
             sourceAmount: body.amountIn.amount,
             targetAmount: body.amountOut.amount,
             rate: String(body.exchangeRate),
-            recipientAddress: recipient,
+            recipientAddress,
             providerId: this.providerId,
             metadata,
         };
@@ -221,9 +236,8 @@ export class DecentCryptoOnrampProvider extends CryptoOnrampProvider<DecentQuote
 
             const newQuote = await this.getQuote({
                 amount: params.quote.sourceAmount,
-                sourceCurrencyAddress: params.quote.sourceCurrencyAddress,
-                sourceChain: params.quote.sourceChain,
-                targetCurrencyAddress: params.quote.targetCurrencyAddress,
+                sourceCurrency: params.quote.sourceCurrency,
+                targetCurrency: params.quote.targetCurrency,
                 recipientAddress: params.quote.recipientAddress,
                 refundAddress: params.refundAddress,
                 isSourceAmount: true,
@@ -241,8 +255,7 @@ export class DecentCryptoOnrampProvider extends CryptoOnrampProvider<DecentQuote
                 depositId: newMetadata.response.txId,
                 address: newMetadata.response.tx.to,
                 amount: newMetadata.response.amountIn.amount,
-                sourceCurrencyAddress: params.quote.sourceCurrencyAddress,
-                sourceChain: evmChainIdToCaip2(newMetadata.response.amountIn.chainId),
+                sourceCurrency: params.quote.sourceCurrency,
                 providerId: this.providerId,
             };
         }
@@ -251,8 +264,7 @@ export class DecentCryptoOnrampProvider extends CryptoOnrampProvider<DecentQuote
             depositId: response.txId,
             address: response.tx.to,
             amount: response.amountIn.amount,
-            sourceCurrencyAddress: params.quote.sourceCurrencyAddress,
-            sourceChain: evmChainIdToCaip2(response.amountIn.chainId),
+            sourceCurrency: params.quote.sourceCurrency,
             providerId: this.providerId,
         };
     }
@@ -292,6 +304,14 @@ export class DecentCryptoOnrampProvider extends CryptoOnrampProvider<DecentQuote
         }
 
         return mapStatus(body.status);
+    }
+
+    /**
+     * Decent's API has no token-enumeration endpoint, so we just return the curated
+     * static list. Consumers can override via {@link DecentProviderConfig.supportedCurrencies}.
+     */
+    async getSupportedCurrencies(): Promise<CryptoOnrampSupportedCurrencies> {
+        return this.supportedCurrencies;
     }
 }
 

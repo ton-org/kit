@@ -6,7 +6,7 @@
  *
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ComponentProps, FC } from 'react';
 import clsx from 'clsx';
 
@@ -33,11 +33,9 @@ export type CryptoOnrampWidgetRenderProps = CryptoOnrampContextType &
 
 export const CryptoOnrampWidgetUI: FC<CryptoOnrampWidgetRenderProps> = ({
     tokens,
-    tokenSections,
     selectedToken,
     setSelectedToken,
     paymentMethods,
-    methodSections,
     selectedMethod,
     setSelectedMethod,
     chains,
@@ -76,6 +74,13 @@ export const CryptoOnrampWidgetUI: FC<CryptoOnrampWidgetRenderProps> = ({
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
     const { t } = useI18n();
+
+    // TokenSelectModal generic requires `id` + non-optional `name`; supplement with
+    // address-derived id and a name fallback so walletkit currencies satisfy the shared type.
+    const tokensForSelect = useMemo(
+        () => tokens.map((c) => ({ ...c, id: c.address, name: c.name ?? c.symbol })),
+        [tokens],
+    );
 
     const handleContinue = useCallback(() => {
         if (refundAddressMode === 'off') {
@@ -119,9 +124,9 @@ export const CryptoOnrampWidgetUI: FC<CryptoOnrampWidgetRenderProps> = ({
                 className={styles.selectors}
                 from={{ title: selectedToken?.symbol ?? '', logoSrc: selectedToken?.logo }}
                 to={{
-                    title: selectedMethod.symbol,
-                    logoSrc: selectedMethod.logo,
-                    networkLogoSrc: getChainInfo(selectedMethod.chain, chains).logo,
+                    title: selectedMethod?.symbol ?? '',
+                    logoSrc: selectedMethod?.logo,
+                    networkLogoSrc: selectedMethod ? getChainInfo(selectedMethod.chain, chains).logo : undefined,
                 }}
                 onFromClick={() => setIsTokenSelectOpen(true)}
                 onToClick={() => setIsMethodSelectOpen(true)}
@@ -133,7 +138,7 @@ export const CryptoOnrampWidgetUI: FC<CryptoOnrampWidgetRenderProps> = ({
                     value={amount}
                     onValueChange={setAmount}
                     disabled={!isWalletConnected}
-                    ticker={amountInputMode === 'token' ? selectedToken?.symbol : selectedMethod.symbol}
+                    ticker={amountInputMode === 'token' ? selectedToken?.symbol : selectedMethod?.symbol}
                 />
 
                 <AmountReversed
@@ -144,8 +149,10 @@ export const CryptoOnrampWidgetUI: FC<CryptoOnrampWidgetRenderProps> = ({
                             ? () => setAmountInputMode(amountInputMode === 'token' ? 'method' : 'token')
                             : undefined
                     }
-                    ticker={amountInputMode === 'token' ? selectedMethod.symbol : selectedToken?.symbol}
-                    decimals={amountInputMode === 'token' ? selectedMethod.decimals : (selectedToken?.decimals ?? 0)}
+                    ticker={amountInputMode === 'token' ? selectedMethod?.symbol : selectedToken?.symbol}
+                    decimals={
+                        amountInputMode === 'token' ? (selectedMethod?.decimals ?? 0) : (selectedToken?.decimals ?? 0)
+                    }
                 />
             </div>
 
@@ -220,8 +227,7 @@ export const CryptoOnrampWidgetUI: FC<CryptoOnrampWidgetRenderProps> = ({
             <TokenSelectModal
                 open={isTokenSelectOpen}
                 onClose={() => setIsTokenSelectOpen(false)}
-                tokens={tokens}
-                tokenSections={tokenSections}
+                tokens={tokensForSelect}
                 onSelect={setSelectedToken}
                 title={t('onramp.selectToken')}
                 searchPlaceholder={t('onramp.searchToken')}
@@ -231,7 +237,6 @@ export const CryptoOnrampWidgetUI: FC<CryptoOnrampWidgetRenderProps> = ({
                 open={isMethodSelectOpen}
                 onClose={() => setIsMethodSelectOpen(false)}
                 methods={paymentMethods}
-                methodSections={methodSections}
                 chains={chains}
                 onSelect={setSelectedMethod}
             />
@@ -241,9 +246,9 @@ export const CryptoOnrampWidgetUI: FC<CryptoOnrampWidgetRenderProps> = ({
                 onClose={handleDepositClose}
                 address={deposit?.address ?? ''}
                 amount={depositAmount}
-                symbol={selectedMethod.symbol}
+                symbol={selectedMethod?.symbol ?? ''}
                 memo={deposit?.memo}
-                tokenLogo={selectedMethod.logo}
+                tokenLogo={selectedMethod?.logo}
                 chainWarning={deposit?.chainWarning}
                 depositStatus={depositStatus}
                 targetSymbol={selectedToken?.symbol ?? ''}

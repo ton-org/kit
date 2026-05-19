@@ -8,6 +8,7 @@
 
 import { useCallback, useMemo } from 'react';
 import { formatUnits, parseUnits } from '@ton/appkit';
+import type { CryptoOnrampDestinationCurrency, CryptoOnrampSourceCurrency } from '@ton/appkit';
 import { keepPreviousData } from '@tanstack/react-query';
 
 import { useCreateCryptoOnrampDeposit } from '../../../hooks/use-create-crypto-onramp-deposit';
@@ -15,15 +16,14 @@ import { useCryptoOnrampProviderById } from '../../../hooks/use-crypto-onramp-pr
 import { useCryptoOnrampQuote } from '../../../hooks/use-crypto-onramp-quote';
 import { useCryptoOnrampStatus } from '../../../hooks/use-crypto-onramp-status';
 import { useDebounceValue } from '../../../../../hooks/use-debounce-value';
-import type { CryptoOnrampToken, CryptoPaymentMethod } from '../../../types';
 import type { CryptoAmountInputMode } from './crypto-onramp-context';
 
 const QUOTE_DEBOUNCE_MS = 500;
 const STATUS_REFETCH_MS = 10000;
 
 interface UseCryptoOnrampQuoteAndDepositOptions {
-    selectedToken: CryptoOnrampToken | null;
-    selectedMethod: CryptoPaymentMethod;
+    selectedToken: CryptoOnrampDestinationCurrency | null;
+    selectedMethod: CryptoOnrampSourceCurrency | null;
     amount: string;
     amountInputMode: CryptoAmountInputMode;
     userAddress: string | undefined;
@@ -41,7 +41,7 @@ export const useCryptoOnrampQuoteAndDeposit = ({
     const [amountDebounced] = useDebounceValue(amount, QUOTE_DEBOUNCE_MS);
 
     const requestAmountDecimals =
-        amountInputMode === 'method' ? selectedMethod.decimals : (selectedToken?.decimals ?? 0);
+        amountInputMode === 'method' ? (selectedMethod?.decimals ?? 0) : (selectedToken?.decimals ?? 0);
 
     const requestAmountBase = useMemo(() => {
         if (!amountDebounced || isNaN(parseFloat(amountDebounced))) return '';
@@ -54,14 +54,18 @@ export const useCryptoOnrampQuoteAndDeposit = ({
 
     const quoteQuery = useCryptoOnrampQuote({
         amount: requestAmountBase,
-        sourceCurrencyAddress: selectedMethod.address,
-        sourceChain: selectedMethod.chain,
-        targetCurrencyAddress: selectedToken?.address ?? '',
+        sourceCurrency: selectedMethod ?? undefined,
+        targetCurrency: selectedToken ?? undefined,
         recipientAddress: userAddress ?? '',
         isSourceAmount: amountInputMode === 'method',
         providerId,
         query: {
-            enabled: !!requestAmountBase && !!selectedToken && !!userAddress && parseFloat(amountDebounced) > 0,
+            enabled:
+                !!requestAmountBase &&
+                !!selectedToken &&
+                !!selectedMethod &&
+                !!userAddress &&
+                parseFloat(amountDebounced) > 0,
             retry: false,
             placeholderData: keepPreviousData,
             refetchOnWindowFocus: false,
@@ -86,12 +90,12 @@ export const useCryptoOnrampQuoteAndDeposit = ({
     const convertedAmount = useMemo(() => {
         if (!quoteQuery.data) return '';
         const rawAmount = amountInputMode === 'token' ? quoteQuery.data.sourceAmount : quoteQuery.data.targetAmount;
-        const decimals = amountInputMode === 'token' ? selectedMethod.decimals : (selectedToken?.decimals ?? 0);
+        const decimals = amountInputMode === 'token' ? (selectedMethod?.decimals ?? 0) : (selectedToken?.decimals ?? 0);
         return formatUnits(rawAmount, decimals);
     }, [quoteQuery.data, amountInputMode, selectedMethod, selectedToken]);
 
     const depositAmount = useMemo(() => {
-        if (createDepositMutation.data) {
+        if (createDepositMutation.data && selectedMethod) {
             return formatUnits(createDepositMutation.data.amount, selectedMethod.decimals);
         }
         return amount;

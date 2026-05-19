@@ -7,18 +7,18 @@
  */
 
 import { useMemo } from 'react';
+import type { CryptoOnrampDestinationCurrency, CryptoOnrampSourceCurrency } from '@ton/appkit';
 
 import { hasTooManyDecimals } from '../../../../../utils/validate-amount';
 import { mapCryptoOnrampError } from '../utils/map-crypto-onramp-error';
-import type { CryptoPaymentMethod, CryptoOnrampToken } from '../../../types';
 import type { CryptoAmountInputMode } from './crypto-onramp-context';
 
 interface UseCryptoOnrampValidationOptions {
     amount: string;
     amountDebounced: string;
     amountInputMode: CryptoAmountInputMode;
-    selectedMethod: CryptoPaymentMethod;
-    selectedToken: CryptoOnrampToken | null;
+    selectedMethod: CryptoOnrampSourceCurrency | null;
+    selectedToken: CryptoOnrampDestinationCurrency | null;
     quoteError: Error | null;
     depositError: Error | null;
     hasQuote: boolean;
@@ -40,7 +40,7 @@ export const useCryptoOnrampValidation = ({
     depositError,
     hasQuote,
 }: UseCryptoOnrampValidationOptions): UseCryptoOnrampValidationResult => {
-    const decimals = amountInputMode === 'method' ? selectedMethod.decimals : selectedToken?.decimals;
+    const decimals = amountInputMode === 'method' ? selectedMethod?.decimals : selectedToken?.decimals;
     const tooManyDecimals = hasTooManyDecimals(amount, decimals);
 
     const mappedQuoteError = useMemo(

@@ -7,39 +7,34 @@
  */
 
 import { createContext, useContext } from 'react';
-import type { CryptoOnrampDeposit, CryptoOnrampProvider, CryptoOnrampQuote, CryptoOnrampStatus } from '@ton/appkit';
+import type {
+    CryptoOnrampDeposit,
+    CryptoOnrampDestinationCurrency,
+    CryptoOnrampProvider,
+    CryptoOnrampQuote,
+    CryptoOnrampSourceCurrency,
+    CryptoOnrampStatus,
+} from '@ton/appkit';
 
-import { CRYPTO_ONRAMP_TARGET_TOKENS } from '../../../mock-data/crypto-onramp-tokens';
-import { CRYPTO_PAYMENT_METHODS } from '../../../mock-data/crypto-payment-methods';
 import { DEFAULT_ONRAMP_PRESETS } from '../../../constants';
 import type { ChainInfo } from '../utils/chains';
 import { DEFAULT_CHAINS } from '../utils/chains';
-import type {
-    CryptoOnrampToken,
-    CryptoOnrampTokenSectionConfig,
-    CryptoPaymentMethod,
-    OnrampAmountPreset,
-    PaymentMethodSectionConfig,
-} from '../../../types';
+import type { OnrampAmountPreset } from '../../../types';
 
 export type CryptoAmountInputMode = 'token' | 'method';
 
 export interface CryptoOnrampContextType {
-    /** Full list of tokens to buy */
-    tokens: CryptoOnrampToken[];
-    /** Optional section configs for grouping tokens */
-    tokenSections?: CryptoOnrampTokenSectionConfig[];
+    /** Full list of tokens to buy (TON-side) */
+    tokens: CryptoOnrampDestinationCurrency[];
     /** Currently selected token to buy */
-    selectedToken: CryptoOnrampToken | null;
-    setSelectedToken: (token: CryptoOnrampToken) => void;
+    selectedToken: CryptoOnrampDestinationCurrency | null;
+    setSelectedToken: (token: CryptoOnrampDestinationCurrency) => void;
 
-    /** Available crypto payment methods */
-    paymentMethods: CryptoPaymentMethod[];
-    /** Optional section configs for grouping payment methods */
-    methodSections?: PaymentMethodSectionConfig[];
+    /** Available crypto payment methods (source side) */
+    paymentMethods: CryptoOnrampSourceCurrency[];
     /** Currently selected payment method */
-    selectedMethod: CryptoPaymentMethod;
-    setSelectedMethod: (method: CryptoPaymentMethod) => void;
+    selectedMethod: CryptoOnrampSourceCurrency | null;
+    setSelectedMethod: (method: CryptoOnrampSourceCurrency) => void;
     /** CAIP-2 → chain display info map (defaults merged with consumer overrides) */
     chains: Record<string, ChainInfo>;
 
@@ -104,13 +99,11 @@ export interface CryptoOnrampContextType {
 }
 
 const defaultContext: CryptoOnrampContextType = {
-    tokens: CRYPTO_ONRAMP_TARGET_TOKENS,
-    tokenSections: undefined,
-    selectedToken: CRYPTO_ONRAMP_TARGET_TOKENS[0]!,
+    tokens: [],
+    selectedToken: null,
     setSelectedToken: () => {},
-    paymentMethods: CRYPTO_PAYMENT_METHODS,
-    methodSections: undefined,
-    selectedMethod: CRYPTO_PAYMENT_METHODS[0]!,
+    paymentMethods: [],
+    selectedMethod: null,
     setSelectedMethod: () => {},
     chains: DEFAULT_CHAINS,
     amount: '',

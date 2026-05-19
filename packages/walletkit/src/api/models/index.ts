@@ -152,6 +152,11 @@ export type {
     CryptoOnrampProviderMetadata,
     CryptoOnrampProviderMetadataOverride,
 } from './crypto-onramp/CryptoOnrampProviderMetadata';
+export type {
+    CryptoOnrampSourceCurrency,
+    CryptoOnrampDestinationCurrency,
+    CryptoOnrampSupportedCurrencies,
+} from './crypto-onramp/CryptoOnrampCurrency';
 
 // Transaction models
 export * from './transactions/Transaction';

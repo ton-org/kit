@@ -7,8 +7,8 @@
  */
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { CryptoOnrampSourceCurrency } from '@ton/appkit';
 
-import type { CryptoPaymentMethod } from '../../../types';
 import type { ChainInfo } from '../utils/chains';
 import { CryptoMethodSelectModal } from './crypto-method-select-modal';
 
@@ -27,9 +27,8 @@ const CHAINS: Record<string, ChainInfo> = {
     },
 };
 
-const METHODS: CryptoPaymentMethod[] = [
+const METHODS: CryptoOnrampSourceCurrency[] = [
     {
-        id: 'usdc-base',
         symbol: 'USDC',
         name: 'USD Coin',
         chain: 'eip155:8453',
@@ -38,7 +37,6 @@ const METHODS: CryptoPaymentMethod[] = [
         logo: 'https://assets.coingecko.com/coins/images/6319/standard/USDC.png?1769615602',
     },
     {
-        id: 'usdt-bsc',
         symbol: 'USDT',
         name: 'Tether',
         chain: 'eip155:56',
@@ -47,12 +45,11 @@ const METHODS: CryptoPaymentMethod[] = [
         logo: 'https://asset.ston.fi/img/EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs/1a87edfee9a28b05578853952e5effb8cc30af1e0fb90043aa2ce19dce490849',
     },
     {
-        id: 'eth-mainnet',
         symbol: 'ETH',
         name: 'Ethereum',
         chain: 'eip155:1',
         decimals: 18,
-        address: '',
+        address: '0x0000000000000000000000000000000000000000',
         logo: 'https://assets.coingecko.com/coins/images/279/standard/ethereum.png',
     },
 ];
@@ -69,17 +66,6 @@ export const Default: Story = {
     args: {
         open: true,
         methods: METHODS,
-        chains: CHAINS,
-        onClose: () => {},
-        onSelect: () => {},
-    },
-};
-
-export const WithSections: Story = {
-    args: {
-        open: true,
-        methods: METHODS,
-        methodSections: [{ title: 'Stablecoins', ids: ['usdc-base', 'usdt-bsc'] }],
         chains: CHAINS,
         onClose: () => {},
         onSelect: () => {},

@@ -34,5 +34,10 @@ export {
     type UseCryptoOnrampStatusParameters,
     type UseCryptoOnrampStatusReturnType,
 } from './hooks/use-crypto-onramp-status';
+export {
+    useCryptoOnrampSupportedCurrencies,
+    type UseCryptoOnrampSupportedCurrenciesParameters,
+    type UseCryptoOnrampSupportedCurrenciesReturnType,
+} from './hooks/use-crypto-onramp-supported-currencies';
 
 export * from './types';

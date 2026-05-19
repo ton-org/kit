@@ -24,6 +24,12 @@ export const mapCryptoOnrampError = (error: unknown): string => {
                 return 'cryptoOnramp.reversedAmountNotSupported';
             case CryptoOnrampError.UNSUPPORTED_SOURCE_CHAIN:
                 return 'cryptoOnramp.unsupportedSourceChain';
+            case CryptoOnrampError.UNSUPPORTED_SOURCE_TOKEN:
+                return 'cryptoOnramp.unsupportedSourceToken';
+            case CryptoOnrampError.UNSUPPORTED_DESTINATION_TOKEN:
+                return 'cryptoOnramp.unsupportedDestinationToken';
+            case CryptoOnrampError.ROUTE_NOT_FOUND:
+                return 'cryptoOnramp.routeNotFound';
             case CryptoOnrampError.INVALID_REFUND_ADDRESS:
                 return 'cryptoOnramp.invalidRefundAddress';
             case CryptoOnrampError.QUOTE_FAILED:
