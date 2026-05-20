@@ -17,4 +17,4 @@ import type { AccountState } from './AccountState';
  * by an `AccountState` with `status: 'non-existing'`. Keys are normalized
  * via `asAddressFriendly`, regardless of the input format.
  */
-export type AccountStates = Record<UserFriendlyAddress, AccountState>;
+export type AccountStates = { [key: UserFriendlyAddress]: AccountState };
