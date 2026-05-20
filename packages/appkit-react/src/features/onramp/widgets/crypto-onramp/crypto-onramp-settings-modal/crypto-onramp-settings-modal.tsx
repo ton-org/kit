@@ -10,6 +10,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { FC } from 'react';
 import type { CryptoOnrampProvider } from '@ton/appkit';
 
+import type { CryptoOnrampProvidersMetadata } from '../crypto-onramp-widget-provider/use-crypto-onramp-providers-with-metadata';
 import { Modal } from '../../../../../components/ui/modal/modal';
 import { Button } from '../../../../../components/ui/button';
 import { OptionSwitcher } from '../../../../../components/shared/option-switcher';
@@ -21,6 +22,8 @@ export interface CryptoOnrampSettingsModalProps {
     onClose: () => void;
     provider: CryptoOnrampProvider | undefined;
     providers: CryptoOnrampProvider[];
+    providersMetadata?: CryptoOnrampProvidersMetadata;
+    isProvidersMetadataLoading?: boolean;
     onProviderChange: (providerId: string) => void;
 }
 
@@ -29,6 +32,8 @@ export const CryptoOnrampSettingsModal: FC<CryptoOnrampSettingsModalProps> = ({
     onClose,
     provider,
     providers,
+    providersMetadata,
+    isProvidersMetadataLoading,
     onProviderChange,
 }) => {
     const { t } = useI18n();
@@ -40,8 +45,12 @@ export const CryptoOnrampSettingsModal: FC<CryptoOnrampSettingsModalProps> = ({
     }, [open, provider?.providerId]);
 
     const providerOptions = useMemo(
-        () => providers.map((p) => ({ value: p.providerId, label: p.getMetadata().name })),
-        [providers],
+        () =>
+            providers.map((p) => ({
+                value: p.providerId,
+                label: providersMetadata?.[p.providerId]?.name ?? p.providerId,
+            })),
+        [providers, providersMetadata],
     );
 
     const handleSave = () => {
@@ -54,7 +63,12 @@ export const CryptoOnrampSettingsModal: FC<CryptoOnrampSettingsModalProps> = ({
             <div className={styles.rows}>
                 <div className={styles.row}>
                     <span className={styles.label}>{t('cryptoOnramp.provider')}</span>
-                    <OptionSwitcher value={stagedProviderId} options={providerOptions} onChange={setStagedProviderId} />
+                    <OptionSwitcher
+                        value={stagedProviderId}
+                        options={providerOptions}
+                        onChange={setStagedProviderId}
+                        loading={isProvidersMetadataLoading && !providersMetadata?.[stagedProviderId ?? '']}
+                    />
                 </div>
             </div>
 

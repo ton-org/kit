@@ -48,8 +48,9 @@ export abstract class CryptoOnrampProvider<
 
     /**
      * Get static metadata for the provider (display name, logo, url).
+     * @returns Promise resolving to provider metadata
      */
-    abstract getMetadata(): CryptoOnrampProviderMetadata;
+    abstract getMetadata(): Promise<CryptoOnrampProviderMetadata>;
 
     /**
      * Get a quote for onramping from another crypto asset into a TON asset

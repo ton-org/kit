@@ -42,7 +42,7 @@ const METHODS: CryptoOnrampSourceCurrency[] = [
         chain: 'eip155:56',
         decimals: 18,
         address: '0x55d398326f99059fF775485246999027B3197955',
-        logo: 'https://asset.ston.fi/img/EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs/1a87edfee9a28b05578853952e5effb8cc30af1e0fb90043aa2ce19dce490849',
+        logo: 'https://cdn.layerswap.io/layerswap/currencies/usdt.png',
     },
     {
         symbol: 'ETH',

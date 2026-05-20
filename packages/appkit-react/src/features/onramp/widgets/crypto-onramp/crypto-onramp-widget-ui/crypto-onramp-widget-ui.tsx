@@ -47,6 +47,8 @@ export const CryptoOnrampWidgetUI: FC<CryptoOnrampWidgetRenderProps> = ({
     presetAmounts,
     provider,
     providers,
+    providersMetadata,
+    isProvidersMetadataLoading,
     setProviderId,
     quote,
     isLoadingQuote,
@@ -81,6 +83,8 @@ export const CryptoOnrampWidgetUI: FC<CryptoOnrampWidgetRenderProps> = ({
         () => tokens.map((c) => ({ ...c, id: c.address, name: c.name ?? c.symbol })),
         [tokens],
     );
+
+    const providerName = provider ? providersMetadata[provider.providerId]?.name : undefined;
 
     const handleContinue = useCallback(() => {
         if (refundAddressMode === 'off') {
@@ -220,7 +224,11 @@ export const CryptoOnrampWidgetUI: FC<CryptoOnrampWidgetRenderProps> = ({
 
                 <InfoBlock.Row>
                     <InfoBlock.Label>{t('cryptoOnramp.provider')}</InfoBlock.Label>
-                    <InfoBlock.Value>{provider?.getMetadata().name ?? ''}</InfoBlock.Value>
+                    {providerName === undefined && isProvidersMetadataLoading ? (
+                        <InfoBlock.ValueSkeleton />
+                    ) : (
+                        <InfoBlock.Value>{providerName ?? ''}</InfoBlock.Value>
+                    )}
                 </InfoBlock.Row>
             </InfoBlock.Container>
 
@@ -271,6 +279,8 @@ export const CryptoOnrampWidgetUI: FC<CryptoOnrampWidgetRenderProps> = ({
                 onClose={() => setIsSettingsOpen(false)}
                 provider={provider}
                 providers={providers}
+                providersMetadata={providersMetadata}
+                isProvidersMetadataLoading={isProvidersMetadataLoading}
                 onProviderChange={setProviderId}
             />
         </div>

@@ -211,14 +211,14 @@ export const DEFAULT_DECENT_SUPPORTED_CURRENCIES: CryptoOnrampSupportedCurrencie
             symbol: 'TON',
             name: 'Toncoin',
             decimals: 9,
-            logo: 'https://pretty-picture-g2.s3.eu-central-1.amazonaws.com/ton_ebae1444e3.svg',
+            logo: `${LS}/ton.png`,
         },
         {
             address: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs',
             symbol: 'USDT',
             name: 'Tether',
             decimals: 6,
-            logo: 'https://pretty-picture-g2.s3.eu-central-1.amazonaws.com/usdt20_9a8c677b99_c67aed2f04.svg',
+            logo: `${LS}/usdt.png`,
         },
     ],
 };

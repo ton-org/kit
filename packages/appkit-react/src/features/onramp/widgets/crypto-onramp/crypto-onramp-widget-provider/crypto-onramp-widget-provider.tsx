@@ -18,6 +18,7 @@ import type { ChainInfo } from '../utils/chains';
 import { DEFAULT_CHAINS } from '../utils/chains';
 import { CryptoOnrampContext } from './crypto-onramp-context';
 import { useCryptoOnrampBalance } from './use-crypto-onramp-balance';
+import { useCryptoOnrampProvidersWithMetadata } from './use-crypto-onramp-providers-with-metadata';
 import { useCryptoOnrampQuoteAndDeposit } from './use-crypto-onramp-quote-and-deposit';
 import { useCryptoOnrampTokenState } from './use-crypto-onramp-token-state';
 import { useCryptoOnrampValidation } from './use-crypto-onramp-validation';
@@ -45,6 +46,8 @@ export const CryptoOnrampWidgetProvider: FC<CryptoOnrampProviderProps> = ({
     const userAddress = useAddress();
     const [provider, setProviderId] = useCryptoOnrampProvider();
     const providers = useCryptoOnrampProviders();
+    const { metadataByProviderId: providersMetadata, isLoading: isProvidersMetadataLoading } =
+        useCryptoOnrampProvidersWithMetadata();
 
     const { data: supportedCurrencies } = useCryptoOnrampSupportedCurrencies({
         providerId: provider?.providerId,
@@ -137,6 +140,8 @@ export const CryptoOnrampWidgetProvider: FC<CryptoOnrampProviderProps> = ({
             presetAmounts: DEFAULT_ONRAMP_PRESETS,
             provider,
             providers,
+            providersMetadata,
+            isProvidersMetadataLoading,
             setProviderId,
             quote,
             isLoadingQuote,
@@ -170,6 +175,8 @@ export const CryptoOnrampWidgetProvider: FC<CryptoOnrampProviderProps> = ({
             convertedAmount,
             provider,
             providers,
+            providersMetadata,
+            isProvidersMetadataLoading,
             setProviderId,
             quote,
             isLoadingQuote,

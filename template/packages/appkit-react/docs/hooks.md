@@ -208,6 +208,12 @@ Hook to get all registered crypto-onramp providers.
 
 %%demo/examples/src/appkit/hooks/onramp#USE_CRYPTO_ONRAMP_PROVIDERS%%
 
+### `useCryptoOnrampProviderMetadata`
+
+Hook to get static metadata for a crypto-onramp provider (display name, logo, url).
+
+%%demo/examples/src/appkit/hooks/onramp#USE_CRYPTO_ONRAMP_PROVIDER_METADATA%%
+
 ## Staking
 
 ### `useStakingProviders`

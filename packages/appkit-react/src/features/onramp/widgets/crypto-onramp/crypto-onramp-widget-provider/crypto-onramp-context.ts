@@ -16,6 +16,7 @@ import type {
     CryptoOnrampStatus,
 } from '@ton/appkit';
 
+import type { CryptoOnrampProvidersMetadata } from './use-crypto-onramp-providers-with-metadata';
 import { DEFAULT_ONRAMP_PRESETS } from '../../../constants';
 import type { ChainInfo } from '../utils/chains';
 import { DEFAULT_CHAINS } from '../utils/chains';
@@ -52,6 +53,10 @@ export interface CryptoOnrampContextType {
     provider: CryptoOnrampProvider | undefined;
     /** All registered crypto-onramp providers */
     providers: CryptoOnrampProvider[];
+    /** Resolved metadata for each provider, keyed by `providerId`. Entry is `undefined` while loading or on error. */
+    providersMetadata: CryptoOnrampProvidersMetadata;
+    /** True while any provider's metadata query is in its first load. */
+    isProvidersMetadataLoading: boolean;
     /** Updates the selected crypto-onramp provider */
     setProviderId: (providerId: string) => void;
 
@@ -115,6 +120,8 @@ const defaultContext: CryptoOnrampContextType = {
 
     provider: undefined,
     providers: [],
+    providersMetadata: {},
+    isProvidersMetadataLoading: false,
     setProviderId: () => {},
 
     quote: null,

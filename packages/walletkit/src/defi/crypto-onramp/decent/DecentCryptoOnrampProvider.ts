@@ -100,7 +100,7 @@ export class DecentCryptoOnrampProvider extends CryptoOnrampProvider<DecentQuote
         return [Network.mainnet()];
     }
 
-    getMetadata() {
+    async getMetadata() {
         return { name: 'Decent', url: 'https://decent.xyz', refundAddressMode: 'required' as const };
     }
 

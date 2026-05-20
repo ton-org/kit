@@ -52,7 +52,7 @@ export const DEFAULT_LAYERSWAP_SUPPORTED_CURRENCIES: CryptoOnrampSupportedCurren
             symbol: 'USDT',
             name: 'Tether',
             decimals: 6,
-            logo: 'https://pretty-picture-g2.s3.eu-central-1.amazonaws.com/usdt20_9a8c677b99_c67aed2f04.svg',
+            logo: 'https://cdn.layerswap.io/layerswap/currencies/usdt.png',
         },
     ],
 };

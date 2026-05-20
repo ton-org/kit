@@ -10,16 +10,21 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { CryptoOnrampProvider } from '@ton/appkit';
 
 import { CryptoOnrampSettingsModal } from './crypto-onramp-settings-modal';
+import type { CryptoOnrampProvidersMetadata } from '../crypto-onramp-widget-provider/use-crypto-onramp-providers-with-metadata';
 
-const makeProvider = (id: string, name: string): CryptoOnrampProvider =>
+const makeProvider = (id: string): CryptoOnrampProvider =>
     ({
         providerId: id,
         type: 'crypto-onramp',
-        getMetadata: () => ({ name }),
     }) as unknown as CryptoOnrampProvider;
 
-const decent = makeProvider('decent', 'Decent');
-const layerswap = makeProvider('layerswap', 'Layerswap');
+const decent = makeProvider('decent');
+const layerswap = makeProvider('layerswap');
+
+const metadata: CryptoOnrampProvidersMetadata = {
+    decent: { name: 'Decent' },
+    layerswap: { name: 'Layerswap' },
+};
 
 const meta: Meta<typeof CryptoOnrampSettingsModal> = {
     title: 'Features/Onramp/Internal/CryptoOnrampSettingsModal',
@@ -34,6 +39,7 @@ export const Default: Story = {
         open: true,
         provider: decent,
         providers: [decent, layerswap],
+        providersMetadata: metadata,
         onClose: () => {},
         onProviderChange: () => {},
     },
@@ -44,6 +50,31 @@ export const SingleProvider: Story = {
         open: true,
         provider: decent,
         providers: [decent],
+        providersMetadata: { decent: metadata.decent },
+        onClose: () => {},
+        onProviderChange: () => {},
+    },
+};
+
+export const MetadataPartiallyLoaded: Story = {
+    args: {
+        open: true,
+        provider: decent,
+        providers: [decent, layerswap],
+        // Only one provider has resolved metadata — the other shows its providerId as fallback.
+        providersMetadata: { decent: metadata.decent },
+        onClose: () => {},
+        onProviderChange: () => {},
+    },
+};
+
+export const MetadataLoading: Story = {
+    args: {
+        open: true,
+        provider: decent,
+        providers: [decent, layerswap],
+        providersMetadata: {},
+        isProvidersMetadataLoading: true,
         onClose: () => {},
         onProviderChange: () => {},
     },

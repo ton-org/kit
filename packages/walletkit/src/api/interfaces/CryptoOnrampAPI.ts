@@ -24,6 +24,13 @@ import type { DefiProvider } from './DefiProvider';
  */
 export interface CryptoOnrampAPI extends DefiManagerAPI<CryptoOnrampProviderInterface> {
     /**
+     * Get static metadata for a crypto onramp provider
+     * @param providerId Provider identifier (optional, uses default if not specified)
+     * @returns A promise that resolves to provider metadata
+     */
+    getMetadata(providerId?: string): Promise<CryptoOnrampProviderMetadata>;
+
+    /**
      * Get a quote for onramping from another crypto asset into a TON asset
      * @param params Quote parameters (source currency/network, target currency, amount)
      * @param providerId Provider identifier (optional, uses default if not specified)
@@ -72,8 +79,9 @@ export interface CryptoOnrampProviderInterface<
 
     /**
      * Get static metadata for the provider (display name, logo, url).
+     * @returns A promise that resolves to provider metadata
      */
-    getMetadata(): CryptoOnrampProviderMetadata;
+    getMetadata(): Promise<CryptoOnrampProviderMetadata>;
 
     /**
      * Get a quote for onramping from another crypto asset into a TON asset

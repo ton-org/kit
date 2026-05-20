@@ -10,6 +10,7 @@ import type { CryptoOnrampAPI, CryptoOnrampProviderInterface } from '../../api/i
 import type {
     CryptoOnrampDeposit,
     CryptoOnrampDepositParams,
+    CryptoOnrampProviderMetadata,
     CryptoOnrampQuote,
     CryptoOnrampQuoteParams,
     CryptoOnrampStatus,
@@ -29,6 +30,22 @@ const log = globalLogger.createChild('CryptoOnrampManager');
  * for crypto-to-TON onramp operations. Providers can be switched dynamically.
  */
 export class CryptoOnrampManager extends DefiManager<CryptoOnrampProviderInterface> implements CryptoOnrampAPI {
+    /**
+     * Get static metadata for a crypto onramp provider
+     * @param providerId - Optional provider id to use
+     */
+    async getMetadata(providerId?: string): Promise<CryptoOnrampProviderMetadata> {
+        const selectedProviderId = providerId || this.defaultProviderId;
+        log.debug('Getting crypto onramp metadata', { providerId: selectedProviderId });
+
+        try {
+            return await this.getProvider(selectedProviderId).getMetadata();
+        } catch (error) {
+            log.error('Failed to get crypto onramp metadata', { error });
+            throw error;
+        }
+    }
+
     /**
      * Get a quote for onramping from another crypto asset into a TON asset
      * @param params - Quote parameters

@@ -252,6 +252,12 @@ Get all registered crypto-onramp providers.
 
 %%demo/examples/src/appkit/actions/onramp#GET_CRYPTO_ONRAMP_PROVIDERS%%
 
+### `getCryptoOnrampProviderMetadata`
+
+Get static metadata for a crypto-onramp provider (display name, logo, url).
+
+%%demo/examples/src/appkit/actions/onramp#GET_CRYPTO_ONRAMP_PROVIDER_METADATA%%
+
 ### `watchCryptoOnrampProviders`
 
 Watch for new crypto-onramp providers registration and default-provider changes.

@@ -12,7 +12,7 @@ import type { CryptoOnrampDestinationCurrency, CryptoOnrampSourceCurrency } from
 import { keepPreviousData } from '@tanstack/react-query';
 
 import { useCreateCryptoOnrampDeposit } from '../../../hooks/use-create-crypto-onramp-deposit';
-import { useCryptoOnrampProviderById } from '../../../hooks/use-crypto-onramp-provider-by-id';
+import { useCryptoOnrampProviderMetadata } from '../../../hooks/use-crypto-onramp-provider-metadata';
 import { useCryptoOnrampQuote } from '../../../hooks/use-crypto-onramp-quote';
 import { useCryptoOnrampStatus } from '../../../hooks/use-crypto-onramp-status';
 import { useDebounceValue } from '../../../../../hooks/use-debounce-value';
@@ -72,8 +72,10 @@ export const useCryptoOnrampQuoteAndDeposit = ({
         },
     });
 
-    const selectedProvider = useCryptoOnrampProviderById({ id: providerId });
-    const selectedProviderMetadata = selectedProvider?.getMetadata();
+    const { data: selectedProviderMetadata } = useCryptoOnrampProviderMetadata({
+        providerId,
+        query: { enabled: !!providerId },
+    });
     const refundAddressMode = selectedProviderMetadata?.refundAddressMode ?? 'off';
     const isReversedAmountSupported = selectedProviderMetadata?.isReversedAmountSupported ?? true;
 
