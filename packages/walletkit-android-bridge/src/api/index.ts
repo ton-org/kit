@@ -100,12 +100,16 @@ export const api = {
 
     createTonStakersStakingProvider: staking.createTonStakersStakingProvider,
     registerStakingProvider: staking.registerStakingProvider,
+    removeStakingProvider: staking.removeStakingProvider,
     setDefaultStakingProvider: staking.setDefaultStakingProvider,
+    getRegisteredStakingProviders: staking.getRegisteredStakingProviders,
+    hasStakingProvider: staking.hasStakingProvider,
     getStakingQuote: staking.getStakingQuote,
     buildStakeTransaction: staking.buildStakeTransaction,
     getStakedBalance: staking.getStakedBalance,
     getStakingProviderInfo: staking.getStakingProviderInfo,
     getStakingProviderMetadata: staking.getStakingProviderMetadata,
+    getStakingProviderSupportedNetworks: staking.getStakingProviderSupportedNetworks,
     registerKotlinStakingProvider: staking.registerKotlinStakingProvider,
 
     createOmnistonSwapProvider: swap.createOmnistonSwapProvider,

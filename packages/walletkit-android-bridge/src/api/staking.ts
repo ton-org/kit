@@ -27,8 +27,7 @@ import { get, release, retainWithId } from '../utils/registry';
 
 /**
  * JS-side proxy that implements [StakingProviderInterface] by forwarding every call to a
- * Kotlin-implemented `ITONStakingProvider` via reverse-RPC. Mirrors the streaming
- * `ProxyStreamingProvider` pattern.
+ * Kotlin-implemented `ITONStakingProvider` via reverse-RPC.
  *
  * `getStakingProviderMetadata` and `getSupportedNetworks` are synchronous per the interface
  * contract, so both values are passed in at registration and cached on this instance.
@@ -101,9 +100,26 @@ export async function registerStakingProvider(args: { providerId: string }) {
     instance.staking.registerProvider(provider);
 }
 
+export async function removeStakingProvider(args: { providerId: string }): Promise<void> {
+    const instance = await getKit();
+    if (!instance.staking.hasProvider(args.providerId)) return;
+    instance.staking.removeProvider(instance.staking.getProvider(args.providerId));
+}
+
 export async function setDefaultStakingProvider(args: { providerId: string }) {
     const instance = await getKit();
     instance.staking.setDefaultProvider(args.providerId);
+}
+
+export async function getRegisteredStakingProviders(): Promise<{ providerIds: string[] }> {
+    const instance = await getKit();
+    const providerIds = instance.staking.getProviders().map((provider) => provider.providerId);
+    return { providerIds };
+}
+
+export async function hasStakingProvider(args: { providerId: string }): Promise<{ result: boolean }> {
+    const instance = await getKit();
+    return { result: instance.staking.hasProvider(args.providerId) };
 }
 
 export async function getStakingQuote(args: StakingQuoteParams & { providerId?: string }) {
@@ -137,6 +153,14 @@ export async function getStakingProviderMetadata(args: { network?: { chainId: st
     return instance.staking.getStakingProviderMetadata(args.network, args.providerId);
 }
 
+export async function getStakingProviderSupportedNetworks(args: {
+    providerId: string;
+}): Promise<{ networks: Network[] }> {
+    const instance = await getKit();
+    const networks = instance.staking.getProvider(args.providerId).getSupportedNetworks();
+    return { networks };
+}
+
 /**
  * Tell the JS staking manager that a Kotlin-implemented provider is available.
  * A [ProxyStakingProvider] is created and registered; all subsequent staking operations on it
@@ -152,7 +176,6 @@ export async function registerKotlinStakingProvider(args: {
     supportedNetworks: Network[];
 }) {
     const instance = await getKit();
-    // Replace any previous proxy with the same id
     const previous = get<ProxyStakingProvider>(args.providerId);
     if (previous instanceof ProxyStakingProvider) {
         release(args.providerId);
