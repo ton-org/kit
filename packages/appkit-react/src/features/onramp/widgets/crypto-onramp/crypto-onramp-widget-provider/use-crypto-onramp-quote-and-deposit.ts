@@ -90,11 +90,13 @@ export const useCryptoOnrampQuoteAndDeposit = ({
     });
 
     const convertedAmount = useMemo(() => {
-        if (!quoteQuery.data) return '';
+        // `keepPreviousData` keeps quoteQuery.data after the user clears the input, so we must
+        // gate on the current amount to avoid showing a stale conversion.
+        if (!quoteQuery.data || !(parseFloat(amount) > 0)) return '';
         const rawAmount = amountInputMode === 'token' ? quoteQuery.data.sourceAmount : quoteQuery.data.targetAmount;
         const decimals = amountInputMode === 'token' ? (selectedMethod?.decimals ?? 0) : (selectedToken?.decimals ?? 0);
         return formatUnits(rawAmount, decimals);
-    }, [quoteQuery.data, amountInputMode, selectedMethod, selectedToken]);
+    }, [quoteQuery.data, amount, amountInputMode, selectedMethod, selectedToken]);
 
     const depositAmount = useMemo(() => {
         if (createDepositMutation.data && selectedMethod) {
