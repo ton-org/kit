@@ -2,6 +2,46 @@
   margin-bottom: 16px;
 }
 
+.filters {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin-bottom: 12px;
+}
+
+.filters::-webkit-scrollbar {
+  display: none;
+}
+
+.chip {
+  composes: labelMedium from "../../../styles/typography.module.css";
+
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: none;
+  border-radius: var(--ta-border-radius-2xl);
+  background-color: var(--ta-color-background-secondary);
+  color: var(--ta-color-text);
+  cursor: pointer;
+  flex-shrink: 0;
+  white-space: nowrap;
+  transition: background-color 0.2s;
+}
+
+.chip[data-active] {
+  background-color: var(--ta-color-background-tertiary);
+}
+
+.chipLogo {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
 .body {
   overflow-y: hidden;
 }

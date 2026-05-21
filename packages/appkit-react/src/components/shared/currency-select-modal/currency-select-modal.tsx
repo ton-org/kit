@@ -71,6 +71,59 @@ export const CurrencySelectListContainer: FC<CurrencySelectListContainerProps> =
     );
 };
 
+export interface CurrencySelectFilterOption {
+    id: string;
+    label: string;
+    logo?: string;
+}
+
+export interface CurrencySelectFiltersProps {
+    options: CurrencySelectFilterOption[];
+    /** Currently active filter id. `null` means the implicit "All" chip is selected. */
+    value: string | null;
+    onChange: (id: string | null) => void;
+    /** Label for the leading "All" chip — passed in so callers control i18n. */
+    allLabel: string;
+    className?: string;
+}
+
+export const CurrencySelectFilters: FC<CurrencySelectFiltersProps> = ({
+    options,
+    value,
+    onChange,
+    allLabel,
+    className,
+}) => {
+    return (
+        <div className={clsx(styles.filters, className)} role="tablist">
+            <button
+                type="button"
+                role="tab"
+                aria-selected={value === null}
+                data-active={value === null ? '' : undefined}
+                className={styles.chip}
+                onClick={() => onChange(null)}
+            >
+                {allLabel}
+            </button>
+            {options.map((opt) => (
+                <button
+                    type="button"
+                    role="tab"
+                    aria-selected={value === opt.id}
+                    data-active={value === opt.id ? '' : undefined}
+                    className={styles.chip}
+                    key={opt.id}
+                    onClick={() => onChange(opt.id)}
+                >
+                    {opt.logo && <img src={opt.logo} alt="" className={styles.chipLogo} />}
+                    <span>{opt.label}</span>
+                </button>
+            ))}
+        </div>
+    );
+};
+
 export const CurrencySelectSectionHeader: FC<ComponentProps<'p'>> = ({ className, children, ...props }) => (
     <p className={clsx(styles.sectionHeader, className)} {...props}>
         {children}
@@ -90,6 +143,7 @@ export const CurrencySelectModal: FC<ModalProps> = ({ className, ...props }) => 
 export const CurrencySelect = {
     Modal: CurrencySelectModal,
     Search: CurrencySelectSearch,
+    Filters: CurrencySelectFilters,
     ListContainer: CurrencySelectListContainer,
     SectionHeader: CurrencySelectSectionHeader,
     Section: CurrencySelectSection,

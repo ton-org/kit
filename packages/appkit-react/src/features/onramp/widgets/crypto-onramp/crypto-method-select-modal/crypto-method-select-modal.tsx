@@ -11,6 +11,7 @@ import type { FC } from 'react';
 import type { CryptoOnrampSourceCurrency } from '@ton/appkit';
 
 import { CurrencySelect } from '../../../../../components/shared/currency-select-modal';
+import type { CurrencySelectFilterOption } from '../../../../../components/shared/currency-select-modal';
 import { LogoWithNetwork } from '../../../../../components/ui/logo-with-network';
 import { CurrencyItem } from '../../../../../components/shared/currency-item';
 import { useI18n } from '../../../../settings/hooks/use-i18n';
@@ -51,11 +52,24 @@ export const CryptoMethodSelectModal: FC<CryptoMethodSelectModalProps> = ({
 }) => {
     const { t } = useI18n();
     const [search, setSearch] = useState('');
+    const [chainFilter, setChainFilter] = useState<string | null>(null);
 
-    const displayMethods = useMemo(
-        () => (search ? filterMethods(methods, search, chains) : methods),
-        [methods, chains, search],
-    );
+    const chainFilterOptions = useMemo<CurrencySelectFilterOption[]>(() => {
+        const seen = new Set<string>();
+        const result: CurrencySelectFilterOption[] = [];
+        for (const m of methods) {
+            if (seen.has(m.chain)) continue;
+            seen.add(m.chain);
+            const info = getChainInfo(m.chain, chains);
+            result.push({ id: m.chain, label: info.name, logo: info.logo });
+        }
+        return result;
+    }, [methods, chains]);
+
+    const displayMethods = useMemo(() => {
+        const byChain = chainFilter ? methods.filter((m) => m.chain === chainFilter) : methods;
+        return search ? filterMethods(byChain, search, chains) : byChain;
+    }, [methods, chains, search, chainFilter]);
 
     const isEmpty = displayMethods.length === 0;
 
@@ -63,12 +77,14 @@ export const CryptoMethodSelectModal: FC<CryptoMethodSelectModalProps> = ({
         onSelect(method);
         onClose();
         setSearch('');
+        setChainFilter(null);
     };
 
     const handleOpenChange = (isOpen: boolean) => {
         if (!isOpen) {
             onClose();
             setSearch('');
+            setChainFilter(null);
         }
     };
 
@@ -79,6 +95,15 @@ export const CryptoMethodSelectModal: FC<CryptoMethodSelectModalProps> = ({
                 onSearchChange={setSearch}
                 placeholder={t('cryptoOnramp.searchMethod')}
             />
+
+            {chainFilterOptions.length > 1 && (
+                <CurrencySelect.Filters
+                    options={chainFilterOptions}
+                    value={chainFilter}
+                    onChange={setChainFilter}
+                    allLabel={t('cryptoOnramp.allNetworks')}
+                />
+            )}
 
             <CurrencySelect.ListContainer isEmpty={isEmpty}>
                 <CurrencySelect.Section>
