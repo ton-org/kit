@@ -76,18 +76,34 @@ export const isErrorResponse = (body: unknown): body is LayerswapErrorResponse =
 };
 
 /**
- * Translate a Layerswap-specific API error code into a provider-agnostic CryptoOnrampError code.
- * Falls back to the original code when there is no known mapping.
+ * Translate a Layerswap-specific API error into a provider-agnostic CryptoOnrampError code.
+ *
+ * Layerswap reuses `VALIDATION_ERROR` for unsupported source/destination tokens — the only
+ * differentiator is the network name in the message. Source/destination is disambiguated by
+ * checking whether the message references {@link LAYERSWAP_DESTINATION_NETWORK} (TON). When
+ * the message shape changes, the parser falls back to the caller's fallback code.
  */
 export const mapLayerswapErrorCode = (
     apiCode: string | undefined,
+    apiMessage: string | undefined,
     fallback: CryptoOnrampErrorCode,
 ): CryptoOnrampErrorCode => {
     switch (apiCode) {
         case 'ROUTE_NOT_FOUND_ERROR':
             return CryptoOnrampErrorCode.RouteNotFound;
+        case 'GREATER_THAN_MAX_ERROR':
+            return CryptoOnrampErrorCode.AmountTooLarge;
+        case 'LESS_THAN_MIN_ERROR':
+            return CryptoOnrampErrorCode.AmountTooSmall;
+        case 'VALIDATION_ERROR':
+            if (apiMessage && /is not supported on/.test(apiMessage)) {
+                return apiMessage.includes(`'${LAYERSWAP_DESTINATION_NETWORK}'`)
+                    ? CryptoOnrampErrorCode.UnsupportedDestinationToken
+                    : CryptoOnrampErrorCode.UnsupportedSourceToken;
+            }
+            return fallback;
         default:
-            return (apiCode as CryptoOnrampErrorCode) ?? fallback;
+            return fallback;
     }
 };
 

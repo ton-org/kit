@@ -18,7 +18,7 @@ export const STORY_TOKENS: AppkitUIToken[] = [
         decimals: 9,
         address: 'ton',
         network: Network.mainnet(),
-        logo: 'https://cdn.layerswap.io/layerswap/currencies/ton.png',
+        logo: 'https://cdn.layerswap.io/layerswap/networks/ton_mainnet.png',
     },
     {
         id: 'usdt',

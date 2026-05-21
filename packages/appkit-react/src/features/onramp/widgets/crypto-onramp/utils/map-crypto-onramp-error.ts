@@ -30,14 +30,16 @@ export const mapCryptoOnrampError = (error: unknown): string => {
                 return 'cryptoOnramp.unsupportedDestinationToken';
             case CryptoOnrampErrorCode.RouteNotFound:
                 return 'cryptoOnramp.routeNotFound';
+            case CryptoOnrampErrorCode.AmountTooLarge:
+                return 'cryptoOnramp.amountTooLarge';
+            case CryptoOnrampErrorCode.AmountTooSmall:
+                return 'cryptoOnramp.amountTooSmall';
             case CryptoOnrampErrorCode.InvalidRefundAddress:
                 return 'cryptoOnramp.invalidRefundAddress';
             case CryptoOnrampErrorCode.QuoteFailed:
                 return 'cryptoOnramp.quoteError';
             case CryptoOnrampErrorCode.ProviderError:
                 return 'cryptoOnramp.providerError';
-            case CryptoOnrampErrorCode.DepositFailed:
-                return 'cryptoOnramp.depositFailed';
         }
     }
 

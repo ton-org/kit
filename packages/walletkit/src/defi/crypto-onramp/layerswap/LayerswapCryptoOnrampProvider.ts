@@ -183,7 +183,7 @@ export class LayerswapCryptoOnrampProvider extends CryptoOnrampProvider<undefine
             const err = isErrorResponse(json) ? json.error : undefined;
             throw new CryptoOnrampError(
                 err?.message ?? `Layerswap create swap failed (HTTP ${response.status})`,
-                mapLayerswapErrorCode(err?.code, CryptoOnrampErrorCode.QuoteFailed),
+                mapLayerswapErrorCode(err?.code, err?.message, CryptoOnrampErrorCode.QuoteFailed),
                 err ?? { status: response.status },
             );
         }
@@ -296,7 +296,7 @@ export class LayerswapCryptoOnrampProvider extends CryptoOnrampProvider<undefine
             const err = isErrorResponse(json) ? json.error : undefined;
             throw new CryptoOnrampError(
                 err?.message ?? `Layerswap get swap failed (HTTP ${response.status})`,
-                mapLayerswapErrorCode(err?.code, CryptoOnrampErrorCode.ProviderError),
+                mapLayerswapErrorCode(err?.code, err?.message, CryptoOnrampErrorCode.ProviderError),
                 err ?? { status: response.status },
             );
         }
@@ -368,7 +368,7 @@ export class LayerswapCryptoOnrampProvider extends CryptoOnrampProvider<undefine
             const err = isErrorResponse(json) ? json.error : undefined;
             throw new CryptoOnrampError(
                 err?.message ?? `Layerswap /sources failed (HTTP ${response.status})`,
-                mapLayerswapErrorCode(err?.code, CryptoOnrampErrorCode.ProviderError),
+                mapLayerswapErrorCode(err?.code, err?.message, CryptoOnrampErrorCode.ProviderError),
                 err ?? { status: response.status },
             );
         }

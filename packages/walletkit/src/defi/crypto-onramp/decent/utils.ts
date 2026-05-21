@@ -8,6 +8,7 @@
 
 import type { CryptoOnrampStatus, CryptoOnrampSupportedCurrencies } from '../../../api/models';
 import { Caip2ByNetwork } from '../caip2';
+import { CryptoOnrampErrorCode } from '../errors';
 import type { DecentErrorResponse } from './types';
 
 const EVM_ADDRESS_REGEX = /^(0x)?[0-9a-fA-F]{40}$/;
@@ -221,7 +222,7 @@ export const DEFAULT_DECENT_SUPPORTED_CURRENCIES: CryptoOnrampSupportedCurrencie
             symbol: 'TON',
             name: 'Toncoin',
             decimals: 9,
-            logo: `${LS}/ton.png`,
+            logo: 'https://cdn.layerswap.io/layerswap/networks/ton_mainnet.png',
         },
         {
             address: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs',
@@ -231,6 +232,28 @@ export const DEFAULT_DECENT_SUPPORTED_CURRENCIES: CryptoOnrampSupportedCurrencie
             logo: `${LS}/usdt.png`,
         },
     ],
+};
+
+/**
+ * Translate a Decent-specific API error code into a provider-agnostic CryptoOnrampError code.
+ * Falls back to the original code when there is no known mapping.
+ */
+export const mapDecentErrorCode = (
+    apiCode: string | undefined,
+    fallback: CryptoOnrampErrorCode,
+): CryptoOnrampErrorCode => {
+    switch (apiCode) {
+        case 'AMOUNT_TOO_HIGH':
+            return CryptoOnrampErrorCode.AmountTooLarge;
+        case 'AMOUNT_TOO_LOW':
+            return CryptoOnrampErrorCode.AmountTooSmall;
+        case 'INVALID_SOURCE_TOKEN':
+            return CryptoOnrampErrorCode.UnsupportedSourceToken;
+        case 'INVALID_DESTINATION_TOKEN':
+            return CryptoOnrampErrorCode.UnsupportedDestinationToken;
+        default:
+            return fallback;
+    }
 };
 
 export const isErrorResponse = (body: unknown): body is DecentErrorResponse => {

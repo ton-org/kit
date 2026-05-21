@@ -25,6 +25,7 @@ import {
     DEFAULT_DECENT_SUPPORTED_CURRENCIES,
     isErrorResponse,
     isEvmAddress,
+    mapDecentErrorCode,
     mapStatus,
 } from './utils';
 import type { DecentChainConfig } from './utils';
@@ -180,7 +181,7 @@ export class DecentCryptoOnrampProvider extends CryptoOnrampProvider<DecentQuote
             const err = isErrorResponse(body) ? body.error : undefined;
             throw new CryptoOnrampError(
                 err?.message ?? `Decent getAction failed (HTTP ${response.status})`,
-                (err?.code as CryptoOnrampErrorCode) ?? CryptoOnrampErrorCode.QuoteFailed,
+                mapDecentErrorCode(err?.code, CryptoOnrampErrorCode.QuoteFailed),
                 err ?? { status: response.status },
             );
         }
@@ -301,7 +302,7 @@ export class DecentCryptoOnrampProvider extends CryptoOnrampProvider<DecentQuote
 
             throw new CryptoOnrampError(
                 err?.message ?? `Decent getStatus failed (HTTP ${response.status})`,
-                (err?.code as CryptoOnrampErrorCode) ?? CryptoOnrampErrorCode.ProviderError,
+                mapDecentErrorCode(err?.code, CryptoOnrampErrorCode.ProviderError),
                 err ?? { status: response.status },
             );
         }
