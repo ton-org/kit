@@ -159,7 +159,7 @@ export const CryptoOnrampWidgetUI: FC<CryptoOnrampWidgetRenderProps> = ({
                         className={styles.input}
                         value={amount}
                         onValueChange={setAmount}
-                        disabled={!isWalletConnected || isSelectionIncomplete}
+                        disabled={isSelectionIncomplete}
                         ticker={amountInputMode === 'token' ? selectedToken?.symbol : selectedMethod?.symbol}
                     />
                 )}
