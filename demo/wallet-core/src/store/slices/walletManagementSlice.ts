@@ -579,7 +579,14 @@ export const createWalletManagementSlice =
             if (!network) return;
 
             const streaming = state.walletCore.walletKit?.streaming;
+
             if (!streaming) return;
+            if (!streaming.hasProvider(network)) {
+                log.info(
+                    `No streaming provider registered for network ${network.chainId}; skipping WebSocket streaming`,
+                );
+                return;
+            }
 
             activeStreamingUnwatchers.forEach((unwatch) => unwatch());
             activeStreamingUnwatchers = [];
