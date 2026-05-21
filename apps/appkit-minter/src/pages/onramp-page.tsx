@@ -15,9 +15,7 @@ export const CryptoOnrampPage: React.FC = () => {
     return (
         <Layout title="Crypto Onramp">
             <div className="w-full max-w-[434px] mx-auto flex justify-center items-center">
-                <CryptoOnrampWidget
-                    defaultDestination={{ address: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs' }}
-                />
+                <CryptoOnrampWidget />
             </div>
         </Layout>
     );

@@ -8,6 +8,7 @@
 
 import { useEffect, useMemo } from 'react';
 import type { FC, PropsWithChildren } from 'react';
+import type { CryptoOnrampDestinationCurrency, CryptoOnrampSourceCurrency } from '@ton/appkit';
 
 import { useAddress } from '../../../../wallets';
 import { useCryptoOnrampProvider } from '../../../hooks/use-crypto-onramp-provider';
@@ -17,6 +18,7 @@ import { DEFAULT_ONRAMP_PRESETS } from '../../../constants';
 import type { ChainInfo } from '../utils/chains';
 import { DEFAULT_CHAINS } from '../utils/chains';
 import { CryptoOnrampContext } from './crypto-onramp-context';
+import { DEFAULT_DESTINATION_CURRENCY, DEFAULT_SOURCE_CURRENCY } from './defaults';
 import { useCryptoOnrampBalance } from './use-crypto-onramp-balance';
 import { useCryptoOnrampProvidersWithMetadata } from './use-crypto-onramp-providers-with-metadata';
 import { useCryptoOnrampQuoteAndDeposit } from './use-crypto-onramp-quote-and-deposit';
@@ -30,17 +32,25 @@ export interface CryptoOnrampProviderProps extends PropsWithChildren {
      * override or add (e.g. `{ 'eip155:42161': { name: 'Arbitrum', logo: '...' } }`).
      */
     chains?: Record<string, ChainInfo>;
-    /** Pre-select a destination (TON-side) token by address. */
-    defaultDestination?: { address: string };
-    /** Pre-select a source currency by chain + address. */
-    defaultSource?: { chain: string; address: string };
+    /**
+     * Initial destination (TON-side) currency. Rendered immediately on first paint, so the
+     * full object — including `symbol`, `decimals`, and `logo` — must be provided. Defaults
+     * to USDT on TON when omitted.
+     */
+    defaultDestination?: CryptoOnrampDestinationCurrency;
+    /**
+     * Initial source currency. Rendered immediately on first paint, so the full object —
+     * including `chain`, `symbol`, `decimals`, and `logo` — must be provided. Defaults to
+     * USDT0 on Arbitrum when omitted.
+     */
+    defaultSource?: CryptoOnrampSourceCurrency;
 }
 
 export const CryptoOnrampWidgetProvider: FC<CryptoOnrampProviderProps> = ({
     children,
     chains: chainsOverride,
-    defaultDestination,
-    defaultSource,
+    defaultDestination = DEFAULT_DESTINATION_CURRENCY,
+    defaultSource = DEFAULT_SOURCE_CURRENCY,
 }) => {
     // 2. Queries and external readers
     const userAddress = useAddress();
@@ -67,7 +77,7 @@ export const CryptoOnrampWidgetProvider: FC<CryptoOnrampProviderProps> = ({
         setAmount,
         amountInputMode,
         setAmountInputMode,
-    } = useCryptoOnrampTokenState({ tokens, paymentMethods, defaultDestination, defaultSource });
+    } = useCryptoOnrampTokenState({ defaultDestination, defaultSource });
 
     const { targetBalance, isLoadingTargetBalance } = useCryptoOnrampBalance({ selectedToken, userAddress });
 

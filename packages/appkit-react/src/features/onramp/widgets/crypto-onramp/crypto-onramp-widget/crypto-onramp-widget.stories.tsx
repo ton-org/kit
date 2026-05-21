@@ -20,7 +20,5 @@ export default meta;
 type Story = StoryObj<typeof CryptoOnrampWidget>;
 
 export const Default: Story = {
-    args: {
-        defaultDestination: { address: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs' },
-    },
+    args: {},
 };
