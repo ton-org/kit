@@ -9,6 +9,7 @@
 import type {
     ApiClient,
     Hex,
+    ManifestFetchResult,
     Network,
     TonWalletKitOptions,
     WalletSigner,
@@ -71,6 +72,8 @@ export interface SwiftWalletKitConfiguration extends ReusedTonWalletKitOptions {
 }
 
 export type SwiftBridgeTransport = (data: { sessionID: string; messageID: string; message: unknown }) => void;
+
+export type SwiftFetchManifest = (manifestUrl: string) => Promise<ManifestFetchResult>;
 
 export interface SwiftWalletKit {
     isReady(): boolean;

@@ -69,6 +69,7 @@ import { SwiftTONConnectSessionsManager } from './SwiftTONConnectSessionsManager
 import type {
     SwiftApiClient,
     SwiftBridgeTransport,
+    SwiftFetchManifest,
     SwiftWalletKit,
     SwiftWalletKitConfiguration,
     SwiftWalletSigner,
@@ -83,11 +84,12 @@ declare global {
             bridgeTransport?: SwiftBridgeTransport,
             sessionManager?: TONConnectSessionManager,
             apiClients?: SwiftApiClient[],
+            fetchManifest?: SwiftFetchManifest,
         ) => Promise<void>;
     }
 }
 
-window.initWalletKit = async (configuration, storage, bridgeTransport, sessionManager, apiClients) => {
+window.initWalletKit = async (configuration, storage, bridgeTransport, sessionManager, apiClients, fetchManifest) => {
     console.log('🚀 WalletKit iOS Bridge starting...');
 
     console.log('Creating WalletKit instance with configuration', configuration);
@@ -159,6 +161,7 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, sessionMa
         storage: storage ? new SwiftStorageAdapter(storage) : new MemoryStorageAdapter({}),
         dev: configuration.dev,
         analytics: configuration.analytics,
+        fetchManifest: fetchManifest,
     });
 
     console.log('🚀 WalletKit iOS Bridge starting...');
