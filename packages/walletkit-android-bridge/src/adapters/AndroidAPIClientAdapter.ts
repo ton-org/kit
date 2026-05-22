@@ -40,25 +40,17 @@ import { error } from '../utils/logger';
 
 type AndroidAPIClientBridge = {
     apiGetNetworks: () => string;
-    apiSendBoc: (networkJson: string, boc: string) => string;
-    apiRunGetMethod: (
-        networkJson: string,
-        address: string,
-        method: string,
-        stackJson: string | null,
-        seqno: number,
-    ) => string;
-    apiGetBalance: (networkJson: string, address: string, seqno: number) => string;
-    apiGetMasterchainInfo: (networkJson: string) => string;
-    apiNftItemsByAddress: (networkJson: string, requestJson: string) => string;
-    apiNftItemsByOwner: (networkJson: string, requestJson: string) => string;
-    // ignoreSignature: -1 = missing, 0 = false, 1 = true
-    apiFetchEmulation: (networkJson: string, messageBoc: string, ignoreSignature: number) => string;
-    // seqno: -1 represents a missing optional
-    apiAccountState: (networkJson: string, address: string, seqno: number) => string;
-    apiAccountStates: (networkJson: string, addressesJson: string) => string;
-    apiResolveDnsWallet: (networkJson: string, domain: string) => string | undefined;
-    apiBackResolveDnsWallet: (networkJson: string, address: string) => string | undefined;
+    apiSendBoc: (paramsJson: string) => string;
+    apiRunGetMethod: (paramsJson: string) => string;
+    apiGetBalance: (paramsJson: string) => string;
+    apiGetMasterchainInfo: (paramsJson: string) => string;
+    apiNftItemsByAddress: (paramsJson: string) => string;
+    apiNftItemsByOwner: (paramsJson: string) => string;
+    apiFetchEmulation: (paramsJson: string) => string;
+    apiAccountState: (paramsJson: string) => string;
+    apiAccountStates: (paramsJson: string) => string;
+    apiResolveDnsWallet: (paramsJson: string) => string | undefined;
+    apiBackResolveDnsWallet: (paramsJson: string) => string | undefined;
 };
 
 type AndroidWindow = Window & {
@@ -114,9 +106,7 @@ export class AndroidAPIClientAdapter implements ApiClient {
 
     async sendBoc(boc: Base64String): Promise<string> {
         try {
-            const networkJson = JSON.stringify(this.network);
-            const result = this.androidBridge.apiSendBoc(networkJson, boc);
-            return result;
+            return this.androidBridge.apiSendBoc(JSON.stringify({ network: this.network, boc }));
         } catch (err) {
             error('[AndroidAPIClientAdapter] sendBoc failed:', err);
             throw err;
@@ -130,12 +120,8 @@ export class AndroidAPIClientAdapter implements ApiClient {
         seqno?: number,
     ): Promise<GetMethodResult> {
         try {
-            const networkJson = JSON.stringify(this.network);
-            const stackJson = stack ? JSON.stringify(stack) : null;
-            const seqnoArg = seqno ?? -1; // Use -1 to represent null
-            const resultJson = this.androidBridge.apiRunGetMethod(networkJson, address, method, stackJson, seqnoArg);
-            const result = JSON.parse(resultJson) as GetMethodResult;
-            return result;
+            const params = JSON.stringify({ network: this.network, address, method, stack, seqno });
+            return JSON.parse(this.androidBridge.apiRunGetMethod(params)) as GetMethodResult;
         } catch (err) {
             error('[AndroidAPIClientAdapter] runGetMethod failed:', err);
             throw err;
@@ -144,9 +130,8 @@ export class AndroidAPIClientAdapter implements ApiClient {
 
     async nftItemsByAddress(request: NFTsRequest): Promise<NFTsResponse> {
         try {
-            const networkJson = JSON.stringify(this.network);
-            const result = this.androidBridge.apiNftItemsByAddress(networkJson, JSON.stringify(request));
-            return JSON.parse(result) as NFTsResponse;
+            const params = JSON.stringify({ network: this.network, request });
+            return JSON.parse(this.androidBridge.apiNftItemsByAddress(params)) as NFTsResponse;
         } catch (err) {
             error('[AndroidAPIClientAdapter] nftItemsByAddress failed:', err);
             throw err;
@@ -155,9 +140,8 @@ export class AndroidAPIClientAdapter implements ApiClient {
 
     async nftItemsByOwner(request: UserNFTsRequest): Promise<NFTsResponse> {
         try {
-            const networkJson = JSON.stringify(this.network);
-            const result = this.androidBridge.apiNftItemsByOwner(networkJson, JSON.stringify(request));
-            return JSON.parse(result) as NFTsResponse;
+            const params = JSON.stringify({ network: this.network, request });
+            return JSON.parse(this.androidBridge.apiNftItemsByOwner(params)) as NFTsResponse;
         } catch (err) {
             error('[AndroidAPIClientAdapter] nftItemsByOwner failed:', err);
             throw err;
@@ -166,11 +150,8 @@ export class AndroidAPIClientAdapter implements ApiClient {
 
     async fetchEmulation(messageBoc: Base64String, ignoreSignature?: boolean): Promise<EmulationResult> {
         try {
-            const networkJson = JSON.stringify(this.network);
-            // -1 = missing, 0 = false, 1 = true (boolean can't cross JavascriptInterface cleanly).
-            const flag = ignoreSignature === undefined ? -1 : ignoreSignature ? 1 : 0;
-            const result = this.androidBridge.apiFetchEmulation(networkJson, messageBoc, flag);
-            return JSON.parse(result) as EmulationResult;
+            const params = JSON.stringify({ network: this.network, messageBoc, ignoreSignature });
+            return JSON.parse(this.androidBridge.apiFetchEmulation(params)) as EmulationResult;
         } catch (err) {
             error('[AndroidAPIClientAdapter] fetchEmulation failed:', err);
             throw err;
@@ -179,10 +160,8 @@ export class AndroidAPIClientAdapter implements ApiClient {
 
     async getAccountState(address: UserFriendlyAddress, seqno?: number): Promise<AccountState> {
         try {
-            const networkJson = JSON.stringify(this.network);
-            const seqnoArg = seqno ?? -1;
-            const result = this.androidBridge.apiAccountState(networkJson, address, seqnoArg);
-            return JSON.parse(result) as AccountState;
+            const params = JSON.stringify({ network: this.network, address, seqno });
+            return JSON.parse(this.androidBridge.apiAccountState(params)) as AccountState;
         } catch (err) {
             error('[AndroidAPIClientAdapter] getAccountState failed:', err);
             throw err;
@@ -191,9 +170,8 @@ export class AndroidAPIClientAdapter implements ApiClient {
 
     async getAccountStates(addresses: UserFriendlyAddress[]): Promise<AccountStates> {
         try {
-            const networkJson = JSON.stringify(this.network);
-            const result = this.androidBridge.apiAccountStates(networkJson, JSON.stringify(addresses));
-            return JSON.parse(result) as AccountStates;
+            const params = JSON.stringify({ network: this.network, addresses });
+            return JSON.parse(this.androidBridge.apiAccountStates(params)) as AccountStates;
         } catch (err) {
             error('[AndroidAPIClientAdapter] getAccountStates failed:', err);
             throw err;
@@ -202,11 +180,8 @@ export class AndroidAPIClientAdapter implements ApiClient {
 
     async getBalance(address: UserFriendlyAddress, seqno?: number): Promise<TokenAmount> {
         try {
-            const networkJson = JSON.stringify(this.network);
-            // -1 represents a missing optional seqno (JS bridge can't pass `null` cleanly).
-            const seqnoArg = seqno ?? -1;
-            const result = this.androidBridge.apiGetBalance(networkJson, address, seqnoArg);
-            return result;
+            const params = JSON.stringify({ network: this.network, address, seqno });
+            return this.androidBridge.apiGetBalance(params);
         } catch (err) {
             error('[AndroidAPIClientAdapter] getBalance failed:', err);
             throw err;
@@ -235,8 +210,8 @@ export class AndroidAPIClientAdapter implements ApiClient {
 
     async resolveDnsWallet(domain: string): Promise<string | undefined> {
         try {
-            const networkJson = JSON.stringify(this.network);
-            return this.androidBridge.apiResolveDnsWallet(networkJson, domain) ?? undefined;
+            const params = JSON.stringify({ network: this.network, domain });
+            return this.androidBridge.apiResolveDnsWallet(params) ?? undefined;
         } catch (err) {
             error('[AndroidAPIClientAdapter] resolveDnsWallet failed:', err);
             throw err;
@@ -245,8 +220,8 @@ export class AndroidAPIClientAdapter implements ApiClient {
 
     async backResolveDnsWallet(address: UserFriendlyAddress): Promise<string | undefined> {
         try {
-            const networkJson = JSON.stringify(this.network);
-            return this.androidBridge.apiBackResolveDnsWallet(networkJson, address) ?? undefined;
+            const params = JSON.stringify({ network: this.network, address });
+            return this.androidBridge.apiBackResolveDnsWallet(params) ?? undefined;
         } catch (err) {
             error('[AndroidAPIClientAdapter] backResolveDnsWallet failed:', err);
             throw err;
@@ -267,9 +242,8 @@ export class AndroidAPIClientAdapter implements ApiClient {
 
     async getMasterchainInfo(): Promise<MasterchainInfo> {
         try {
-            const networkJson = JSON.stringify(this.network);
-            const resultJson = this.androidBridge.apiGetMasterchainInfo(networkJson);
-            return JSON.parse(resultJson) as MasterchainInfo;
+            const params = JSON.stringify({ network: this.network });
+            return JSON.parse(this.androidBridge.apiGetMasterchainInfo(params)) as MasterchainInfo;
         } catch (err) {
             error('[AndroidAPIClientAdapter] getMasterchainInfo failed:', err);
             throw err;
