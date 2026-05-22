@@ -531,4 +531,43 @@ export interface WalletKitBridgeApi {
     getSwapQuote(args: GetSwapQuoteArgs): PromiseOrValue<unknown>;
     buildSwapTransaction(args: BuildSwapTransactionArgs): PromiseOrValue<unknown>;
     registerKotlinSwapProvider(args: RegisterKotlinSwapProviderArgs): PromiseOrValue<void>;
+
+    // Per-wallet ApiClient proxy: Android `BridgedJSAPIClient` round-trips
+    // `wallet.client.<method>` through these so the underlying JS `ApiClient`
+    // (built-in or user-supplied) handles the call. Mirrors iOS JSTONAPIClient.
+    walletClientSendBoc(args: { walletId: string; boc: string }): PromiseOrValue<{ result: string }>;
+    walletClientRunGetMethod(args: {
+        walletId: string;
+        address: string;
+        method: string;
+        stack?: unknown[];
+        seqno?: number;
+    }): PromiseOrValue<unknown>;
+    walletClientGetBalance(args: {
+        walletId: string;
+        address: string;
+        seqno?: number;
+    }): PromiseOrValue<{ result: string }>;
+    walletClientGetMasterchainInfo(args: { walletId: string }): PromiseOrValue<unknown>;
+    walletClientNftItemsByAddress(args: { walletId: string; request: unknown }): PromiseOrValue<unknown>;
+    walletClientNftItemsByOwner(args: { walletId: string; request: unknown }): PromiseOrValue<unknown>;
+    walletClientFetchEmulation(args: {
+        walletId: string;
+        messageBoc: string;
+        ignoreSignature?: boolean;
+    }): PromiseOrValue<unknown>;
+    walletClientAccountState(args: {
+        walletId: string;
+        address: string;
+        seqno?: number;
+    }): PromiseOrValue<unknown>;
+    walletClientAccountStates(args: { walletId: string; addresses: string[] }): PromiseOrValue<unknown>;
+    walletClientResolveDnsWallet(args: {
+        walletId: string;
+        domain: string;
+    }): PromiseOrValue<{ result: string | null }>;
+    walletClientBackResolveDnsWallet(args: {
+        walletId: string;
+        address: string;
+    }): PromiseOrValue<{ result: string | null }>;
 }

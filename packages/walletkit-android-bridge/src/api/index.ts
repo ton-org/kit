@@ -19,6 +19,7 @@ import * as staking from './staking';
 import * as browser from './browser';
 import * as streaming from './streaming';
 import * as swap from './swap';
+import * as walletClient from './walletClient';
 import { eventListeners } from './eventListeners';
 
 export { eventListeners };
@@ -124,4 +125,16 @@ export const api = {
     getSwapQuote: swap.getSwapQuote,
     buildSwapTransaction: swap.buildSwapTransaction,
     registerKotlinSwapProvider: swap.registerKotlinSwapProvider,
+
+    walletClientSendBoc: walletClient.walletClientSendBoc,
+    walletClientRunGetMethod: walletClient.walletClientRunGetMethod,
+    walletClientGetBalance: walletClient.walletClientGetBalance,
+    walletClientGetMasterchainInfo: walletClient.walletClientGetMasterchainInfo,
+    walletClientNftItemsByAddress: walletClient.walletClientNftItemsByAddress,
+    walletClientNftItemsByOwner: walletClient.walletClientNftItemsByOwner,
+    walletClientFetchEmulation: walletClient.walletClientFetchEmulation,
+    walletClientAccountState: walletClient.walletClientAccountState,
+    walletClientAccountStates: walletClient.walletClientAccountStates,
+    walletClientResolveDnsWallet: walletClient.walletClientResolveDnsWallet,
+    walletClientBackResolveDnsWallet: walletClient.walletClientBackResolveDnsWallet,
 } as unknown as WalletKitBridgeApi;
