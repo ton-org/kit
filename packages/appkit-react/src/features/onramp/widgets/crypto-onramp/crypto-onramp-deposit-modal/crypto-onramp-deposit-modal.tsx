@@ -147,7 +147,7 @@ export const CryptoOnrampDepositModal: FC<CryptoOnrampDepositModalProps> = ({
                             <span className={styles.infoValue}>
                                 {amount} {symbol}
                             </span>
-                            <CopyButton value={`${amount} ${symbol}`} aria-label="Copy amount" />
+                            <CopyButton value={amount} aria-label="Copy amount" />
                         </div>
                     </div>
 
