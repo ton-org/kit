@@ -9,7 +9,7 @@
 /**
  * WalletKit initialization helpers used by the bridge entry point.
  */
-import type { BridgeResponse, BridgeEvent } from '@ton/walletkit';
+import type { BridgeResponse, BridgeEvent, ManifestFetchResult } from '@ton/walletkit';
 import { TONCONNECT_BRIDGE_EVENT, ApiClientTonApi, ApiClientToncenter } from '@ton/walletkit';
 import { TONCONNECT_BRIDGE_RESPONSE } from '@ton/walletkit/bridge';
 
@@ -97,6 +97,13 @@ export async function initTonWalletKit(
     const kitOptions: Record<string, unknown> = {
         networks: networksConfig,
     };
+
+    const nativeBridge = window.WalletKitNative;
+    if (nativeBridge?.hasCustomFetchManifest?.() && nativeBridge.apiFetchManifest) {
+        const fetchFn = nativeBridge.apiFetchManifest.bind(nativeBridge);
+        kitOptions.fetchManifest = async (url: string): Promise<ManifestFetchResult> =>
+            JSON.parse(fetchFn(url)) as ManifestFetchResult;
+    }
 
     const devOptions: Record<string, unknown> = {};
     if (config?.disableNetworkSend) {
