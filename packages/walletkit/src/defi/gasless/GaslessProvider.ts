@@ -7,7 +7,13 @@
  */
 
 import type { GaslessProviderInterface } from '../../api/interfaces';
-import type { GaslessConfig, GaslessEstimateParams, GaslessEstimateResult, GaslessSendParams } from '../../api/models';
+import type {
+    GaslessConfig,
+    GaslessEstimateParams,
+    GaslessEstimateResult,
+    GaslessSendParams,
+    Network,
+} from '../../api/models';
 
 /**
  * Abstract base class for gasless relay providers.
@@ -30,6 +36,7 @@ export abstract class GaslessProvider implements GaslessProviderInterface {
     readonly type = 'gasless';
     abstract readonly providerId: string;
 
+    abstract getSupportedNetworks(): Network[];
     abstract getConfig(): Promise<GaslessConfig>;
     abstract estimate(params: GaslessEstimateParams): Promise<GaslessEstimateResult>;
     abstract send(params: GaslessSendParams): Promise<void>;

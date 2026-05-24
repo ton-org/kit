@@ -15,6 +15,7 @@ import type {
     GaslessEstimateResult,
     GaslessSendParams,
 } from '../../../api/models';
+import { Network } from '../../../api/models';
 import { globalLogger } from '../../../core/Logger';
 import { CallForSuccess } from '../../../utils/retry';
 import { GaslessError } from '../errors';
@@ -68,6 +69,10 @@ export class TonApiGaslessProvider extends GaslessProvider {
         this.providerId = config.providerId ?? 'tonapi';
         this.sendRetries = config.sendRetries ?? 5;
         this.sendRetryDelayMs = config.sendRetryDelayMs ?? 2000;
+    }
+
+    getSupportedNetworks(): Network[] {
+        return [Network.mainnet()];
     }
 
     async getConfig(): Promise<GaslessConfig> {

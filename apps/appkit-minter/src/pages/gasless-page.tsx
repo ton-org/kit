@@ -19,7 +19,7 @@ import type { Base64String } from '@ton/appkit-react';
 import { parseUnits, createJettonTransferPayload, compareAddress } from '@ton/appkit';
 import { toast } from 'sonner';
 
-import { Card, Layout } from '@/core/components';
+import { Layout } from '@/core/components';
 
 const USDT_MASTER_MAINNET = 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs';
 
@@ -87,7 +87,7 @@ export const GaslessPage: FC = () => {
 
     return (
         <Layout title="Gasless Transfer">
-            <Card className="w-full max-w-[434px] mx-auto p-6 space-y-6">
+            <div className="w-full max-w-[434px] mx-auto p-6 space-y-6 rounded-2xl border border-border bg-card">
                 <div className="space-y-2">
                     <h2 className="text-xl font-semibold">Send USDT (Gasless)</h2>
                     <p className="text-sm text-muted-foreground">
@@ -147,7 +147,7 @@ export const GaslessPage: FC = () => {
                         )}
                     </div>
                 )}
-            </Card>
+            </div>
         </Layout>
     );
 };
