@@ -53,6 +53,5 @@ export const mapGaslessQuote = (raw: TonApiGaslessEstimateResponse, network: Net
     })),
     fee: raw.commission,
     validUntil: raw.valid_until,
-    relayAddress: asAddressFriendly(raw.relay_address),
     from: asAddressFriendly(raw.from),
 });

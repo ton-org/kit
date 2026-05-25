@@ -26,7 +26,7 @@ interface TonApiErrorBody {
     error_code?: number;
 }
 
-const TONAPI_UNSUPPORTED_FEE_JETTON_CODE = 40000;
+const TONAPI_UNSUPPORTED_FEE_ASSET_CODE = 40000;
 
 export const mapTonApiGaslessError = (
     error: unknown,
@@ -42,10 +42,10 @@ export const mapTonApiGaslessError = (
     if (error instanceof TonClientError) {
         const body = error.details as TonApiErrorBody | undefined;
 
-        if (body && typeof body === 'object' && body.error_code === TONAPI_UNSUPPORTED_FEE_JETTON_CODE) {
+        if (body && typeof body === 'object' && body.error_code === TONAPI_UNSUPPORTED_FEE_ASSET_CODE) {
             return new GaslessError(
-                body.error ?? 'Jetton is not supported by the gasless relayer',
-                GaslessErrorCode.UnsupportedFeeJetton,
+                body.error ?? 'Fee asset is not supported by the gasless relayer',
+                GaslessErrorCode.UnsupportedFeeAsset,
                 error,
             );
         }

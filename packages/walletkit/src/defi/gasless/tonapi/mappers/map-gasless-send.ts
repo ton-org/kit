@@ -6,7 +6,8 @@
  *
  */
 
-import type { Base64String, GaslessSendParams, SendTransactionResponse } from '../../../../api/models';
+import type { GaslessSendParams, SendTransactionResponse } from '../../../../api/models';
+import { asBase64 } from '../../../../utils/base64';
 import { getNormalizedExtMessageHash } from '../../../../utils/getNormalizedExtMessageHash';
 import { GaslessError, GaslessErrorCode } from '../../errors';
 import { internalBocToExternalMessageBoc, stripHexPrefix } from '../utils';
@@ -40,7 +41,7 @@ export const mapGaslessSend = (raw: TonApiGaslessSendResponse): SendTransactionR
         });
     }
 
-    const boc = Buffer.from(raw.external, 'hex').toString('base64') as Base64String;
+    const boc = asBase64(Buffer.from(raw.external, 'hex').toString('base64'));
     const { hash: normalizedHash, boc: normalizedBoc } = getNormalizedExtMessageHash(boc);
     return { boc, normalizedBoc, normalizedHash };
 };

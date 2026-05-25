@@ -45,7 +45,6 @@
   "dependencies": {
     "@ton/appkit": "workspace:*",
     "clsx": "2.1.1",
-    "radix-ui": "^1.4.3",
     "rosetta": "1.1.0"
   },
   "devDependencies": {

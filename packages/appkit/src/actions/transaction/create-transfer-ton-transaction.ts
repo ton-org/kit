@@ -9,7 +9,7 @@
 import { createCommentPayloadBase64, parseUnits } from '@ton/walletkit';
 
 import type { TransactionRequest, TransactionRequestMessage } from '../../types/transaction';
-import type { Base64String } from '../../types/primitives';
+import { asBase64 } from '../../utils';
 import type { AppKit } from '../../core/app-kit';
 import { getSelectedWallet } from '../wallets/get-selected-wallet';
 
@@ -46,14 +46,14 @@ export const createTransferTonTransaction = (
     const message: TransactionRequestMessage = {
         address: recipientAddress,
         amount: parseUnits(amount, 9).toString(),
-        stateInit: stateInit as Base64String,
+        stateInit: stateInit ? asBase64(stateInit) : undefined,
     };
 
     // Payload takes priority, otherwise use comment
     if (payload) {
-        message.payload = payload as Base64String;
+        message.payload = asBase64(payload);
     } else if (comment) {
-        message.payload = createCommentPayloadBase64(comment) as Base64String;
+        message.payload = createCommentPayloadBase64(comment);
     }
 
     return {

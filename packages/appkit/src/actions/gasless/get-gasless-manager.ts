@@ -6,8 +6,7 @@
  *
  */
 
-import type { GaslessManager } from '@ton/walletkit';
-
+import type { GaslessManager } from '../../gasless';
 import type { AppKit } from '../../core/app-kit';
 
 export type GetGaslessManagerReturnType = GaslessManager;

@@ -135,7 +135,7 @@ export class TonApiGaslessProvider extends GaslessProvider {
             log.error('Failed to fetch gasless supported assets', { error, chainId: network.chainId });
             throw mapTonApiGaslessError(
                 error,
-                GaslessErrorCode.ConfigFailed,
+                GaslessErrorCode.SupportedAssetsFailed,
                 'Failed to fetch gasless supported assets',
             );
         }

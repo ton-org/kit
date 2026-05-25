@@ -17,8 +17,15 @@ import {
     useSelectedWallet,
     useSendGaslessTransaction,
 } from '@ton/appkit-react';
-import { asBase64, compareAddress, createJettonTransferPayload, GaslessError, parseUnits } from '@ton/appkit';
-import type { GaslessSupportedAsset, TransactionRequestMessage } from '@ton/appkit';
+import {
+    asAddressFriendly,
+    asBase64,
+    compareAddress,
+    createJettonTransferPayload,
+    GaslessError,
+    parseUnits,
+} from '@ton/appkit';
+import type { GaslessSupportedAsset, TransactionRequestMessage, UserFriendlyAddress } from '@ton/appkit';
 import { toast } from 'sonner';
 
 import { Layout } from '@/core/components';
@@ -55,7 +62,7 @@ export const GaslessPage: FC = () => {
 
     const [recipient, setRecipient] = useState('');
     const [amount, setAmount] = useState('0.1');
-    const [feeAsset, setFeeAsset] = useState<string | null>(null);
+    const [feeAsset, setFeeAsset] = useState<UserFriendlyAddress | null>(null);
 
     useEffect(() => {
         if (address && !recipient) setRecipient(address);
@@ -197,7 +204,7 @@ export const GaslessPage: FC = () => {
                             <select
                                 className="w-full p-2 bg-secondary rounded-md border border-border"
                                 value={feeAsset ?? ''}
-                                onChange={(e) => setFeeAsset(e.target.value)}
+                                onChange={(e) => setFeeAsset(asAddressFriendly(e.target.value))}
                                 disabled={isAssetsLoading || !supportedAssets?.length}
                             >
                                 {supportedAssets?.map((asset) => (

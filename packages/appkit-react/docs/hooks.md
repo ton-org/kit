@@ -878,7 +878,7 @@ Hook to fetch a gasless quote. Auto-refetches as inputs change; cached results b
 
 ```tsx
 const { data: quote, isFetching } = useGaslessQuote({
-    feeAsset: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs', // USDT
+    feeAsset: asAddressFriendly('EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs'), // USDT
     messages: [
         {
             address: 'EQ...jetton_wallet_address',

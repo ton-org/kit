@@ -7,12 +7,13 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { GaslessErrorCode, Network } from '@ton/walletkit';
-import type { Feature, GaslessQuote } from '@ton/walletkit';
 
+import { GaslessErrorCode } from '../../gasless';
+import type { GaslessQuote } from '../../gasless';
+import { Network } from '../../types/network';
 import type { AppKit } from '../../core/app-kit';
 import type { Base64String } from '../../types/primitives';
-import type { WalletInterface } from '../../types/wallet';
+import type { Feature, WalletInterface } from '../../types/wallet';
 import { sendGaslessTransaction } from './send-gasless-transaction';
 
 const TEST_ADDRESS = 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs';
@@ -23,7 +24,6 @@ const makeQuote = (overrides: Partial<GaslessQuote> = {}): GaslessQuote => ({
     messages: [{ address: TEST_ADDRESS, amount: '60000000' }],
     fee: '1234',
     validUntil: Math.floor(Date.now() / 1000) + 60,
-    relayAddress: TEST_ADDRESS,
     from: TEST_ADDRESS,
     ...overrides,
 });

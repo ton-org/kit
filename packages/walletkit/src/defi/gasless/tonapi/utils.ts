@@ -19,6 +19,7 @@ import {
 } from '@ton/core';
 
 import type { Base64String, TransactionRequestMessage } from '../../../api/models';
+import { asBase64 } from '../../../utils/base64';
 import { GaslessError, GaslessErrorCode } from '../errors';
 
 export const stripHexPrefix = (value: string): string => {
@@ -26,7 +27,7 @@ export const stripHexPrefix = (value: string): string => {
 };
 
 export const cellToBase64 = (cell: Cell): Base64String => {
-    return cell.toBoc().toString('base64') as Base64String;
+    return asBase64(cell.toBoc().toString('base64'));
 };
 
 export const buildInternalMessageCell = (message: TransactionRequestMessage): Cell => {

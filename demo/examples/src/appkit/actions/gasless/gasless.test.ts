@@ -41,7 +41,6 @@ describe('Gasless Actions Examples', () => {
             messages: [{ address: TEST_ADDRESS, amount: '60000000' }],
             fee: '1234',
             validUntil: Math.floor(Date.now() / 1000) + 120,
-            relayAddress: TEST_ADDRESS,
             from: TEST_ADDRESS,
         });
         mockSend = vi.fn().mockResolvedValue({

@@ -27,8 +27,6 @@ export interface GaslessQuote {
     fee: TokenAmount;
     /** Unix timestamp after which the bundle becomes invalid for relay */
     validUntil: number;
-    /** Address of the relayer that produced this estimate */
-    relayAddress: UserFriendlyAddress;
     /** Sender wallet address echoed by the relayer */
     from: UserFriendlyAddress;
 }

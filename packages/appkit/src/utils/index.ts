@@ -6,7 +6,15 @@
  *
  */
 
-export { formatUnits, parseUnits, compareAddress, createJettonTransferPayload, asBase64, asHex } from '@ton/walletkit';
+export {
+    formatUnits,
+    parseUnits,
+    compareAddress,
+    createJettonTransferPayload,
+    asAddressFriendly,
+    asBase64,
+    asHex,
+} from '@ton/walletkit';
 
 export * from './address/is-valid-address';
 export * from './address/to-bounceble-address';

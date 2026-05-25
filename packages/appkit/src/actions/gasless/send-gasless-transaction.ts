@@ -6,9 +6,8 @@
  *
  */
 
-import type { GaslessQuote, GaslessSendResponse } from '@ton/walletkit';
-
 import { GaslessError, GaslessErrorCode } from '../../gasless';
+import type { GaslessQuote, GaslessSendResponse } from '../../gasless';
 import type { AppKit } from '../../core/app-kit';
 import { getSelectedWallet } from '../wallets/get-selected-wallet';
 

@@ -6,8 +6,7 @@
  *
  */
 
-import type { GaslessProviderInterface } from '@ton/walletkit';
-
+import type { GaslessProviderInterface } from '../../gasless';
 import type { AppKit } from '../../core/app-kit';
 
 export interface GetGaslessProviderOptions {

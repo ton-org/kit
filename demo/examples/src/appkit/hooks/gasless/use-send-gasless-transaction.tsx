@@ -6,6 +6,7 @@
  *
  */
 
+import { asAddressFriendly } from '@ton/appkit';
 import type { Base64String } from '@ton/appkit';
 import { useGaslessQuote, useSendGaslessTransaction } from '@ton/appkit-react';
 
@@ -14,7 +15,7 @@ import { useGaslessQuote, useSendGaslessTransaction } from '@ton/appkit-react';
 export const UseSendGaslessTransactionExample = () => {
     // SAMPLE_START: USE_SEND_GASLESS_TRANSACTION
     const { data: quote } = useGaslessQuote({
-        feeAsset: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs',
+        feeAsset: asAddressFriendly('EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs'),
         messages: [
             {
                 address: 'EQ...jetton_wallet_address',

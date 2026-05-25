@@ -39,7 +39,6 @@ const makeProvider = (providerId: string): GaslessProviderInterface => ({
         messages: [],
         fee: '0',
         validUntil: 0,
-        relayAddress: TEST_ADDRESS,
         from: TEST_ADDRESS,
     }),
     sendTransaction: vi.fn<(p: GaslessSendParams) => Promise<GaslessSendResponse>>().mockResolvedValue({

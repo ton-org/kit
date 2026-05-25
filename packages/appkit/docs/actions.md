@@ -637,7 +637,7 @@ console.log('Staked Balance:', balance);
 Gasless lets a dApp submit on-chain transactions without the user holding TON for gas: a relayer co-signs and broadcasts the transaction, taking a jetton fee in return. The connected wallet must support the `SignMessage` TonConnect feature.
 
 The high-level flow is:
-1. `getGaslessConfig` – discover which jettons the relayer accepts as fee payment.
+1. `getGaslessSupportedAssets` – discover which assets the relayer accepts as fee payment.
 2. `getGaslessQuote` – ask the relayer for fee + wrapped messages (with a `validUntil`).
 3. `sendGaslessTransaction` – sign the wrapped messages via the wallet and submit the signed BoC.
 

@@ -182,12 +182,12 @@ describe('TonApiGaslessProvider.getSupportedAssets', () => {
         });
     });
 
-    it('wraps fetch errors in GaslessError(CONFIG_FAILED)', async () => {
+    it('wraps fetch errors in GaslessError(SUPPORTED_ASSETS_FAILED)', async () => {
         fetchApi.mockResolvedValueOnce(new Response('boom', { status: 500 }));
 
         await expect(provider.getSupportedAssets(Network.mainnet())).rejects.toMatchObject({
             name: 'GaslessError',
-            code: GaslessErrorCode.ConfigFailed,
+            code: GaslessErrorCode.SupportedAssetsFailed,
         });
     });
 });
@@ -278,7 +278,7 @@ describe('TonApiGaslessProvider.getQuote', () => {
         });
     });
 
-    it('maps TonAPI error_code 40000 to GaslessError(UNSUPPORTED_FEE_JETTON)', async () => {
+    it('maps TonAPI error_code 40000 to GaslessError(UNSUPPORTED_FEE_ASSET)', async () => {
         fetchApi.mockResolvedValueOnce(
             new Response(JSON.stringify({ error: 'Jetton is not supported.', error_code: 40000 }), {
                 status: 400,
@@ -288,7 +288,7 @@ describe('TonApiGaslessProvider.getQuote', () => {
 
         await expect(provider.getQuote(baseQuoteParams)).rejects.toMatchObject({
             name: 'GaslessError',
-            code: GaslessErrorCode.UnsupportedFeeJetton,
+            code: GaslessErrorCode.UnsupportedFeeAsset,
             message: 'Jetton is not supported.',
         });
     });

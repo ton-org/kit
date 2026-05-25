@@ -78,11 +78,11 @@ The `validUntil` timestamp is set by the relayer (typically ~2 minutes). In `@to
 
 | Code | Meaning |
 |---|---|
-| `UNSUPPORTED_FEE_JETTON` | The relayer does not accept the chosen fee asset. The TonAPI provider surfaces this when the server replies with `error_code: 40000`. |
+| `UNSUPPORTED_FEE_ASSET` | The relayer does not accept the chosen fee asset. The TonAPI provider surfaces this when the server replies with `error_code: 40000`. |
 | `UNSUPPORTED_OPERATION` | Provider does not implement the requested mode (e.g. TonAPI provider called without `feeAsset` — it only supports jetton-fee mode). |
 | `QUOTE_FAILED` | Relayer rejected the quote (insufficient liquidity, malformed messages, …). |
 | `SEND_FAILED` | Relayer rejected the signed BoC, or all retries were exhausted. |
-| `CONFIG_FAILED` | Relayer config endpoint failed. |
+| `SUPPORTED_ASSETS_FAILED` | Failed to discover relayer-accepted fee assets. |
 | `SIGN_MESSAGE_NOT_SUPPORTED` | Connected wallet does not implement the `SignMessage` feature. Surfaced by the higher-level `sendGaslessTransaction` action in `@ton/appkit`. |
 | `TOO_MANY_MESSAGES` | The quote carries more messages than the wallet's advertised `SignMessage.maxMessages` cap. Surfaced by `sendGaslessTransaction` in `@ton/appkit`. |
 

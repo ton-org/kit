@@ -6,9 +6,9 @@
  *
  */
 
-import type { GaslessQuote } from '@ton/walletkit';
-
+import type { GaslessQuote } from '../../gasless';
 import type { Network } from '../../types/network';
+import type { UserFriendlyAddress } from '../../types/primitives';
 import type { TransactionRequestMessage } from '../../types/transaction';
 import type { AppKit } from '../../core/app-kit';
 import { getSelectedWallet } from '../wallets/get-selected-wallet';
@@ -20,7 +20,7 @@ export interface GetGaslessQuoteOptions {
      * Omit for free / sponsored providers — jetton-only providers will throw
      * `GaslessError(UnsupportedOperation)` in that case.
      */
-    feeAsset?: string;
+    feeAsset?: UserFriendlyAddress;
     /** User's messages to include in the gasless transaction */
     messages: TransactionRequestMessage[];
     /** Network to quote on. Defaults to the selected wallet's network. */
