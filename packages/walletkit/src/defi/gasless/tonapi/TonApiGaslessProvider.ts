@@ -10,6 +10,7 @@ import { Address } from '@ton/core';
 
 import type {
     GaslessConfig,
+    GaslessProviderMetadata,
     GaslessQuote,
     GaslessQuoteParams,
     GaslessSendParams,
@@ -22,7 +23,7 @@ import type { ProviderFactoryContext } from '../../../types/factory';
 import { delay } from '../../../utils/delay';
 import { GaslessError, GaslessErrorCode } from '../errors';
 import { GaslessProvider } from '../GaslessProvider';
-import { DEFAULT_PROVIDER_ID, DEFAULT_SEND_RETRIES, DEFAULT_SEND_RETRY_DELAY_MS } from './constants';
+import { DEFAULT_METADATA, DEFAULT_PROVIDER_ID, DEFAULT_SEND_RETRIES, DEFAULT_SEND_RETRY_DELAY_MS } from './constants';
 import { isTransientError, networkFromChainId } from './helpers';
 import { mapGaslessConfig } from './mappers/map-gasless-config';
 import { mapTonApiGaslessError } from './mappers/map-gasless-error';
@@ -119,6 +120,10 @@ export class TonApiGaslessProvider extends GaslessProvider {
 
     getSupportedNetworks(): Network[] {
         return Object.keys(this.chainConfig).map(networkFromChainId);
+    }
+
+    async getMetadata(): Promise<GaslessProviderMetadata> {
+        return DEFAULT_METADATA;
     }
 
     async getConfig(network: Network): Promise<GaslessConfig> {

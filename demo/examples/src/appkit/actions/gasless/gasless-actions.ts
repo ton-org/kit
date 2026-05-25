@@ -11,6 +11,7 @@ import {
     getGaslessConfig,
     getGaslessManager,
     getGaslessProvider,
+    getGaslessProviderMetadata,
     getGaslessProviders,
     getGaslessQuote,
     sendGaslessTransaction,
@@ -45,6 +46,11 @@ export const gaslessExample = async (appKit: AppKit) => {
     });
     unsubscribe();
     // SAMPLE_END: WATCH_GASLESS_PROVIDERS
+
+    // SAMPLE_START: GET_GASLESS_PROVIDER_METADATA
+    const metadata = await getGaslessProviderMetadata(appKit);
+    console.log('Gasless provider:', metadata.name, metadata.url);
+    // SAMPLE_END: GET_GASLESS_PROVIDER_METADATA
 
     // SAMPLE_START: GET_GASLESS_CONFIG
     const config = await getGaslessConfig(appKit);

@@ -8,6 +8,7 @@
 
 import type {
     GaslessConfig,
+    GaslessProviderMetadata,
     GaslessQuote,
     GaslessQuoteParams,
     GaslessSendParams,
@@ -24,6 +25,12 @@ import type { DefiProvider } from './DefiProvider';
  * for gas: a relayer co-signs and covers the gas, taking a jetton fee in return.
  */
 export interface GaslessAPI extends DefiManagerAPI<GaslessProviderInterface> {
+    /**
+     * Get static metadata for a gasless provider (display name, logo, url).
+     * @param providerId Provider identifier (optional, uses default if not specified)
+     */
+    getMetadata(providerId?: string): Promise<GaslessProviderMetadata>;
+
     /**
      * Fetch relayer configuration (supported jettons and relay address).
      * @param network Network to query (optional, falls back to the provider's first supported network)
@@ -65,6 +72,11 @@ export interface GaslessProviderInterface extends DefiProvider {
      * Unique identifier for the provider
      */
     readonly providerId: string;
+
+    /**
+     * Get static metadata for the provider (display name, logo, url).
+     */
+    getMetadata(): Promise<GaslessProviderMetadata>;
 
     /**
      * Fetch relayer configuration (supported jettons and relay address) for the requested network.

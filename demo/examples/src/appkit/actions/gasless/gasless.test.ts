@@ -19,6 +19,7 @@ const SIGN_MESSAGE_FEATURE = { name: 'SignMessage', maxMessages: 4 } as const;
 describe('Gasless Actions Examples', () => {
     let appKit: AppKit;
     let consoleSpy: ReturnType<typeof vi.spyOn>;
+    let mockGetMetadata: ReturnType<typeof vi.fn>;
     let mockGetConfig: ReturnType<typeof vi.fn>;
     let mockGetQuote: ReturnType<typeof vi.fn>;
     let mockSend: ReturnType<typeof vi.fn>;
@@ -34,6 +35,7 @@ describe('Gasless Actions Examples', () => {
             },
         });
 
+        mockGetMetadata = vi.fn().mockResolvedValue({ name: 'TonAPI', url: 'https://tonapi.io' });
         mockGetConfig = vi.fn().mockResolvedValue({
             relayAddress: TEST_ADDRESS,
             supportedAssets: [{ address: TEST_ADDRESS }],
@@ -58,6 +60,8 @@ describe('Gasless Actions Examples', () => {
             providerId: id || 'default',
         }));
         vi.spyOn(appKit.gaslessManager, 'getProviders').mockReturnValue([]);
+        // @ts-expect-error - internal mock access
+        vi.spyOn(appKit.gaslessManager, 'getMetadata').mockImplementation(mockGetMetadata);
         // @ts-expect-error - internal mock access
         vi.spyOn(appKit.gaslessManager, 'getConfig').mockImplementation(mockGetConfig);
         // @ts-expect-error - internal mock access
@@ -93,6 +97,7 @@ describe('Gasless Actions Examples', () => {
 
         await gaslessExample(appKit);
 
+        expect(mockGetMetadata).toHaveBeenCalled();
         expect(mockGetConfig).toHaveBeenCalled();
         expect(mockGetQuote).toHaveBeenCalled();
         expect(mockSignMessage).toHaveBeenCalled();

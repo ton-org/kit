@@ -94,6 +94,7 @@ To target a different relayer, extend `GaslessProvider`:
 import {
     GaslessProvider,
     type GaslessConfig,
+    type GaslessProviderMetadata,
     type GaslessQuoteParams,
     type GaslessQuote,
     type GaslessSendParams,
@@ -106,6 +107,10 @@ export class MyGaslessProvider extends GaslessProvider {
 
     getSupportedNetworks(): Network[] {
         return [Network.mainnet()];
+    }
+
+    async getMetadata(): Promise<GaslessProviderMetadata> {
+        return { name: 'My Relayer', url: 'https://my-relayer.example' };
     }
 
     async getConfig(): Promise<GaslessConfig> {
@@ -129,6 +134,9 @@ export class MyGaslessProvider extends GaslessProvider {
 ## API Reference
 
 ### GaslessManager
+
+#### `getMetadata(providerId?)`
+Static metadata for the gasless provider: `{ name, logo?, url? }`. Useful for rendering provider info in the UI.
 
 #### `getConfig(network?, providerId?)`
 Fetch the relayer config (supported fee assets, relay address). `network` defaults to the provider's first supported network.

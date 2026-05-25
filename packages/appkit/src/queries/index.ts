@@ -173,6 +173,15 @@ export {
     type GetGaslessConfigErrorType,
 } from './gasless/get-gasless-config';
 export {
+    getGaslessProviderMetadataQueryOptions,
+    getGaslessProviderMetadataQueryKey,
+    type GetGaslessProviderMetadataQueryConfig,
+    type GetGaslessProviderMetadataData,
+    type GetGaslessProviderMetadataErrorType,
+    type GetGaslessProviderMetadataQueryKey,
+    type GetGaslessProviderMetadataQueryOptions,
+} from './gasless/get-gasless-provider-metadata';
+export {
     getGaslessQuoteQueryOptions,
     getGaslessQuoteQueryKey,
     GASLESS_QUOTE_STALE_TIME_MS,

@@ -12,6 +12,11 @@ export {
     type UseGaslessConfigReturnType,
 } from './hooks/use-gasless-config';
 export {
+    useGaslessProviderMetadata,
+    type UseGaslessProviderMetadataParameters,
+    type UseGaslessProviderMetadataReturnType,
+} from './hooks/use-gasless-provider-metadata';
+export {
     useGaslessQuote,
     type UseGaslessQuoteParameters,
     type UseGaslessQuoteReturnType,

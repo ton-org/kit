@@ -688,6 +688,15 @@ const unsubscribe = watchGaslessProviders(appKit, {
 unsubscribe();
 ```
 
+### `getGaslessProviderMetadata`
+
+Fetch static metadata (display name, logo, url) for a gasless provider.
+
+```ts
+const metadata = await getGaslessProviderMetadata(appKit);
+console.log('Gasless provider:', metadata.name, metadata.url);
+```
+
 ### `getGaslessConfig`
 
 Fetch relayer configuration (supported fee assets + relay address).

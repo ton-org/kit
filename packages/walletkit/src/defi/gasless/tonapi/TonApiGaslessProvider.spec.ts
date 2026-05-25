@@ -109,6 +109,17 @@ describe('createTonApiGaslessProvider', () => {
     });
 });
 
+describe('TonApiGaslessProvider.getMetadata', () => {
+    it('returns the static TonAPI provider metadata', async () => {
+        const provider = makeProvider(makeFetch(), { networks: [Network.mainnet()] });
+
+        await expect(provider.getMetadata()).resolves.toEqual({
+            name: 'TonAPI',
+            url: 'https://tonapi.io',
+        });
+    });
+});
+
 describe('TonApiGaslessProvider.getConfig', () => {
     let fetchApi: ReturnType<typeof makeFetch>;
     let provider: TonApiGaslessProvider;

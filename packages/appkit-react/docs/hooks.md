@@ -841,6 +841,20 @@ return (
 
 Gasless lets a dApp submit on-chain transactions without the user holding TON for gas: a relayer co-signs and broadcasts the transaction, taking a jetton fee in return. The connected wallet must support the `SignMessage` TonConnect feature.
 
+### `useGaslessProviderMetadata`
+
+Hook to fetch static metadata (display name, logo, url) for a gasless provider.
+
+```tsx
+const { data: metadata, isLoading } = useGaslessProviderMetadata();
+if (isLoading || !metadata) return null;
+return (
+    <a href={metadata.url} target="_blank" rel="noreferrer">
+        {metadata.name}
+    </a>
+);
+```
+
 ### `useGaslessConfig`
 
 Hook to fetch the relayer config (supported fee assets + relay address).

@@ -30,6 +30,7 @@ const makeProvider = (providerId: string): GaslessProviderInterface => ({
     type: 'gasless',
     providerId,
     getSupportedNetworks: () => [Network.mainnet()],
+    getMetadata: vi.fn().mockResolvedValue({ name: 'Test', url: 'https://test.example' }),
     getConfig: vi.fn<(n: Network) => Promise<GaslessConfig>>().mockResolvedValue({
         relayAddress: TEST_ADDRESS,
         supportedAssets: [{ address: TEST_ADDRESS }],
@@ -119,6 +120,15 @@ describe('GaslessManager.setDefaultProvider', () => {
 });
 
 describe('GaslessManager delegation', () => {
+    it('forwards getMetadata to the default provider', async () => {
+        const { manager } = makeManager();
+        const provider = makeProvider('one');
+        manager.registerProvider(provider);
+
+        await expect(manager.getMetadata()).resolves.toEqual({ name: 'Test', url: 'https://test.example' });
+        expect(provider.getMetadata).toHaveBeenCalledTimes(1);
+    });
+
     it('forwards getConfig to the default provider', async () => {
         const { manager } = makeManager();
         const provider = makeProvider('one');

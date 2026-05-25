@@ -9,6 +9,7 @@
 import type { GaslessAPI, GaslessProviderInterface } from '../../api/interfaces';
 import type {
     GaslessConfig,
+    GaslessProviderMetadata,
     GaslessQuote,
     GaslessQuoteParams,
     GaslessSendParams,
@@ -32,6 +33,21 @@ const log = globalLogger.createChild('GaslessManager');
 export class GaslessManager extends DefiManager<GaslessProviderInterface> implements GaslessAPI {
     constructor(createFactoryContext: () => ProviderFactoryContext) {
         super(createFactoryContext);
+    }
+
+    /**
+     * Get static metadata for a gasless provider (display name, logo, url).
+     */
+    async getMetadata(providerId?: string): Promise<GaslessProviderMetadata> {
+        const selectedProviderId = providerId ?? this.defaultProviderId;
+        log.debug('Getting gasless provider metadata', { providerId: selectedProviderId });
+
+        try {
+            return await this.getProvider(selectedProviderId).getMetadata();
+        } catch (error) {
+            log.error('Failed to get gasless provider metadata', { error });
+            throw error;
+        }
     }
 
     /**

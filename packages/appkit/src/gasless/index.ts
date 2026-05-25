@@ -13,6 +13,8 @@ export type {
     GaslessProviderInterface,
     GaslessConfig,
     GaslessSupportedAsset,
+    GaslessProviderMetadata,
+    GaslessProviderMetadataOverride,
     GaslessQuoteParams,
     GaslessQuote,
     GaslessSendParams,

@@ -133,6 +133,12 @@ export {
     type GetGaslessConfigErrorType,
 } from './gasless/get-gasless-config';
 export {
+    getGaslessProviderMetadata,
+    type GetGaslessProviderMetadataOptions,
+    type GetGaslessProviderMetadataReturnType,
+    type GetGaslessProviderMetadataErrorType,
+} from './gasless/get-gasless-provider-metadata';
+export {
     getGaslessQuote,
     type GetGaslessQuoteOptions,
     type GetGaslessQuoteReturnType,
