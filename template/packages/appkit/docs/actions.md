@@ -318,6 +318,73 @@ Get the user's staked balance.
 
 %%demo/examples/src/appkit/actions/staking#GET_STAKED_BALANCE%%
 
+## Gasless
+
+Gasless lets a dApp submit on-chain transactions without the user holding TON for gas: a relayer co-signs and broadcasts the transaction, charging the user a fee in a relayer-accepted asset (e.g. USDT). The connected wallet must support the `SignMessage` TonConnect feature. See the [gasless guide](./gasless.md) for a regular-send → gasless-send migration.
+
+The high-level flow is:
+1. `getGaslessSupportedAssets` – discover which assets the relayer accepts as fee payment.
+2. `getGaslessQuote` – ask the relayer for fee + wrapped messages (with a `validUntil`).
+3. `sendGaslessTransaction` – sign the wrapped messages via the wallet and submit the signed BoC.
+
+### `getGaslessManager`
+
+Get the `GaslessManager` instance to interact with gasless providers directly.
+
+%%demo/examples/src/appkit/actions/gasless#GET_GASLESS_MANAGER%%
+
+### `getGaslessProvider`
+
+Get a specific gasless provider by its ID. Uses the default provider when no `id` is supplied.
+
+%%demo/examples/src/appkit/actions/gasless#GET_GASLESS_PROVIDER%%
+
+### `getGaslessProviders`
+
+Get all registered gasless providers.
+
+%%demo/examples/src/appkit/actions/gasless#GET_GASLESS_PROVIDERS%%
+
+### `setDefaultGaslessProvider`
+
+Set the default gasless provider. Subsequent quote and send calls will use this provider when none is specified.
+
+%%demo/examples/src/appkit/actions/gasless#SET_DEFAULT_GASLESS_PROVIDER%%
+
+### `watchGaslessProviders`
+
+Watch for new gasless provider registrations and default-provider changes.
+
+%%demo/examples/src/appkit/actions/gasless#WATCH_GASLESS_PROVIDERS%%
+
+### `getGaslessProviderMetadata`
+
+Fetch static metadata (display name, logo, url) for a gasless provider.
+
+%%demo/examples/src/appkit/actions/gasless#GET_GASLESS_PROVIDER_METADATA%%
+
+### `getGaslessSupportedAssets`
+
+Discover the assets the gasless relayer accepts as fee payment.
+
+%%demo/examples/src/appkit/actions/gasless#GET_GASLESS_SUPPORTED_ASSETS%%
+
+### `getGaslessQuote`
+
+Ask the relayer for a gasless transaction quote. Returns relayer-wrapped messages, the fee charged in the chosen `feeAsset`, and the bundle validity window (`validUntil`). Omit `feeAsset` for free / sponsored providers — jetton-fee providers (like TonAPI) throw `GaslessError(UNSUPPORTED_OPERATION)` in that case. Quotes are typically valid for ~2 minutes.
+
+%%demo/examples/src/appkit/actions/gasless#GET_GASLESS_QUOTE%%
+
+### `sendGaslessTransaction`
+
+Sign a previously computed gasless quote and submit the resulting BoC to the relayer. Returns a `GaslessSendResponse` — a strict superset of `SendTransactionResponse` (`{ boc, normalizedBoc, normalizedHash, internalBoc }`).
+
+Throws:
+- `GaslessError(SIGN_MESSAGE_NOT_SUPPORTED)` if the connected wallet does not advertise the `SignMessage` feature.
+- `GaslessError(TOO_MANY_MESSAGES)` if the quote carries more messages than the wallet's `maxMessages` cap.
+
+%%demo/examples/src/appkit/actions/gasless#SEND_GASLESS_TRANSACTION%%
+
 ## Transaction
 
 ### `createTransferTonTransaction`

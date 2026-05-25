@@ -634,7 +634,7 @@ console.log('Staked Balance:', balance);
 
 ## Gasless
 
-Gasless lets a dApp submit on-chain transactions without the user holding TON for gas: a relayer co-signs and broadcasts the transaction, taking a jetton fee in return. The connected wallet must support the `SignMessage` TonConnect feature.
+Gasless lets a dApp submit on-chain transactions without the user holding TON for gas: a relayer co-signs and broadcasts the transaction, charging the user a fee in a relayer-accepted asset (e.g. USDT). The connected wallet must support the `SignMessage` TonConnect feature. See the [gasless guide](./gasless.md) for a regular-send → gasless-send migration.
 
 The high-level flow is:
 1. `getGaslessSupportedAssets` – discover which assets the relayer accepts as fee payment.
@@ -659,7 +659,7 @@ const provider = getGaslessProvider(appKit, { id: 'tonapi' });
 
 ### `getGaslessProviders`
 
-Get all registered gasless providers. The returned array keeps a stable reference until the provider list changes.
+Get all registered gasless providers.
 
 ```ts
 const providers = getGaslessProviders(appKit);
@@ -704,13 +704,12 @@ Discover the assets the gasless relayer accepts as fee payment.
 ```ts
 const supportedAssets = await getGaslessSupportedAssets(appKit);
 const feeAsset = supportedAssets[0].address;
+console.log('Supported fee assets:', supportedAssets.length);
 ```
 
 ### `getGaslessQuote`
 
-Ask the relayer for a gasless transaction quote. Returns relayer-wrapped messages, the fee charged in the chosen `feeAsset`, and the bundle validity window (`validUntil`). Omit `feeAsset` for free / sponsored providers — jetton-fee providers (like TonAPI) throw `GaslessError(UNSUPPORTED_OPERATION)` in that case.
-
-The quote is intended to be passed verbatim to `sendGaslessTransaction`. Quotes are typically valid for ~2 minutes.
+Ask the relayer for a gasless transaction quote. Returns relayer-wrapped messages, the fee charged in the chosen `feeAsset`, and the bundle validity window (`validUntil`). Omit `feeAsset` for free / sponsored providers — jetton-fee providers (like TonAPI) throw `GaslessError(UNSUPPORTED_OPERATION)` in that case. Quotes are typically valid for ~2 minutes.
 
 ```ts
 const quote = await getGaslessQuote(appKit, {
@@ -719,27 +718,24 @@ const quote = await getGaslessQuote(appKit, {
         {
             address: 'EQ...jetton_wallet_address',
             amount: '60000000', // 0.06 TON gas budget
-            payload: jettonTransferPayloadBase64,
+            payload: 'te6cckEBAQEAAgAAAA==' as never,
         },
     ],
 });
-console.log('Relayer fee:', quote.fee);
-console.log('Valid until:', new Date(quote.validUntil * 1000));
+console.log('Relayer fee:', quote.fee, 'valid until:', quote.validUntil);
 ```
 
 ### `sendGaslessTransaction`
 
-Sign a previously computed gasless quote and submit the resulting BoC to the relayer.
-
-Quote freshness is owned by the query layer: `useGaslessQuote` uses a 2-minute `staleTime` matching the relayer `validUntil` window. If you submit a stale quote anyway, the relayer rejects it and the error surfaces through `gaslessManager.sendTransaction`.
+Sign a previously computed gasless quote and submit the resulting BoC to the relayer. Returns a `GaslessSendResponse` — a strict superset of `SendTransactionResponse` (`{ boc, normalizedBoc, normalizedHash, internalBoc }`).
 
 Throws:
 - `GaslessError(SIGN_MESSAGE_NOT_SUPPORTED)` if the connected wallet does not advertise the `SignMessage` feature.
 - `GaslessError(TOO_MANY_MESSAGES)` if the quote carries more messages than the wallet's `maxMessages` cap.
 
 ```ts
-const { internalBoc, fee } = await sendGaslessTransaction(appKit, { quote });
-console.log('Submitted gasless transaction. Fee:', fee);
+const result = await sendGaslessTransaction(appKit, { quote });
+console.log('Submitted gasless transaction. Hash:', result.normalizedHash, 'BoC:', result.internalBoc);
 ```
 
 ## Transaction

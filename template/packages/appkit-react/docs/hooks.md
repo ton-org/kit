@@ -238,6 +238,50 @@ Hook to build a stake transaction from a previously fetched quote.
 
 %%demo/examples/src/appkit/hooks/staking#USE_BUILD_STAKE_TRANSACTION%%
 
+## Gasless
+
+Gasless lets a dApp submit on-chain transactions without the user holding TON for gas: a relayer co-signs and broadcasts the transaction, charging the user a fee in a relayer-accepted asset (e.g. USDT). The connected wallet must support the `SignMessage` TonConnect feature. See the [gasless guide](https://github.com/ton-connect/kit/blob/main/packages/appkit/docs/gasless.md) for a regular-send → gasless-send migration.
+
+### `useGaslessProviders`
+
+Hook to get all registered gasless providers.
+
+%%demo/examples/src/appkit/hooks/gasless#USE_GASLESS_PROVIDERS%%
+
+### `useGaslessProvider`
+
+Hook to get the current default gasless provider and a setter to switch the default.
+
+%%demo/examples/src/appkit/hooks/gasless#USE_GASLESS_PROVIDER%%
+
+### `useGaslessProviderMetadata`
+
+Hook to fetch static metadata (display name, logo, url) for a gasless provider.
+
+%%demo/examples/src/appkit/hooks/gasless#USE_GASLESS_PROVIDER_METADATA%%
+
+### `useGaslessSupportedAssets`
+
+Hook to discover the assets the gasless relayer accepts as fee payment.
+
+%%demo/examples/src/appkit/hooks/gasless#USE_GASLESS_SUPPORTED_ASSETS%%
+
+### `useGaslessQuote`
+
+Hook to fetch a gasless quote. Auto-refetches as inputs change; cached results become stale after ~2 minutes (matches the relayer `validUntil` window). Omit `feeAsset` for free / sponsored providers — jetton-fee providers throw `GaslessError(UNSUPPORTED_OPERATION)` in that case.
+
+%%demo/examples/src/appkit/hooks/gasless#USE_GASLESS_QUOTE%%
+
+### `useSendGaslessTransaction`
+
+Hook to sign a previously computed quote and submit the resulting BoC to the relayer. Returns a `GaslessSendResponse` (`{ boc, normalizedBoc, normalizedHash, internalBoc }`).
+
+Throws:
+- `GaslessError(SIGN_MESSAGE_NOT_SUPPORTED)` if the wallet does not advertise `SignMessage`.
+- `GaslessError(TOO_MANY_MESSAGES)` if the quote carries more messages than the wallet's `maxMessages` cap.
+
+%%demo/examples/src/appkit/hooks/gasless#USE_SEND_GASLESS_TRANSACTION%%
+
 ## Transaction
 
 ### `useSendTransaction`

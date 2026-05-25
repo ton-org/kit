@@ -1,0 +1,68 @@
+---
+target: packages/appkit/docs/gasless.md
+---
+
+# Gasless
+
+AppKit supports gasless transactions: a relayer co-signs and broadcasts the transaction, charging the user a fee in a relayer-accepted asset (e.g. USDT) instead of TON. Useful when the user holds jettons but no TON.
+
+Available providers:
+
+- **createTonApiGaslessProvider** – relay via the [TonAPI gasless REST API](https://docs.tonapi.io/tonapi/rest-api/gasless) (no extra dependencies, [provider README](https://github.com/ton-connect/kit/blob/main/packages/walletkit/src/defi/gasless/tonapi/README.md))
+
+## Wallet requirements
+
+The connected wallet must advertise the `SignMessage` TonConnect feature. Gasless sends the *internal* message BoC to the relayer instead of an external message, so the wallet needs a different signing capability than `sendTransaction`. Check via `wallet.getSupportedFeatures()` — `sendGaslessTransaction` throws `GaslessError(SIGN_MESSAGE_NOT_SUPPORTED)` if the feature is missing.
+
+## Setup
+
+Pass `createTonApiGaslessProvider()` to the `AppKit` constructor. With no arguments, the factory auto-registers every network the kit was configured with:
+
+%%demo/examples/src/appkit/gasless#GASLESS_PROVIDER_INIT%%
+
+To pass per-chain `apiKey` / `endpoint` overrides:
+
+%%demo/examples/src/appkit/gasless#GASLESS_PROVIDER_CHAINS%%
+
+## Regular vs. gasless USDT transfer
+
+Both flows produce the same on-chain outcome — a USDT jetton transfer from the user. The difference is *who pays the TON gas* and *what the wallet signs*.
+
+### Regular jetton transfer (user pays TON gas)
+
+%%demo/examples/src/appkit/gasless#SEND_USDT_REGULAR%%
+
+Cost: the user spends **~0.06 TON** on gas (whatever is unused is refunded). Wallet needs the `SendTransaction` feature (almost all do).
+
+### Gasless jetton transfer (user pays only the jetton fee)
+
+%%demo/examples/src/appkit/gasless#SEND_USDT_GASLESS%%
+
+Cost: the user spends **0 TON** and a small amount of USDT (the relayer fee, shown in `quote.fee`). Wallet needs the `SignMessage` feature.
+
+## Migration recipe
+
+The jetton-transfer payload and the `messages` array are unchanged — the relayer wraps your messages on its end and adds the fee transfer. The only difference between the two snippets above: replace `sendTransaction(appKit, { messages })` with `getGaslessQuote(appKit, { messages })` followed by `sendGaslessTransaction(appKit, { quote })`.
+
+To pick a specific fee asset, pass `feeAsset` to `getGaslessQuote`. Discover the relayer-accepted assets with `getGaslessSupportedAssets(appKit)` — or hardcode the jetton master you want to charge in.
+
+For React projects, the same flow is available as hooks (`useSendTransaction` / `useGaslessQuote` + `useSendGaslessTransaction`) — see [hooks reference](https://github.com/ton-connect/kit/blob/main/packages/appkit-react/docs/hooks.md#gasless).
+
+## Error codes
+
+| Code | When it happens |
+|---|---|
+| `UNSUPPORTED_FEE_ASSET` | Relayer does not accept the chosen `feeAsset`. Surfaced from TonAPI's `error_code: 40000`. |
+| `UNSUPPORTED_OPERATION` | Provider does not implement the requested mode (e.g. TonAPI requires `feeAsset`). |
+| `QUOTE_FAILED` | Relayer rejected the quote (insufficient liquidity, malformed messages, …). |
+| `SEND_FAILED` | Relayer rejected the signed BoC, or all retries were exhausted. |
+| `SUPPORTED_ASSETS_FAILED` | Failed to discover relayer-accepted fee assets. |
+| `SIGN_MESSAGE_NOT_SUPPORTED` | Connected wallet does not advertise the `SignMessage` feature. |
+| `TOO_MANY_MESSAGES` | Quote carries more messages than the wallet's `SignMessage.maxMessages` cap. |
+
+## Related
+
+- [Gasless API reference (actions)](./actions.md#gasless)
+- [Gasless React hooks](https://github.com/ton-connect/kit/blob/main/packages/appkit-react/docs/hooks.md#gasless)
+- [TonApi gasless provider README](https://github.com/ton-connect/kit/blob/main/packages/walletkit/src/defi/gasless/tonapi/README.md)
+- [Gasless Manager (walletkit)](https://github.com/ton-connect/kit/blob/main/packages/walletkit/src/defi/gasless/README.md)

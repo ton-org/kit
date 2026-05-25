@@ -839,7 +839,36 @@ return (
 
 ## Gasless
 
-Gasless lets a dApp submit on-chain transactions without the user holding TON for gas: a relayer co-signs and broadcasts the transaction, taking a jetton fee in return. The connected wallet must support the `SignMessage` TonConnect feature.
+Gasless lets a dApp submit on-chain transactions without the user holding TON for gas: a relayer co-signs and broadcasts the transaction, charging the user a fee in a relayer-accepted asset (e.g. USDT). The connected wallet must support the `SignMessage` TonConnect feature. See the [gasless guide](https://github.com/ton-connect/kit/blob/main/packages/appkit/docs/gasless.md) for a regular-send → gasless-send migration.
+
+### `useGaslessProviders`
+
+Hook to get all registered gasless providers.
+
+```tsx
+const providers = useGaslessProviders();
+return (
+    <ul>
+        {providers.map((p) => (
+            <li key={p.providerId}>{p.providerId}</li>
+        ))}
+    </ul>
+);
+```
+
+### `useGaslessProvider`
+
+Hook to get the current default gasless provider and a setter to switch the default.
+
+```tsx
+const [provider, setProviderId] = useGaslessProvider();
+return (
+    <div>
+        <div>Current: {provider?.providerId ?? 'none'}</div>
+        <button onClick={() => setProviderId('tonapi')}>Use TonApi</button>
+    </div>
+);
+```
 
 ### `useGaslessProviderMetadata`
 
@@ -847,9 +876,13 @@ Hook to fetch static metadata (display name, logo, url) for a gasless provider.
 
 ```tsx
 const { data: metadata, isLoading } = useGaslessProviderMetadata();
-if (isLoading || !metadata) return null;
+
+if (isLoading) return <div>Loading provider...</div>;
+if (!metadata) return null;
+
 return (
     <a href={metadata.url} target="_blank" rel="noreferrer">
+        {metadata.logo && <img src={metadata.logo} alt="" width={16} height={16} />}
         {metadata.name}
     </a>
 );
@@ -861,6 +894,9 @@ Hook to discover the assets the gasless relayer accepts as fee payment.
 
 ```tsx
 const { data: supportedAssets, isLoading } = useGaslessSupportedAssets();
+
+if (isLoading) return <div>Loading fee assets...</div>;
+
 return (
     <select>
         {supportedAssets?.map((asset) => (
@@ -883,7 +919,7 @@ const { data: quote, isFetching } = useGaslessQuote({
         {
             address: 'EQ...jetton_wallet_address',
             amount: '60000000', // 0.06 TON gas budget
-            payload: jettonTransferPayloadBase64,
+            payload: 'te6cckEBAQEAAgAAAA==' as Base64String,
         },
     ],
 });
@@ -903,55 +939,39 @@ return (
 
 ### `useSendGaslessTransaction`
 
-Hook to sign a previously computed quote and submit the resulting BoC to the relayer.
+Hook to sign a previously computed quote and submit the resulting BoC to the relayer. Returns a `GaslessSendResponse` (`{ boc, normalizedBoc, normalizedHash, internalBoc }`).
 
 Throws:
 - `GaslessError(SIGN_MESSAGE_NOT_SUPPORTED)` if the wallet does not advertise `SignMessage`.
 - `GaslessError(TOO_MANY_MESSAGES)` if the quote carries more messages than the wallet's `maxMessages` cap.
 
 ```tsx
-const { data: quote } = useGaslessQuote({ feeAsset, messages });
+const { data: quote } = useGaslessQuote({
+    feeAsset: asAddressFriendly('EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs'),
+    messages: [
+        {
+            address: 'EQ...jetton_wallet_address',
+            amount: '60000000',
+            payload: 'te6cckEBAQEAAgAAAA==' as Base64String,
+        },
+    ],
+});
 const { mutateAsync: sendGasless, isPending } = useSendGaslessTransaction();
 
 const handleSend = async () => {
     if (!quote) return;
-    const { normalizedHash, internalBoc } = await sendGasless({ quote });
-    console.log('Submitted. Hash:', normalizedHash, 'BoC:', internalBoc);
+    try {
+        const { internalBoc, normalizedHash } = await sendGasless({ quote });
+        console.log('Submitted. Hash:', normalizedHash, 'BoC:', internalBoc);
+    } catch (e) {
+        console.error(e);
+    }
 };
 
 return (
     <button onClick={handleSend} disabled={!quote || isPending}>
         {isPending ? 'Sending...' : 'Send Gasless'}
     </button>
-);
-```
-
-### `useGaslessProvider`
-
-Hook to read and change the currently selected gasless provider. Returns a tuple `[provider, setProviderId]` — mirrors `useSwapProvider`.
-
-```tsx
-const [provider, setProviderId] = useGaslessProvider();
-return (
-    <div>
-        <div>Current: {provider?.providerId ?? 'none'}</div>
-        <button onClick={() => setProviderId('tonapi')}>Use TonApi</button>
-    </div>
-);
-```
-
-### `useGaslessProviders`
-
-Hook to get all registered gasless providers. The returned array keeps a stable reference until the provider list changes.
-
-```tsx
-const providers = useGaslessProviders();
-return (
-    <ul>
-        {providers.map((p) => (
-            <li key={p.providerId}>{p.providerId}</li>
-        ))}
-    </ul>
 );
 ```
 
