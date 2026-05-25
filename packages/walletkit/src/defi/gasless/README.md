@@ -74,7 +74,8 @@ The `validUntil` timestamp is set by the relayer (typically ~2 minutes). In `@to
 
 | Code | Meaning |
 |---|---|
-| `UNSUPPORTED_FEE_JETTON` | The relayer does not accept the chosen jetton as fee payment. |
+| `UNSUPPORTED_FEE_JETTON` | The relayer does not accept the chosen jetton as fee payment. The TonAPI provider surfaces this when the server replies with `error_code: 40000`. |
+| `UNSUPPORTED_OPERATION` | Sentinel for provider-side capability mismatches (analogue of `StakingErrorCode.UnsupportedOperation`). Currently unused; reserved for future providers that may not implement every method. |
 | `QUOTE_FAILED` | Relayer rejected the quote (insufficient liquidity, malformed messages, …). |
 | `SEND_FAILED` | Relayer rejected the signed BoC, or all retries were exhausted. |
 | `CONFIG_FAILED` | Relayer config endpoint failed. |

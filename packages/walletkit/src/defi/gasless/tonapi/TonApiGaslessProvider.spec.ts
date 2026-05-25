@@ -237,6 +237,28 @@ describe('TonApiGaslessProvider.getQuote', () => {
             code: GaslessErrorCode.QuoteFailed,
         });
     });
+
+    it('maps TonAPI error_code 40000 to GaslessError(UNSUPPORTED_FEE_JETTON)', async () => {
+        fetchApi.mockResolvedValueOnce(
+            new Response(JSON.stringify({ error: 'Jetton is not supported.', error_code: 40000 }), {
+                status: 400,
+                headers: { 'content-type': 'application/json' },
+            }),
+        );
+
+        await expect(
+            provider.getQuote({
+                feeJettonMaster: TEST_ADDRESS,
+                walletAddress: TEST_ADDRESS,
+                walletPublicKey: TEST_PUBKEY,
+                messages: [{ address: TEST_ADDRESS, amount: '0' }],
+            }),
+        ).rejects.toMatchObject({
+            name: 'GaslessError',
+            code: GaslessErrorCode.UnsupportedFeeJetton,
+            message: 'Jetton is not supported.',
+        });
+    });
 });
 
 describe('TonApiGaslessProvider.sendTransaction', () => {

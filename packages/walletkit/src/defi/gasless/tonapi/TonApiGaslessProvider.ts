@@ -14,9 +14,10 @@ import { BaseApiClient } from '../../../clients/BaseApiClient';
 import { globalLogger } from '../../../core/Logger';
 import type { ProviderFactoryContext } from '../../../types/factory';
 import { CallForSuccess } from '../../../utils/retry';
-import { GaslessError, GaslessErrorCode } from '../errors';
+import { GaslessErrorCode } from '../errors';
 import { GaslessProvider } from '../GaslessProvider';
 import { mapGaslessConfig } from './mappers/map-gasless-config';
+import { mapTonApiGaslessError } from './mappers/map-gasless-error';
 import { buildGaslessQuoteRequest, mapGaslessQuote } from './mappers/map-gasless-quote';
 import { buildGaslessSendRequest } from './mappers/map-gasless-send';
 import type { TonApiGaslessConfig } from './types/config';
@@ -122,11 +123,7 @@ export class TonApiGaslessProvider extends GaslessProvider {
             return mapGaslessConfig(raw);
         } catch (error) {
             log.error('Failed to fetch gasless config', { error });
-            throw new GaslessError(
-                error instanceof Error ? error.message : 'Failed to fetch gasless config',
-                GaslessErrorCode.ConfigFailed,
-                error,
-            );
+            throw mapTonApiGaslessError(error, GaslessErrorCode.ConfigFailed, 'Failed to fetch gasless config');
         }
     }
 
@@ -142,11 +139,7 @@ export class TonApiGaslessProvider extends GaslessProvider {
             return mapGaslessQuote(raw);
         } catch (error) {
             log.error('Failed to quote gasless transaction', { error, params });
-            throw new GaslessError(
-                error instanceof Error ? error.message : 'Failed to quote gasless transaction',
-                GaslessErrorCode.QuoteFailed,
-                error,
-            );
+            throw mapTonApiGaslessError(error, GaslessErrorCode.QuoteFailed, 'Failed to quote gasless transaction');
         }
     }
 
@@ -161,11 +154,7 @@ export class TonApiGaslessProvider extends GaslessProvider {
             );
         } catch (error) {
             log.error('Failed to send gasless transaction', { error });
-            throw new GaslessError(
-                error instanceof Error ? error.message : 'Failed to send gasless transaction',
-                GaslessErrorCode.SendFailed,
-                error,
-            );
+            throw mapTonApiGaslessError(error, GaslessErrorCode.SendFailed, 'Failed to send gasless transaction');
         }
     }
 }

@@ -10,6 +10,7 @@ import { DefiError } from '../errors';
 
 export enum GaslessErrorCode {
     UnsupportedFeeJetton = 'UNSUPPORTED_FEE_JETTON',
+    UnsupportedOperation = 'UNSUPPORTED_OPERATION',
     QuoteFailed = 'QUOTE_FAILED',
     SendFailed = 'SEND_FAILED',
     ConfigFailed = 'CONFIG_FAILED',
