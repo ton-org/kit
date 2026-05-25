@@ -10,7 +10,7 @@ import { useState, useEffect, useMemo } from 'react';
 import type { FC } from 'react';
 import {
     useAddress,
-    useGaslessConfig,
+    useGaslessSupportedAssets,
     useGaslessQuote,
     useJettonBalanceByAddress,
     useJettonWalletAddress,
@@ -50,7 +50,7 @@ export const GaslessPage: FC = () => {
     const address = useAddress();
     const [selectedWallet] = useSelectedWallet();
 
-    const { data: gaslessConfig, isLoading: isConfigLoading } = useGaslessConfig();
+    const { data: supportedAssets, isLoading: isAssetsLoading } = useGaslessSupportedAssets();
     const { mutateAsync: sendGasless, isPending: isSending } = useSendGaslessTransaction();
 
     const [recipient, setRecipient] = useState('');
@@ -62,13 +62,13 @@ export const GaslessPage: FC = () => {
     }, [address, recipient]);
 
     useEffect(() => {
-        if (!feeAsset && gaslessConfig?.supportedAssets.length) {
-            const preferred = gaslessConfig.supportedAssets.find((j: GaslessSupportedAsset) =>
-                compareAddress(j.address, USDT_MASTER_MAINNET),
+        if (!feeAsset && supportedAssets?.length) {
+            const preferred = supportedAssets.find((asset: GaslessSupportedAsset) =>
+                compareAddress(asset.address, USDT_MASTER_MAINNET),
             );
-            setFeeAsset(preferred?.address ?? gaslessConfig.supportedAssets[0].address);
+            setFeeAsset(preferred?.address ?? supportedAssets[0].address);
         }
-    }, [feeAsset, gaslessConfig]);
+    }, [feeAsset, supportedAssets]);
 
     const { data: usdtBalance } = useJettonBalanceByAddress({
         jettonAddress: USDT_MASTER_MAINNET,
@@ -198,9 +198,9 @@ export const GaslessPage: FC = () => {
                                 className="w-full p-2 bg-secondary rounded-md border border-border"
                                 value={feeAsset ?? ''}
                                 onChange={(e) => setFeeAsset(e.target.value)}
-                                disabled={isConfigLoading || !gaslessConfig?.supportedAssets.length}
+                                disabled={isAssetsLoading || !supportedAssets?.length}
                             >
-                                {gaslessConfig?.supportedAssets.map((asset) => (
+                                {supportedAssets?.map((asset) => (
                                     <option key={asset.address} value={asset.address}>
                                         {asset.address.slice(0, 6)}…{asset.address.slice(-4)}
                                     </option>

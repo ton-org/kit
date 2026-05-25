@@ -120,7 +120,7 @@ describe('TonApiGaslessProvider.getMetadata', () => {
     });
 });
 
-describe('TonApiGaslessProvider.getConfig', () => {
+describe('TonApiGaslessProvider.getSupportedAssets', () => {
     let fetchApi: ReturnType<typeof makeFetch>;
     let provider: TonApiGaslessProvider;
 
@@ -135,19 +135,19 @@ describe('TonApiGaslessProvider.getConfig', () => {
         ...overrides,
     });
 
-    it('maps the TonApi response to GaslessConfig', async () => {
+    it('maps the TonApi response to GaslessSupportedAsset[]', async () => {
         fetchApi.mockResolvedValueOnce(jsonResponse(rawConfig()));
 
-        const cfg = await provider.getConfig(Network.mainnet());
+        const assets = await provider.getSupportedAssets(Network.mainnet());
 
-        expect(cfg.relayAddress).toBe(Address.parse(TEST_ADDRESS).toString({ bounceable: true }));
-        expect(cfg.supportedAssets).toHaveLength(1);
+        expect(assets).toHaveLength(1);
+        expect(assets[0].address).toBe(Address.parse(TEST_ADDRESS).toString({ bounceable: true }));
     });
 
     it('hits /v2/gasless/config on the mainnet endpoint when called for mainnet', async () => {
         fetchApi.mockResolvedValueOnce(jsonResponse(rawConfig({ gas_jettons: [] })));
 
-        await provider.getConfig(Network.mainnet());
+        await provider.getSupportedAssets(Network.mainnet());
 
         expect((fetchApi.mock.calls[0][0] as URL).toString()).toBe('https://tonapi.io/v2/gasless/config');
     });
@@ -155,7 +155,7 @@ describe('TonApiGaslessProvider.getConfig', () => {
     it('uses the testnet endpoint when called for testnet', async () => {
         fetchApi.mockResolvedValueOnce(jsonResponse(rawConfig({ gas_jettons: [] })));
 
-        await provider.getConfig(Network.testnet());
+        await provider.getSupportedAssets(Network.testnet());
 
         expect((fetchApi.mock.calls[0][0] as URL).origin).toBe('https://testnet.tonapi.io');
     });
@@ -166,7 +166,7 @@ describe('TonApiGaslessProvider.getConfig', () => {
         });
         fetchApi.mockResolvedValueOnce(jsonResponse(rawConfig({ gas_jettons: [] })));
 
-        await authedProvider.getConfig(Network.mainnet());
+        await authedProvider.getSupportedAssets(Network.mainnet());
 
         const init = fetchApi.mock.calls[0][1] as RequestInit;
         const headers = init.headers as Headers;
@@ -176,7 +176,7 @@ describe('TonApiGaslessProvider.getConfig', () => {
     it('throws GaslessError(UNSUPPORTED_OPERATION) when called for a non-configured chain', async () => {
         const mainnetOnly = makeProvider(fetchApi, { networks: [Network.mainnet()] });
 
-        await expect(mainnetOnly.getConfig(Network.testnet())).rejects.toMatchObject({
+        await expect(mainnetOnly.getSupportedAssets(Network.testnet())).rejects.toMatchObject({
             name: 'GaslessError',
             code: GaslessErrorCode.UnsupportedOperation,
         });
@@ -185,7 +185,7 @@ describe('TonApiGaslessProvider.getConfig', () => {
     it('wraps fetch errors in GaslessError(CONFIG_FAILED)', async () => {
         fetchApi.mockResolvedValueOnce(new Response('boom', { status: 500 }));
 
-        await expect(provider.getConfig(Network.mainnet())).rejects.toMatchObject({
+        await expect(provider.getSupportedAssets(Network.mainnet())).rejects.toMatchObject({
             name: 'GaslessError',
             code: GaslessErrorCode.ConfigFailed,
         });

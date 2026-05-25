@@ -4,7 +4,7 @@
 
 ## Flow
 
-1. **Configure** – fetch the relayer config (`getConfig`) to learn which assets it accepts as fee payment and its relay address.
+1. **Discover** – call `getSupportedAssets` to learn which assets the relayer accepts as fee payment (omit if the dApp already knows which asset it wants to charge).
 2. **Quote** – call `getQuote` with your messages and chosen fee asset. The relayer returns *wrapped* messages, a fee, and a `validUntil` window.
 3. **Sign** – pass the wrapped messages to `wallet.signMessage` (TonConnect `SignMessage` feature). The wallet returns a signed *internal-message* BoC.
 4. **Send** – submit the signed BoC via `sendTransaction`; the relayer converts it to an external message, pays the gas, and broadcasts.
@@ -42,8 +42,8 @@ The connected wallet must expose the `SignMessage` feature (advertised via TonCo
 import { Address } from '@ton/core';
 import { Network } from '@ton/walletkit';
 
-const config = await kit.gasless.getConfig();
-const feeAsset = config.supportedAssets[0].address;
+const supportedAssets = await kit.gasless.getSupportedAssets();
+const feeAsset = supportedAssets[0].address;
 
 const quote = await kit.gasless.getQuote({
     feeAsset,
@@ -93,12 +93,12 @@ To target a different relayer, extend `GaslessProvider`:
 ```typescript
 import {
     GaslessProvider,
-    type GaslessConfig,
     type GaslessProviderMetadata,
     type GaslessQuoteParams,
     type GaslessQuote,
     type GaslessSendParams,
     type GaslessSendResponse,
+    type GaslessSupportedAsset,
     type Network,
 } from '@ton/walletkit';
 
@@ -113,7 +113,7 @@ export class MyGaslessProvider extends GaslessProvider {
         return { name: 'My Relayer', url: 'https://my-relayer.example' };
     }
 
-    async getConfig(): Promise<GaslessConfig> {
+    async getSupportedAssets(): Promise<GaslessSupportedAsset[]> {
         // …
     }
 
@@ -138,8 +138,8 @@ export class MyGaslessProvider extends GaslessProvider {
 #### `getMetadata(providerId?)`
 Static metadata for the gasless provider: `{ name, logo?, url? }`. Useful for rendering provider info in the UI.
 
-#### `getConfig(network?, providerId?)`
-Fetch the relayer config (supported fee assets, relay address). `network` defaults to the provider's first supported network.
+#### `getSupportedAssets(network?, providerId?)`
+Discover the assets the relayer accepts as fee payment. `network` defaults to the provider's first supported network.
 
 #### `getQuote(params, providerId?)`
 Wrap caller's messages with relayer fee-collection logic. Returns wrapped messages, fee, and `validUntil`. Pass `feeAsset` to choose a jetton master (omit for free / sponsored providers).

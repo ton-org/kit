@@ -127,11 +127,11 @@ export {
     type WatchGaslessProvidersReturnType,
 } from './gasless/watch-gasless-providers';
 export {
-    getGaslessConfig,
-    type GetGaslessConfigOptions,
-    type GetGaslessConfigReturnType,
-    type GetGaslessConfigErrorType,
-} from './gasless/get-gasless-config';
+    getGaslessSupportedAssets,
+    type GetGaslessSupportedAssetsOptions,
+    type GetGaslessSupportedAssetsReturnType,
+    type GetGaslessSupportedAssetsErrorType,
+} from './gasless/get-gasless-supported-assets';
 export {
     getGaslessProviderMetadata,
     type GetGaslessProviderMetadataOptions,

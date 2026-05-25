@@ -9,12 +9,12 @@
 import { Address } from '@ton/core';
 
 import type {
-    GaslessConfig,
     GaslessProviderMetadata,
     GaslessQuote,
     GaslessQuoteParams,
     GaslessSendParams,
     GaslessSendResponse,
+    GaslessSupportedAsset,
     Network,
 } from '../../../api/models';
 import { ApiClientTonApi } from '../../../clients/tonapi/ApiClientTonApi';
@@ -25,7 +25,7 @@ import { GaslessError, GaslessErrorCode } from '../errors';
 import { GaslessProvider } from '../GaslessProvider';
 import { DEFAULT_METADATA, DEFAULT_PROVIDER_ID, DEFAULT_SEND_RETRIES, DEFAULT_SEND_RETRY_DELAY_MS } from './constants';
 import { isTransientError, networkFromChainId } from './helpers';
-import { mapGaslessConfig } from './mappers/map-gasless-config';
+import { mapGaslessSupportedAssets } from './mappers/map-gasless-supported-assets';
 import { mapTonApiGaslessError } from './mappers/map-gasless-error';
 import { buildGaslessQuoteRequest, mapGaslessQuote } from './mappers/map-gasless-quote';
 import { buildGaslessSendRequest, mapGaslessSend } from './mappers/map-gasless-send';
@@ -126,14 +126,18 @@ export class TonApiGaslessProvider extends GaslessProvider {
         return DEFAULT_METADATA;
     }
 
-    async getConfig(network: Network): Promise<GaslessConfig> {
+    async getSupportedAssets(network: Network): Promise<GaslessSupportedAsset[]> {
         try {
             const http = this.getClient(network);
             const raw = await http.getJson<TonApiGaslessConfig>('/v2/gasless/config');
-            return mapGaslessConfig(raw);
+            return mapGaslessSupportedAssets(raw);
         } catch (error) {
-            log.error('Failed to fetch gasless config', { error, chainId: network.chainId });
-            throw mapTonApiGaslessError(error, GaslessErrorCode.ConfigFailed, 'Failed to fetch gasless config');
+            log.error('Failed to fetch gasless supported assets', { error, chainId: network.chainId });
+            throw mapTonApiGaslessError(
+                error,
+                GaslessErrorCode.ConfigFailed,
+                'Failed to fetch gasless supported assets',
+            );
         }
     }
 

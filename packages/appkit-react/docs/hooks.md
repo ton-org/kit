@@ -855,15 +855,15 @@ return (
 );
 ```
 
-### `useGaslessConfig`
+### `useGaslessSupportedAssets`
 
-Hook to fetch the relayer config (supported fee assets + relay address).
+Hook to discover the assets the gasless relayer accepts as fee payment.
 
 ```tsx
-const { data: config, isLoading } = useGaslessConfig();
+const { data: supportedAssets, isLoading } = useGaslessSupportedAssets();
 return (
     <select>
-        {config?.supportedAssets.map((asset) => (
+        {supportedAssets?.map((asset) => (
             <option key={asset.address} value={asset.address}>
                 {asset.address}
             </option>

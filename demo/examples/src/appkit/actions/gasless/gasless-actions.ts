@@ -8,12 +8,12 @@
 
 import type { AppKit } from '@ton/appkit';
 import {
-    getGaslessConfig,
     getGaslessManager,
     getGaslessProvider,
     getGaslessProviderMetadata,
     getGaslessProviders,
     getGaslessQuote,
+    getGaslessSupportedAssets,
     sendGaslessTransaction,
     setDefaultGaslessProvider,
     watchGaslessProviders,
@@ -52,11 +52,11 @@ export const gaslessExample = async (appKit: AppKit) => {
     console.log('Gasless provider:', metadata.name, metadata.url);
     // SAMPLE_END: GET_GASLESS_PROVIDER_METADATA
 
-    // SAMPLE_START: GET_GASLESS_CONFIG
-    const config = await getGaslessConfig(appKit);
-    const feeAsset = config.supportedAssets[0].address;
-    console.log('Relay address:', config.relayAddress);
-    // SAMPLE_END: GET_GASLESS_CONFIG
+    // SAMPLE_START: GET_GASLESS_SUPPORTED_ASSETS
+    const supportedAssets = await getGaslessSupportedAssets(appKit);
+    const feeAsset = supportedAssets[0].address;
+    console.log('Supported fee assets:', supportedAssets.length);
+    // SAMPLE_END: GET_GASLESS_SUPPORTED_ASSETS
 
     // SAMPLE_START: GET_GASLESS_QUOTE
     const quote = await getGaslessQuote(appKit, {
@@ -77,5 +77,5 @@ export const gaslessExample = async (appKit: AppKit) => {
     console.log('Submitted gasless transaction. Hash:', result.normalizedHash, 'BoC:', result.internalBoc);
     // SAMPLE_END: SEND_GASLESS_TRANSACTION
 
-    return { gaslessManager, provider, config, quote };
+    return { gaslessManager, provider, supportedAssets, quote };
 };

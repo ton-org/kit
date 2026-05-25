@@ -697,13 +697,13 @@ const metadata = await getGaslessProviderMetadata(appKit);
 console.log('Gasless provider:', metadata.name, metadata.url);
 ```
 
-### `getGaslessConfig`
+### `getGaslessSupportedAssets`
 
-Fetch relayer configuration (supported fee assets + relay address).
+Discover the assets the gasless relayer accepts as fee payment.
 
 ```ts
-const config = await getGaslessConfig(appKit);
-const feeAsset = config.supportedAssets[0].address;
+const supportedAssets = await getGaslessSupportedAssets(appKit);
+const feeAsset = supportedAssets[0].address;
 ```
 
 ### `getGaslessQuote`

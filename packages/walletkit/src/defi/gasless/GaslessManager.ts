@@ -8,12 +8,12 @@
 
 import type { GaslessAPI, GaslessProviderInterface } from '../../api/interfaces';
 import type {
-    GaslessConfig,
     GaslessProviderMetadata,
     GaslessQuote,
     GaslessQuoteParams,
     GaslessSendParams,
     GaslessSendResponse,
+    GaslessSupportedAsset,
     Network,
 } from '../../api/models';
 import { globalLogger } from '../../core/Logger';
@@ -51,22 +51,22 @@ export class GaslessManager extends DefiManager<GaslessProviderInterface> implem
     }
 
     /**
-     * Fetch relayer configuration (supported jettons and relay address).
+     * Discover the assets the relayer accepts as fee payment.
      *
      * `network` defaults to the provider's first supported network.
      */
-    async getConfig(network?: Network, providerId?: string): Promise<GaslessConfig> {
+    async getSupportedAssets(network?: Network, providerId?: string): Promise<GaslessSupportedAsset[]> {
         const provider = this.getProvider(providerId ?? this.defaultProviderId);
         const targetNetwork = network ?? provider.getSupportedNetworks()[0];
-        log.debug('Getting gasless config', {
+        log.debug('Getting gasless supported assets', {
             network: targetNetwork?.chainId,
             providerId: providerId ?? this.defaultProviderId,
         });
 
         try {
-            return await provider.getConfig(targetNetwork);
+            return await provider.getSupportedAssets(targetNetwork);
         } catch (error) {
-            log.error('Failed to get gasless config', { error });
+            log.error('Failed to get gasless supported assets', { error });
             throw error;
         }
     }

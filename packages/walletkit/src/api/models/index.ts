@@ -138,7 +138,6 @@ export type { UnstakeModes } from './staking/UnstakeMode';
 export { UnstakeMode } from './staking/UnstakeMode';
 
 // Gasless models
-export type { GaslessConfig } from './gasless/GaslessConfig';
 export type { GaslessSupportedAsset } from './gasless/GaslessSupportedAsset';
 export type { GaslessProviderMetadata, GaslessProviderMetadataOverride } from './gasless/GaslessProviderMetadata';
 export type { GaslessQuoteParams } from './gasless/GaslessQuoteParams';

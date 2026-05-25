@@ -8,12 +8,12 @@
 
 import type { GaslessProviderInterface } from '../../api/interfaces';
 import type {
-    GaslessConfig,
     GaslessProviderMetadata,
     GaslessQuote,
     GaslessQuoteParams,
     GaslessSendParams,
     GaslessSendResponse,
+    GaslessSupportedAsset,
     Network,
 } from '../../api/models';
 
@@ -29,7 +29,7 @@ import type {
  *   readonly providerId = 'my-relayer';
  *
  *   async getMetadata(): Promise<GaslessProviderMetadata> { ... }
- *   async getConfig(network: Network): Promise<GaslessConfig> { ... }
+ *   async getSupportedAssets(network: Network): Promise<GaslessSupportedAsset[]> { ... }
  *   async getQuote(params): Promise<GaslessQuote> { ... }
  *   async sendTransaction(params): Promise<GaslessSendResponse> { ... }
  * }
@@ -41,7 +41,7 @@ export abstract class GaslessProvider implements GaslessProviderInterface {
 
     abstract getSupportedNetworks(): Network[];
     abstract getMetadata(): Promise<GaslessProviderMetadata>;
-    abstract getConfig(network: Network): Promise<GaslessConfig>;
+    abstract getSupportedAssets(network: Network): Promise<GaslessSupportedAsset[]>;
     abstract getQuote(params: GaslessQuoteParams): Promise<GaslessQuote>;
     abstract sendTransaction(params: GaslessSendParams): Promise<GaslessSendResponse>;
 }

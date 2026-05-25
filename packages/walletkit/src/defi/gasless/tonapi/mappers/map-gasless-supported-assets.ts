@@ -6,13 +6,11 @@
  *
  */
 
-import type { GaslessConfig } from '../../../../api/models';
+import type { GaslessSupportedAsset } from '../../../../api/models';
 import { asAddressFriendly } from '../../../../utils/address';
 import type { TonApiGaslessConfig } from '../types/config';
 
-export const mapGaslessConfig = (raw: TonApiGaslessConfig): GaslessConfig => ({
-    relayAddress: asAddressFriendly(raw.relay_address),
-    supportedAssets: raw.gas_jettons.map((jetton) => ({
+export const mapGaslessSupportedAssets = (raw: TonApiGaslessConfig): GaslessSupportedAsset[] =>
+    raw.gas_jettons.map((jetton) => ({
         address: asAddressFriendly(jetton.master_id),
-    })),
-});
+    }));

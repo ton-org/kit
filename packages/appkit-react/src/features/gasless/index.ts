@@ -7,10 +7,10 @@
  */
 
 export {
-    useGaslessConfig,
-    type UseGaslessConfigParameters,
-    type UseGaslessConfigReturnType,
-} from './hooks/use-gasless-config';
+    useGaslessSupportedAssets,
+    type UseGaslessSupportedAssetsParameters,
+    type UseGaslessSupportedAssetsReturnType,
+} from './hooks/use-gasless-supported-assets';
 export {
     useGaslessProviderMetadata,
     type UseGaslessProviderMetadataParameters,

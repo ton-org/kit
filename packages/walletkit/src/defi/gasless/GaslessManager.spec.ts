@@ -11,11 +11,11 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { GaslessProviderInterface } from '../../api/interfaces';
 import type {
     Base64String,
-    GaslessConfig,
     GaslessQuote,
     GaslessQuoteParams,
     GaslessSendParams,
     GaslessSendResponse,
+    GaslessSupportedAsset,
     Hex,
 } from '../../api/models';
 import { Network } from '../../api/models';
@@ -31,10 +31,9 @@ const makeProvider = (providerId: string): GaslessProviderInterface => ({
     providerId,
     getSupportedNetworks: () => [Network.mainnet()],
     getMetadata: vi.fn().mockResolvedValue({ name: 'Test', url: 'https://test.example' }),
-    getConfig: vi.fn<(n: Network) => Promise<GaslessConfig>>().mockResolvedValue({
-        relayAddress: TEST_ADDRESS,
-        supportedAssets: [{ address: TEST_ADDRESS }],
-    }),
+    getSupportedAssets: vi
+        .fn<(n: Network) => Promise<GaslessSupportedAsset[]>>()
+        .mockResolvedValue([{ address: TEST_ADDRESS }]),
     getQuote: vi.fn<(p: GaslessQuoteParams) => Promise<GaslessQuote>>().mockResolvedValue({
         network: Network.mainnet(),
         messages: [],
@@ -129,14 +128,14 @@ describe('GaslessManager delegation', () => {
         expect(provider.getMetadata).toHaveBeenCalledTimes(1);
     });
 
-    it('forwards getConfig to the default provider', async () => {
+    it('forwards getSupportedAssets to the default provider', async () => {
         const { manager } = makeManager();
         const provider = makeProvider('one');
         manager.registerProvider(provider);
 
-        await manager.getConfig();
+        await manager.getSupportedAssets();
 
-        expect(provider.getConfig).toHaveBeenCalledTimes(1);
+        expect(provider.getSupportedAssets).toHaveBeenCalledTimes(1);
     });
 
     it('forwards getQuote to the named provider', async () => {

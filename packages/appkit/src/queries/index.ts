@@ -167,11 +167,14 @@ export {
 
 // Gasless
 export {
-    getGaslessConfigQueryOptions,
-    type GetGaslessConfigQueryConfig,
-    type GetGaslessConfigData,
-    type GetGaslessConfigErrorType,
-} from './gasless/get-gasless-config';
+    getGaslessSupportedAssetsQueryOptions,
+    getGaslessSupportedAssetsQueryKey,
+    type GetGaslessSupportedAssetsQueryConfig,
+    type GetGaslessSupportedAssetsData,
+    type GetGaslessSupportedAssetsErrorType,
+    type GetGaslessSupportedAssetsQueryKey,
+    type GetGaslessSupportedAssetsQueryOptions,
+} from './gasless/get-gasless-supported-assets';
 export {
     getGaslessProviderMetadataQueryOptions,
     getGaslessProviderMetadataQueryKey,
