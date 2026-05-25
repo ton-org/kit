@@ -8,7 +8,7 @@ AppKit supports gasless transactions: a relayer co-signs and broadcasts the tran
 
 Available providers:
 
-- **createTonApiGaslessProvider** – relay via the [TonAPI gasless REST API](https://docs.tonapi.io/tonapi/rest-api/gasless) (no extra dependencies, [provider README](https://github.com/ton-connect/kit/blob/main/packages/walletkit/src/defi/gasless/tonapi/README.md))
+- **createTonApiGaslessProvider** – relay via the TonAPI gasless REST API (no extra dependencies)
 
 ## Wallet requirements
 
@@ -46,7 +46,7 @@ The jetton-transfer payload and the `messages` array are unchanged — the relay
 
 To pick a specific fee asset, pass `feeAsset` to `getGaslessQuote`. Discover the relayer-accepted assets with `getGaslessSupportedAssets(appKit)` — or hardcode the jetton master you want to charge in.
 
-For React projects, the same flow is available as hooks (`useSendTransaction` / `useGaslessQuote` + `useSendGaslessTransaction`) — see [hooks reference](https://github.com/ton-connect/kit/blob/main/packages/appkit-react/docs/hooks.md#gasless).
+For React projects, the same flow is available as hooks (`useSendTransaction` / `useGaslessQuote` + `useSendGaslessTransaction`).
 
 ## Error codes
 
@@ -59,10 +59,3 @@ For React projects, the same flow is available as hooks (`useSendTransaction` / 
 | `SUPPORTED_ASSETS_FAILED` | Failed to discover relayer-accepted fee assets. |
 | `SIGN_MESSAGE_NOT_SUPPORTED` | Connected wallet does not advertise the `SignMessage` feature. |
 | `TOO_MANY_MESSAGES` | Quote carries more messages than the wallet's `SignMessage.maxMessages` cap. |
-
-## Related
-
-- [Gasless API reference (actions)](./actions.md#gasless)
-- [Gasless React hooks](https://github.com/ton-connect/kit/blob/main/packages/appkit-react/docs/hooks.md#gasless)
-- [TonApi gasless provider README](https://github.com/ton-connect/kit/blob/main/packages/walletkit/src/defi/gasless/tonapi/README.md)
-- [Gasless Manager (walletkit)](https://github.com/ton-connect/kit/blob/main/packages/walletkit/src/defi/gasless/README.md)
