@@ -1826,6 +1826,67 @@ function updateRefs(obj, refMap) {
     }
 }
 
+/**
+ * Convert SCREAMING_SNAKE_CASE / snake_case names to PascalCase.
+ * `FOO_BAR_BAZ` → `FooBarBaz`, `foo_bar` → `FooBar`. Names without an
+ * underscore are not snake_case — left as-is so acronyms like `NFT`, `URL`,
+ * `OK` keep their canonical form.
+ */
+function toPascalCase(str) {
+    if (typeof str !== 'string' || str.length === 0) return str;
+    if (str.includes('_')) {
+        return str
+            .toLowerCase()
+            .split('_')
+            .filter(Boolean)
+            .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+            .join('');
+    }
+    return str;
+}
+
+/**
+ * Rename schema definitions whose name is snake_case or SCREAMING_SNAKE_CASE
+ * to PascalCase, and update every `$ref` accordingly. Names without an
+ * underscore are not considered snake_case and are left alone (so acronyms
+ * like `NFT`, `URL` keep their canonical form).
+ *
+ * Runs early so the rest of the post-processing pipeline sees the final names
+ * when it materialises type references into vendor extensions.
+ */
+function postProcessTypeNameCasing(schema) {
+    const definitions = schema.definitions || {};
+    const renames = {};
+
+    for (const name of Object.keys(definitions)) {
+        if (!name.includes('_')) continue;
+
+        const newName = toPascalCase(name);
+        if (newName !== name) renames[name] = newName;
+    }
+
+    if (Object.keys(renames).length === 0) return;
+
+    for (const [oldName, newName] of Object.entries(renames)) {
+        if (newName !== oldName && newName in definitions) {
+            console.warn(
+                `[type-name-casing] cannot rename ${oldName} -> ${newName}: collides with existing definition`,
+            );
+            delete renames[oldName];
+            continue;
+        }
+        definitions[newName] = definitions[oldName];
+        delete definitions[oldName];
+    }
+
+    const refMap = {};
+    for (const [oldName, newName] of Object.entries(renames)) {
+        refMap[`#/definitions/${oldName}`] = `#/definitions/${newName}`;
+        refMap[`#/components/schemas/${oldName}`] = `#/components/schemas/${newName}`;
+    }
+    updateRefs(definitions, refMap);
+}
+
 // ============================================================================
 // Main
 // ============================================================================
@@ -1875,6 +1936,12 @@ try {
 
     // Post-process: rename definitions with x-definition-name
     postProcessDefinitionNames(schema);
+
+    // Post-process: rewrite SCREAMING_SNAKE_CASE / snake_case definition names
+    // to PascalCase so the Swift generator produces ConnectEventErrorCodes,
+    // not CONNECTEVENTERRORCODES. Runs before any step that materialises type
+    // names into vendor extensions so those see the final name.
+    postProcessTypeNameCasing(schema);
 
     // Post-process: transform @discriminator annotated unions into discriminated union schemas
     postProcessDiscriminatedUnions(schema);
