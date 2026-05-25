@@ -136,14 +136,10 @@
   "peerDependenciesMeta": {
     "@ston-fi/omniston-sdk": {
       "optional": true
-    },
-    "@ton-api/client": {
-      "optional": true
     }
   },
   "optionalDependencies": {
-    "@ston-fi/omniston-sdk": "^0.7.9",
-    "@ton-api/client": "^0.4.0"
+    "@ston-fi/omniston-sdk": "^0.7.9"
   },
   "devDependencies": {
     "@jest/globals": "^30.2.0",

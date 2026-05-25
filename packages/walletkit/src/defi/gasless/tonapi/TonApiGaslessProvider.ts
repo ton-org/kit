@@ -7,7 +7,6 @@
  */
 
 import { Address } from '@ton/core';
-import type { TonApiClient } from '@ton-api/client';
 
 import type {
     GaslessConfig,
@@ -16,25 +15,59 @@ import type {
     GaslessSendParams,
 } from '../../../api/models';
 import { Network } from '../../../api/models';
+import { BaseApiClient } from '../../../clients/BaseApiClient';
 import { globalLogger } from '../../../core/Logger';
 import type { ProviderFactoryContext } from '../../../types/factory';
 import { CallForSuccess } from '../../../utils/retry';
 import { GaslessError, GaslessErrorCode } from '../errors';
 import { GaslessProvider } from '../GaslessProvider';
-import { buildInternalMessageCell, cellToBase64, internalBocToExternalMessageBoc, stripHexPrefix } from './utils';
+import { mapGaslessConfig } from './mappers/map-gasless-config';
+import { buildGaslessEstimateRequest, mapGaslessEstimate } from './mappers/map-gasless-estimate';
+import { buildGaslessSendRequest } from './mappers/map-gasless-send';
+import type { TonApiGaslessConfig } from './types/config';
+import type { TonApiGaslessEstimateResponse } from './types/estimate';
 
 const log = globalLogger.createChild('TonApiGaslessProvider');
 
+const DEFAULT_SEND_RETRIES = 5;
+const DEFAULT_SEND_RETRY_DELAY_MS = 2000;
+
+const defaultEndpoint = (network: Network): string => {
+    switch (network.chainId) {
+        case Network.mainnet().chainId:
+            return 'https://tonapi.io';
+        case Network.tetra().chainId:
+            return 'https://tetra.tonapi.io';
+        default:
+            return 'https://testnet.tonapi.io';
+    }
+};
+
+class TonApiHttpClient extends BaseApiClient {
+    protected appendAuthHeaders(headers: Headers): void {
+        if (this.apiKey) {
+            headers.set('Authorization', `Bearer ${this.apiKey}`);
+        }
+    }
+}
+
 /**
- * Configuration for TonApiGaslessProvider.
+ * Configuration for `TonApiGaslessProvider`.
+ *
+ * Shape mirrors `TonApiStreamingProviderConfig` — one provider instance per
+ * network. To support both mainnet and testnet, register two providers.
  */
 export interface TonApiGaslessProviderConfig {
-    /** Pre-configured TonApi client (brings its own baseUrl / API key). */
-    client: TonApiClient;
-    /** Optional provider id override. Defaults to 'tonapi'. */
+    /** Network this provider operates on. Determines the default endpoint. */
+    network: Network;
+    /** Optional TonAPI REST endpoint override. */
+    endpoint?: string;
+    /** Optional bearer token for TonAPI. */
+    apiKey?: string;
+    /** Optional fetch implementation override (testing / SSR). */
+    fetchApi?: typeof fetch;
+    /** Optional provider id override. Defaults to `tonapi-${network.chainId}`. */
     providerId?: string;
-    /** Networks on which this provider can operate. Defaults to `[Network.mainnet()]`. */
-    networks?: Network[];
     /** Number of send retries on transient errors. Defaults to 5. */
     sendRetries?: number;
     /** Delay between send retries in ms. Defaults to 2000. */
@@ -42,53 +75,56 @@ export interface TonApiGaslessProviderConfig {
 }
 
 /**
- * Gasless provider implementation backed by TonApi (@ton-api/client).
+ * Gasless provider implementation backed by the public TonAPI REST API.
  *
- * Follows the public gasless flow documented at
- * https://docs.tonapi.io/tonapi/rest-api/gasless.
+ * Implements the flow documented at https://docs.tonapi.io/tonapi/rest-api/gasless.
  *
  * @example
  * ```typescript
- * import { TonApiClient } from '@ton-api/client';
- * import { TonApiGaslessProvider } from '@ton/walletkit/gasless/tonapi';
+ * import { Network } from '@ton/walletkit';
+ * import { createTonApiGaslessProvider } from '@ton/walletkit/gasless/tonapi';
  *
- * const provider = new TonApiGaslessProvider({
- *     client: new TonApiClient({ baseUrl: 'https://tonapi.io' }),
+ * const provider = createTonApiGaslessProvider({
+ *     network: Network.mainnet(),
+ *     apiKey: process.env.TON_API_KEY,
  * });
  *
- * kit.registerProvider(provider);
+ * kit.gasless.registerProvider(provider);
  * ```
  */
 export class TonApiGaslessProvider extends GaslessProvider {
     readonly providerId: string;
 
-    private readonly client: TonApiClient;
-    private readonly networks: Network[];
+    private readonly network: Network;
+    private readonly http: TonApiHttpClient;
     private readonly sendRetries: number;
     private readonly sendRetryDelayMs: number;
 
     constructor(config: TonApiGaslessProviderConfig) {
         super();
-        this.client = config.client;
-        this.providerId = config.providerId ?? 'tonapi';
-        this.networks = config.networks ?? [Network.mainnet()];
-        this.sendRetries = config.sendRetries ?? 5;
-        this.sendRetryDelayMs = config.sendRetryDelayMs ?? 2000;
+        this.network = config.network;
+        this.providerId = config.providerId ?? `tonapi-${config.network.chainId}`;
+        this.sendRetries = config.sendRetries ?? DEFAULT_SEND_RETRIES;
+        this.sendRetryDelayMs = config.sendRetryDelayMs ?? DEFAULT_SEND_RETRY_DELAY_MS;
+        this.http = new TonApiHttpClient(
+            {
+                endpoint: config.endpoint,
+                apiKey: config.apiKey,
+                fetchApi: config.fetchApi,
+                network: config.network,
+            },
+            defaultEndpoint(config.network),
+        );
     }
 
     getSupportedNetworks(): Network[] {
-        return this.networks;
+        return [this.network];
     }
 
     async getConfig(): Promise<GaslessConfig> {
         try {
-            const cfg = await this.client.gasless.gaslessConfig();
-            return {
-                relayAddress: cfg.relayAddress.toString({ bounceable: true }),
-                supportedGasJettons: cfg.gasJettons.map((jetton) => ({
-                    jettonMaster: jetton.masterId.toString({ bounceable: true }),
-                })),
-            };
+            const raw = await this.http.getJson<TonApiGaslessConfig>('/v2/gasless/config');
+            return mapGaslessConfig(raw);
         } catch (error) {
             log.error('Failed to fetch gasless config', { error });
             throw new GaslessError(
@@ -100,33 +136,15 @@ export class TonApiGaslessProvider extends GaslessProvider {
     }
 
     async estimate(params: GaslessEstimateParams): Promise<GaslessEstimateResult> {
-        const feeJettonMaster = Address.parse(params.feeJettonMaster);
-        const walletAddress = Address.parse(params.walletAddress);
-        const walletPublicKey = stripHexPrefix(params.walletPublicKey);
-
-        const messagesBoc = params.messages.map((message) => ({
-            boc: buildInternalMessageCell(message),
-        }));
+        const masterId = Address.parse(params.feeJettonMaster).toRawString();
+        const body = buildGaslessEstimateRequest(params);
 
         try {
-            const result = await this.client.gasless.gaslessEstimate(feeJettonMaster, {
-                walletAddress,
-                walletPublicKey,
-                messages: messagesBoc,
-            });
-
-            return {
-                messages: result.messages.map((message) => ({
-                    address: message.address.toString({ bounceable: true }),
-                    amount: message.amount,
-                    payload: message.payload ? cellToBase64(message.payload) : undefined,
-                    stateInit: message.stateInit ? cellToBase64(message.stateInit) : undefined,
-                })),
-                fee: result.commission.toString(),
-                validUntil: result.validUntil,
-                relayAddress: result.relayAddress.toString({ bounceable: true }),
-                from: result.from.toString({ bounceable: true }),
-            };
+            const raw = await this.http.postJson<TonApiGaslessEstimateResponse>(
+                `/v2/gasless/estimate/${masterId}`,
+                body,
+            );
+            return mapGaslessEstimate(raw);
         } catch (error) {
             log.error('Failed to estimate gasless transaction', { error, params });
             throw new GaslessError(
@@ -138,16 +156,11 @@ export class TonApiGaslessProvider extends GaslessProvider {
     }
 
     async send(params: GaslessSendParams): Promise<void> {
-        const walletPublicKey = stripHexPrefix(params.walletPublicKey);
-        const externalBoc = internalBocToExternalMessageBoc(params.internalBoc);
+        const body = buildGaslessSendRequest(params);
 
         try {
             await CallForSuccess(
-                () =>
-                    this.client.gasless.gaslessSend({
-                        walletPublicKey,
-                        boc: externalBoc,
-                    }),
+                () => this.http.postJson('/v2/gasless/send', body),
                 this.sendRetries,
                 this.sendRetryDelayMs,
             );

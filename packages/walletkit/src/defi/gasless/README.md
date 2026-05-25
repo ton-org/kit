@@ -14,7 +14,6 @@
 ```typescript
 import { TonWalletKit, Network } from '@ton/walletkit';
 import { createTonApiGaslessProvider } from '@ton/walletkit/gasless/tonapi';
-import { TonApiClient } from '@ton-api/client';
 
 const kit = new TonWalletKit({
     networks: {
@@ -24,7 +23,8 @@ const kit = new TonWalletKit({
 
 kit.gasless.registerProvider(
     createTonApiGaslessProvider({
-        client: new TonApiClient({ baseUrl: 'https://tonapi.io' }),
+        network: Network.mainnet(),
+        apiKey: process.env.TON_API_KEY,
     }),
 );
 ```
@@ -118,7 +118,7 @@ export class MyGaslessProvider extends GaslessProvider {
 
 ## Available Providers
 
-- **TonApi** (`@ton/walletkit/gasless/tonapi`) – uses the public TonApi gasless API at `https://docs.tonapi.io/tonapi/rest-api/gasless`. Mainnet by default; pass `networks` in the config to enable other chains.
+- **TonApi** (`@ton/walletkit/gasless/tonapi`) – uses the public TonApi gasless REST API documented at `https://docs.tonapi.io/tonapi/rest-api/gasless`. One provider instance per network: pass `network: Network.mainnet()` (default endpoint `https://tonapi.io`) or `network: Network.testnet()` (`https://testnet.tonapi.io`). No external SDK dependency — talks to TonAPI directly via `fetch`.
 
 ## API Reference
 

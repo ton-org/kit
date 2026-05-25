@@ -18,7 +18,6 @@ import { createDeDustProvider } from '@ton/appkit/swap/dedust';
 import { createOmnistonProvider } from '@ton/appkit/swap/omniston';
 import { createTonstakersProvider } from '@ton/appkit/staking/tonstakers';
 import { createTonApiGaslessProvider } from '@ton/appkit/gasless/tonapi';
-import { TonApiClient } from '@ton-api/client';
 
 import { ENV_TON_API_KEY_TESTNET, ENV_TON_API_KEY_MAINNET } from '@/core/configs/env';
 
@@ -35,10 +34,6 @@ const testnetApiClient = new ApiClientToncenter({
 const tetraApiClient = new ApiClientTonApi({
     network: Network.tetra(),
     endpoint: 'https://tetra.tonapi.io',
-});
-
-const mainnetTonApi = new TonApiClient({
-    baseUrl: 'https://tonapi.io',
 });
 
 export const appKit = new AppKit({
@@ -60,6 +55,10 @@ export const appKit = new AppKit({
         createTonstakersProvider(),
         createTonCenterStreamingProvider({ network: Network.mainnet(), apiKey: ENV_TON_API_KEY_MAINNET }),
         createTonCenterStreamingProvider({ network: Network.testnet(), apiKey: ENV_TON_API_KEY_TESTNET }),
-        createTonApiGaslessProvider({ client: mainnetTonApi }),
+        // Note: `apiKey` is intentionally omitted. ENV_TON_API_KEY_MAINNET is a Toncenter v3 key
+        // (hex format) — TonAPI uses a different base32 token format, so passing the Toncenter
+        // key as Bearer here triggers a 401 "illegal base32 data" from TonAPI. The gasless
+        // config endpoint is public; supply a real TonAPI key here if you need higher rate limits.
+        createTonApiGaslessProvider({ network: Network.mainnet() }),
     ],
 });

@@ -122,7 +122,7 @@ export function Base64ToUint8Array(data?: string | null): Uint8Array | null {
  * @param data Uint8Array
  * @returns Base64 string
  */
-export function Uint8ArrayToBase64(data: Uint8Array): string {
+export function Uint8ArrayToBase64(data: Uint8Array): Base64String {
     if (typeof btoa === 'undefined' && typeof Buffer === 'undefined') {
         throw new Error('btoa is not available in this environment');
     }
@@ -130,7 +130,9 @@ export function Uint8ArrayToBase64(data: Uint8Array): string {
     for (let i = 0; i < data.length; i++) {
         binary += String.fromCharCode(data[i]);
     }
-    return typeof btoa === 'function' ? btoa(binary) : Buffer.from(data).toString('base64');
+    return typeof btoa === 'function'
+        ? (btoa(binary) as Base64String)
+        : (Buffer.from(data).toString('base64') as Base64String);
 }
 
 /**
@@ -205,6 +207,6 @@ export function HexToUint8Array(data: Hex): Uint8Array {
  * @param data Hex (hex string starting with 0x)
  * @returns Base64 string
  */
-export function HexToBase64(data: Hex): string {
+export function HexToBase64(data: Hex): Base64String {
     return Uint8ArrayToBase64(HexToUint8Array(data));
 }

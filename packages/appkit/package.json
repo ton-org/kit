@@ -119,9 +119,6 @@
     "@ston-fi/omniston-sdk": {
       "optional": true
     },
-    "@ton-api/client": {
-      "optional": true
-    },
     "@tanstack/query-core": {
       "optional": true
     }
