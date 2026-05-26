@@ -119,7 +119,7 @@
     "@tanstack/query-core": "catalog:",
     "@ton/core": "catalog:",
     "@tonconnect/ui": "catalog:",
-    "typescript": "~5.9.3",
+    "typescript": "catalog:",
     "vitest": "^4.1.4"
   }
 }

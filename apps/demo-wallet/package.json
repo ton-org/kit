@@ -17,7 +17,6 @@
     "build:extension:chrome": "cross-env VITE_APP_ENV=extension TARGET=chrome vite build --config vite.extension.config.ts",
     "build:extension:firefox": "cross-env VITE_APP_ENV=extension TARGET=firefox vite build --config vite.extension.config.ts",
     "build:website": "tsc -b && vite build",
-    "lint": "eslint .",
     "preview": "vite preview",
     "clean": "git clean -xdf .cache .turbo dist dist-extension-chrome dist-extension-firefox node_modules allure-results playwright-report test-results",
     "typecheck": "tsc --noEmit -p tsconfig.app.json"
@@ -34,7 +33,7 @@
     "@ton/walletkit": "workspace:*",
     "@truecarry/vite-plugin-web-extension": "^4.5.1",
     "@truecarry/webext-bridge": "^6.0.2",
-    "buffer": "^6.0.3",
+    "buffer": "catalog:",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "consola": "^3.4.2",
@@ -53,7 +52,6 @@
     "zustand": "^5.0.13"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.59.1",
     "@types/chrome": "^0.1.40",
     "@types/react": "catalog:",
@@ -64,13 +62,8 @@
     "allure-playwright": "^3.7.1",
     "cross-env": "^10.1.0",
     "dotenv": "^17.4.2",
-    "eslint": "^9.39.4",
-    "eslint-plugin-react-hooks": "^7.0.1",
-    "eslint-plugin-react-refresh": "^0.5.2",
-    "globals": "^17.5.0",
-    "typescript": "~5.9.3",
-    "typescript-eslint": "^8.58.2",
-    "vite": "^8.0.8",
+    "typescript": "catalog:",
+    "vite": "catalog:",
     "vite-bundle-analyzer": "^1.3.7",
     "webextension-polyfill": "^0.12.0"
   }

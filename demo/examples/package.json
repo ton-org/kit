@@ -23,7 +23,7 @@
     "react": "catalog:",
     "react-dom": "catalog:",
     "tsx": "^4.22.3",
-    "typescript": "^5.9.3"
+    "typescript": "catalog:"
   },
   "devDependencies": {
     "@testing-library/dom": "^10.4.1",

@@ -36,13 +36,13 @@
   "license": "MIT",
   "devDependencies": {
     "@changesets/cli": "^2.30.0",
-    "@ton/toolchain": "github:the-ton-tech/toolchain#v1.5.0",
-    "eslint": "^9.39.4",
+    "@ton/toolchain": "github:the-ton-tech/toolchain#v1.7.0",
+    "eslint": "catalog:",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-license-header": "^0.9.0",
     "globals": "^17.5.0",
-    "rimraf": "^6.1.2",
-    "turbo": "2.9.6"
+    "rimraf": "catalog:",
+    "turbo": "2.9.14"
   },
   "packageManager": "pnpm@11.3.0+sha512.2c403d6594527287672b1f7056343a1f7c3634036a67ffabfcc2b3d7595d843768f8787148d1b57cf7956c90606bbd192857c363af19e96d2d0ec9ec5741d215"
 }

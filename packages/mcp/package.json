@@ -52,6 +52,7 @@
     "lint": "eslint src --max-warnings 0",
     "lint:fix": "eslint src --max-warnings 0 --fix",
     "test": "vitest run",
+    "clean": "git clean -xdf dist node_modules .turbo",
     "typecheck": "tsc --noEmit"
   },
   "keywords": [
@@ -84,9 +85,9 @@
     "@types/node": "^25.6.0",
     "@types/ws": "^8.18.1",
     "@vitest/coverage-v8": "^4.1.7",
-    "rimraf": "^6.1.0",
-    "rolldown": "1.0.0",
-    "typescript": "~5.9.3",
+    "rimraf": "catalog:",
+    "rolldown": "1.0.2",
+    "typescript": "catalog:",
     "vitest": "^4.1.4"
   },
   "engines": {

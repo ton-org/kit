@@ -5,6 +5,7 @@
 dist-android
 .idea
 .turbo
+.cache
 apps/demo-wallet/dist-extension.pem
 apps/demo-wallet/dist-extension.crx
 coverage
@@ -13,6 +14,7 @@ reports
 *-results
 *-report
 generated
+storybook-static
 .local/
 settings.local.json
 
