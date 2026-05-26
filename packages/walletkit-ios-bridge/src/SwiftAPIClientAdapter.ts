@@ -60,28 +60,28 @@ export class SwiftAPIClientAdapter implements ApiClient {
         return this.swiftApiClient.runGetMethod(address, method, stack, seqno);
     }
 
-    async nftItemsByAddress(_request: NFTsRequest): Promise<NFTsResponse> {
-        throw new Error('nftItemsByAddress is not implemented yet');
+    async nftItemsByAddress(request: NFTsRequest): Promise<NFTsResponse> {
+        return this.swiftApiClient.nftItemsByAddress(request);
     }
 
-    async nftItemsByOwner(_request: UserNFTsRequest): Promise<NFTsResponse> {
-        throw new Error('nftItemsByOwner is not implemented yet');
+    async nftItemsByOwner(request: UserNFTsRequest): Promise<NFTsResponse> {
+        return this.swiftApiClient.nftItemsByOwner(request);
     }
 
-    async fetchEmulation(_messageBoc: Base64String, _ignoreSignature?: boolean): Promise<EmulationResult> {
-        throw new Error('fetchEmulation is not implemented yet');
+    async fetchEmulation(messageBoc: Base64String, ignoreSignature?: boolean): Promise<EmulationResult> {
+        return this.swiftApiClient.fetchEmulation(messageBoc, ignoreSignature);
     }
 
-    async getAccountState(_address: UserFriendlyAddress, _seqno?: number): Promise<AccountState> {
-        throw new Error('getAccountState is not implemented yet');
+    async getAccountState(address: UserFriendlyAddress, seqno?: number): Promise<AccountState> {
+        return this.swiftApiClient.getAccountState(address, seqno);
     }
 
-    async getAccountStates(_addresses: UserFriendlyAddress[]): Promise<AccountStates> {
-        throw new Error('getAccountStates is not implemented yet');
+    async getAccountStates(addresses: UserFriendlyAddress[]): Promise<AccountStates> {
+        return this.swiftApiClient.getAccountStates(addresses);
     }
 
-    async getBalance(_address: UserFriendlyAddress, _seqno?: number): Promise<TokenAmount> {
-        throw new Error('getBalance is not implemented yet');
+    async getBalance(address: UserFriendlyAddress, seqno?: number): Promise<TokenAmount> {
+        return this.swiftApiClient.getBalance(address, seqno);
     }
 
     async getAccountTransactions(_request: TransactionsByAddressRequest): Promise<TransactionsResponse> {
@@ -104,12 +104,12 @@ export class SwiftAPIClientAdapter implements ApiClient {
         throw new Error('getPendingTrace is not implemented yet');
     }
 
-    async resolveDnsWallet(_domain: string): Promise<string | undefined> {
-        throw new Error('resolveDnsWallet is not implemented yet');
+    async resolveDnsWallet(domain: string): Promise<string | undefined> {
+        return this.swiftApiClient.resolveDnsWallet(domain);
     }
 
-    async backResolveDnsWallet(_address: UserFriendlyAddress): Promise<string | undefined> {
-        throw new Error('backResolveDnsWallet is not implemented yet');
+    async backResolveDnsWallet(address: UserFriendlyAddress): Promise<string | undefined> {
+        return this.swiftApiClient.backResolveDnsWallet(address);
     }
 
     async jettonsByAddress(_request: GetJettonsByAddressRequest): Promise<ToncenterResponseJettonMasters> {

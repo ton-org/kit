@@ -149,7 +149,8 @@
     "@tanstack/query-core": ">=5.0.0",
     "@ton/core": "^0.62.0 || ^0.63.0",
     "@ton/crypto": "^3.3.0",
-    "@tonconnect/ui": ">=2.4.1"
+    "@tonconnect/ui": ">=2.5.0-alpha.1",
+    "@tonconnect/sdk": ">=3.5.0-alpha.1"
   },
   "peerDependenciesMeta": {
     "@tonconnect/ui": {

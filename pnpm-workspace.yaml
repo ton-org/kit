@@ -3,6 +3,13 @@ packages:
   - apps/*
   - demo/*
 
+allowBuilds:
+  esbuild: false
+  node-hid: false
+  spawn-sync: false
+  unrs-resolver: false
+  usb: false
+
 catalog:
   '@tanstack/query-core': 5.99.0
   lru-cache: 11.3.5
