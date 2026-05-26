@@ -101,8 +101,13 @@ export async function initTonWalletKit(
     const nativeBridge = window.WalletKitNative;
     if (nativeBridge?.hasCustomFetchManifest?.() && nativeBridge.apiFetchManifest) {
         const fetchFn = nativeBridge.apiFetchManifest.bind(nativeBridge);
-        kitOptions.fetchManifest = async (url: string): Promise<ManifestFetchResult> =>
-            JSON.parse(fetchFn(url)) as ManifestFetchResult;
+        kitOptions.fetchManifest = async (url: string): Promise<ManifestFetchResult> => {
+            const result = fetchFn(url);
+            if (result === null) {
+                throw new Error('apiFetchManifest returned null (no custom fetcher configured)');
+            }
+            return JSON.parse(result) as ManifestFetchResult;
+        };
     }
 
     const devOptions: Record<string, unknown> = {};

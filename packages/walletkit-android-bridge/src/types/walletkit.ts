@@ -41,8 +41,8 @@ export interface WalletKitNativeBridgeType {
     postMessage(json: string): void;
     adapterCallSync(method: string, paramsJson: string): string;
     hasCustomFetchManifest?: () => boolean;
-    // Returns a JSON-encoded ManifestFetchResult.
-    apiFetchManifest?: (url: string) => string;
+    // Returns a JSON-encoded ManifestFetchResult, or null if no custom fetcher is configured.
+    apiFetchManifest?: (url: string) => string | null;
 }
 
 export type WalletKitAdapter = WalletAdapter;
