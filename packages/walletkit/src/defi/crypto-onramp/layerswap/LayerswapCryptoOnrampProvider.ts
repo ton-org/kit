@@ -144,17 +144,16 @@ export class LayerswapCryptoOnrampProvider extends CryptoOnrampProvider<undefine
             );
         }
 
-        let amountDecimal: string;
-        try {
-            const baseUnits = BigInt(params.amount);
-            if (baseUnits < 0n) throw new Error('negative');
-            amountDecimal = formatUnits(baseUnits, sourceCurrency.decimals);
-        } catch {
+        const baseUnits = BigInt(params.amount);
+
+        if (baseUnits < 0n) {
             throw new CryptoOnrampError(
                 `Layerswap: amount "${params.amount}" is not a non-negative integer in base units`,
                 CryptoOnrampErrorCode.InvalidParams,
             );
         }
+
+        const amountDecimal = formatUnits(baseUnits, sourceCurrency.decimals);
 
         const body = {
             amount: amountDecimal,
@@ -207,18 +206,11 @@ export class LayerswapCryptoOnrampProvider extends CryptoOnrampProvider<undefine
             );
         }
 
-        let targetAmountBaseUnits: string;
-        try {
-            targetAmountBaseUnits = parseUnits(
-                data.quote.receive_amount.toString(),
-                targetCurrency.decimals,
-            ).toString();
-        } catch {
-            throw new CryptoOnrampError(
-                `Layerswap: received malformed quote amount "${data.quote.receive_amount}"`,
-                CryptoOnrampErrorCode.ProviderError,
-            );
-        }
+        const targetAmountBaseUnits = parseUnits(
+            data.quote.receive_amount.toString(),
+            targetCurrency.decimals,
+        ).toString();
+
         const rate =
             data.quote.requested_amount > 0
                 ? (data.quote.receive_amount / data.quote.requested_amount).toString()
