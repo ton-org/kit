@@ -47,9 +47,11 @@ export const CardGenerator: React.FC<CardGeneratorProps> = ({ className }) => {
                         <CardPreview card={currentCard} />
                     </div>
                 ) : (
-                    <div className="flex aspect-[3/4] w-56 flex-col items-center justify-center rounded-xl border-2 border-dashed border-tertiary bg-background/40 px-4">
-                        <Sparkles className="mb-2 h-10 w-10 text-tertiary-foreground" />
-                        <p className="text-center text-xs text-tertiary-foreground">Your card will appear here</p>
+                    <div className="w-56 rounded-2xl border-2 border-dashed border-tertiary bg-background/40 p-4">
+                        <div className="mb-4 flex aspect-square items-center justify-center rounded-xl border border-tertiary/20 bg-background/50">
+                            <Sparkles className="h-10 w-10 text-tertiary-foreground" />
+                        </div>
+                        <div className="h-14" />
                     </div>
                 )}
             </div>
