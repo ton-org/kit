@@ -112,6 +112,7 @@ export default {
         selectMethod: 'Select payment method',
         searchMethod: 'Search',
         quoteError: 'Failed to get a quote',
+        depositFailed: 'Failed to create deposit',
         tooManyDecimals: 'Too many decimals',
         providerError: 'Provider error',
         genericError: 'Something went wrong',

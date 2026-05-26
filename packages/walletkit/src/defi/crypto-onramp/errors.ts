@@ -11,6 +11,7 @@ import { DefiError } from '../errors';
 export enum CryptoOnrampErrorCode {
     ProviderError = 'PROVIDER_ERROR',
     QuoteFailed = 'QUOTE_FAILED',
+    DepositFailed = 'DEPOSIT_FAILED',
     RefundAddressRequired = 'REFUND_ADDRESS_REQUIRED',
     InvalidRefundAddress = 'INVALID_REFUND_ADDRESS',
     ReversedAmountNotSupported = 'REVERSED_AMOUNT_NOT_SUPPORTED',

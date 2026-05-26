@@ -22,7 +22,7 @@ export { JettonsManager } from './core/JettonsManager';
 export { DefiError, DefiErrorCode } from './defi/errors';
 export { SwapManager, SwapProvider, SwapError, SwapErrorCode } from './defi/swap';
 export { StakingManager, StakingProvider, StakingError, StakingErrorCode } from './defi/staking';
-export { OnrampManager, OnrampProvider, OnrampError } from './defi/onramp';
+export { OnrampManager, OnrampProvider, OnrampError, OnrampErrorCode } from './defi/onramp';
 export {
     CryptoOnrampManager,
     CryptoOnrampProvider,

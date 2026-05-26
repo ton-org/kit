@@ -26,13 +26,12 @@ import {
     DEFAULT_LAYERSWAP_SUPPORTED_CHAINS,
     LAYERSWAP_DESTINATION_NETWORK,
     LAYERSWAP_DESTINATION_TOKENS,
-    formatBaseUnits,
     isErrorResponse,
     mapLayerswapErrorCode,
     mapStatus,
-    parseBaseUnits,
 } from './utils';
 import type { LayerswapChainConfig } from './utils';
+import { formatUnits, parseUnits } from '../../../utils/units';
 
 const LAYERSWAP_API_URL = 'https://api.layerswap.io/api/v2';
 
@@ -145,7 +144,16 @@ export class LayerswapCryptoOnrampProvider extends CryptoOnrampProvider<undefine
             );
         }
 
-        const amountDecimal = formatBaseUnits(params.amount, sourceCurrency.decimals);
+        const baseUnits = BigInt(params.amount);
+
+        if (baseUnits < 0n) {
+            throw new CryptoOnrampError(
+                `Layerswap: amount "${params.amount}" is not a non-negative integer in base units`,
+                CryptoOnrampErrorCode.InvalidParams,
+            );
+        }
+
+        const amountDecimal = formatUnits(baseUnits, sourceCurrency.decimals);
 
         const body = {
             amount: amountDecimal,
@@ -198,7 +206,11 @@ export class LayerswapCryptoOnrampProvider extends CryptoOnrampProvider<undefine
             );
         }
 
-        const targetAmountBaseUnits = parseBaseUnits(data.quote.receive_amount, targetCurrency.decimals);
+        const targetAmountBaseUnits = parseUnits(
+            data.quote.receive_amount.toString(),
+            targetCurrency.decimals,
+        ).toString();
+
         const rate =
             data.quote.requested_amount > 0
                 ? (data.quote.receive_amount / data.quote.requested_amount).toString()
@@ -320,8 +332,10 @@ export class LayerswapCryptoOnrampProvider extends CryptoOnrampProvider<undefine
         );
 
         const sourceMap = new Map<string, CryptoOnrampSourceCurrency>();
+        let anyFulfilled = false;
         for (const result of results) {
             if (result.status !== 'fulfilled') continue;
+            anyFulfilled = true;
             for (const network of result.value) {
                 const caip2 = slugToCaip2[network.name];
                 if (!caip2) continue;
@@ -332,6 +346,17 @@ export class LayerswapCryptoOnrampProvider extends CryptoOnrampProvider<undefine
                     if (!sourceMap.has(key)) sourceMap.set(key, mapped);
                 }
             }
+        }
+
+        if (!anyFulfilled && results.length > 0) {
+            const firstRejection = results.find(
+                (result): result is PromiseRejectedResult => result.status === 'rejected',
+            );
+            throw new CryptoOnrampError(
+                'Layerswap: failed to fetch supported sources for all destinations',
+                CryptoOnrampErrorCode.ProviderError,
+                firstRejection?.reason,
+            );
         }
 
         return { source: Array.from(sourceMap.values()), destination };

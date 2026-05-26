@@ -46,7 +46,7 @@ export class StakingManager extends DefiManager<StakingProviderInterface> implem
             log.debug('Received staking quote', quote);
             return quote;
         } catch (error) {
-            throw this.createError('Failed to get staking quote', StakingErrorCode.InvalidParams, { error, params });
+            throw new StakingError('Failed to get staking quote', StakingErrorCode.InvalidParams, { error, params });
         }
     }
 
@@ -60,7 +60,7 @@ export class StakingManager extends DefiManager<StakingProviderInterface> implem
         try {
             return await this.getProvider(providerId).buildStakeTransaction(params);
         } catch (error) {
-            throw this.createError('Failed to build staking transaction', StakingErrorCode.InvalidParams, {
+            throw new StakingError('Failed to build staking transaction', StakingErrorCode.InvalidParams, {
                 error,
                 params,
             });
@@ -87,7 +87,7 @@ export class StakingManager extends DefiManager<StakingProviderInterface> implem
         try {
             return await this.getProvider(providerId).getStakedBalance(userAddress, network);
         } catch (error) {
-            throw this.createError('Failed to get staking balance', StakingErrorCode.InvalidParams, {
+            throw new StakingError('Failed to get staking balance', StakingErrorCode.InvalidParams, {
                 error,
                 userAddress,
                 network,
@@ -109,7 +109,7 @@ export class StakingManager extends DefiManager<StakingProviderInterface> implem
         try {
             return await this.getProvider(providerId).getStakingProviderInfo(network);
         } catch (error) {
-            throw this.createError('Failed to get staking info', StakingErrorCode.InvalidParams, { error, network });
+            throw new StakingError('Failed to get staking info', StakingErrorCode.InvalidParams, { error, network });
         }
     }
 
@@ -127,18 +127,10 @@ export class StakingManager extends DefiManager<StakingProviderInterface> implem
         try {
             return this.getProvider(providerId).getStakingProviderMetadata(network);
         } catch (error) {
-            throw this.createError('Failed to get staking metadata', StakingErrorCode.InvalidParams, {
+            throw new StakingError('Failed to get staking metadata', StakingErrorCode.InvalidParams, {
                 error,
                 network,
             });
         }
-    }
-
-    protected createError(message: string, code: string, details?: unknown): StakingError {
-        const errorCode = Object.values(StakingErrorCode).includes(code as StakingErrorCode)
-            ? (code as StakingErrorCode)
-            : StakingErrorCode.InvalidParams;
-        log.error(message, { code, details });
-        return new StakingError(message, errorCode, details);
     }
 }

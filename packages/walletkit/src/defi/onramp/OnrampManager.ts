@@ -8,7 +8,6 @@
 
 import type { OnrampAPI, OnrampProviderInterface } from '../../api/interfaces';
 import type { OnrampParams, OnrampQuote, OnrampQuoteParams } from '../../api/models';
-import { OnrampError } from './errors';
 import { globalLogger } from '../../core/Logger';
 import { DefiManager } from '../DefiManager';
 
@@ -123,9 +122,5 @@ export class OnrampManager extends DefiManager<OnrampProviderInterface> implemen
             log.error('Failed to build onramp URL', { error, params });
             throw error;
         }
-    }
-
-    protected createError(message: string, code: string, details?: unknown): OnrampError {
-        return new OnrampError(message, code, details);
     }
 }

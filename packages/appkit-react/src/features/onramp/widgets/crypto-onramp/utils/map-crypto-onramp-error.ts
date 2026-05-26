@@ -40,6 +40,8 @@ export const mapCryptoOnrampError = (error: unknown): string => {
                 return 'cryptoOnramp.quoteError';
             case CryptoOnrampErrorCode.ProviderError:
                 return 'cryptoOnramp.providerError';
+            case CryptoOnrampErrorCode.DepositFailed:
+                return 'cryptoOnramp.depositFailed';
         }
     }
 

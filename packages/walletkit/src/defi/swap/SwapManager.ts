@@ -9,8 +9,6 @@
 import type { TransactionRequest } from '../../api/models';
 import type { SwapAPI, SwapProviderInterface } from '../../api/interfaces';
 import type { SwapQuoteParams, SwapQuote, SwapParams } from '../../api/models';
-import type { SwapErrorCode } from './errors';
-import { SwapError } from './errors';
 import { globalLogger } from '../../core/Logger';
 import { DefiManager } from '../DefiManager';
 import type { ProviderFactoryContext } from '../../types/factory';
@@ -87,9 +85,5 @@ export class SwapManager extends DefiManager<SwapProviderInterface> implements S
             log.error('Failed to build swap transaction', { error, params });
             throw error;
         }
-    }
-
-    protected createError(message: string, code: string, details?: unknown): SwapError {
-        return new SwapError(message, code as SwapErrorCode, details);
     }
 }
