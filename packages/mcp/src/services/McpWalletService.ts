@@ -426,7 +426,7 @@ export class McpWalletService {
         const network = this.wallet.getNetwork();
         return network.chainId === Network.mainnet().chainId
             ? 'mainnet'
-            : Network.tetra().chainId
+            : network.chainId === Network.tetra().chainId
               ? 'tetra'
               : 'testnet';
     }
