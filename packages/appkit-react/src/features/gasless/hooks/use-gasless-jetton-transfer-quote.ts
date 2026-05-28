@@ -40,7 +40,12 @@ export const useGaslessJettonTransferQuote = <selectData = GetGaslessJettonTrans
     parameters: UseGaslessJettonTransferQuoteParameters<selectData> = {},
 ): UseGaslessJettonTransferQuoteReturnType<selectData> => {
     const appKit = useAppKit();
-    useNetwork();
+    const walletNetwork = useNetwork();
 
-    return useQuery(getGaslessJettonTransferQuoteQueryOptions(appKit, parameters));
+    return useQuery(
+        getGaslessJettonTransferQuoteQueryOptions(appKit, {
+            ...parameters,
+            network: parameters.network ?? walletNetwork,
+        }),
+    );
 };
