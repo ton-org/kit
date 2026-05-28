@@ -7,10 +7,10 @@
  */
 
 import type { GaslessSendParams, SendTransactionResponse } from '../../../../api/models';
-import { asBase64 } from '../../../../utils/base64';
+import { asHex } from '../../../../utils/hex';
 import { getNormalizedExtMessageHash } from '../../../../utils/getNormalizedExtMessageHash';
 import { GaslessError, GaslessErrorCode } from '../../errors';
-import { internalBocToExternalMessageBoc, stripHexPrefix } from '../utils';
+import { hexBocToBase64, internalBocToExternalMessageBoc, stripHexPrefix } from '../utils';
 import type { TonApiGaslessSendRequest, TonApiGaslessSendResponse } from '../types/send';
 
 /**
@@ -20,7 +20,8 @@ import type { TonApiGaslessSendRequest, TonApiGaslessSendResponse } from '../typ
  * unwrapped into an external message BoC that the relayer can broadcast.
  */
 export const buildGaslessSendRequest = (params: GaslessSendParams): TonApiGaslessSendRequest => ({
-    wallet_public_key: stripHexPrefix(params.walletPublicKey),
+    // `asHex` validates the public key before stripping the prefix.
+    wallet_public_key: stripHexPrefix(asHex(params.walletPublicKey)),
     boc: internalBocToExternalMessageBoc(params.internalBoc).toBoc().toString('hex'),
 });
 
@@ -41,7 +42,7 @@ export const mapGaslessSend = (raw: TonApiGaslessSendResponse): SendTransactionR
         });
     }
 
-    const boc = asBase64(Buffer.from(raw.external, 'hex').toString('base64'));
+    const boc = hexBocToBase64(raw.external);
     const { hash: normalizedHash, boc: normalizedBoc } = getNormalizedExtMessageHash(boc);
     return { boc, normalizedBoc, normalizedHash };
 };

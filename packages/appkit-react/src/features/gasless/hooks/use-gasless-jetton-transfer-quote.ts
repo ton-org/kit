@@ -30,16 +30,16 @@ export type UseGaslessJettonTransferQuoteReturnType<selectData = GetGaslessJetto
  * Hook to fetch a gasless quote for a jetton transfer.
  *
  * Assembles the transfer messages from semantic params (no manual payload
- * building) and quotes them. Auto-refetches as inputs change; `useNetwork`
- * subscribes the hook to the selected wallet so switching wallet/network
- * recomputes the (wallet-bound) query key and refetches.
+ * building) and quotes them. Auto-refetches as inputs change.
+ *
+ * `useNetwork` subscribes the hook to the selected wallet, so switching wallet
+ * (or network) re-renders and recomputes the wallet-bound query key, refetching
+ * for the new wallet instead of serving the previous one's cached quote.
  */
 export const useGaslessJettonTransferQuote = <selectData = GetGaslessJettonTransferQuoteData>(
     parameters: UseGaslessJettonTransferQuoteParameters<selectData> = {},
 ): UseGaslessJettonTransferQuoteReturnType<selectData> => {
     const appKit = useAppKit();
-    // Subscribe to the selected wallet so switching wallet/network re-renders and
-    // recomputes the wallet-bound query key, refetching for the new wallet.
     useNetwork();
 
     return useQuery(getGaslessJettonTransferQuoteQueryOptions(appKit, parameters));

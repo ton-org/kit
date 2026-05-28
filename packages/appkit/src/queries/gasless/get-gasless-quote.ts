@@ -49,8 +49,13 @@ export const getGaslessQuoteQueryOptions = <selectData = GetGaslessQuoteData>(
         ...options.query,
         // `feeAsset` is intentionally not part of the gate: free / sponsored
         // providers accept an undefined asset, and jetton-only providers throw
-        // a typed error themselves. We only require messages to send.
-        enabled: Boolean(options.messages && options.messages.length > 0 && (options.query?.enabled ?? true)),
+        // a typed error themselves. We require messages and a connected wallet —
+        // the action resolves the wallet internally and throws without one, so
+        // gating here keeps the query idle instead of erroring (matches the
+        // jetton/ton transfer-quote options).
+        enabled: Boolean(
+            options.messages && options.messages.length > 0 && walletAddress && (options.query?.enabled ?? true),
+        ),
         queryFn: async (context) => {
             const [, parameters] = context.queryKey as [string, GetGaslessQuoteOptions, string | undefined];
 

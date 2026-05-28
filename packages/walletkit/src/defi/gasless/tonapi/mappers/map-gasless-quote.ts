@@ -10,19 +10,9 @@ import { Address } from '@ton/core';
 
 import type { GaslessQuote, GaslessQuoteParams, Network } from '../../../../api/models';
 import { asAddressFriendly } from '../../../../utils/address';
-import { HexToBase64 } from '../../../../utils/base64';
 import { asHex } from '../../../../utils/hex';
-import { buildInternalMessageCell, stripHexPrefix } from '../utils';
+import { buildInternalMessageCell, hexBocToBase64, stripHexPrefix } from '../utils';
 import type { TonApiGaslessEstimateRequest, TonApiGaslessEstimateResponse } from '../types/estimate';
-
-/**
- * TonAPI returns BoCs as bare hex strings (no `0x` prefix); the walletkit
- * domain uses base64 (`Base64String`). Re-encoding is byte-identical.
- */
-const hexBocToBase64 = (hex: string) => {
-    const normalizedHex = asHex(hex.startsWith('0x') ? hex : `0x${hex}`);
-    return HexToBase64(normalizedHex);
-};
 
 /**
  * Domain → wire: build the JSON body for `POST /v2/gasless/estimate/{master_id}`.
@@ -31,7 +21,9 @@ const hexBocToBase64 = (hex: string) => {
  */
 export const buildGaslessQuoteRequest = (params: GaslessQuoteParams): TonApiGaslessEstimateRequest => ({
     wallet_address: Address.parse(params.walletAddress).toRawString(),
-    wallet_public_key: stripHexPrefix(params.walletPublicKey),
+    // `asHex` validates the public key before stripping the prefix, so a
+    // malformed key fails fast instead of flowing to the relayer.
+    wallet_public_key: stripHexPrefix(asHex(params.walletPublicKey)),
     messages: params.messages.map((message) => ({
         boc: buildInternalMessageCell(message).toBoc().toString('hex'),
     })),

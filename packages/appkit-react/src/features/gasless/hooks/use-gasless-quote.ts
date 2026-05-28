@@ -38,12 +38,11 @@ export const useGaslessQuote = <selectData = GetGaslessQuoteData>(
     parameters: UseGaslessQuoteParameters<selectData> = {},
 ): UseGaslessQuoteReturnType<selectData> => {
     const appKit = useAppKit();
-    const network = useNetwork();
+    // Subscribe to the selected wallet so a wallet/network switch re-renders and
+    // recomputes the wallet-bound query key (the options factory reads the
+    // selected wallet), refetching for the new wallet instead of serving the
+    // previous one's cached quote.
+    useNetwork();
 
-    return useQuery(
-        getGaslessQuoteQueryOptions(appKit, {
-            ...parameters,
-            network: parameters.network ?? network,
-        }),
-    );
+    return useQuery(getGaslessQuoteQueryOptions(appKit, parameters));
 };

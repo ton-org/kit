@@ -118,6 +118,18 @@ describe('sendGaslessTransaction', () => {
         expect(sendTransaction).not.toHaveBeenCalled();
     });
 
+    it('throws GaslessError(QUOTE_EXPIRED) when validUntil is missing/non-finite', async () => {
+        const { appKit, sendTransaction } = makeAppKit(wallet);
+        const quoteWithoutValidUntil = makeQuote({ validUntil: undefined as unknown as number });
+
+        await expect(sendGaslessTransaction(appKit, { quote: quoteWithoutValidUntil })).rejects.toMatchObject({
+            name: 'GaslessError',
+            code: GaslessErrorCode.QuoteExpired,
+        });
+        expect(wallet.signMessage).not.toHaveBeenCalled();
+        expect(sendTransaction).not.toHaveBeenCalled();
+    });
+
     it('throws GaslessError(WALLET_MISMATCH) before signing when the quote was issued for another wallet', async () => {
         const { appKit, sendTransaction } = makeAppKit(wallet);
         const otherWalletQuote = makeQuote({ from: 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c' });

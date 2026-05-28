@@ -66,10 +66,12 @@ export const sendGaslessTransaction = async (
     // Fail fast on a dead quote before prompting the wallet to sign: the relayer
     // owns `validUntil`, so a passed deadline means the relayer would reject the
     // send anyway. Cheaper to surface a typed error here than to round-trip a
-    // signature the relayer discards.
-    if (Math.floor(Date.now() / 1000) > quote.validUntil) {
+    // signature the relayer discards. A non-finite `validUntil` (missing/garbled
+    // relayer response) is treated as expired rather than silently bypassing the
+    // check (`n > undefined` is always false).
+    if (!Number.isFinite(quote.validUntil) || Math.floor(Date.now() / 1000) > quote.validUntil) {
         throw new GaslessError(
-            'Gasless quote has expired. Fetch a fresh quote before sending.',
+            'Gasless quote has expired or is missing a validity window. Fetch a fresh quote before sending.',
             GaslessErrorCode.QuoteExpired,
             { validUntil: quote.validUntil },
         );

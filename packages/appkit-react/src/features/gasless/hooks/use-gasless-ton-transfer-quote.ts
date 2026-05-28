@@ -32,16 +32,16 @@ export type UseGaslessTonTransferQuoteReturnType<selectData = GetGaslessTonTrans
  * Hook to fetch a gasless quote for a TON transfer.
  *
  * Assembles the transfer message from semantic params and quotes it.
- * Auto-refetches as inputs change; `useNetwork` subscribes the hook to the
- * selected wallet so switching wallet/network recomputes the (wallet-bound)
- * query key and refetches.
+ * Auto-refetches as inputs change.
+ *
+ * `useNetwork` subscribes the hook to the selected wallet, so switching wallet
+ * (or network) re-renders and recomputes the wallet-bound query key, refetching
+ * for the new wallet instead of serving the previous one's cached quote.
  */
 export const useGaslessTonTransferQuote = <selectData = GetGaslessTonTransferQuoteData>(
     parameters: UseGaslessTonTransferQuoteParameters<selectData> = {},
 ): UseGaslessTonTransferQuoteReturnType<selectData> => {
     const appKit = useAppKit();
-    // Subscribe to the selected wallet so switching wallet/network re-renders and
-    // recomputes the wallet-bound query key, refetching for the new wallet.
     useNetwork();
 
     return useQuery(getGaslessTonTransferQuoteQueryOptions(appKit, parameters));

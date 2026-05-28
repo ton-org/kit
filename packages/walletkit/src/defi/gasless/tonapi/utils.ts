@@ -19,11 +19,21 @@ import {
 } from '@ton/core';
 
 import type { Base64String, TransactionRequestMessage } from '../../../api/models';
-import { asBase64 } from '../../../utils/base64';
+import { asBase64, HexToBase64 } from '../../../utils/base64';
+import { asHex } from '../../../utils/hex';
 import { GaslessError, GaslessErrorCode } from '../errors';
 
 export const stripHexPrefix = (value: string): string => {
     return value.startsWith('0x') ? value.slice(2) : value;
+};
+
+/**
+ * TonAPI returns BoCs as bare hex strings (no `0x` prefix); the walletkit domain
+ * uses base64 (`Base64String`). Re-encoding is byte-identical; `asHex` validates
+ * the hex first. Shared by the quote and send mappers.
+ */
+export const hexBocToBase64 = (hex: string): Base64String => {
+    return HexToBase64(asHex(hex.startsWith('0x') ? hex : `0x${hex}`));
 };
 
 export const cellToBase64 = (cell: Cell): Base64String => {
