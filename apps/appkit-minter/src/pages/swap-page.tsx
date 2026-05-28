@@ -12,6 +12,7 @@ import { SwapWidget } from '@ton/appkit-react';
 import type { AppkitUIToken } from '@ton/appkit-react';
 
 import { Layout } from '@/core/components';
+import { USDT_MASTER_MAINNET } from '@/core/constants/tokens';
 
 const TOKENS: AppkitUIToken[] = [
     {
@@ -29,7 +30,7 @@ const TOKENS: AppkitUIToken[] = [
         address: 'UQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_p0p',
         network: Network.mainnet(),
         rate: '1',
-        logo: 'https://asset.ston.fi/img/EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs/1a87edfee9a28b05578853952e5effb8cc30af1e0fb90043aa2ce19dce490849',
+        logo: `https://asset.ston.fi/img/${USDT_MASTER_MAINNET}/1a87edfee9a28b05578853952e5effb8cc30af1e0fb90043aa2ce19dce490849`,
     },
     {
         symbol: 'STON',

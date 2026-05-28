@@ -65,7 +65,9 @@ export const GaslessControls: FC<GaslessControlsProps> = ({
             {enabled && (
                 <>
                     <FeeAssetSelect value={feeAsset} onChange={onFeeAssetChange} />
-                    {fee && <p className="text-xs text-tertiary-foreground">Gas fee: {fee}</p>}
+                    {!quoteError && (
+                        <p className="px-1 text-xs text-tertiary-foreground">Gas fee: {fee || 'Loading...'}</p>
+                    )}
                     {quoteError && <p className="text-xs text-error">{getErrorMessage(quoteError)}</p>}
                 </>
             )}

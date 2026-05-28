@@ -6,15 +6,13 @@
  *
  */
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import type { FC } from 'react';
 import { Input, useGaslessConfig, useJettonInfo } from '@ton/appkit-react';
-import { asAddressFriendly, compareAddress } from '@ton/appkit';
+import { asAddressFriendly, compareAddress, middleEllipsis } from '@ton/appkit';
 import type { UserFriendlyAddress } from '@ton/appkit';
 
-const USDT_MASTER_MAINNET = 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs';
-
-const truncateAddress = (address: string): string => `${address.slice(0, 6)}…${address.slice(-4)}`;
+import { USDT_MASTER_MAINNET } from '../../../core/constants/tokens';
 
 /**
  * Renders one fee-asset `<option>`; shows the token's address until its jetton
@@ -23,7 +21,7 @@ const truncateAddress = (address: string): string => `${address.slice(0, 6)}…$
  */
 const FeeAssetOption: FC<{ address: UserFriendlyAddress }> = ({ address }) => {
     const { data } = useJettonInfo({ address });
-    return <option value={address}>{data?.symbol || truncateAddress(address)}</option>;
+    return <option value={address}>{data?.symbol || middleEllipsis(address)}</option>;
 };
 
 interface FeeAssetSelectProps {
@@ -40,7 +38,10 @@ interface FeeAssetSelectProps {
  */
 export const FeeAssetSelect: FC<FeeAssetSelectProps> = ({ value, onChange, disabled }) => {
     const { data: config, isLoading } = useGaslessConfig();
-    const supportedAssets = config?.supportedAssets;
+    const supportedAssets = useMemo(
+        () => config?.supportedAssets && [...config.supportedAssets].sort((a, b) => a.address.localeCompare(b.address)),
+        [config?.supportedAssets],
+    );
 
     useEffect(() => {
         if (!value && supportedAssets?.length) {

@@ -26,9 +26,7 @@ import type { TonApiGaslessChainConfig } from './TonApiGaslessChainConfig';
  */
 export interface TonApiGaslessProviderConfig {
     /** Per-chain settings keyed by `Network#chainId`. */
-    chains?: Record<string, TonApiGaslessChainConfig>;
-    /** Custom fetch implementation (testing / SSR). Applies to every chain. */
-    fetchApi?: typeof fetch;
+    chains?: { [chainId: number]: TonApiGaslessChainConfig };
     /** Provider id. Defaults to `tonapi`. */
     providerId?: string;
     /** Number of send retries on transient errors. Defaults to 5. */

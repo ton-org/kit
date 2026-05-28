@@ -7,7 +7,7 @@
  */
 
 import type { FC } from 'react';
-import { Gem } from 'lucide-react';
+import { TonIconCircle } from '@ton/appkit-react';
 
 import type { TokenInfo } from '../utils/get-token-summary';
 
@@ -26,7 +26,7 @@ export const TokenSummary: FC<TokenSummaryProps> = ({ tokenType, info }) => (
             {info.image ? (
                 <img src={info.image} alt={info.name} className="w-full h-full object-cover" />
             ) : tokenType === 'TON' ? (
-                <Gem className="w-6 h-6 text-primary" />
+                <TonIconCircle size={40} />
             ) : (
                 <span className="text-sm font-bold text-tertiary-foreground">{info.symbol?.slice(0, 2)}</span>
             )}
