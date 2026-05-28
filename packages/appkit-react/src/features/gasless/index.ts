@@ -7,10 +7,10 @@
  */
 
 export {
-    useGaslessSupportedAssets,
-    type UseGaslessSupportedAssetsParameters,
-    type UseGaslessSupportedAssetsReturnType,
-} from './hooks/use-gasless-supported-assets';
+    useGaslessConfig,
+    type UseGaslessConfigParameters,
+    type UseGaslessConfigReturnType,
+} from './hooks/use-gasless-config';
 export {
     useGaslessProviderMetadata,
     type UseGaslessProviderMetadataParameters,
@@ -26,11 +26,6 @@ export {
     type UseGaslessJettonTransferQuoteParameters,
     type UseGaslessJettonTransferQuoteReturnType,
 } from './hooks/use-gasless-jetton-transfer-quote';
-export {
-    useGaslessTonTransferQuote,
-    type UseGaslessTonTransferQuoteParameters,
-    type UseGaslessTonTransferQuoteReturnType,
-} from './hooks/use-gasless-ton-transfer-quote';
 export { useGaslessProvider, type UseGaslessProviderReturnType } from './hooks/use-gasless-provider';
 export { useGaslessProviders, type UseGaslessProvidersReturnType } from './hooks/use-gasless-providers';
 export {

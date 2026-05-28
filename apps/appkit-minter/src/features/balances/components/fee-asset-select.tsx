@@ -8,7 +8,7 @@
 
 import { useEffect } from 'react';
 import type { FC } from 'react';
-import { Input, useGaslessSupportedAssets, useJettonInfo } from '@ton/appkit-react';
+import { Input, useGaslessConfig, useJettonInfo } from '@ton/appkit-react';
 import { asAddressFriendly, compareAddress } from '@ton/appkit';
 import type { UserFriendlyAddress } from '@ton/appkit';
 
@@ -39,7 +39,8 @@ interface FeeAssetSelectProps {
  * state match the modal's other inputs.
  */
 export const FeeAssetSelect: FC<FeeAssetSelectProps> = ({ value, onChange, disabled }) => {
-    const { data: supportedAssets, isLoading } = useGaslessSupportedAssets();
+    const { data: config, isLoading } = useGaslessConfig();
+    const supportedAssets = config?.supportedAssets;
 
     useEffect(() => {
         if (!value && supportedAssets?.length) {

@@ -27,7 +27,7 @@ describe('Gasless Actions Examples', () => {
     let appKit: AppKit;
     let consoleSpy: ReturnType<typeof vi.spyOn>;
     let mockGetMetadata: ReturnType<typeof vi.fn>;
-    let mockGetSupportedAssets: ReturnType<typeof vi.fn>;
+    let mockGetConfig: ReturnType<typeof vi.fn>;
     let mockGetQuote: ReturnType<typeof vi.fn>;
     let mockSend: ReturnType<typeof vi.fn>;
     let mockSignMessage: ReturnType<typeof vi.fn>;
@@ -43,7 +43,9 @@ describe('Gasless Actions Examples', () => {
         });
 
         mockGetMetadata = vi.fn().mockResolvedValue({ name: 'TonAPI', url: 'https://tonapi.io' });
-        mockGetSupportedAssets = vi.fn().mockResolvedValue([{ address: TEST_ADDRESS }]);
+        mockGetConfig = vi
+            .fn()
+            .mockResolvedValue({ relayAddress: TEST_ADDRESS, supportedAssets: [{ address: TEST_ADDRESS }] });
         mockGetQuote = vi.fn().mockResolvedValue({
             messages: [{ address: TEST_ADDRESS, amount: '60000000' }],
             fee: '1234',
@@ -66,7 +68,7 @@ describe('Gasless Actions Examples', () => {
         // @ts-expect-error - internal mock access
         vi.spyOn(appKit.gaslessManager, 'getMetadata').mockImplementation(mockGetMetadata);
         // @ts-expect-error - internal mock access
-        vi.spyOn(appKit.gaslessManager, 'getSupportedAssets').mockImplementation(mockGetSupportedAssets);
+        vi.spyOn(appKit.gaslessManager, 'getConfig').mockImplementation(mockGetConfig);
         // @ts-expect-error - internal mock access
         vi.spyOn(appKit.gaslessManager, 'getQuote').mockImplementation(mockGetQuote);
         // @ts-expect-error - internal mock access
@@ -127,7 +129,7 @@ describe('Gasless Actions Examples', () => {
         await gaslessExample(appKit);
 
         expect(mockGetMetadata).toHaveBeenCalled();
-        expect(mockGetSupportedAssets).toHaveBeenCalled();
+        expect(mockGetConfig).toHaveBeenCalled();
         expect(mockGetQuote).toHaveBeenCalled();
         expect(mockSignMessage).toHaveBeenCalled();
         expect(mockSend).toHaveBeenCalled();

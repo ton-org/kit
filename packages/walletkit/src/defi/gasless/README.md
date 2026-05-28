@@ -4,7 +4,7 @@
 
 ## Flow
 
-1. **Discover** – call `getSupportedAssets` to learn which assets the relayer accepts as fee payment (omit if the dApp already knows which asset it wants to charge).
+1. **Discover** – call `getConfig` to fetch the relay address and the assets the relayer accepts as fee payment (omit if the dApp already knows which asset it wants to charge).
 2. **Quote** – call `getQuote` with your messages and chosen fee asset. The relayer returns *wrapped* messages, a fee, and a `validUntil` window.
 3. **Sign** – pass the wrapped messages to `wallet.signMessage` (TonConnect `SignMessage` feature). The wallet returns a signed *internal-message* BoC.
 4. **Send** – submit the signed BoC via `sendTransaction`; the relayer converts it to an external message, pays the gas, and broadcasts.
@@ -42,8 +42,8 @@ The connected wallet must expose the `SignMessage` feature (advertised via TonCo
 import { Address } from '@ton/core';
 import { Network } from '@ton/walletkit';
 
-const supportedAssets = await kit.gasless.getSupportedAssets();
-const feeAsset = supportedAssets[0].address;
+const config = await kit.gasless.getConfig();
+const feeAsset = config.supportedAssets[0].address;
 
 const quote = await kit.gasless.getQuote({
     feeAsset,
@@ -83,7 +83,7 @@ The `validUntil` timestamp is set by the relayer (typically ~2 minutes). In `@to
 | `UNSUPPORTED_OPERATION` | The provider does not implement the requested mode (e.g. a jetton-fee-only provider called without `feeAsset`). |
 | `QUOTE_FAILED` | Relayer rejected the quote (insufficient liquidity, malformed messages, …). |
 | `SEND_FAILED` | Relayer rejected the signed BoC, or all retries were exhausted. |
-| `SUPPORTED_ASSETS_FAILED` | Failed to discover relayer-accepted fee assets. |
+| `CONFIG_FAILED` | Failed to fetch the relayer's configuration (relay address + accepted fee assets). |
 | `SIGN_MESSAGE_NOT_SUPPORTED` | Connected wallet does not implement the `SignMessage` feature. Surfaced by the higher-level `sendGaslessTransaction` action in `@ton/appkit`. |
 | `TOO_MANY_MESSAGES` | The quote carries more messages than the wallet's advertised `SignMessage.maxMessages` cap. Surfaced by `sendGaslessTransaction` in `@ton/appkit`. |
 | `QUOTE_EXPIRED` | The quote's `validUntil` window has already passed. Surfaced by `sendGaslessTransaction` in `@ton/appkit` before signing, so the wallet is not prompted for a quote the relayer would reject. |
@@ -101,7 +101,7 @@ import {
     type GaslessQuote,
     type GaslessSendParams,
     type GaslessSendResponse,
-    type GaslessSupportedAsset,
+    type GaslessConfig,
     type Network,
 } from '@ton/walletkit';
 
@@ -116,7 +116,7 @@ export class MyGaslessProvider extends GaslessProvider {
         return { name: 'My Relayer', url: 'https://my-relayer.example' };
     }
 
-    async getSupportedAssets(): Promise<GaslessSupportedAsset[]> {
+    async getConfig(): Promise<GaslessConfig> {
         // …
     }
 
@@ -141,8 +141,8 @@ export class MyGaslessProvider extends GaslessProvider {
 #### `getMetadata(providerId?)`
 Static metadata for the gasless provider: `{ name, logo?, url? }`. Useful for rendering provider info in the UI.
 
-#### `getSupportedAssets(network?, providerId?)`
-Discover the assets the relayer accepts as fee payment. `network` defaults to the provider's first supported network.
+#### `getConfig(network?, providerId?)`
+Fetch the relayer's configuration on a network: `{ relayAddress, supportedAssets }`. `network` defaults to the provider's first supported network.
 
 #### `getQuote(params, providerId?)`
 Wrap caller's messages with relayer fee-collection logic. Returns wrapped messages, fee, and `validUntil`. Pass `feeAsset` to choose a jetton master (omit for free / sponsored providers).

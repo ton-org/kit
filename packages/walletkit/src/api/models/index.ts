@@ -18,6 +18,7 @@ export type { AddressBook, AddressBookEntry } from './core/AddressBook';
 export type { ManifestFetchResult } from './core/ManifestFetchResult';
 export { AssetType } from './core/AssetType';
 export type { BaseProvider, BaseProviderEvents, BaseProviderUpdate } from './core/BaseProvider';
+export type { DefiProviderType } from './core/DefiProviderType';
 export type { DAppInfo } from './core/DAppInfo';
 export type { ExtraCurrencies } from './core/ExtraCurrencies';
 export { Network } from './core/Network';
@@ -140,6 +141,7 @@ export { UnstakeMode } from './staking/UnstakeMode';
 
 // Gasless models
 export type { GaslessSupportedAsset } from './gasless/GaslessSupportedAsset';
+export type { GaslessConfig } from './gasless/GaslessConfig';
 export type { GaslessProviderMetadata, GaslessProviderMetadataOverride } from './gasless/GaslessProviderMetadata';
 export type { GaslessQuoteParams } from './gasless/GaslessQuoteParams';
 export type { GaslessQuote } from './gasless/GaslessQuote';

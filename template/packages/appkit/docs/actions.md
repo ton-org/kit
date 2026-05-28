@@ -323,7 +323,7 @@ Get the user's staked balance.
 Gasless lets a dApp submit on-chain transactions without the user holding TON for gas: a relayer co-signs and broadcasts the transaction, charging the user a fee in a relayer-accepted asset (e.g. USDT). The connected wallet must support the `SignMessage` TonConnect feature. See the [gasless guide](./gasless.md) for a regular-send → gasless-send migration.
 
 The high-level flow is:
-1. `getGaslessSupportedAssets` – discover which assets the relayer accepts as fee payment.
+1. `getGaslessConfig` – discover the relay address and assets the relayer accepts as fee payment.
 2. `getGaslessQuote` – ask the relayer for fee + wrapped messages (with a `validUntil`).
 3. `sendGaslessTransaction` – sign the wrapped messages via the wallet and submit the signed BoC.
 
@@ -363,11 +363,11 @@ Fetch static metadata (display name, logo, url) for a gasless provider.
 
 %%demo/examples/src/appkit/actions/gasless#GET_GASLESS_PROVIDER_METADATA%%
 
-### `getGaslessSupportedAssets`
+### `getGaslessConfig`
 
-Discover the assets the gasless relayer accepts as fee payment.
+Fetch the relayer's configuration on a network — the relay address (e.g. for jetton-transfer `responseDestination`) and the assets it accepts as fee payment.
 
-%%demo/examples/src/appkit/actions/gasless#GET_GASLESS_SUPPORTED_ASSETS%%
+%%demo/examples/src/appkit/actions/gasless#GET_GASLESS_CONFIG%%
 
 ### `getGaslessQuote`
 
@@ -380,12 +380,6 @@ Ask the relayer for a gasless transaction quote. Returns relayer-wrapped message
 Convenience wrapper that builds a jetton transfer's messages (resolving the jetton wallet address, decimals and payload) and quotes them in one call. Takes semantic params (`jettonAddress`, `recipientAddress`, `amount`, `feeAsset`) instead of pre-built `messages`. Returns a `GaslessQuote` to pass to `sendGaslessTransaction`.
 
 %%demo/examples/src/appkit/actions/gasless#GET_GASLESS_JETTON_TRANSFER_QUOTE%%
-
-### `getGaslessTonTransferQuote`
-
-Convenience wrapper that builds a TON transfer's message and quotes it in one call. Takes `recipientAddress`, `amount`, `feeAsset` instead of pre-built `messages`. Returns a `GaslessQuote` to pass to `sendGaslessTransaction`.
-
-%%demo/examples/src/appkit/actions/gasless#GET_GASLESS_TON_TRANSFER_QUOTE%%
 
 ### `sendGaslessTransaction`
 

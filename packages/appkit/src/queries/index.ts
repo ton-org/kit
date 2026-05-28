@@ -167,14 +167,14 @@ export {
 
 // Gasless
 export {
-    getGaslessSupportedAssetsQueryOptions,
-    getGaslessSupportedAssetsQueryKey,
-    type GetGaslessSupportedAssetsQueryConfig,
-    type GetGaslessSupportedAssetsData,
-    type GetGaslessSupportedAssetsErrorType,
-    type GetGaslessSupportedAssetsQueryKey,
-    type GetGaslessSupportedAssetsQueryOptions,
-} from './gasless/get-gasless-supported-assets';
+    getGaslessConfigQueryOptions,
+    getGaslessConfigQueryKey,
+    type GetGaslessConfigQueryConfig,
+    type GetGaslessConfigData,
+    type GetGaslessConfigErrorType,
+    type GetGaslessConfigQueryKey,
+    type GetGaslessConfigQueryOptions,
+} from './gasless/get-gasless-config';
 export {
     getGaslessProviderMetadataQueryOptions,
     getGaslessProviderMetadataQueryKey,
@@ -203,15 +203,6 @@ export {
     type GetGaslessJettonTransferQuoteQueryKey,
     type GetGaslessJettonTransferQuoteQueryOptions,
 } from './gasless/get-gasless-jetton-transfer-quote';
-export {
-    getGaslessTonTransferQuoteQueryOptions,
-    getGaslessTonTransferQuoteQueryKey,
-    type GetGaslessTonTransferQuoteQueryConfig,
-    type GetGaslessTonTransferQuoteData,
-    type GetGaslessTonTransferQuoteErrorType,
-    type GetGaslessTonTransferQuoteQueryKey,
-    type GetGaslessTonTransferQuoteQueryOptions,
-} from './gasless/get-gasless-ton-transfer-quote';
 export {
     sendGaslessTransactionMutationOptions,
     type SendGaslessTransactionMutationConfig,

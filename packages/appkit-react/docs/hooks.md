@@ -888,23 +888,26 @@ return (
 );
 ```
 
-### `useGaslessSupportedAssets`
+### `useGaslessConfig`
 
-Hook to discover the assets the gasless relayer accepts as fee payment.
+Hook to fetch the gasless relayer's configuration — relay address (e.g. for jetton-transfer `responseDestination`) and accepted fee assets.
 
 ```tsx
-const { data: supportedAssets, isLoading } = useGaslessSupportedAssets();
+const { data: config, isLoading } = useGaslessConfig();
 
-if (isLoading) return <div>Loading fee assets...</div>;
+if (isLoading) return <div>Loading gasless config...</div>;
 
 return (
-    <select>
-        {supportedAssets?.map((asset) => (
-            <option key={asset.address} value={asset.address}>
-                {asset.address}
-            </option>
-        ))}
-    </select>
+    <div>
+        <p>Relay: {config?.relayAddress}</p>
+        <select>
+            {config?.supportedAssets.map((asset) => (
+                <option key={asset.address} value={asset.address}>
+                    {asset.address}
+                </option>
+            ))}
+        </select>
+    </div>
 );
 ```
 
@@ -948,34 +951,6 @@ const { data: quote, isFetching } = useGaslessJettonTransferQuote({
     recipientAddress: 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c',
     amount: '100',
     feeAsset: asAddressFriendly(USDT_MASTER),
-});
-
-const { mutateAsync: sendGasless, isPending } = useSendGaslessTransaction();
-
-return (
-    <div>
-        {isFetching && <span>Quoting...</span>}
-        {quote && (
-            <>
-                <div>Fee: {quote.fee}</div>
-                <button disabled={isPending} onClick={() => sendGasless({ quote })}>
-                    Send
-                </button>
-            </>
-        )}
-    </div>
-);
-```
-
-### `useGaslessTonTransferQuote`
-
-Hook to fetch a gasless quote for a TON transfer from `recipientAddress`, `amount`, `feeAsset`. Auto-refetches as inputs change and on wallet/network switch.
-
-```tsx
-const { data: quote, isFetching } = useGaslessTonTransferQuote({
-    recipientAddress: 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c',
-    amount: '1.5',
-    feeAsset: asAddressFriendly('EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs'), // USDT
 });
 
 const { mutateAsync: sendGasless, isPending } = useSendGaslessTransaction();

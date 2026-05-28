@@ -42,9 +42,12 @@ Cost: the user spends **0 TON** and a small amount of USDT (the relayer fee, sho
 
 ## Migration recipe
 
-The `messages` array is built the same way for both flows — the relayer wraps your messages on its end and adds the fee transfer. The only difference between the two snippets above: replace `sendTransaction(appKit, { messages })` with `getGaslessQuote(appKit, { messages, feeAsset })` followed by `sendGaslessTransaction(appKit, { quote })`.
+The `messages` array is built the same way for both flows — the relayer wraps your messages on its end and adds the fee transfer. Two changes versus a regular send:
 
-`feeAsset` is the jetton master the relayer charges the fee in. The TonAPI provider requires it; discover the relayer-accepted assets with `getGaslessSupportedAssets(appKit)`, or hardcode the jetton master you want to charge in.
+1. Set the jetton transfer's `responseDestination` to the relayer's `relayAddress` (from `getGaslessConfig`) so the unspent TON gas returns to the relayer that paid it instead of the user's wallet.
+2. Replace `sendTransaction(appKit, { messages })` with `getGaslessQuote(appKit, { messages, feeAsset })` followed by `sendGaslessTransaction(appKit, { quote })`.
+
+`feeAsset` is the jetton master the relayer charges the fee in. The TonAPI provider requires it; discover the relayer-accepted assets via `getGaslessConfig(appKit)` (returns `{ relayAddress, supportedAssets }`), or hardcode the jetton master you want to charge in. The `getGaslessJettonTransferQuote` convenience wrapper handles both points above for you.
 
 For React projects, the same flow is available as hooks (`useSendTransaction` / `useGaslessQuote` + `useSendGaslessTransaction`).
 
@@ -57,7 +60,7 @@ For React projects, the same flow is available as hooks (`useSendTransaction` / 
 | `UNSUPPORTED_OPERATION` | The provider does not implement the requested mode (e.g. a jetton-fee provider called without `feeAsset`). |
 | `QUOTE_FAILED` | Relayer rejected the quote (insufficient liquidity, malformed messages, …). |
 | `SEND_FAILED` | Relayer rejected the signed BoC, or all retries were exhausted. |
-| `SUPPORTED_ASSETS_FAILED` | Failed to discover relayer-accepted fee assets. |
+| `CONFIG_FAILED` | Failed to fetch the relayer's configuration (relay address + accepted fee assets). |
 | `SIGN_MESSAGE_NOT_SUPPORTED` | Connected wallet does not advertise the `SignMessage` feature. |
 | `TOO_MANY_MESSAGES` | Quote carries more messages than the wallet's `SignMessage.maxMessages` cap. |
 | `QUOTE_EXPIRED` | Quote's `validUntil` window has passed; checked before signing so the wallet is not prompted for a quote the relayer would reject. Fetch a fresh quote. |

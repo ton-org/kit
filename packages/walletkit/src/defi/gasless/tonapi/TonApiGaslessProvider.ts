@@ -7,14 +7,15 @@
  */
 
 import { Address } from '@ton/core';
+import { LRUCache } from 'lru-cache';
 
 import type {
+    GaslessConfig,
     GaslessProviderMetadata,
     GaslessQuote,
     GaslessQuoteParams,
     GaslessSendParams,
     GaslessSendResponse,
-    GaslessSupportedAsset,
     Network,
 } from '../../../api/models';
 import { ApiClientTonApi } from '../../../clients/tonapi/ApiClientTonApi';
@@ -23,9 +24,15 @@ import type { ProviderFactoryContext } from '../../../types/factory';
 import { delay } from '../../../utils/delay';
 import { GaslessError, GaslessErrorCode } from '../errors';
 import { GaslessProvider } from '../GaslessProvider';
-import { DEFAULT_METADATA, DEFAULT_PROVIDER_ID, DEFAULT_SEND_RETRIES, DEFAULT_SEND_RETRY_DELAY_MS } from './constants';
+import {
+    DEFAULT_CONFIG_CACHE_TTL_MS,
+    DEFAULT_METADATA,
+    DEFAULT_PROVIDER_ID,
+    DEFAULT_SEND_RETRIES,
+    DEFAULT_SEND_RETRY_DELAY_MS,
+} from './constants';
 import { isTransientError, networkFromChainId } from './helpers';
-import { mapGaslessSupportedAssets } from './mappers/map-gasless-supported-assets';
+import { mapGaslessConfig } from './mappers/map-gasless-config';
 import { mapTonApiGaslessError } from './mappers/map-gasless-error';
 import { buildGaslessQuoteRequest, mapGaslessQuote } from './mappers/map-gasless-quote';
 import { buildGaslessSendRequest, mapGaslessSend } from './mappers/map-gasless-send';
@@ -63,6 +70,8 @@ export class TonApiGaslessProvider extends GaslessProvider {
     private readonly clients: Record<string, ApiClientTonApi> = {};
     private readonly sendRetries: number;
     private readonly sendRetryDelayMs: number;
+    private readonly configCacheTtlMs: number;
+    private readonly configCache?: LRUCache<string, GaslessConfig, Network>;
 
     /**
      * @internal Use {@link createTonApiGaslessProvider} (AppKit) or {@link TonApiGaslessProvider.createFromContext}.
@@ -74,6 +83,18 @@ export class TonApiGaslessProvider extends GaslessProvider {
         this.providerId = options.providerId ?? DEFAULT_PROVIDER_ID;
         this.sendRetries = options.sendRetries ?? DEFAULT_SEND_RETRIES;
         this.sendRetryDelayMs = options.sendRetryDelayMs ?? DEFAULT_SEND_RETRY_DELAY_MS;
+        this.configCacheTtlMs = options.configCacheTtlMs ?? DEFAULT_CONFIG_CACHE_TTL_MS;
+
+        if (this.configCacheTtlMs > 0) {
+            // LRUCache's `fetchMethod` joins concurrent calls into one fetch and
+            // drops the entry on rejection — exactly the dedup+no-cache-failures
+            // semantics we want. Network is threaded via `context` per call.
+            this.configCache = new LRUCache<string, GaslessConfig, Network>({
+                max: Math.max(1, Object.keys(chainConfig).length),
+                ttl: this.configCacheTtlMs,
+                fetchMethod: (_chainId, _stale, { context }) => this.fetchConfig(context),
+            });
+        }
 
         log.info('TonApiGaslessProvider initialized', {
             providerId: this.providerId,
@@ -126,18 +147,29 @@ export class TonApiGaslessProvider extends GaslessProvider {
         return DEFAULT_METADATA;
     }
 
-    async getSupportedAssets(network: Network): Promise<GaslessSupportedAsset[]> {
+    async getConfig(network: Network): Promise<GaslessConfig> {
+        if (!this.configCache) {
+            return this.fetchConfig(network);
+        }
+        // `fetch` returns the cached value when fresh, otherwise runs `fetchMethod`.
+        // The result is `undefined` only if `fetchMethod` is undefined or the
+        // cache returns `forceRefresh: true` on a stale-while-revalidate path —
+        // neither applies here.
+        const value = await this.configCache.fetch(network.chainId, { context: network });
+        if (!value) {
+            throw new GaslessError('Gasless config cache returned no value', GaslessErrorCode.ConfigFailed);
+        }
+        return value;
+    }
+
+    private async fetchConfig(network: Network): Promise<GaslessConfig> {
         try {
             const http = this.getClient(network);
             const raw = await http.getJson<TonApiGaslessConfig>('/v2/gasless/config');
-            return mapGaslessSupportedAssets(raw);
+            return mapGaslessConfig(raw);
         } catch (error) {
-            log.error('Failed to fetch gasless supported assets', { error, chainId: network.chainId });
-            throw mapTonApiGaslessError(
-                error,
-                GaslessErrorCode.SupportedAssetsFailed,
-                'Failed to fetch gasless supported assets',
-            );
+            log.error('Failed to fetch gasless config', { error, chainId: network.chainId });
+            throw mapTonApiGaslessError(error, GaslessErrorCode.ConfigFailed, 'Failed to fetch gasless config');
         }
     }
 

@@ -8,14 +8,13 @@
 
 import type { AppKit } from '@ton/appkit';
 import {
+    getGaslessConfig,
     getGaslessJettonTransferQuote,
     getGaslessManager,
     getGaslessProvider,
     getGaslessProviderMetadata,
     getGaslessProviders,
     getGaslessQuote,
-    getGaslessSupportedAssets,
-    getGaslessTonTransferQuote,
     sendGaslessTransaction,
     setDefaultGaslessProvider,
     watchGaslessProviders,
@@ -54,11 +53,11 @@ export const gaslessExample = async (appKit: AppKit) => {
     console.log('Gasless provider:', metadata.name, metadata.url);
     // SAMPLE_END: GET_GASLESS_PROVIDER_METADATA
 
-    // SAMPLE_START: GET_GASLESS_SUPPORTED_ASSETS
-    const supportedAssets = await getGaslessSupportedAssets(appKit);
-    const feeAsset = supportedAssets[0].address;
-    console.log('Supported fee assets:', supportedAssets.length);
-    // SAMPLE_END: GET_GASLESS_SUPPORTED_ASSETS
+    // SAMPLE_START: GET_GASLESS_CONFIG
+    const config = await getGaslessConfig(appKit);
+    const feeAsset = config.supportedAssets[0].address;
+    console.log('Relay address:', config.relayAddress, '— supported fee assets:', config.supportedAssets.length);
+    // SAMPLE_END: GET_GASLESS_CONFIG
 
     // SAMPLE_START: GET_GASLESS_QUOTE
     const quote = await getGaslessQuote(appKit, {
@@ -85,19 +84,10 @@ export const gaslessExample = async (appKit: AppKit) => {
     await sendGaslessTransaction(appKit, { quote: jettonQuote });
     // SAMPLE_END: GET_GASLESS_JETTON_TRANSFER_QUOTE
 
-    // SAMPLE_START: GET_GASLESS_TON_TRANSFER_QUOTE
-    const tonQuote = await getGaslessTonTransferQuote(appKit, {
-        recipientAddress: 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c',
-        amount: '1.5',
-        feeAsset, // gas covered by the relayer, fee paid in this jetton
-    });
-    await sendGaslessTransaction(appKit, { quote: tonQuote });
-    // SAMPLE_END: GET_GASLESS_TON_TRANSFER_QUOTE
-
     // SAMPLE_START: SEND_GASLESS_TRANSACTION
     const result = await sendGaslessTransaction(appKit, { quote });
     console.log('Submitted gasless transaction. Hash:', result.normalizedHash, 'BoC:', result.internalBoc);
     // SAMPLE_END: SEND_GASLESS_TRANSACTION
 
-    return { gaslessManager, provider, supportedAssets, quote };
+    return { gaslessManager, provider, config, quote };
 };

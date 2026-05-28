@@ -260,11 +260,11 @@ Hook to fetch static metadata (display name, logo, url) for a gasless provider.
 
 %%demo/examples/src/appkit/hooks/gasless#USE_GASLESS_PROVIDER_METADATA%%
 
-### `useGaslessSupportedAssets`
+### `useGaslessConfig`
 
-Hook to discover the assets the gasless relayer accepts as fee payment.
+Hook to fetch the gasless relayer's configuration — relay address (e.g. for jetton-transfer `responseDestination`) and accepted fee assets.
 
-%%demo/examples/src/appkit/hooks/gasless#USE_GASLESS_SUPPORTED_ASSETS%%
+%%demo/examples/src/appkit/hooks/gasless#USE_GASLESS_CONFIG%%
 
 ### `useGaslessQuote`
 
@@ -277,12 +277,6 @@ Hook to fetch a gasless quote. Auto-refetches as inputs change; cached results b
 Hook to fetch a gasless quote for a jetton transfer from semantic params (`jettonAddress`, `recipientAddress`, `amount`, `feeAsset`) — no manual message building. Auto-refetches as inputs change and on wallet/network switch.
 
 %%demo/examples/src/appkit/hooks/gasless#USE_GASLESS_JETTON_TRANSFER_QUOTE%%
-
-### `useGaslessTonTransferQuote`
-
-Hook to fetch a gasless quote for a TON transfer from `recipientAddress`, `amount`, `feeAsset`. Auto-refetches as inputs change and on wallet/network switch.
-
-%%demo/examples/src/appkit/hooks/gasless#USE_GASLESS_TON_TRANSFER_QUOTE%%
 
 ### `useSendGaslessTransaction`
 

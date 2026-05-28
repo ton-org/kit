@@ -637,7 +637,7 @@ console.log('Staked Balance:', balance);
 Gasless lets a dApp submit on-chain transactions without the user holding TON for gas: a relayer co-signs and broadcasts the transaction, charging the user a fee in a relayer-accepted asset (e.g. USDT). The connected wallet must support the `SignMessage` TonConnect feature. See the [gasless guide](./gasless.md) for a regular-send → gasless-send migration.
 
 The high-level flow is:
-1. `getGaslessSupportedAssets` – discover which assets the relayer accepts as fee payment.
+1. `getGaslessConfig` – discover the relay address and assets the relayer accepts as fee payment.
 2. `getGaslessQuote` – ask the relayer for fee + wrapped messages (with a `validUntil`).
 3. `sendGaslessTransaction` – sign the wrapped messages via the wallet and submit the signed BoC.
 
@@ -697,14 +697,14 @@ const metadata = await getGaslessProviderMetadata(appKit);
 console.log('Gasless provider:', metadata.name, metadata.url);
 ```
 
-### `getGaslessSupportedAssets`
+### `getGaslessConfig`
 
-Discover the assets the gasless relayer accepts as fee payment.
+Fetch the relayer's configuration on a network — the relay address (e.g. for jetton-transfer `responseDestination`) and the assets it accepts as fee payment.
 
 ```ts
-const supportedAssets = await getGaslessSupportedAssets(appKit);
-const feeAsset = supportedAssets[0].address;
-console.log('Supported fee assets:', supportedAssets.length);
+const config = await getGaslessConfig(appKit);
+const feeAsset = config.supportedAssets[0].address;
+console.log('Relay address:', config.relayAddress, '— supported fee assets:', config.supportedAssets.length);
 ```
 
 ### `getGaslessQuote`
@@ -738,19 +738,6 @@ const jettonQuote = await getGaslessJettonTransferQuote(appKit, {
     feeAsset, // pay the relayer fee in this jetton (here: USDT)
 });
 await sendGaslessTransaction(appKit, { quote: jettonQuote });
-```
-
-### `getGaslessTonTransferQuote`
-
-Convenience wrapper that builds a TON transfer's message and quotes it in one call. Takes `recipientAddress`, `amount`, `feeAsset` instead of pre-built `messages`. Returns a `GaslessQuote` to pass to `sendGaslessTransaction`.
-
-```ts
-const tonQuote = await getGaslessTonTransferQuote(appKit, {
-    recipientAddress: 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c',
-    amount: '1.5',
-    feeAsset, // gas covered by the relayer, fee paid in this jetton
-});
-await sendGaslessTransaction(appKit, { quote: tonQuote });
 ```
 
 ### `sendGaslessTransaction`

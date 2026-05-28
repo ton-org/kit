@@ -11,6 +11,7 @@ export { GaslessProvider, GaslessError, GaslessErrorCode, GaslessManager } from 
 export type {
     GaslessAPI,
     GaslessProviderInterface,
+    GaslessConfig,
     GaslessSupportedAsset,
     GaslessProviderMetadata,
     GaslessProviderMetadataOverride,

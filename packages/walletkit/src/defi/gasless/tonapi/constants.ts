@@ -22,3 +22,10 @@ export const DEFAULT_SEND_RETRIES = 3;
 
 /** Base delay between send retries (ms). Subsequent retries use exponential backoff (2× per attempt). */
 export const DEFAULT_SEND_RETRY_DELAY_MS = 2000;
+
+/**
+ * Default TTL for the in-memory `/v2/gasless/config` cache (ms). The relayer
+ * config (relay address + supported fee jettons) is essentially static, so a
+ * coarse TTL avoids hammering TonAPI when `getConfig` runs on every quote.
+ */
+export const DEFAULT_CONFIG_CACHE_TTL_MS = 5 * 60 * 1000;

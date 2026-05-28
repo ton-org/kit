@@ -35,7 +35,7 @@ If no chain ends up configured, the factory throws.
 
 `sendTransaction` retries on transient failures only (HTTP 5xx, 408, 429, network errors) with exponential backoff (`sendRetryDelayMs * 2 ** attempt`, starting at 2000ms). 4xx responses fail fast. The wallet's seqno guard protects against on-chain double-spend if a retry duplicates an accepted BoC.
 
-`getQuote` and `getSupportedAssets` do not retry — quotes are short-lived (~2 min `validUntil`), and the asset list is cached at the React Query layer.
+`getQuote` and `getConfig` do not retry — quotes are short-lived (~2 min `validUntil`), and the config is cached at the React Query layer.
 
 ## BoC encoding
 
@@ -48,7 +48,7 @@ The `send` response carries the broadcasted external message as hex; we run it t
 TonAPI returns a numeric `error_code` in the error body. The provider maps the
 known ones to domain `GaslessErrorCode` values (see `mappers/map-gasless-error.ts`);
 any other code falls back to the call-site's code (`QUOTE_FAILED` / `SEND_FAILED` /
-`SUPPORTED_ASSETS_FAILED`).
+`CONFIG_FAILED`).
 
 | TonAPI `error_code` | Domain `GaslessErrorCode` | Meaning |
 |---|---|---|

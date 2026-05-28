@@ -13,10 +13,9 @@ import * as AppKitReact from '@ton/appkit-react';
 import { UseGaslessProvidersExample } from './use-gasless-providers';
 import { UseGaslessProviderExample } from './use-gasless-provider';
 import { UseGaslessProviderMetadataExample } from './use-gasless-provider-metadata';
-import { UseGaslessSupportedAssetsExample } from './use-gasless-supported-assets';
+import { UseGaslessConfigExample } from './use-gasless-config';
 import { UseGaslessQuoteExample } from './use-gasless-quote';
 import { UseGaslessJettonTransferQuoteExample } from './use-gasless-jetton-transfer-quote';
-import { UseGaslessTonTransferQuoteExample } from './use-gasless-ton-transfer-quote';
 import { UseSendGaslessTransactionExample } from './use-send-gasless-transaction';
 
 vi.mock('@ton/appkit-react', async () => {
@@ -26,10 +25,9 @@ vi.mock('@ton/appkit-react', async () => {
         useGaslessProviders: vi.fn(),
         useGaslessProvider: vi.fn(),
         useGaslessProviderMetadata: vi.fn(),
-        useGaslessSupportedAssets: vi.fn(),
+        useGaslessConfig: vi.fn(),
         useGaslessQuote: vi.fn(),
         useGaslessJettonTransferQuote: vi.fn(),
-        useGaslessTonTransferQuote: vi.fn(),
         useSendGaslessTransaction: vi.fn(),
     };
 });
@@ -94,26 +92,27 @@ describe('Gasless Hooks Examples', () => {
         });
     });
 
-    describe('UseGaslessSupportedAssetsExample', () => {
+    describe('UseGaslessConfigExample', () => {
         it('renders loading state', () => {
             // @ts-expect-error - mock
-            vi.mocked(AppKitReact.useGaslessSupportedAssets).mockReturnValue({
+            vi.mocked(AppKitReact.useGaslessConfig).mockReturnValue({
                 isLoading: true,
                 data: undefined,
             });
 
-            render(<UseGaslessSupportedAssetsExample />);
-            expect(screen.getByText('Loading fee assets...')).toBeDefined();
+            render(<UseGaslessConfigExample />);
+            expect(screen.getByText('Loading gasless config...')).toBeDefined();
         });
 
-        it('renders supported asset options', () => {
+        it('renders relay address and supported asset options', () => {
             // @ts-expect-error - mock
-            vi.mocked(AppKitReact.useGaslessSupportedAssets).mockReturnValue({
+            vi.mocked(AppKitReact.useGaslessConfig).mockReturnValue({
                 isLoading: false,
-                data: [{ address: TEST_ADDRESS }],
+                data: { relayAddress: TEST_ADDRESS, supportedAssets: [{ address: TEST_ADDRESS }] },
             });
 
-            render(<UseGaslessSupportedAssetsExample />);
+            render(<UseGaslessConfigExample />);
+            expect(screen.getByText(`Relay: ${TEST_ADDRESS}`)).toBeDefined();
             expect(screen.getByRole('option', { name: TEST_ADDRESS })).toBeDefined();
         });
     });
@@ -160,32 +159,6 @@ describe('Gasless Hooks Examples', () => {
 
             const { getByText } = render(<UseGaslessJettonTransferQuoteExample />);
             expect(getByText('Fee: 1234')).toBeDefined();
-
-            fireEvent.click(getByText('Send'));
-            await waitFor(() => {
-                expect(mockSend).toHaveBeenCalledWith({ quote: mockQuote });
-            });
-        });
-    });
-
-    describe('UseGaslessTonTransferQuoteExample', () => {
-        it('renders the quote fee and sends on click', async () => {
-            const mockQuote = { fee: '5678', validUntil: 1735680000 };
-            const mockSend = vi.fn().mockResolvedValue({});
-
-            // @ts-expect-error - mock
-            vi.mocked(AppKitReact.useGaslessTonTransferQuote).mockReturnValue({
-                data: mockQuote,
-                isFetching: false,
-            });
-            // @ts-expect-error - mock
-            vi.mocked(AppKitReact.useSendGaslessTransaction).mockReturnValue({
-                mutateAsync: mockSend,
-                isPending: false,
-            });
-
-            const { getByText } = render(<UseGaslessTonTransferQuoteExample />);
-            expect(getByText('Fee: 5678')).toBeDefined();
 
             fireEvent.click(getByText('Send'));
             await waitFor(() => {

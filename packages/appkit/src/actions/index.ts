@@ -127,11 +127,11 @@ export {
     type WatchGaslessProvidersReturnType,
 } from './gasless/watch-gasless-providers';
 export {
-    getGaslessSupportedAssets,
-    type GetGaslessSupportedAssetsOptions,
-    type GetGaslessSupportedAssetsReturnType,
-    type GetGaslessSupportedAssetsErrorType,
-} from './gasless/get-gasless-supported-assets';
+    getGaslessConfig,
+    type GetGaslessConfigOptions,
+    type GetGaslessConfigReturnType,
+    type GetGaslessConfigErrorType,
+} from './gasless/get-gasless-config';
 export {
     getGaslessProviderMetadata,
     type GetGaslessProviderMetadataOptions,
@@ -150,12 +150,6 @@ export {
     type GetGaslessJettonTransferQuoteReturnType,
     type GetGaslessJettonTransferQuoteErrorType,
 } from './gasless/get-gasless-jetton-transfer-quote';
-export {
-    getGaslessTonTransferQuote,
-    type GetGaslessTonTransferQuoteOptions,
-    type GetGaslessTonTransferQuoteReturnType,
-    type GetGaslessTonTransferQuoteErrorType,
-} from './gasless/get-gasless-ton-transfer-quote';
 export {
     sendGaslessTransaction,
     type SendGaslessTransactionParameters,

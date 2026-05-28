@@ -35,4 +35,9 @@ export interface TonApiGaslessProviderConfig {
     sendRetries?: number;
     /** Delay between send retries in ms. Defaults to 2000. */
     sendRetryDelayMs?: number;
+    /**
+     * TTL for the in-memory `/v2/gasless/config` cache (ms). Defaults to
+     * 5 minutes. Set to `0` to disable caching.
+     */
+    configCacheTtlMs?: number;
 }

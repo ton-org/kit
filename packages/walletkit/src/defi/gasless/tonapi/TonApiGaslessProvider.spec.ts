@@ -120,7 +120,7 @@ describe('TonApiGaslessProvider.getMetadata', () => {
     });
 });
 
-describe('TonApiGaslessProvider.getSupportedAssets', () => {
+describe('TonApiGaslessProvider.getConfig', () => {
     let fetchApi: ReturnType<typeof makeFetch>;
     let provider: TonApiGaslessProvider;
 
@@ -135,19 +135,20 @@ describe('TonApiGaslessProvider.getSupportedAssets', () => {
         ...overrides,
     });
 
-    it('maps the TonApi response to GaslessSupportedAsset[]', async () => {
+    it('maps the TonApi response to GaslessConfig (relayAddress + supportedAssets)', async () => {
         fetchApi.mockResolvedValueOnce(jsonResponse(rawConfig()));
 
-        const assets = await provider.getSupportedAssets(Network.mainnet());
+        const config = await provider.getConfig(Network.mainnet());
 
-        expect(assets).toHaveLength(1);
-        expect(assets[0].address).toBe(Address.parse(TEST_ADDRESS).toString({ bounceable: true }));
+        expect(config.relayAddress).toBe(Address.parse(TEST_ADDRESS).toString({ bounceable: true }));
+        expect(config.supportedAssets).toHaveLength(1);
+        expect(config.supportedAssets[0].address).toBe(Address.parse(TEST_ADDRESS).toString({ bounceable: true }));
     });
 
     it('hits /v2/gasless/config on the mainnet endpoint when called for mainnet', async () => {
         fetchApi.mockResolvedValueOnce(jsonResponse(rawConfig({ gas_jettons: [] })));
 
-        await provider.getSupportedAssets(Network.mainnet());
+        await provider.getConfig(Network.mainnet());
 
         expect((fetchApi.mock.calls[0][0] as URL).toString()).toBe('https://tonapi.io/v2/gasless/config');
     });
@@ -155,7 +156,7 @@ describe('TonApiGaslessProvider.getSupportedAssets', () => {
     it('uses the testnet endpoint when called for testnet', async () => {
         fetchApi.mockResolvedValueOnce(jsonResponse(rawConfig({ gas_jettons: [] })));
 
-        await provider.getSupportedAssets(Network.testnet());
+        await provider.getConfig(Network.testnet());
 
         expect((fetchApi.mock.calls[0][0] as URL).origin).toBe('https://testnet.tonapi.io');
     });
@@ -166,7 +167,7 @@ describe('TonApiGaslessProvider.getSupportedAssets', () => {
         });
         fetchApi.mockResolvedValueOnce(jsonResponse(rawConfig({ gas_jettons: [] })));
 
-        await authedProvider.getSupportedAssets(Network.mainnet());
+        await authedProvider.getConfig(Network.mainnet());
 
         const init = fetchApi.mock.calls[0][1] as RequestInit;
         const headers = init.headers as Headers;
@@ -176,19 +177,93 @@ describe('TonApiGaslessProvider.getSupportedAssets', () => {
     it('throws GaslessError(UNSUPPORTED_OPERATION) when called for a non-configured chain', async () => {
         const mainnetOnly = makeProvider(fetchApi, { networks: [Network.mainnet()] });
 
-        await expect(mainnetOnly.getSupportedAssets(Network.testnet())).rejects.toMatchObject({
+        await expect(mainnetOnly.getConfig(Network.testnet())).rejects.toMatchObject({
             name: 'GaslessError',
             code: GaslessErrorCode.UnsupportedOperation,
         });
     });
 
-    it('wraps fetch errors in GaslessError(SUPPORTED_ASSETS_FAILED)', async () => {
+    it('wraps fetch errors in GaslessError(CONFIG_FAILED)', async () => {
         fetchApi.mockResolvedValueOnce(new Response('boom', { status: 500 }));
 
-        await expect(provider.getSupportedAssets(Network.mainnet())).rejects.toMatchObject({
+        await expect(provider.getConfig(Network.mainnet())).rejects.toMatchObject({
             name: 'GaslessError',
-            code: GaslessErrorCode.SupportedAssetsFailed,
+            code: GaslessErrorCode.ConfigFailed,
         });
+    });
+
+    it('serves repeated calls from the in-memory cache within TTL', async () => {
+        fetchApi.mockResolvedValueOnce(jsonResponse(rawConfig()));
+
+        const first = await provider.getConfig(Network.mainnet());
+        const second = await provider.getConfig(Network.mainnet());
+
+        expect(fetchApi).toHaveBeenCalledTimes(1);
+        expect(second).toBe(first);
+    });
+
+    it('refetches after the cache TTL expires', async () => {
+        const shortTtl = makeProvider(fetchApi, { configCacheTtlMs: 5 });
+        fetchApi.mockResolvedValueOnce(jsonResponse(rawConfig())).mockResolvedValueOnce(jsonResponse(rawConfig()));
+
+        await shortTtl.getConfig(Network.mainnet());
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        await shortTtl.getConfig(Network.mainnet());
+
+        expect(fetchApi).toHaveBeenCalledTimes(2);
+    });
+
+    it('deduplicates concurrent calls into one fetch', async () => {
+        let resolveFetch: (response: Response) => void = () => {};
+        fetchApi.mockImplementationOnce(
+            () =>
+                new Promise<Response>((resolve) => {
+                    resolveFetch = resolve;
+                }),
+        );
+
+        const a = provider.getConfig(Network.mainnet());
+        const b = provider.getConfig(Network.mainnet());
+
+        resolveFetch(jsonResponse(rawConfig()));
+
+        const [resA, resB] = await Promise.all([a, b]);
+        expect(fetchApi).toHaveBeenCalledTimes(1);
+        expect(resA).toBe(resB);
+    });
+
+    it('does not cache failures — retries on the next call', async () => {
+        fetchApi
+            .mockResolvedValueOnce(new Response('boom', { status: 500 }))
+            .mockResolvedValueOnce(jsonResponse(rawConfig()));
+
+        await expect(provider.getConfig(Network.mainnet())).rejects.toMatchObject({
+            code: GaslessErrorCode.ConfigFailed,
+        });
+        await expect(provider.getConfig(Network.mainnet())).resolves.toBeDefined();
+
+        expect(fetchApi).toHaveBeenCalledTimes(2);
+    });
+
+    it('skips caching when configCacheTtlMs is 0', async () => {
+        const noCache = makeProvider(fetchApi, { configCacheTtlMs: 0 });
+        fetchApi.mockImplementation(async () => jsonResponse(rawConfig()));
+
+        await noCache.getConfig(Network.mainnet());
+        await noCache.getConfig(Network.mainnet());
+
+        expect(fetchApi).toHaveBeenCalledTimes(2);
+    });
+
+    it('caches per-chain — mainnet and testnet have independent entries', async () => {
+        fetchApi.mockResolvedValueOnce(jsonResponse(rawConfig())).mockResolvedValueOnce(jsonResponse(rawConfig()));
+
+        await provider.getConfig(Network.mainnet());
+        await provider.getConfig(Network.testnet());
+        await provider.getConfig(Network.mainnet());
+        await provider.getConfig(Network.testnet());
+
+        expect(fetchApi).toHaveBeenCalledTimes(2);
     });
 });
 

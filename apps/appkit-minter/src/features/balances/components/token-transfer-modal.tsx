@@ -46,7 +46,6 @@ export const TokenTransferModal: React.FC<TokenTransferModalProps> = ({
 
     const gasless = useGaslessTransfer({
         enabled: gaslessEnabled,
-        tokenType,
         jettonAddress: jetton?.address,
         recipientAddress,
         amount,

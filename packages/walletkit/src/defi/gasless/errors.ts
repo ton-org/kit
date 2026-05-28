@@ -13,7 +13,7 @@ export enum GaslessErrorCode {
     UnsupportedOperation = 'UNSUPPORTED_OPERATION',
     QuoteFailed = 'QUOTE_FAILED',
     SendFailed = 'SEND_FAILED',
-    SupportedAssetsFailed = 'SUPPORTED_ASSETS_FAILED',
+    ConfigFailed = 'CONFIG_FAILED',
     SignMessageNotSupported = 'SIGN_MESSAGE_NOT_SUPPORTED',
     TooManyMessages = 'TOO_MANY_MESSAGES',
     QuoteExpired = 'QUOTE_EXPIRED',

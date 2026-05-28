@@ -6,29 +6,31 @@
  *
  */
 
-import type { GaslessSupportedAsset } from '../../gasless';
+import type { GaslessConfig } from '../../gasless';
 import type { AppKit } from '../../core/app-kit';
 import type { Network } from '../../types/network';
 import { getSelectedWallet } from '../wallets/get-selected-wallet';
 
-export interface GetGaslessSupportedAssetsOptions {
+export interface GetGaslessConfigOptions {
     /** Network to query. Defaults to the selected wallet's network, then provider's first supported. */
     network?: Network;
     /** Gasless provider id. Uses the default provider when omitted. */
     providerId?: string;
 }
 
-export type GetGaslessSupportedAssetsReturnType = Promise<GaslessSupportedAsset[]>;
+export type GetGaslessConfigReturnType = Promise<GaslessConfig>;
 
-export type GetGaslessSupportedAssetsErrorType = Error;
+export type GetGaslessConfigErrorType = Error;
 
 /**
- * Discover the assets the gasless relayer accepts as fee payment.
+ * Fetch the gasless relayer's configuration on a network — the relay address
+ * (e.g. for jetton-transfer `responseDestination`) and the assets it accepts
+ * as fee payment.
  */
-export const getGaslessSupportedAssets = async (
+export const getGaslessConfig = async (
     appKit: AppKit,
-    options: GetGaslessSupportedAssetsOptions = {},
-): GetGaslessSupportedAssetsReturnType => {
+    options: GetGaslessConfigOptions = {},
+): GetGaslessConfigReturnType => {
     const network = options.network ?? getSelectedWallet(appKit)?.getNetwork();
-    return appKit.gaslessManager.getSupportedAssets(network, options.providerId);
+    return appKit.gaslessManager.getConfig(network, options.providerId);
 };

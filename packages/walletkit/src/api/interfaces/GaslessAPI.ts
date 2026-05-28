@@ -7,12 +7,12 @@
  */
 
 import type {
+    GaslessConfig,
     GaslessProviderMetadata,
     GaslessQuote,
     GaslessQuoteParams,
     GaslessSendParams,
     GaslessSendResponse,
-    GaslessSupportedAsset,
     Network,
 } from '../models';
 import type { DefiManagerAPI } from './DefiManagerAPI';
@@ -32,11 +32,13 @@ export interface GaslessAPI extends DefiManagerAPI<GaslessProviderInterface> {
     getMetadata(providerId?: string): Promise<GaslessProviderMetadata>;
 
     /**
-     * Discover the assets the relayer accepts as fee payment.
+     * Fetch the relayer's configuration on a given network — the relay address
+     * (e.g. for jetton-transfer `responseDestination`) and the assets it
+     * accepts as fee payment.
      * @param network Network to query (optional, falls back to the provider's first supported network)
      * @param providerId Provider identifier (optional, uses default if not specified)
      */
-    getSupportedAssets(network?: Network, providerId?: string): Promise<GaslessSupportedAsset[]>;
+    getConfig(network?: Network, providerId?: string): Promise<GaslessConfig>;
 
     /**
      * Quote fees and obtain relayer-wrapped messages for signing.
@@ -79,9 +81,10 @@ export interface GaslessProviderInterface extends DefiProvider {
     getMetadata(): Promise<GaslessProviderMetadata>;
 
     /**
-     * Discover the assets the relayer accepts as fee payment for the requested network.
+     * Fetch the relayer's configuration (relay address + accepted fee assets)
+     * for the requested network.
      */
-    getSupportedAssets(network: Network): Promise<GaslessSupportedAsset[]>;
+    getConfig(network: Network): Promise<GaslessConfig>;
 
     /**
      * Quote fees and return relayer-wrapped messages for signing.

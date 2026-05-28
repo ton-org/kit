@@ -7,19 +7,13 @@
  */
 
 import { useCallback } from 'react';
-import {
-    useGaslessJettonTransferQuote,
-    useGaslessTonTransferQuote,
-    useJettonInfo,
-    useSendGaslessTransaction,
-} from '@ton/appkit-react';
+import { useGaslessJettonTransferQuote, useJettonInfo, useSendGaslessTransaction } from '@ton/appkit-react';
 import { formatUnits } from '@ton/appkit';
 import type { GaslessSendResponse, UserFriendlyAddress } from '@ton/appkit';
 
 interface UseGaslessTransferParams {
     /** Only quote/send while the gasless toggle is on. */
     enabled: boolean;
-    tokenType: 'TON' | 'JETTON';
     jettonAddress?: string;
     recipientAddress: string;
     amount: string;
@@ -28,39 +22,32 @@ interface UseGaslessTransferParams {
 }
 
 /**
- * Drives the gasless quote → send flow for the transfer modal. Quotes the
- * jetton or TON transfer (depending on `tokenType`) and exposes a formatted fee
+ * Drives the gasless quote → send flow for the transfer modal. Gasless is
+ * jetton-only here: quotes the jetton transfer and exposes a formatted fee
  * plus a `send` that relays the signed quote.
  */
 export const useGaslessTransfer = ({
     enabled,
-    tokenType,
     jettonAddress,
     recipientAddress,
     amount,
     comment,
     feeAsset,
 }: UseGaslessTransferParams) => {
-    const hasInputs = Boolean(recipientAddress && amount && feeAsset);
+    const hasInputs = Boolean(jettonAddress && recipientAddress && amount && feeAsset);
 
-    const jettonQuote = useGaslessJettonTransferQuote({
+    const {
+        data: quote,
+        isFetching: isQuoting,
+        error: quoteError,
+    } = useGaslessJettonTransferQuote({
         jettonAddress: jettonAddress ?? '',
         recipientAddress,
         amount,
         comment,
         feeAsset: feeAsset ?? undefined,
-        query: { enabled: enabled && tokenType === 'JETTON' && hasInputs && Boolean(jettonAddress) },
+        query: { enabled: enabled && hasInputs },
     });
-
-    const tonQuote = useGaslessTonTransferQuote({
-        recipientAddress,
-        amount,
-        comment,
-        feeAsset: feeAsset ?? undefined,
-        query: { enabled: enabled && tokenType === 'TON' && hasInputs },
-    });
-
-    const { data: quote, isFetching: isQuoting, error: quoteError } = tokenType === 'JETTON' ? jettonQuote : tonQuote;
 
     const { data: feeAssetInfo } = useJettonInfo({
         address: feeAsset ?? undefined,
