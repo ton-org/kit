@@ -100,6 +100,7 @@ export { wrapWalletInterface } from './core/Initializer';
 export type { NftTransferParamsHuman, NftTransferParamsRaw } from './types/nfts';
 
 export { isValidAddress, compareAddress } from './utils/address';
+export { withTimeout } from './utils/withTimeout';
 export { validateTransactionMessage } from './validation';
 export { createDeviceInfo, createWalletManifest, getMaxOutgoingMessages } from './utils/getDefaultWalletConfig';
 export { Signer } from './utils/Signer';

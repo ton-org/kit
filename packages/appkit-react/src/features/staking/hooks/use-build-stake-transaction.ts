@@ -11,11 +11,14 @@ import { buildStakeTransactionMutationOptions } from '@ton/appkit/queries';
 import type {
     BuildStakeTransactionData,
     BuildStakeTransactionErrorType,
+    BuildStakeTransactionMutationOptions,
     BuildStakeTransactionVariables,
 } from '@ton/appkit/queries';
 
 import { useAppKit } from '../../settings';
 import { useMutation } from '../../../libs/query';
+
+export type UseBuildStakeTransactionParameters<context = unknown> = BuildStakeTransactionMutationOptions<context>;
 
 export type UseBuildStakeTransactionReturnType<context = unknown> = UseMutationResult<
     BuildStakeTransactionData,
@@ -27,7 +30,9 @@ export type UseBuildStakeTransactionReturnType<context = unknown> = UseMutationR
 /**
  * Hook to build stake transaction
  */
-export const useBuildStakeTransaction = <context = unknown>(): UseBuildStakeTransactionReturnType<context> => {
+export const useBuildStakeTransaction = <context = unknown>(
+    parameters?: UseBuildStakeTransactionParameters<context>,
+): UseBuildStakeTransactionReturnType<context> => {
     const appKit = useAppKit();
-    return useMutation(buildStakeTransactionMutationOptions<context>(appKit));
+    return useMutation(buildStakeTransactionMutationOptions<context>(appKit, parameters));
 };

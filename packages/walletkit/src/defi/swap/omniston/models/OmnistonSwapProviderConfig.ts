@@ -32,6 +32,14 @@ export interface OmnistonSwapProviderConfig extends OmnistonReferrerOptions {
     quoteTimeoutMs?: number;
 
     /**
+     * Timeout for build-transaction requests in milliseconds.
+     * Guards against indefinite hangs when network connectivity is lost between getting
+     * a quote and signing — `buildTransfer` would otherwise wait without surfacing an error.
+     * @format int
+     */
+    buildTimeoutMs?: number;
+
+    /**
      * Identifier for the provider
      */
     providerId?: string;

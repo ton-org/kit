@@ -6,7 +6,7 @@
  *
  */
 
-import { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { FC, PropsWithChildren } from 'react';
 import type { Network, StakingProvider, StakingQuoteDirection, TonShortfall } from '@ton/appkit';
 import {
@@ -224,8 +224,39 @@ export const StakingWidgetProvider: FC<StakingProviderProps> = ({ children, netw
         query: { refetchInterval: 5000 },
     });
 
-    const { mutateAsync: buildTransaction } = useBuildStakeTransaction();
-    const { mutateAsync: sendTransaction, isPending: isSendingTransaction } = useSendTransaction();
+    const {
+        mutateAsync: buildTransaction,
+        isPending: isBuildingTransaction,
+        error: buildError,
+        reset: resetBuild,
+    } = useBuildStakeTransaction({ mutation: { networkMode: 'always' } });
+    const {
+        mutateAsync: sendTransaction,
+        isPending: isSendingPending,
+        error: sendMutationError,
+        reset: resetSend,
+    } = useSendTransaction({ mutation: { networkMode: 'always' } });
+    const isSendingTransaction = isBuildingTransaction || isSendingPending;
+    const sendError = sendMutationError ?? buildError;
+
+    const resetSendError = useCallback(() => {
+        resetBuild();
+        resetSend();
+    }, [resetBuild, resetSend]);
+
+    // Drop the previous send error when the user changes anything that invalidates it —
+    // the next attempt is conceptually a new stake, no need to keep the old message on screen.
+    useEffect(() => {
+        resetSendError();
+    }, [direction, amount, isReversed, resetSendError]);
+
+    // Auto-clear the send error after a short delay so a stale failure doesn't linger in the
+    // submit button — the user is expected to act on it within seconds or move on.
+    useEffect(() => {
+        if (!sendError) return;
+        const id = setTimeout(resetSendError, 5000);
+        return () => clearTimeout(id);
+    }, [sendError, resetSendError]);
 
     const amountDecimals = useMemo(() => {
         const unstakeDecimals = isReversed
@@ -256,7 +287,10 @@ export const StakingWidgetProvider: FC<StakingProviderProps> = ({ children, netw
         data: quote,
         isFetching: isQuoteLoading,
         error: quoteError,
-    } = useStakingQuote({ ...quoteParamsDebounced, query: { enabled: isNetworkSupported } });
+    } = useStakingQuote({
+        ...quoteParamsDebounced,
+        query: { enabled: isNetworkSupported, networkMode: 'always', retry: false, gcTime: 0 },
+    });
 
     const reversedAmount = useMemo(() => {
         if (direction === 'unstake' && isReversed) return quote?.amountIn || '0';
@@ -337,6 +371,7 @@ export const StakingWidgetProvider: FC<StakingProviderProps> = ({ children, netw
         amountDebounced: quoteParamsDebounced.amount || '',
         balance,
         quoteError,
+        sendError,
         direction,
         stakedBalance: stakedBalanceData?.stakedBalance,
         quote,

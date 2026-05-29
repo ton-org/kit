@@ -9,6 +9,7 @@
 export * from './Signer';
 export * from './address';
 export * from './base64';
+export * from './withTimeout';
 export * from './cell';
 export * from './delay';
 export * from './getDefaultWalletConfig';
