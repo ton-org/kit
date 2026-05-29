@@ -6,7 +6,7 @@
  *
  */
 
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import type { ComponentProps, FC, ReactNode } from 'react';
 import type { StakingQuoteDirection } from '@ton/appkit';
 import clsx from 'clsx';
@@ -15,6 +15,7 @@ import { CenteredAmountInput } from '../../../../components/ui/centered-amount-i
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../../../components/ui/tabs';
 import { useI18n } from '../../../settings/hooks/use-i18n';
 import { StakingBalanceBlock } from '../staking-balance-block';
+import { StakingConfirmModal } from '../staking-confirm-modal';
 import { StakingInfo } from '../staking-info';
 import { SelectUnstakeMode } from '../select-unstake-mode';
 import { StakingSettingsModal } from '../staking-settings-modal';
@@ -66,14 +67,25 @@ export const StakingWidgetUI: FC<StakingWidgetRenderProps> = ({
     const { t } = useI18n();
 
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
     const receiveToken = providerMetadata?.receiveToken;
     const stakeToken = providerMetadata?.stakeToken;
 
     const buttonText = useMemo(() => {
+        if (isSendingTransaction || isQuoteLoading) return t('staking.loading');
         if (error) return t(error);
         return direction === 'stake' ? t('staking.continue') : t('staking.unstake');
-    }, [error, direction, t]);
+    }, [isSendingTransaction, isQuoteLoading, error, direction, t]);
+
+    // Close the modal immediately; the build/send result (including errors) is surfaced
+    // back in the widget's main button via the `error` from the provider.
+    const handleConfirm = useCallback(() => {
+        setIsConfirmOpen(false);
+        sendTransaction().catch(() => {
+            // Error is captured by the mutation and shown through the validator's `error` output.
+        });
+    }, [sendTransaction]);
 
     const submitActions: ReactNode = (
         <div className={styles.actions}>
@@ -82,7 +94,7 @@ export const StakingWidgetUI: FC<StakingWidgetRenderProps> = ({
                 size="l"
                 fullWidth
                 disabled={!canSubmit || isQuoteLoading || isSendingTransaction}
-                onClick={sendTransaction}
+                onClick={() => setIsConfirmOpen(true)}
             >
                 {buttonText}
             </ButtonWithConnect>
@@ -194,6 +206,19 @@ export const StakingWidgetUI: FC<StakingWidgetRenderProps> = ({
                 providers={stakingProviders}
                 onProviderChange={setStakingProviderId}
                 network={network}
+            />
+
+            <StakingConfirmModal
+                open={isConfirmOpen}
+                onClose={() => setIsConfirmOpen(false)}
+                onConfirm={handleConfirm}
+                direction={direction}
+                network={network}
+                quote={quote}
+                providerInfo={providerInfo}
+                providerMetadata={providerMetadata}
+                isProviderInfoLoading={isProviderInfoLoading}
+                isQuoteLoading={isQuoteLoading}
             />
         </div>
     );

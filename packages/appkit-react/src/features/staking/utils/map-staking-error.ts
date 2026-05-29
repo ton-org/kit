@@ -11,10 +11,12 @@ import { StakingError, StakingErrorCode } from '@ton/appkit';
 import { mapDefiError } from '../../../utils/map-defi-error';
 
 /**
- * Map a thrown staking error to an i18n key. Tries staking-specific codes first, falls back to the
- * shared {@link mapDefiError} for base DeFi codes, and finally to a generic `staking.quoteError`.
+ * Map a thrown staking error to an i18n key. Tries staking-specific codes first, falls back to
+ * the shared {@link mapDefiError} for base DeFi codes, and finally to the caller-provided
+ * {@link fallback} (defaults to `staking.quoteError`, but send-time callers should pass
+ * `staking.sendFailed`).
  */
-export const mapStakingError = (error: unknown): string => {
+export const mapStakingError = (error: unknown, fallback: string = 'staking.quoteError'): string => {
     if (error instanceof StakingError) {
         switch (error.code) {
             case StakingErrorCode.InvalidParams:
@@ -24,5 +26,5 @@ export const mapStakingError = (error: unknown): string => {
         }
     }
 
-    return mapDefiError(error) ?? 'staking.quoteError';
+    return mapDefiError(error) ?? fallback;
 };

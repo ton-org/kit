@@ -56,7 +56,7 @@ export const CardPreview: React.FC<CardPreviewProps> = ({ card, className }) => 
             {/* Card content */}
             <div className="relative p-4">
                 {/* Card image */}
-                <div className="relative aspect-square rounded-xl overflow-hidden mb-4 bg-background/50 backdrop-blur-sm border border-tertiary/20">
+                <div className="relative aspect-square rounded-2xl overflow-hidden mb-4 bg-background/50 backdrop-blur-sm border border-tertiary/20">
                     {card.imageUrl ? (
                         <img src={card.imageUrl} alt={card.name} className="w-full h-full object-cover" />
                     ) : (
