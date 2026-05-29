@@ -15,7 +15,15 @@ import type { Event, Action } from '@ton/walletkit';
 
 import { formatTonForDisplay, getTonviewerTxUrl, sameAddress } from '../utils';
 import { TraceRow } from './TraceRow';
-import { TransactionErrorState, TransactionLoadingState, TransactionEmptyState, ActionCard } from './transactions';
+import {
+    TransactionErrorState,
+    TransactionLoadingState,
+    TransactionEmptyState,
+    ActionCard,
+    TransactionCard,
+} from './transactions';
+
+import { DEMO_ACTIVITY, DEMO_MODE } from '@/lib/demo';
 
 interface RecentTransactionsProps {
     embedded?: boolean;
@@ -475,6 +483,34 @@ export const RecentTransactions: React.FC<RecentTransactionsProps> = memo(({ emb
             )}
         </div>
     );
+
+    // Demo: show a single incoming 100 USDT transfer for a clean recording state.
+    if (DEMO_MODE) {
+        const demoContent = (
+            <div className={`relative ${embedded ? 'py-2 border-t border-gray-100' : 'p-6'}`}>
+                <TransactionCard
+                    description={DEMO_ACTIVITY.description}
+                    value={DEMO_ACTIVITY.value}
+                    valueImage={DEMO_ACTIVITY.image}
+                    timestamp={Math.floor(Date.now() / 1000)}
+                    status="success"
+                    finality="done"
+                    isOutgoing={false}
+                />
+            </div>
+        );
+        return embedded ? (
+            <div className="space-y-0">
+                {header}
+                {demoContent}
+            </div>
+        ) : (
+            <div className="bg-white rounded-lg shadow-md border border-gray-200">
+                {header}
+                {demoContent}
+            </div>
+        );
+    }
 
     if (embedded) {
         return (

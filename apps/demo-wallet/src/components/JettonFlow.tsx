@@ -59,15 +59,18 @@ const JettonFlowItem = memo(function JettonFlowItem({
     jettonAddress: Address | string | undefined;
     amount: string;
 }) {
+    const value = BigInt(amount);
+    const color = value > 0n ? 'text-green-600' : value < 0n ? 'text-red-600' : 'text-gray-900';
+
     return (
         <div className="flex items-center justify-between">
             <span className="truncate max-w-[200px] flex items-center gap-2">
                 <JettonImage jettonAddress={jettonAddress} />
                 <JettonNameDisplay jettonAddress={jettonAddress} />
             </span>
-            <div className={`flex ml-2 font-medium ${BigInt(amount) >= 0n ? 'text-green-600' : 'text-red-600'}`}>
-                {BigInt(amount) >= 0n ? '+' : ''}
-                <JettonAmountDisplay amount={BigInt(amount)} jettonAddress={jettonAddress} />
+            <div className={`flex ml-2 font-medium ${color}`}>
+                {value > 0n ? '+' : ''}
+                <JettonAmountDisplay amount={value} jettonAddress={jettonAddress} />
             </div>
         </div>
     );

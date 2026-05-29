@@ -6,8 +6,9 @@
  *
  */
 
-import React from 'react';
-import type { SignMessageRequestEvent } from '@ton/walletkit';
+import React, { useMemo } from 'react';
+import type { SignMessageRequestEvent, TransactionTraceMoneyFlowItem } from '@ton/walletkit';
+import { AssetType } from '@ton/walletkit';
 import type { SavedWallet } from '@demo/wallet-core';
 import { useSignMessageRequests } from '@demo/wallet-core';
 
@@ -22,6 +23,18 @@ interface SignMessageRequestModalProps {
 
 export const SignMessageRequestModal: React.FC<SignMessageRequestModalProps> = ({ request, savedWallets, isOpen }) => {
     const { approveSignMessageRequest, rejectSignMessageRequest } = useSignMessageRequests();
+
+    // Demo-only: present a clean money flow — no TON spent, just the NFT price
+    // in USDT (the dApp covers the commission, so it is left out here).
+    const demoMoneyFlow = useMemo<TransactionTraceMoneyFlowItem[]>(() => {
+        const jettonItems = (request.request.items ?? []).filter((item) => item.type === 'jetton');
+        const first = jettonItems[0];
+        const flow: TransactionTraceMoneyFlowItem[] = [{ assetType: AssetType.ton, amount: '0' }];
+        if (first) {
+            flow.push({ assetType: AssetType.jetton, amount: (-100000000).toString(), tokenAddress: first.master });
+        }
+        return flow;
+    }, [request.request]);
 
     const handleApprove = async () => {
         await approveSignMessageRequest();
@@ -38,16 +51,11 @@ export const SignMessageRequestModal: React.FC<SignMessageRequestModalProps> = (
             isOpen={isOpen}
             title="Sign Message Request"
             subtitle="A dApp wants you to sign a transaction without broadcasting it"
-            details={<TransactionRequestDetails request={request.request} title="The dApp can submit:" />}
-            warning={{
-                tone: 'yellow',
-                message: (
-                    <>
-                        <strong>Warning:</strong> This will sign a transaction that the dApp can submit later. Only
-                        approve if you trust the requesting dApp.
-                    </>
-                ),
-            }}
+            hideDApp
+            details={
+                <TransactionRequestDetails request={request.request} title="The dApp can submit:" purchaseSummary />
+            }
+            moneyFlow={demoMoneyFlow}
             approveLabel="Sign Message"
             successMessage="Message signed successfully"
             testIds={{

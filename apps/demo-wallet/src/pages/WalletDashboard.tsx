@@ -35,6 +35,7 @@ import {
 import { useTonWallet } from '../hooks';
 import { createComponentLogger } from '../utils/logger';
 import { usePasteHandler } from '../hooks/usePasteHandler';
+import { DEMO_MODE } from '../lib/demo';
 
 // Create logger for wallet dashboard
 const log = createComponentLogger('WalletDashboard');
@@ -168,7 +169,7 @@ export const WalletDashboard: React.FC = () => {
 
                         {/* Row 2: Balance */}
                         <p className="text-xl font-bold text-gray-900 truncate">
-                            <AnimatedBalance balance={balance} />
+                            {DEMO_MODE ? '0 TON' : <AnimatedBalance balance={balance} />}
                         </p>
 
                         {/* Row 3: Address with copy, refresh, TONScan, TONViewer */}
@@ -293,7 +294,7 @@ export const WalletDashboard: React.FC = () => {
                 </Card>
 
                 {/* NFTs */}
-                <NftsCard />
+                {!DEMO_MODE && <NftsCard />}
 
                 {/* Connect to dApp */}
                 <Card title="Connect to dApp" compact>

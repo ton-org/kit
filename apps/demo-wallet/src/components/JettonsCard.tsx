@@ -15,6 +15,7 @@ import { JettonRow } from './JettonRow';
 import { createComponentLogger } from '../utils/logger';
 
 import { getJettonsName } from '@/utils/jetton';
+import { DEMO_MODE, toDemoJettons } from '@/lib/demo';
 
 const log = createComponentLogger('JettonsCard');
 
@@ -26,12 +27,14 @@ interface JettonsCardProps {
 export const JettonsCard: React.FC<JettonsCardProps> = ({ className = '', embedded = false }) => {
     const { userJettons, error, loadUserJettons } = useJettons();
 
+    const jettons = DEMO_MODE ? toDemoJettons(userJettons) : userJettons;
+
     const formatAddress = (address: string): string => {
         return `${address.slice(0, 4)}...${address.slice(-4)}`;
     };
 
-    const topJettons = userJettons.slice(0, 3);
-    const totalJettons = userJettons.length;
+    const topJettons = jettons.slice(0, 3);
+    const totalJettons = jettons.length;
 
     const errorContent = (
         <div className="text-center py-4">
@@ -51,7 +54,7 @@ export const JettonsCard: React.FC<JettonsCardProps> = ({ className = '', embedd
         </div>
     );
 
-    if (error) {
+    if (error && !DEMO_MODE) {
         return embedded ? (
             <div className={className}>{errorContent}</div>
         ) : (
