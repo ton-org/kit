@@ -7,9 +7,14 @@
  */
 
 export function extendAllGlobals(extend: { [key: string]: unknown }) {
-    const globals = [window, globalThis, global];
-    for (const globalObj of globals) {
-        extendGlobal(globalObj, extend);
+    if (typeof window !== 'undefined') {
+        extendGlobal(window as unknown as { [key: string]: unknown }, extend);
+    }
+    if (typeof globalThis !== 'undefined') {
+        extendGlobal(globalThis, extend);
+    }
+    if (typeof global !== 'undefined') {
+        extendGlobal(global, extend);
     }
 }
 
