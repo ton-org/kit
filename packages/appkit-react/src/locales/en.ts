@@ -81,6 +81,7 @@ export default {
         confirmTitle: 'Confirm swap transaction',
         confirm: 'Confirm',
         sendFailed: 'Transaction failed',
+        loading: 'Loading...',
     },
 
     // Low balance modal (shared between swap, staking, etc.)

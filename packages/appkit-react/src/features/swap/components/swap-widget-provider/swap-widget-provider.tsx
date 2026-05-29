@@ -26,7 +26,6 @@ import { useNetwork } from '../../../network';
 import { useSendTransaction } from '../../../transaction/hooks/use-send-transaction';
 import { useDebounceValue } from '../../../../hooks/use-debounce-value';
 import type { AppkitUIToken } from '../../../../types/appkit-ui-token';
-import { mapDefiError } from '../../../../utils/map-defi-error';
 import { mapSwapWidgetTokens } from '../../utils/map-swap-widget-tokens';
 import { useSwapTokenState } from './use-swap-token-state';
 import { useSwapBalances } from './use-swap-balances';
@@ -91,10 +90,6 @@ export interface SwapContextType {
     sendSwapTransaction: () => Promise<void>;
     /** True while a transaction is being built or sent */
     isSendingTransaction: boolean;
-    /** i18n key for the last build/send failure; `null` once the inputs change or a retry succeeds. */
-    sendError: string | null;
-    /** Manually clear `sendError` (e.g. when reopening the confirm modal). */
-    resetSendError: () => void;
     /** True when the built transaction outflow exceeds the user's TON balance */
     isLowBalanceWarningOpen: boolean;
     /** `reduce` when the outgoing token is TON (user can fix by changing amount), `topup` otherwise. */
@@ -134,8 +129,6 @@ export const SwapContext = createContext<SwapContextType>({
     onMaxClick: () => {},
     sendSwapTransaction: () => Promise.resolve(),
     isSendingTransaction: false,
-    sendError: null,
-    resetSendError: () => {},
     isLowBalanceWarningOpen: false,
     lowBalanceMode: 'reduce',
     lowBalanceRequiredTon: '',
@@ -241,7 +234,7 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
         network,
         slippageBps: slippage,
         providerId: swapProvider?.providerId,
-        query: { enabled: isNetworkSupported },
+        query: { enabled: isNetworkSupported, networkMode: 'always', retry: false, gcTime: 0 },
     });
     // Also show "loading" while the user is still typing (debounce in-flight) so the UI doesn't flash
     // the previous quote as if it were final.
@@ -254,6 +247,29 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
     });
     const { data: tonBalance } = useBalance({ network, query: { refetchInterval: 5000 } });
 
+    // 4. Mutations (hoisted above validation: the mutation `error` is one of its inputs)
+    const {
+        mutateAsync: buildTransaction,
+        isPending: isBuildingTransaction,
+        error: buildError,
+        reset: resetBuild,
+    } = useBuildSwapTransaction({ mutation: { networkMode: 'always' } });
+    const {
+        mutateAsync: sendTransaction,
+        isPending: isSendingPending,
+        error: sendMutationError,
+        reset: resetSend,
+    } = useSendTransaction({ mutation: { networkMode: 'always' } });
+    const isSendingTransaction = isBuildingTransaction || isSendingPending;
+    const sendError = sendMutationError ?? buildError;
+
+    // Drop the previous send error when the user changes anything that would invalidate it —
+    // the next attempt is conceptually a new swap, no need to keep the old message on screen.
+    const resetSendError = useCallback(() => {
+        resetBuild();
+        resetSend();
+    }, [resetBuild, resetSend]);
+
     // 3. Derivations
     const toAmount = quote?.toAmount ?? '';
     const { error, canSubmit } = useSwapValidation({
@@ -262,7 +278,9 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
         fromToken,
         toToken,
         fromBalance,
+        quote,
         quoteError,
+        sendError,
         isNetworkSupported,
     });
     const isLowBalanceWarningOpen = pendingSwap !== undefined;
@@ -272,39 +290,19 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
         return formatUnits(pendingSwap.requiredNanos, 9);
     }, [pendingSwap]);
 
-    // 4. Mutations
-    const {
-        mutateAsync: buildTransaction,
-        isPending: isBuildingTransaction,
-        error: buildError,
-        reset: resetBuild,
-    } = useBuildSwapTransaction();
-    const {
-        mutateAsync: sendTransaction,
-        isPending: isSendingPending,
-        error: sendMutationError,
-        reset: resetSend,
-    } = useSendTransaction();
-    const isSendingTransaction = isBuildingTransaction || isSendingPending;
-
-    // Surface the most recent build/send failure as an i18n key. Known swap/defi codes get
-    // a precise message; everything else falls back to a generic `swap.sendFailed`.
-    const sendError = useMemo<string | null>(() => {
-        const err = sendMutationError ?? buildError;
-        if (!err) return null;
-        return mapDefiError(err) ?? 'swap.sendFailed';
-    }, [sendMutationError, buildError]);
-
-    const resetSendError = useCallback(() => {
-        resetBuild();
-        resetSend();
-    }, [resetBuild, resetSend]);
-
     // Drop the previous send error when the user changes anything that would invalidate it —
     // the next attempt is conceptually a new swap, no need to keep the old message on screen.
     useEffect(() => {
         resetSendError();
     }, [fromToken?.address, toToken?.address, fromAmount, resetSendError]);
+
+    // Auto-clear the send error after a short delay so a stale failure doesn't linger in the
+    // submit button — the user is expected to act on it within seconds or move on.
+    useEffect(() => {
+        if (!sendError) return;
+        const id = setTimeout(resetSendError, 5000);
+        return () => clearTimeout(id);
+    }, [sendError, resetSendError]);
 
     // 5. Callbacks
     const handleMaxClick = useCallback(() => {
@@ -370,8 +368,6 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
             onMaxClick: handleMaxClick,
             sendSwapTransaction,
             isSendingTransaction,
-            sendError,
-            resetSendError,
             isLowBalanceWarningOpen,
             lowBalanceMode,
             lowBalanceRequiredTon,
@@ -405,8 +401,6 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
             handleMaxClick,
             sendSwapTransaction,
             isSendingTransaction,
-            sendError,
-            resetSendError,
             isLowBalanceWarningOpen,
             lowBalanceMode,
             lowBalanceRequiredTon,

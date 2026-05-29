@@ -27,7 +27,7 @@ export * from './nft/nft-info';
 export * from './object/map-values';
 export * from './predicate/is-number';
 export * from './predicate/is-string';
-export * from './promise/cancel-promise';
+export * from './promise/with-timeout';
 export * from './promise/sleep';
 export * from './query/filter-query-options';
 export * from './network/resolve-network';
