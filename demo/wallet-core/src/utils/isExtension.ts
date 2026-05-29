@@ -6,6 +6,15 @@
  *
  */
 
+declare global {
+    // global chrome for browser extensions
+    const chrome: {
+        runtime: {
+            id: string;
+        };
+    };
+}
+
 /**
  * Checks if the code is running in a browser extension environment
  * (Chrome Extension, Firefox Extension, etc.)

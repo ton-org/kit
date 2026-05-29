@@ -190,7 +190,9 @@ export class TonWalletKit {
 }
 
 // Mock Signer
-export const Signer = {
+export const Signer: {
+    fromMnemonic: ReturnType<typeof vi.fn>;
+} = {
     fromMnemonic: vi.fn(() =>
         Promise.resolve({
             sign: vi.fn(),

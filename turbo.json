@@ -46,6 +46,9 @@
     },
     "generate-openapi-spec": {
       "dependsOn": ["^generate-openapi-spec"]
+    },
+    "generate-openapi-spec-fixtures": {
+      "dependsOn": ["^generate-openapi-spec-fixtures"]
     }
   }
 }

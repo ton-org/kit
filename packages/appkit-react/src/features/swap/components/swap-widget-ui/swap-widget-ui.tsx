@@ -12,6 +12,7 @@ import clsx from 'clsx';
 
 import { useI18n } from '../../../settings/hooks/use-i18n';
 import { useSelectedWallet } from '../../../wallets';
+import { SwapConfirmModal } from '../swap-confirm-modal';
 import { SwapField } from '../swap-field';
 import { SwapFlipButton } from '../swap-flip-button';
 import { SwapInfo } from '../swap-info';
@@ -67,6 +68,7 @@ export const SwapWidgetUI: FC<SwapWidgetRenderProps> = ({
 
     const [activeField, setActiveField] = useState<'from' | 'to' | null>(null);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const [isFlipped, setIsFlipped] = useState(false);
 
     const handleFlip = useCallback(() => {
@@ -74,12 +76,22 @@ export const SwapWidgetUI: FC<SwapWidgetRenderProps> = ({
         onFlip();
     }, [onFlip]);
 
+    // Close the modal immediately; the build/send result (including errors) is surfaced
+    // back in the widget's main button via the `error` from the provider.
+    const handleConfirm = useCallback(() => {
+        setIsConfirmOpen(false);
+        sendSwapTransaction().catch(() => {
+            // Error is captured by the mutation and shown through the validator's `error` output.
+        });
+    }, [sendSwapTransaction]);
+
     const buttonText = useMemo(() => {
-        if (error) return t(error);
+        if (isSendingTransaction || isQuoteLoading) return t('swap.loading');
         if (!fromToken || !toToken) return t('swap.selectToken');
+        if (error) return t(error);
         if (canSubmit) return t('swap.continue');
         return t('swap.enterAmount');
-    }, [error, fromToken, toToken, canSubmit, t]);
+    }, [isSendingTransaction, isQuoteLoading, error, fromToken, toToken, canSubmit, t]);
 
     return (
         <div className={clsx(styles.widget, className)} {...props}>
@@ -135,6 +147,21 @@ export const SwapWidgetUI: FC<SwapWidgetRenderProps> = ({
                 onProviderChange={setSwapProviderId}
             />
 
+            <SwapConfirmModal
+                open={isConfirmOpen}
+                onClose={() => setIsConfirmOpen(false)}
+                onConfirm={handleConfirm}
+                fromToken={fromToken}
+                toToken={toToken}
+                fromAmount={fromAmount}
+                toAmount={toAmount}
+                fiatSymbol={fiatSymbol}
+                quote={quote}
+                swapProvider={swapProvider}
+                slippage={slippage}
+                isQuoteLoading={isQuoteLoading}
+            />
+
             <LowBalanceModal
                 open={isLowBalanceWarningOpen}
                 mode={lowBalanceMode}
@@ -149,7 +176,7 @@ export const SwapWidgetUI: FC<SwapWidgetRenderProps> = ({
                     size="l"
                     fullWidth
                     disabled={!canSubmit || isQuoteLoading || isSendingTransaction}
-                    onClick={sendSwapTransaction}
+                    onClick={() => setIsConfirmOpen(true)}
                 >
                     {buttonText}
                 </ButtonWithConnect>

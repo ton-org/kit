@@ -265,7 +265,8 @@ export class BridgeManager {
         }
 
         try {
-            await this.bridgeProvider.send(response, sessionCrypto, sessionId, {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await this.bridgeProvider.send(response, sessionCrypto as any, sessionId, {
                 traceId: event?.traceId,
             });
 
@@ -382,7 +383,8 @@ export class BridgeManager {
             session: new SessionCrypto({
                 publicKey: session.publicKey,
                 secretKey: session.privateKey.length > 64 ? session.privateKey.slice(0, 64) : session.privateKey,
-            }),
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            }) as any,
             clientId: session.sessionId,
         }));
     }
@@ -405,7 +407,8 @@ export class BridgeManager {
             if (clients.length === 0) {
                 clients.push({
                     clientId: '0',
-                    session: new SessionCrypto(),
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    session: new SessionCrypto() as any,
                 });
             }
 

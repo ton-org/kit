@@ -8,7 +8,7 @@
 
 import { v7 as uuidv7 } from 'uuid';
 
-import type { BridgePayload } from '../types';
+import type { BridgePayload, WrappedFunctionRef } from '../types';
 import { bigIntReplacer } from '../utils/serialization';
 import { warn, error } from '../utils/logger';
 import { sendToNative } from './port';
@@ -72,6 +72,25 @@ export function bridgeRequest(method: string, params: Record<string, unknown>): 
         pendingRequests.set(id, { resolve, reject });
         postToNative({ kind: 'request', id, method, params });
     });
+}
+
+/**
+ * Reconstructs a native callback that crossed the bridge as a WrappedFunctionRef into a callable.
+ * The function itself can't be serialized, so the returned wrapper forwards its arguments through
+ * the async `callByReference` reverse-RPC method. Returns undefined when there's no reference.
+ * Wrappers are memoized under window.wrapped_funcs (keyed by reference id), not on global scope.
+ */
+export function unwrapRef(ref: WrappedFunctionRef | undefined): ((...args: unknown[]) => Promise<unknown>) | undefined {
+    if (!ref?.__wrappedFn) {
+        return undefined;
+    }
+    const refId = ref.__wrappedFn;
+    const registry = window as unknown as {
+        wrapped_funcs?: Record<string, (...args: unknown[]) => Promise<unknown>>;
+    };
+    registry.wrapped_funcs ??= {};
+    registry.wrapped_funcs[refId] ??= (...args: unknown[]) => bridgeRequest('callByReference', { refId, args });
+    return registry.wrapped_funcs[refId];
 }
 
 export function handleNativeResponse(id: string, resultJson: unknown, errorJson: unknown): void {

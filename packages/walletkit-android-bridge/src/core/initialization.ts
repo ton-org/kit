@@ -29,7 +29,7 @@ import {
     AndroidTONConnectSessionsManager,
 } from '../adapters/AndroidTONConnectSessionsManager';
 import { AndroidAPIClientAdapter } from '../adapters/AndroidAPIClientAdapter';
-import { bridgeRequestSyncTyped, isBridgeAvailable } from '../transport/nativeBridge';
+import { bridgeRequestSyncTyped, isBridgeAvailable, unwrapRef } from '../transport/nativeBridge';
 
 interface InitTonWalletKitDeps {
     emit: (type: WalletKitBridgeEvent['type'], data?: WalletKitBridgeEvent['data']) => void;
@@ -96,6 +96,10 @@ export async function initTonWalletKit(
     const kitOptions: Record<string, unknown> = {
         networks: networksConfig,
     };
+
+    // The host's fetchManifest callback arrives as a wrapped-function reference (a function can't
+    // cross the bridge); unwrapRef turns it back into a callable over the async reverse-RPC channel.
+    kitOptions.fetchManifest = unwrapRef(config?.fetchManifest);
 
     const devOptions: Record<string, unknown> = {};
     if (config?.disableNetworkSend) {

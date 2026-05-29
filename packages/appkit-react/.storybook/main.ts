@@ -17,7 +17,6 @@ import { dirname } from 'node:path';
  */
 
 import type { StorybookConfig } from '@storybook/react-vite';
-import { nodePolyfills } from 'vite-plugin-node-polyfills';
 
 const config: StorybookConfig = {
     stories: ['../src/**/*.stories.@(ts|tsx)'],
@@ -33,7 +32,6 @@ const config: StorybookConfig = {
     viteFinal: async (viteConfig) => {
         return {
             ...viteConfig,
-            plugins: [...(viteConfig.plugins ?? []), nodePolyfills()],
             resolve: {
                 ...viteConfig.resolve,
                 alias: {

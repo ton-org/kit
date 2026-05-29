@@ -8,6 +8,7 @@
 
 import { create } from 'zustand';
 
+import { createRandomCard } from '../lib/card-data';
 import type { CardData } from '../types/card';
 
 interface MinterState {
@@ -19,7 +20,7 @@ interface MinterState {
 }
 
 export const useMinterStore = create<MinterState>(() => ({
-    currentCard: null,
+    currentCard: createRandomCard(),
     mintedCards: [],
     isGenerating: false,
     isMinting: false,

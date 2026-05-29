@@ -12,9 +12,11 @@ import { mapDefiError } from '../../../utils/map-defi-error';
 
 /**
  * Map a thrown swap error to an i18n key. Tries swap-specific codes first, falls back to the
- * shared {@link mapDefiError} for base DeFi codes, and finally to a generic `swap.quoteError`.
+ * shared {@link mapDefiError} for base DeFi codes, and finally to the caller-provided
+ * {@link fallback} (defaults to `swap.quoteError`, but send-time callers should pass
+ * `swap.sendFailed`).
  */
-export const mapSwapError = (error: unknown): string => {
+export const mapSwapError = (error: unknown, fallback: string = 'swap.quoteError'): string => {
     if (error instanceof SwapError) {
         switch (error.code) {
             case SwapErrorCode.InvalidQuote:
@@ -28,5 +30,5 @@ export const mapSwapError = (error: unknown): string => {
         }
     }
 
-    return mapDefiError(error) ?? 'swap.quoteError';
+    return mapDefiError(error) ?? fallback;
 };

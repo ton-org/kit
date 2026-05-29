@@ -15,6 +15,7 @@ export type { TransactionId } from './blockchain/TransactionId';
 
 // Core models
 export type { AddressBook, AddressBookEntry } from './core/AddressBook';
+export type { ManifestFetchResult } from './core/ManifestFetchResult';
 export { AssetType } from './core/AssetType';
 export type { BaseProvider, BaseProviderEvents, BaseProviderUpdate } from './core/BaseProvider';
 export type { DAppInfo } from './core/DAppInfo';
