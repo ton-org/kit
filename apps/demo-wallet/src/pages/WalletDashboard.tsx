@@ -47,6 +47,7 @@ export const WalletDashboard: React.FC = () => {
     const [isConnecting, setIsConnecting] = useState(false);
     const [hasPurchasedNft, setHasPurchasedNft] = useState(false);
     const [purchaseSuccessVisible, setPurchaseSuccessVisible] = useState(false);
+    const [txSuccessVisible, setTxSuccessVisible] = useState(false);
     const navigate = useNavigate();
 
     const {
@@ -380,11 +381,16 @@ export const WalletDashboard: React.FC = () => {
             )}
 
             {/* Transaction Request Modal */}
-            {pendingTransactionRequest && (
+            {(pendingTransactionRequest || txSuccessVisible) && (
                 <TransactionRequestModal
-                    request={pendingTransactionRequest}
-                    savedWallets={savedWallets}
-                    isOpen={isTransactionModalOpen}
+                    wallet={activeWallet}
+                    isOpen={isTransactionModalOpen || txSuccessVisible}
+                    showSuccess={txSuccessVisible}
+                    onPurchased={() => {
+                        setHasPurchasedNft(true);
+                        setTxSuccessVisible(true);
+                    }}
+                    onSuccessClose={() => setTxSuccessVisible(false)}
                 />
             )}
 
