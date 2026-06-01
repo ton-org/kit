@@ -17,6 +17,7 @@ import { Network } from '@ton/walletkit';
 import type { ApiClient, Hex, WalletSigner } from '@ton/walletkit';
 
 import { AgenticWalletAdapter } from '../contracts/agentic_wallet/AgenticWalletAdapter.js';
+import { ActionSendMsg } from '../contracts/agentic_wallet/actions.js';
 import {
     DEFAULT_AGENTIC_COLLECTION_ADDRESS,
     createAgenticWalletRecord,

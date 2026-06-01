@@ -62,6 +62,21 @@ export interface StoredAgenticWallet extends StoredWalletBase {
     wallet_nft_index?: string;
     origin_operator_public_key?: string;
     deployed_by_user?: boolean;
+    /** Cached limits, decoded from the latest on-chain limits-change tx. Absent = no limits set. */
+    limits?: StoredLimits;
+    /** Hex of the on-chain `limits_hash` the cached `limits` correspond to. */
+    limits_hash?: string;
+}
+
+/** Decoded mirror of the on-chain limitsDict, JSON-friendly. */
+export interface StoredLimits {
+    /** Keyed by asset address (`'TON'` sentinel for native TON). */
+    assets: Record<string, StoredAssetLimit>;
+}
+
+export interface StoredAssetLimit {
+    /** Rolling windows: window seconds -> max spend in base units, as a decimal string. */
+    windows: Record<string, string>;
 }
 
 export type StoredWallet = StoredStandardWallet | StoredAgenticWallet;
@@ -188,6 +203,9 @@ function normalizeConfig(raw: TonConfig): TonConfig {
                             collection_address: formatAssetAddress(wallet.collection_address, wallet.network),
                         }
                       : {}),
+                  // Carry limits explicitly so they survive normalization round-trips.
+                  ...(wallet.limits ? { limits: wallet.limits } : {}),
+                  ...(wallet.limits_hash ? { limits_hash: wallet.limits_hash } : {}),
               };
     const normalizeSetupSession = (session: StoredAgenticSetupSession): StoredAgenticSetupSession => ({
         ...session,
@@ -589,6 +607,62 @@ export async function persistAgenticWalletNftIndex(walletId: string, walletNftIn
     return true;
 }
 
+/**
+ * Set or clear the cached limits for an agentic wallet. Identity-keyed on
+ * `limits_hash`: passing the hash already stored is a no-op; passing `undefined`
+ * clears both `limits` and `limits_hash`.
+ */
+export function updateAgenticWalletLimits(
+    config: TonConfig,
+    walletId: string,
+    limits: StoredLimits | undefined,
+    limitsHash: string | undefined,
+): TonConfig {
+    let changed = false;
+    const nextWallets = config.wallets.map((item) => {
+        if (item.id !== walletId || item.type !== 'agentic' || isWalletRemoved(item)) {
+            return item;
+        }
+        if (item.limits_hash === limitsHash) {
+            return item;
+        }
+        changed = true;
+        const { limits: _limits, limits_hash: _limitsHash, ...rest } = item;
+        return {
+            ...rest,
+            ...(limits ? { limits } : {}),
+            ...(limitsHash ? { limits_hash: limitsHash } : {}),
+            updated_at: nowIso(),
+        };
+    });
+
+    if (!changed) {
+        return config;
+    }
+
+    return {
+        ...config,
+        wallets: nextWallets,
+    };
+}
+
+export async function persistAgenticWalletLimits(
+    walletId: string,
+    limits: StoredLimits | undefined,
+    limitsHash: string | undefined,
+): Promise<boolean> {
+    const config = await loadConfigWithMigration();
+    if (!config) {
+        return false;
+    }
+    const nextConfig = updateAgenticWalletLimits(config, walletId, limits, limitsHash);
+    if (nextConfig === config) {
+        return false;
+    }
+    saveConfig(nextConfig);
+    return true;
+}
+
 export function setActiveWallet(
     config: TonConfig,
     selector: string,
@@ -918,6 +992,8 @@ export function createAgenticWalletRecord(input: {
     walletNftIndex?: string;
     originOperatorPublicKey?: string;
     deployedByUser?: boolean;
+    limits?: StoredLimits;
+    limitsHash?: string;
     idPrefix?: string;
 }): StoredAgenticWallet {
     const now = nowIso();
@@ -937,6 +1013,8 @@ export function createAgenticWalletRecord(input: {
         ...(input.walletNftIndex ? { wallet_nft_index: input.walletNftIndex } : {}),
         ...(input.originOperatorPublicKey ? { origin_operator_public_key: input.originOperatorPublicKey } : {}),
         ...(typeof input.deployedByUser === 'boolean' ? { deployed_by_user: input.deployedByUser } : {}),
+        ...(input.limits ? { limits: input.limits } : {}),
+        ...(input.limitsHash ? { limits_hash: input.limitsHash } : {}),
         created_at: now,
         updated_at: now,
     };
