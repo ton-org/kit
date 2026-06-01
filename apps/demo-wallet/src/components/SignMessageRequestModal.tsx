@@ -125,7 +125,7 @@ export const SignMessageRequestModal: React.FC<SignMessageRequestModalProps> = (
                                     <p className="text-base font-semibold text-gray-900 flex items-center gap-1">
                                         <s className="text-gray-500">0.1 TON</s>
                                         <span>0 TON</span>
-                                        <span className="bg-blue-500/10 text-blue-500 text-xs rounded-lg px-1.5 py-0.75 ml-1">
+                                        <span className="bg-blue-500/10 uppercase text-blue-500 text-xs rounded-lg px-1.5 py-0.75 ml-1">
                                             Gasless
                                         </span>
                                     </p>
@@ -189,7 +189,7 @@ export const SignMessageRequestModal: React.FC<SignMessageRequestModalProps> = (
                                     <p className="text-base font-semibold text-gray-900 flex items-center gap-1">
                                         <s className="text-gray-500">0.1 TON</s>
                                         <span>0 TON</span>
-                                        <span className="bg-blue-500/10 text-blue-500 text-xs rounded-lg px-1.5 py-0.75 ml-1">
+                                        <span className="bg-blue-500/10 uppercase text-blue-500 text-xs rounded-lg px-1.5 py-0.75 ml-1">
                                             Gasless
                                         </span>
                                     </p>
