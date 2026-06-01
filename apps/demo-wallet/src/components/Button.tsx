@@ -27,7 +27,7 @@ export const Button: React.FC<ButtonProps> = ({
     ...props
 }) => {
     const baseClasses =
-        'font-medium rounded-2xl transition-transform duration-[80ms] ease-out focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center cursor-pointer enabled:hover:scale-[1.02] enabled:active:scale-[0.98]';
+        'font-medium rounded-2xl transition-transform duration-[180ms] ease-out enabled:active:duration-[80ms] touch-manipulation select-none [-webkit-tap-highlight-color:transparent] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center cursor-pointer enabled:hover:scale-[1.015] enabled:active:scale-[0.995]';
 
     const variantClasses = {
         primary: 'bg-[#007AFF] text-white',
