@@ -28,6 +28,7 @@ export * from './components/ui/select';
 export * from './components/shared/low-balance-modal';
 export * from './components/shared/settings-button';
 export * from './components/shared/option-switcher';
+export * from './components/shared/button-with-connect';
 export * from './components/ui/icons';
 
 export * from './features/balances';
