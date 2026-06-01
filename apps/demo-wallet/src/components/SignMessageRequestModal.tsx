@@ -122,8 +122,13 @@ export const SignMessageRequestModal: React.FC<SignMessageRequestModalProps> = (
                                     <p className="text-xs font-medium uppercase tracking-wide text-gray-500 mb-1">
                                         Fee
                                     </p>
-                                    <p className="text-base font-semibold text-gray-900">0.1 USDT</p>
-                                    <p className="mt-0.5 text-xs text-gray-500">paid by dApp</p>
+                                    <p className="text-base font-semibold text-gray-900 flex items-center gap-1">
+                                        <s className="text-gray-500">0.1 TON</s>
+                                        <span>0 TON</span>
+                                        <span className="bg-blue-500/10 text-blue-500 text-xs rounded-lg px-1.5 py-0.75 ml-1">
+                                            Gasless
+                                        </span>
+                                    </p>
 
                                     <div className="my-4 w-full h-px bg-gray-300" />
 
@@ -181,8 +186,13 @@ export const SignMessageRequestModal: React.FC<SignMessageRequestModalProps> = (
                                     <p className="text-xs font-medium uppercase tracking-wide text-gray-500 mb-1">
                                         Fee
                                     </p>
-                                    <p className="text-base font-semibold text-gray-900">0.1 USDT</p>
-                                    <p className="mt-0.5 text-xs text-gray-500">paid by dApp</p>
+                                    <p className="text-base font-semibold text-gray-900 flex items-center gap-1">
+                                        <s className="text-gray-500">0.1 TON</s>
+                                        <span>0 TON</span>
+                                        <span className="bg-blue-500/10 text-blue-500 text-xs rounded-lg px-1.5 py-0.75 ml-1">
+                                            Gasless
+                                        </span>
+                                    </p>
 
                                     <div className="my-4 w-full h-px bg-gray-300" />
 
@@ -190,7 +200,7 @@ export const SignMessageRequestModal: React.FC<SignMessageRequestModalProps> = (
                                         Wallet
                                     </p>
                                     <p className="text-base font-semibold text-gray-900">
-                                        Wallet 1 ({wallet?.address.slice(0, 6)}...{wallet?.address.slice(-4)})
+                                        Wallet 1 ({wallet?.address.slice(0, 4)}...{wallet?.address.slice(-4)})
                                     </p>
                                 </div>
 
