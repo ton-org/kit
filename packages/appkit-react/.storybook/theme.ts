@@ -14,7 +14,7 @@ export default create({
     // Branding
     brandTitle: 'TON AppKit',
     brandUrl: 'https://github.com/ton-connect/kit',
-    brandImage: 'ton.png',
+    brandImage: 'ton.svg',
     brandTarget: '_self',
 
     // Colors

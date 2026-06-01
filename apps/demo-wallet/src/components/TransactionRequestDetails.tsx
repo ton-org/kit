@@ -18,12 +18,6 @@ import { formatNanoTonAmount, formatTokenAmount } from '../utils/units';
 interface TransactionRequestDetailsProps {
     request: TransactionRequest;
     title?: string;
-    /**
-     * Demo-only: collapse jetton transfers into a single "Buy NFT" card with a
-     * total amount and a "price + commission" breakdown. Used by the sign
-     * message demo so the request reads as one purchase instead of raw sends.
-     */
-    purchaseSummary?: boolean;
 }
 
 function AddressLink({ address, label }: { address?: string; label?: string }) {
@@ -185,62 +179,23 @@ function NftItemAction({ item, index }: { item: Extract<StructuredItem, { type: 
     );
 }
 
-type JettonItem = Extract<StructuredItem, { type: 'jetton' }>;
-
-// Demo-only presentation for the sign message flow.
-const PURCHASE_NFT_NAME = 'Kissed Frog #0000';
-const PURCHASE_NFT_IMAGE =
-    'https://cache.tonapi.io/imgproxy/Hslw0P-XLmBbtuH0Ig9F-PhtiyvN2CVfIegwekx4wCE/rs:fill:100:100:1/g:no/aHR0cHM6Ly9uZnQuZnJhZ21lbnQuY29tL2dpZnQva2lzc2VkZnJvZy02NDI1LndlYnA.webp';
-
-function PurchaseSummaryCard({ items }: { items: JettonItem[] }) {
-    const jettonInfo = useJettonInfo(items[0]?.master);
-    const decimals = jettonInfo?.decimals ?? 6;
-    const symbol = jettonInfo?.symbol ?? 'USDT';
-
-    return (
-        <div className="p-3 border border-gray-200 rounded-lg">
-            <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0 flex items-center gap-2">
-                    <img src={PURCHASE_NFT_IMAGE} alt="" className="w-8 h-8 rounded-lg flex-shrink-0" />
-                    <span className="text-sm font-medium text-gray-900">Buy {PURCHASE_NFT_NAME}</span>
-                </div>
-                <div className="text-base font-semibold text-gray-900 whitespace-nowrap">
-                    {formatTokenAmount(100n * 1000000n, decimals, symbol)}
-                </div>
-            </div>
-            <div className="text-xs text-gray-500 mt-1">
-                {100} {symbol} price + {0.1} {symbol} commission (paid by app)
-            </div>
-        </div>
-    );
-}
-
 function StructuredItemAction({ item, index }: { item: StructuredItem; index: number }) {
     if (item.type === 'ton') return <TonItemAction item={item} index={index} />;
     if (item.type === 'jetton') return <JettonItemAction item={item} index={index} />;
     return <NftItemAction item={item} index={index} />;
 }
 
-export function TransactionRequestDetails({
-    request,
-    title = 'You will sign:',
-    purchaseSummary = false,
-}: TransactionRequestDetailsProps) {
+export function TransactionRequestDetails({ request, title = 'You will sign:' }: TransactionRequestDetailsProps) {
     const items = request.items ?? [];
     const messages = request.messages ?? [];
     const hasItems = items.length > 0;
     const count = hasItems ? items.length : messages.length;
 
-    const jettonItems = items.filter((item): item is JettonItem => item.type === 'jetton');
-    const showPurchaseSummary = purchaseSummary && jettonItems.length > 0;
-
     return (
         <div>
             <div className="font-semibold mb-1">{title}</div>
             <div className="space-y-2">
-                {showPurchaseSummary ? (
-                    <PurchaseSummaryCard items={jettonItems} />
-                ) : count === 0 ? (
+                {count === 0 ? (
                     <div className="border rounded-lg p-3 bg-gray-50">
                         <p className="text-sm text-gray-600 text-center">No outgoing messages in this request</p>
                     </div>
