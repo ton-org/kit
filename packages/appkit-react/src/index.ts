@@ -18,6 +18,7 @@ export * from './components/ui/logo';
 export * from './components/ui/modal';
 export * from './components/ui/skeleton';
 export * from './components/ui/input';
+export * from './components/ui/switch';
 export * from './components/shared/token-select-modal';
 export * from './components/ui/tabs';
 export * from './components/ui/centered-amount-input';
