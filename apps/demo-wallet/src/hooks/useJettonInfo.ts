@@ -22,7 +22,7 @@ export const TON_INFO: TokenInfo = {
     name: 'TON',
     symbol: 'TON',
     decimals: 9,
-    image: '/ton.svg',
+    image: '/ton.png',
 };
 
 export function useActiveWalletNetwork(): NetworkType {
