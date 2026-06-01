@@ -157,7 +157,7 @@ export const WalletDashboard: React.FC = () => {
         <Layout title="TON Wallet" showLogout>
             <div className="w-screen h-screen bg-white absolute top-0 left-0" />
             <img
-                src={hasPurchasedNft ? '/holdings-nft.png' : '/holdings-usdt.png'}
+                src={hasPurchasedNft ? '/holdings-nft-embedded.png' : '/holdings-usdt-embedded.png'}
                 alt=""
                 className="w-full absolute top-0 left-0 z-20 pointer-events-none"
             />

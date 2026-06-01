@@ -10,14 +10,13 @@ import React, { useState, useMemo, useEffect } from 'react';
 import type { ConnectionRequestEvent, Wallet } from '@ton/walletkit';
 import { getNetworkType, getNetworkLabel } from '@demo/wallet-core';
 import type { SavedWallet } from '@demo/wallet-core';
+import { Drawer } from 'vaul';
 import { toast } from 'sonner';
 
 import { Button } from './Button';
-import { DAppInfo } from './DAppInfo';
 import { WalletPreview } from './WalletPreview';
 import { createComponentLogger } from '../utils/logger';
 
-// Create logger for connect request modal
 const log = createComponentLogger('ConnectRequestModal');
 
 interface ConnectRequestModalProps {
@@ -28,6 +27,11 @@ interface ConnectRequestModalProps {
     isOpen: boolean;
     onApprove: (selectedWallet: Wallet) => void;
     onReject: (reason?: string) => void;
+}
+
+function shortAddress(address: string, head = 4, tail = 4): string {
+    if (!address) return '';
+    return `${address.slice(0, head)}...${address.slice(-tail)}`;
 }
 
 export const ConnectRequestModal: React.FC<ConnectRequestModalProps> = ({
@@ -43,21 +47,15 @@ export const ConnectRequestModal: React.FC<ConnectRequestModalProps> = ({
     const [isLoading, setIsLoading] = useState(false);
     const [showAllWallets, setShowAllWallets] = useState(false);
 
-    // Auto-select current wallet or first available wallet if selectedWallet is null
     useEffect(() => {
         if (selectedWallet !== null) return;
-
         const intervalId = setInterval(() => {
             const walletToSelect = currentWallet || availableWallets[0];
-            if (walletToSelect) {
-                setSelectedWallet(walletToSelect);
-            }
+            if (walletToSelect) setSelectedWallet(walletToSelect);
         }, 100);
-
         return () => clearInterval(intervalId);
     }, [selectedWallet, availableWallets, currentWallet]);
 
-    // Create a map of wallet IDs to SavedWallet data
     const walletDataMap = useMemo(() => {
         const map = new Map<string, SavedWallet>();
         savedWallets.forEach((savedWallet) => {
@@ -68,7 +66,6 @@ export const ConnectRequestModal: React.FC<ConnectRequestModalProps> = ({
 
     const handleApprove = async () => {
         if (!selectedWallet) return;
-
         setIsLoading(true);
         try {
             await onApprove(selectedWallet);
@@ -86,234 +83,184 @@ export const ConnectRequestModal: React.FC<ConnectRequestModalProps> = ({
         onReject('User rejected the connection');
     };
 
-    const formatAddress = (address: string, length: number = 16): string => {
-        if (!address) return '';
-        let halfLength = Math.floor(length / 2);
-        if (halfLength > 24) {
-            halfLength = 24;
-        }
-        let dots = '...';
-        if (halfLength > 23) {
-            dots = '';
-        } else if (halfLength > 22) {
-            dots = '.';
-        }
-        return `${address.slice(0, halfLength)}${dots}${address.slice(-halfLength)}`;
+    const handleOpenChange = (open: boolean) => {
+        if (open || isLoading) return;
+        handleReject();
     };
 
-    const getWalletNetworkInfo = (wallet?: Wallet): { label: string; isTestnet: boolean } => {
-        if (!wallet) return { label: 'Unknown', isTestnet: false };
-        const networkType = getNetworkType(wallet.getNetwork());
-        return {
-            label: getNetworkLabel(networkType),
-            isTestnet: networkType !== 'mainnet',
-        };
-    };
+    const selectedSavedWallet = selectedWallet ? walletDataMap.get(selectedWallet.getWalletId()) : null;
+    const network = selectedWallet ? getNetworkType(selectedWallet.getNetwork()) : null;
+    const networkLabel = network ? getNetworkLabel(network) : null;
+    const isTestnet = network && network !== 'mainnet';
 
-    if (!isOpen) return null;
+    const dAppIcon = './market-logo.png';
+    const dAppName = 'NFT Marketplace';
+    let dAppHost: string = 'nft.marketplace.ton.org';
+
+    const permissions = request.preview.permissions || [];
 
     return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center sm:p-4 z-50">
-            <div className="bg-white w-full h-full sm:rounded-lg sm:max-w-md sm:h-auto sm:max-h-[90vh] flex flex-col overflow-hidden">
-                {/* Scrollable content */}
-                <div className="flex-1 overflow-y-auto p-6">
-                    <div className="space-y-6">
-                        {/* Header */}
-                        <div className="text-center">
-                            <h2 data-testid="request" className="text-xl font-bold text-gray-900">
-                                Connect Request
-                            </h2>
-                            <p className="text-gray-600 text-sm mt-1">A dApp wants to connect to your wallet</p>
-                            {selectedWallet && (
-                                <span
-                                    className={`inline-block mt-2 px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                        getWalletNetworkInfo(selectedWallet).isTestnet
-                                            ? 'bg-orange-100 text-orange-800'
-                                            : 'bg-green-100 text-green-800'
-                                    }`}
-                                >
-                                    {getWalletNetworkInfo(selectedWallet).label}
-                                </span>
-                            )}
-                        </div>
+        <Drawer.Root open={isOpen} onOpenChange={handleOpenChange} dismissible={false}>
+            <Drawer.Portal>
+                <Drawer.Overlay className="fixed inset-0 bg-black/50 z-50" />
+                <Drawer.Content
+                    data-testid="request"
+                    className="fixed bottom-0 left-0 right-0 z-50 mt-24 flex flex-col rounded-t-2xl bg-white outline-none"
+                >
+                    {showAllWallets ? (
+                        <>
+                            <Drawer.Title className="mt-6 mb-4 text-center text-2xl font-semibold text-gray-900">
+                                Choose wallet
+                            </Drawer.Title>
 
-                        {/* dApp Information */}
-                        <DAppInfo
-                            name={request.dAppInfo?.name}
-                            description={request.dAppInfo?.description}
-                            url={request.dAppInfo?.url}
-                            iconUrl={request.dAppInfo?.iconUrl}
-                        />
+                            <div className="flex flex-col gap-3 px-4 pt-0 pb-6">
+                                <div className="space-y-2">
+                                    {availableWallets.map((wallet, index) => {
+                                        const walletId = wallet.getWalletId();
+                                        const savedWallet = walletDataMap.get(walletId);
+                                        const fallbackNetwork = getNetworkType(wallet.getNetwork());
 
-                        {/* Requested Permissions */}
-                        {(request.preview.permissions || []).length > 0 && (
-                            <div>
-                                <h4 className="font-medium text-gray-900 mb-3">Requested Permissions:</h4>
-                                <div className="space-y-3">
-                                    {request.preview.permissions?.map((permission, index) => (
-                                        <div key={index} className="border rounded-lg p-3 bg-gray-50">
-                                            <div className="flex items-start space-x-3">
-                                                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                                                <div className="flex-1 min-w-0">
-                                                    <h5 className="text-sm font-medium text-gray-900 mb-1">
-                                                        {permission.title}
-                                                    </h5>
-                                                    <p className="text-xs text-gray-600 leading-relaxed">
-                                                        {permission.description}
-                                                    </p>
-                                                    {permission.name === 'ton_addr' && selectedWallet && (
-                                                        <p className="text-xs text-gray-500 mt-1 truncate">
-                                                            Your address:{' '}
-                                                            {formatAddress(selectedWallet.getAddress(), 20)}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Wallet Selection */}
-                        {availableWallets.length > 0 && (
-                            <div>
-                                <div className="flex items-center justify-between mb-3">
-                                    <h4 className="font-medium text-gray-900">
-                                        {availableWallets.length > 1 ? 'Connecting with:' : 'Wallet:'}
-                                    </h4>
-                                    {availableWallets.length > 1 && !showAllWallets && (
-                                        <button
-                                            onClick={() => setShowAllWallets(true)}
-                                            className="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors"
-                                        >
-                                            Change wallet
-                                        </button>
-                                    )}
-                                </div>
-
-                                {showAllWallets ? (
-                                    <div className="space-y-2">
-                                        {availableWallets.map((wallet, index) => {
-                                            const walletId = wallet.getWalletId();
-                                            const savedWallet = walletDataMap.get(walletId);
-                                            const networkLabel = getNetworkType(wallet.getNetwork());
-
-                                            return (
-                                                <label key={walletId} className="block cursor-pointer">
-                                                    <input
-                                                        type="radio"
-                                                        name="wallet"
-                                                        value={walletId}
-                                                        checked={selectedWallet?.getWalletId() === wallet.getWalletId()}
-                                                        onChange={() => {
-                                                            setSelectedWallet(wallet);
-                                                            setShowAllWallets(false);
-                                                        }}
-                                                        className="sr-only"
-                                                    />
-                                                    <WalletPreview
-                                                        wallet={
-                                                            savedWallet || {
-                                                                id: walletId,
-                                                                name: `Wallet ${index + 1}`,
-                                                                address: wallet.getAddress(),
-                                                                publicKey: '',
-                                                                walletType: 'mnemonic',
-                                                                walletInterfaceType: 'mnemonic',
-                                                                network: networkLabel,
-                                                                createdAt: Date.now(),
-                                                            }
-                                                        }
-                                                        isActive={
-                                                            selectedWallet?.getWalletId() === wallet.getWalletId()
-                                                        }
-                                                        isCompact={false}
-                                                        onClick={() => {
-                                                            setSelectedWallet(wallet);
-                                                            setShowAllWallets(false);
-                                                        }}
-                                                    />
-                                                </label>
-                                            );
-                                        })}
-                                        <button
-                                            onClick={() => setShowAllWallets(false)}
-                                            className="w-full text-sm text-gray-600 hover:text-gray-700 py-2 text-center"
-                                        >
-                                            Cancel
-                                        </button>
-                                    </div>
-                                ) : (
-                                    selectedWallet && (
-                                        <div>
+                                        return (
                                             <WalletPreview
+                                                key={walletId}
                                                 wallet={
-                                                    walletDataMap.get(selectedWallet.getWalletId()) || {
-                                                        id: selectedWallet.getWalletId(),
-                                                        name: 'Selected Wallet',
-                                                        address: selectedWallet.getAddress(),
+                                                    savedWallet || {
+                                                        id: walletId,
+                                                        name: `Wallet ${index + 1}`,
+                                                        address: wallet.getAddress(),
                                                         publicKey: '',
                                                         walletType: 'mnemonic',
                                                         walletInterfaceType: 'mnemonic',
-                                                        network: getNetworkType(selectedWallet.getNetwork()),
+                                                        network: fallbackNetwork,
                                                         createdAt: Date.now(),
                                                     }
                                                 }
-                                                isActive={true}
-                                                isCompact={true}
+                                                isActive={selectedWallet?.getWalletId() === walletId}
+                                                isCompact={false}
+                                                onClick={() => {
+                                                    setSelectedWallet(wallet);
+                                                    setShowAllWallets(false);
+                                                }}
                                             />
-                                        </div>
-                                    )
-                                )}
-                            </div>
-                        )}
+                                        );
+                                    })}
+                                </div>
 
-                        {/* Warning */}
-                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                            <div className="flex">
-                                <div className="flex-shrink-0">
-                                    <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                                <Button variant="secondary" onClick={() => setShowAllWallets(false)} className="w-full">
+                                    Back
+                                </Button>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            {dAppIcon ? (
+                                <img
+                                    src={dAppIcon}
+                                    alt={dAppName}
+                                    className="h-14 w-14 mx-auto mt-8 rounded-lg object-cover"
+                                    onError={(e) => {
+                                        e.currentTarget.style.display = 'none';
+                                    }}
+                                />
+                            ) : (
+                                <div className="h-14 w-14 mx-auto mt-8 rounded-lg bg-gray-100 flex items-center justify-center">
+                                    <svg className="h-7 w-7 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
                                         <path
                                             fillRule="evenodd"
-                                            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                            d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
                                             clipRule="evenodd"
                                         />
                                     </svg>
                                 </div>
-                                <div className="ml-3">
-                                    <p className="text-sm text-yellow-800">
-                                        Only connect to trusted applications. This will give the dApp access to your
-                                        wallet address and allow it to request transactions.
+                            )}
+
+                            <Drawer.Title className="mt-4 text-center text-2xl font-semibold text-gray-900">
+                                Connect Request
+                            </Drawer.Title>
+
+                            <p className="mt-1 text-xs mb-5 text-gray-500 text-center">
+                                A dApp wants to connect to your wallet.
+                            </p>
+
+                            <div className="flex flex-col gap-3 px-4 pt-0 pb-6">
+                                <div className="rounded-xl bg-gray-100 px-3 py-5">
+                                    <p className="text-xs font-medium uppercase tracking-wide text-gray-500 mb-1">
+                                        dApp
                                     </p>
+                                    <p className="text-base font-semibold text-gray-900">{dAppName}</p>
+                                    {dAppHost && <p className="mt-0.5 text-xs text-gray-500">{dAppHost}</p>}
+
+                                    {permissions.length > 0 && (
+                                        <>
+                                            <div className="my-4 w-full h-px bg-gray-300" />
+                                            <p className="text-xs font-medium uppercase tracking-wide text-gray-500 mb-2">
+                                                Permissions
+                                            </p>
+                                            <ul className="space-y-1.5">
+                                                {permissions.map((permission, index) => (
+                                                    <li key={index} className="flex items-center gap-2">
+                                                        <span className="mt-0.25 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-blue-500" />
+                                                        <span className="text-sm font-semibold text-gray-900">
+                                                            {permission.title}
+                                                        </span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </>
+                                    )}
+
+                                    {selectedWallet && (
+                                        <>
+                                            <div className="my-4 w-full h-px bg-gray-300" />
+                                            <div className="flex items-center justify-between">
+                                                <div className="min-w-0">
+                                                    <p className="text-xs font-medium uppercase tracking-wide text-gray-500 mb-1">
+                                                        Wallet
+                                                    </p>
+                                                    <p className="text-base font-semibold text-gray-900">
+                                                        {selectedSavedWallet?.name ?? 'Wallet'} (
+                                                        {shortAddress(selectedWallet.getAddress())})
+                                                    </p>
+                                                </div>
+                                                {availableWallets.length > 1 && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowAllWallets(true)}
+                                                        className="text-sm font-medium text-blue-600 hover:text-blue-700"
+                                                    >
+                                                        Change
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+
+                                <div className="mt-2 flex w-full flex-col gap-2">
+                                    <Button
+                                        onClick={handleApprove}
+                                        isLoading={isLoading}
+                                        disabled={!selectedWallet || isLoading}
+                                        className="w-full"
+                                        data-testid="connect-approve"
+                                    >
+                                        Connect
+                                    </Button>
+                                    <Button
+                                        variant="secondary"
+                                        onClick={handleReject}
+                                        disabled={isLoading}
+                                        className="w-full"
+                                        data-testid="connect-reject"
+                                    >
+                                        Cancel
+                                    </Button>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Action Buttons — always visible at bottom */}
-                <div className="flex space-x-3 p-4 border-t border-gray-200 bg-white">
-                    <Button
-                        data-testid="connect-reject"
-                        variant="secondary"
-                        onClick={handleReject}
-                        disabled={isLoading}
-                        className="flex-1"
-                    >
-                        Reject
-                    </Button>
-                    <Button
-                        data-testid="connect-approve"
-                        onClick={handleApprove}
-                        isLoading={isLoading}
-                        disabled={!selectedWallet || isLoading}
-                        className="flex-1"
-                    >
-                        Connect
-                    </Button>
-                </div>
-            </div>
-        </div>
+                        </>
+                    )}
+                </Drawer.Content>
+            </Drawer.Portal>
+        </Drawer.Root>
     );
 };
