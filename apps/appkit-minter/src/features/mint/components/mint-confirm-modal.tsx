@@ -6,10 +6,11 @@
  *
  */
 
-import type { FC, ReactNode } from 'react';
+import type { FC } from 'react';
 import { ChevronDown } from 'lucide-react';
 import {
     Button,
+    InfoBlock,
     Modal,
     useGaslessConfig,
     useGaslessProviderMetadata,
@@ -30,13 +31,6 @@ interface MintConfirmModalProps {
     onConfirm: () => void;
 }
 
-const InfoRow: FC<{ label: string; value: ReactNode }> = ({ label, value }) => (
-    <div className="flex items-center justify-between gap-3 text-sm">
-        <span className="text-tertiary-foreground">{label}</span>
-        <span className="text-foreground text-right">{value}</span>
-    </div>
-);
-
 /**
  * Renders one fee-asset `<option>`; shows the address until `useJettonInfo`
  * resolves, then swaps to the ticker. React Query dedupes concurrent queries
@@ -50,9 +44,9 @@ const FeeAssetOption: FC<{ address: UserFriendlyAddress }> = ({ address }) => {
 /**
  * Confirms the mint. The regular flow shows only the Owner row; the gasless
  * flow adds Provider, an inline fee-asset selector styled to match the other
- * info-row values (right-aligned text + chevron, native `<select>` under the
- * hood — so the dropdown is rendered by the browser and never overflows the
- * modal), and the live commission. The Confirm button is gated on a fresh
+ * `InfoBlock.Value`s (right-aligned text + chevron, native `<select>` under
+ * the hood — so the dropdown is rendered by the browser and never overflows
+ * the modal), and the live commission. The Confirm button is gated on a fresh
  * quote in gasless mode.
  */
 export const MintConfirmModal: FC<MintConfirmModalProps> = ({ open, onClose, onConfirm }) => {
@@ -74,8 +68,6 @@ export const MintConfirmModal: FC<MintConfirmModalProps> = ({ open, onClose, onC
         mint.isSending ||
         (mint.gasless.enabled && (mint.gasless.isLoadingQuote || !mint.gasless.quote || !!mint.gasless.quoteError));
 
-    const feeText = mint.gasless.fee ?? (mint.gasless.isLoadingQuote ? 'Loading…' : '—');
-
     return (
         <Modal title="Confirm mint" open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
             {currentCard && (
@@ -84,21 +76,30 @@ export const MintConfirmModal: FC<MintConfirmModalProps> = ({ open, onClose, onC
                 </div>
             )}
 
-            <div className="space-y-3">
-                <InfoRow label="Owner" value={ownerAddress ? middleEllipsis(ownerAddress) : '—'} />
+            <InfoBlock.Container>
+                <InfoBlock.Row>
+                    <InfoBlock.Label>Owner</InfoBlock.Label>
+                    <InfoBlock.Value>{ownerAddress ? middleEllipsis(ownerAddress) : '—'}</InfoBlock.Value>
+                </InfoBlock.Row>
 
                 {mint.gasless.enabled && (
                     <>
-                        <InfoRow label="Provider" value={providerMetadata?.name ?? 'TonAPI'} />
+                        <InfoBlock.Row>
+                            <InfoBlock.Label>Provider</InfoBlock.Label>
+                            <InfoBlock.Value>{providerMetadata?.name ?? 'TonAPI'}</InfoBlock.Value>
+                        </InfoBlock.Row>
 
-                        <div className="flex items-center justify-between gap-3 text-sm">
-                            <span className="text-tertiary-foreground">Fee asset</span>
+                        <InfoBlock.Row>
+                            <InfoBlock.Label>Fee asset</InfoBlock.Label>
                             <div className="relative inline-flex items-center">
                                 <select
                                     value={gaslessFeeAsset ?? ''}
                                     onChange={(event) => setGaslessFeeAsset(asAddressFriendly(event.target.value))}
                                     disabled={supportedAssets.length === 0}
-                                    className="appearance-none bg-transparent border-0 outline-none cursor-pointer text-foreground text-sm text-right pr-5 disabled:cursor-default disabled:text-tertiary-foreground"
+                                    // `font-[inherit]` so the select picks up `bodyMedium` from `InfoBlock.Row`;
+                                    // `text-foreground` matches `InfoBlock.Value` color exactly.
+                                    style={{ font: 'inherit' }}
+                                    className="appearance-none bg-transparent border-0 outline-none cursor-pointer text-foreground text-right pr-5 disabled:cursor-default disabled:text-tertiary-foreground"
                                 >
                                     {!gaslessFeeAsset && (
                                         <option value="" disabled>
@@ -111,15 +112,21 @@ export const MintConfirmModal: FC<MintConfirmModalProps> = ({ open, onClose, onC
                                 </select>
                                 <ChevronDown className="absolute right-0 h-4 w-4 pointer-events-none text-tertiary-foreground" />
                             </div>
-                        </div>
+                        </InfoBlock.Row>
 
-                        <InfoRow
-                            label="Gas fee"
-                            value={mint.gasless.quoteError ? <span className="text-error">Quote failed</span> : feeText}
-                        />
+                        <InfoBlock.Row>
+                            <InfoBlock.Label>Gas fee</InfoBlock.Label>
+                            {mint.gasless.quoteError ? (
+                                <InfoBlock.Value className="text-error">Quote failed</InfoBlock.Value>
+                            ) : mint.gasless.isLoadingQuote ? (
+                                <InfoBlock.ValueSkeleton />
+                            ) : (
+                                <InfoBlock.Value>{mint.gasless.fee ?? '—'}</InfoBlock.Value>
+                            )}
+                        </InfoBlock.Row>
                     </>
                 )}
-            </div>
+            </InfoBlock.Container>
 
             <Button
                 className="mt-6 w-full"

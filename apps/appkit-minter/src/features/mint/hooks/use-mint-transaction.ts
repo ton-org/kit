@@ -7,45 +7,44 @@
  */
 
 import { useCallback } from 'react';
-import { toNano, Address, beginCell, storeStateInit } from '@ton/core';
+import { Address, beginCell, storeStateInit, toNano } from '@ton/core';
 import { useSelectedWallet } from '@ton/appkit-react';
 import type { Base64String, TransactionRequest } from '@ton/appkit';
 
 import { useMinterStore } from '../store/minter-store';
 import { buildSingleNftStateInit, encodeOnChainContent } from '../contracts';
 
-type UseNftTransactionType =
-    | {
-          canMint: true;
-          createMintTransaction: () => Promise<TransactionRequest>;
-      }
-    | {
-          canMint: false;
-          createMintTransaction: () => Promise<null>;
-      };
+export interface UseMintTransactionReturn {
+    /** Builds a fresh NFT deploy `TransactionRequest`. Throws when inputs aren't ready. */
+    build: () => Promise<TransactionRequest>;
+    /** Current card and connected wallet are both present. */
+    isReady: boolean;
+}
 
 /**
- * Hook to create NFT mint transaction request
+ * Builder for the regular (non-gasless) NFT deploy message. Returns an async
+ * `build()` rather than pre-computed state so the request's `validUntil`
+ * window starts at click-time, not at hook-mount-time.
  */
-export const useNftMintTransaction = (): UseNftTransactionType => {
+export const useMintTransaction = (): UseMintTransactionReturn => {
     const currentCard = useMinterStore((state) => state.currentCard);
     const [wallet] = useSelectedWallet();
 
-    const createMintTransaction = useCallback(async (): Promise<TransactionRequest> => {
+    const isReady = !!currentCard && !!wallet;
+
+    const build = useCallback(async (): Promise<TransactionRequest> => {
         if (!currentCard || !wallet) {
-            throw new Error('Cannot mint NFT: No current card or wallet');
+            throw new Error('Cannot build mint transaction: no current card or wallet');
         }
 
         const walletAddress = Address.parse(wallet.getAddress());
 
-        // Build on-chain NFT metadata content cell
         const contentCell = encodeOnChainContent({
             name: currentCard.name,
             description: currentCard.description,
             image: currentCard.imageUrl,
         });
 
-        // Build NFT StateInit
         const { stateInit, address: nftAddress } = buildSingleNftStateInit({
             ownerAddress: walletAddress,
             editorAddress: walletAddress,
@@ -57,32 +56,19 @@ export const useNftMintTransaction = (): UseNftTransactionType => {
             },
         });
 
-        // Create deployment message
         const stateInitCell = beginCell().store(storeStateInit(stateInit)).endCell();
 
         return {
-            validUntil: Math.floor(Date.now() / 1000) + 600, // 10 minutes
+            validUntil: Math.floor(Date.now() / 1000) + 600,
             messages: [
                 {
                     address: nftAddress.toString(),
-                    amount: toNano('0.001').toString(), // 0.001 TON for deployment
+                    amount: toNano('0.001').toString(),
                     stateInit: stateInitCell.toBoc().toString('base64') as Base64String,
                 },
             ],
         };
     }, [currentCard, wallet]);
 
-    const canMint = !!currentCard && !!wallet;
-
-    if (canMint) {
-        return {
-            createMintTransaction,
-            canMint: true,
-        };
-    } else {
-        return {
-            createMintTransaction: () => Promise.reject(new Error('Cannot mint NFT: No current card or wallet')),
-            canMint: false,
-        };
-    }
+    return { build, isReady };
 };

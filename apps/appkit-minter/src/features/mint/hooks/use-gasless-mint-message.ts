@@ -20,35 +20,35 @@ import {
     MINT_FORWARD_ADDRESS,
     USDT_FORWARD_JETTON_AMOUNT,
 } from '../constants';
-import { useNftMintTransaction } from './use-nft-mint-transaction';
+import { useMintTransaction } from './use-mint-transaction';
 
-export interface UseMintForwardMessageReturn {
-    /** Single TEP-74 jetton-transfer message ready to be quoted via TonAPI gasless. */
+export interface UseGaslessMintMessageReturn {
+    /** TEP-74 jetton-transfer message ready for the TonAPI gasless quote, or `undefined` while inputs are unresolved. */
     message: TransactionRequestMessage | undefined;
-    /** All inputs (card, wallet, relayer config, fee-asset, jetton-wallet) are resolved. */
+    /** `message` is non-undefined — all inputs are resolved. */
     isReady: boolean;
 }
 
 /**
- * Builds the user-signed gasless mint message: a TEP-74 jetton transfer of the
- * selected fee-asset to `MintForward`, with the NFT deploy spec (address, body,
- * stateInit, amount) packed into `forward_payload`. The contract unwraps it on
- * receipt and emits the NFT deploy itself — so the relayer never sees a
- * top-level `stateInit` in the user-signed batch.
+ * Builder for the gasless mint message. Wraps the NFT deploy spec (address,
+ * body, stateInit, amount) into a TEP-74 jetton-transfer's `forward_payload`
+ * addressed to the on-chain forwarder contract — so the relayer's user-signed
+ * batch contains only a plain jetton transfer and never sees a top-level
+ * `stateInit`.
  *
- * The hook is dormant until card + wallet + relayer config + fee-asset are all
- * present. Returns `undefined` for `message` in that case, leaving consumers
- * (e.g. `useGaslessQuote({ query: { enabled: !!message } })`) cleanly gated.
+ * Dormant until card + wallet + relayer config + fee-asset are all resolved;
+ * `message` stays `undefined` to keep consumers (e.g. `useGaslessQuote`)
+ * cleanly gated.
  */
-export const useMintForwardMessage = (): UseMintForwardMessageReturn => {
+export const useGaslessMintMessage = (): UseGaslessMintMessageReturn => {
     const [wallet] = useSelectedWallet();
     const gaslessFeeAsset = useMinterStore((state) => state.gaslessFeeAsset);
-    const { createMintTransaction, canMint } = useNftMintTransaction();
+    const { build, isReady: isMintReady } = useMintTransaction();
 
     const { data: gaslessConfig } = useGaslessConfig();
     const relayAddress = gaslessConfig?.relayAddress;
 
-    const { data: usdtWalletAddress } = useJettonWalletAddress({
+    const { data: feeAssetWalletAddress } = useJettonWalletAddress({
         jettonAddress: gaslessFeeAsset ?? undefined,
         ownerAddress: wallet?.getAddress() ?? undefined,
         query: { enabled: !!gaslessFeeAsset && !!wallet },
@@ -57,16 +57,16 @@ export const useMintForwardMessage = (): UseMintForwardMessageReturn => {
     const [message, setMessage] = useState<TransactionRequestMessage | undefined>(undefined);
 
     useEffect(() => {
-        if (!canMint || !wallet || !usdtWalletAddress || !relayAddress) {
+        if (!isMintReady || !wallet || !feeAssetWalletAddress || !relayAddress) {
             setMessage(undefined);
             return;
         }
 
         let cancelled = false;
-        createMintTransaction()
+        build()
             .then((req) => {
                 const nftMsg = req.messages[0];
-                if (!nftMsg.stateInit) throw new Error('mint message has no stateInit');
+                if (!nftMsg.stateInit) throw new Error('Mint message has no stateInit');
 
                 const nftAddress = Address.parse(nftMsg.address);
                 const nftStateInit = Cell.fromBase64(nftMsg.stateInit);
@@ -82,9 +82,9 @@ export const useMintForwardMessage = (): UseMintForwardMessageReturn => {
                     .storeCoins(nftAmount)
                     .endCell();
 
-                // TEP-74 jetton transfer body. `response_destination = relayer`
-                // mirrors the standard gasless pattern — relayer pays compute,
-                // captures the jetton-wallet TON excess.
+                // `response_destination = relayer` mirrors the standard gasless
+                // jetton-transfer pattern — relayer paid compute, captures the
+                // jetton-wallet's TON excess.
                 const transferBody = beginCell()
                     .storeUint(JETTON_TRANSFER_OP, 32)
                     .storeUint(0, 64) // query_id
@@ -99,22 +99,22 @@ export const useMintForwardMessage = (): UseMintForwardMessageReturn => {
 
                 if (cancelled) return;
                 setMessage({
-                    address: usdtWalletAddress,
+                    address: feeAssetWalletAddress,
                     amount: JETTON_GAS_BUDGET.toString(),
                     payload: asBase64(transferBody.toBoc().toString('base64')) as Base64String,
                 });
             })
             .catch(() => {
                 if (cancelled) return;
-                // Build failures are surfaced indirectly: `message` stays undefined,
-                // which keeps the gasless flow gated until inputs become valid again.
+                // Build failures keep `message` undefined; consumers stay gated
+                // until the failing input becomes valid again.
                 setMessage(undefined);
             });
 
         return () => {
             cancelled = true;
         };
-    }, [canMint, createMintTransaction, relayAddress, usdtWalletAddress, wallet]);
+    }, [build, feeAssetWalletAddress, isMintReady, relayAddress, wallet]);
 
     return { message, isReady: !!message };
 };

@@ -18,8 +18,8 @@ import { formatUnits } from '@ton/appkit';
 import type { GaslessQuote } from '@ton/appkit';
 
 import { useMinterStore } from '../store/minter-store';
-import { useMintForwardMessage } from './use-mint-forward-message';
-import { useNftMintTransaction } from './use-nft-mint-transaction';
+import { useGaslessMintMessage } from './use-gasless-mint-message';
+import { useMintTransaction } from './use-mint-transaction';
 
 export interface UseMintNftReturn {
     /** Trigger the mint — picks the right flow based on `gaslessEnabled` in store. */
@@ -28,7 +28,7 @@ export interface UseMintNftReturn {
     isSending: boolean;
     /** Latest send error from either flow. */
     error: Error | undefined;
-    /** Wallet + card + (when gasless) quote are all ready. */
+    /** Inputs are resolved and (when gasless) a fresh quote is in hand. */
     canSend: boolean;
 
     gasless: {
@@ -49,10 +49,10 @@ export interface UseMintNftReturn {
  * Single entry-point for the mint flow. Reads `gaslessEnabled` and
  * `gaslessFeeAsset` from `minter-store` and dispatches to either:
  *
- * - **Gasless**: builds the MintForward jetton-transfer via
- *   {@link useMintForwardMessage}, quotes it via {@link useGaslessQuote},
- *   sends through TonAPI via {@link useSendGaslessTransaction}.
- * - **Regular**: emits the raw NFT deploy via {@link useSendTransaction}.
+ * - **Gasless**: builds the jetton-transfer wrapper via {@link useGaslessMintMessage},
+ *   quotes it via {@link useGaslessQuote}, sends through TonAPI via {@link useSendGaslessTransaction}.
+ * - **Regular**: emits the raw NFT deploy via {@link useSendTransaction}, building
+ *   the request lazily at click-time via {@link useMintTransaction}.
  *
  * Common state lives on the top-level return shape (`send`, `isSending`,
  * `error`, `canSend`); gasless-only state hangs off the `gasless` block.
@@ -62,10 +62,10 @@ export const useMintNft = (): UseMintNftReturn => {
     const gaslessEnabled = useMinterStore((state) => state.gaslessEnabled);
     const gaslessFeeAsset = useMinterStore((state) => state.gaslessFeeAsset);
 
-    const { createMintTransaction, canMint } = useNftMintTransaction();
+    const { build: buildMintTransaction, isReady: isMintReady } = useMintTransaction();
 
     // Gasless path
-    const { message } = useMintForwardMessage();
+    const { message } = useGaslessMintMessage();
     const {
         data: quote,
         isFetching: isLoadingQuote,
@@ -98,8 +98,8 @@ export const useMintNft = (): UseMintNftReturn => {
     const isSending = isSendingGasless || isSendingRegular;
     const error = gaslessSendError ?? regularSendError ?? undefined;
 
-    const canSendGasless = canMint && !!message && !!quote && !isLoadingQuote && !quoteError && !isSending;
-    const canSendRegular = canMint && !isSending;
+    const canSendGasless = isMintReady && !!message && !!quote && !isLoadingQuote && !quoteError && !isSending;
+    const canSendRegular = isMintReady && !isSending;
     const canSend = gaslessEnabled ? canSendGasless : canSendRegular;
 
     const send = useCallback(async (): Promise<void> => {
@@ -111,10 +111,9 @@ export const useMintNft = (): UseMintNftReturn => {
             return;
         }
 
-        const request = await createMintTransaction();
-        if (!request) throw new Error('Failed to build mint transaction');
+        const request = await buildMintTransaction();
         await sendRegular(request);
-    }, [wallet, gaslessEnabled, quote, sendGasless, createMintTransaction, sendRegular]);
+    }, [wallet, gaslessEnabled, quote, sendGasless, buildMintTransaction, sendRegular]);
 
     return {
         send,
