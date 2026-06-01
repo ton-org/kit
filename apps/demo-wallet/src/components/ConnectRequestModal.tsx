@@ -13,7 +13,6 @@ import type { SavedWallet } from '@demo/wallet-core';
 import { toast } from 'sonner';
 
 import { Button } from './Button';
-import { DAppInfo } from './DAppInfo';
 import { WalletPreview } from './WalletPreview';
 import { createComponentLogger } from '../utils/logger';
 
@@ -138,12 +137,27 @@ export const ConnectRequestModal: React.FC<ConnectRequestModalProps> = ({
                         </div>
 
                         {/* dApp Information */}
-                        <DAppInfo
-                            name={request.dAppInfo?.name}
-                            description={request.dAppInfo?.description}
-                            url={request.dAppInfo?.url}
-                            iconUrl={request.dAppInfo?.iconUrl}
-                        />
+                        <div className="border rounded-lg p-4 bg-gray-50">
+                            <div className="flex items-center space-x-4">
+                                <div
+                                    className="w-12 h-12 rounded-lg text-white flex items-center justify-center flex-shrink-0"
+                                    style={{ backgroundColor: '#0098EA' }}
+                                >
+                                    <svg viewBox="0 0 116 100" fill="currentColor" className="w-7 h-7">
+                                        <path d="M28.8674 0L49.487 0L59.7968 17.8571L49.487 35.7142H28.8674L18.5576 17.8571L28.8674 0Z" />
+                                        <path d="M86.6023 0L96.912 17.8571L86.6023 35.7142H65.9827L55.6729 17.8571L65.9827 0L86.6023 0Z" />
+                                        <path d="M115.47 49.9998L105.16 67.8569H84.5403L74.2305 49.9998L84.5403 32.1427L105.16 32.1428L115.47 49.9998Z" />
+                                        <path d="M86.6023 99.9997L65.9827 99.9997L55.6729 82.1426L65.9827 64.2855H86.6023L96.912 82.1426L86.6023 99.9997Z" />
+                                        <path d="M28.8674 99.9997L18.5576 82.1426L28.8674 64.2855H49.487L59.7968 82.1426L49.487 99.9997H28.8674Z" />
+                                        <path d="M0 49.9998L10.3098 32.1428H30.9294L41.2392 49.9998L30.9294 67.8569H10.3098L0 49.9998Z" />
+                                    </svg>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <h3 className="font-semibold text-gray-900 truncate">NFT Marketplace</h3>
+                                    <p className="text-xs text-gray-500 mt-1 truncate">nft.marketplace.ton.org</p>
+                                </div>
+                            </div>
+                        </div>
 
                         {/* Requested Permissions */}
                         {(request.preview.permissions || []).length > 0 && (
@@ -268,27 +282,6 @@ export const ConnectRequestModal: React.FC<ConnectRequestModalProps> = ({
                                 )}
                             </div>
                         )}
-
-                        {/* Warning */}
-                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                            <div className="flex">
-                                <div className="flex-shrink-0">
-                                    <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                                        <path
-                                            fillRule="evenodd"
-                                            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                                            clipRule="evenodd"
-                                        />
-                                    </svg>
-                                </div>
-                                <div className="ml-3">
-                                    <p className="text-sm text-yellow-800">
-                                        Only connect to trusted applications. This will give the dApp access to your
-                                        wallet address and allow it to request transactions.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
 

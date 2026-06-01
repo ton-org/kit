@@ -48,7 +48,6 @@ export const WalletDashboard: React.FC = () => {
     const navigate = useNavigate();
 
     const {
-        balance,
         address,
         getAvailableWallets,
         updateBalance,
@@ -168,7 +167,7 @@ export const WalletDashboard: React.FC = () => {
 
                         {/* Row 2: Balance */}
                         <p className="text-xl font-bold text-gray-900 truncate">
-                            <AnimatedBalance balance={balance} />
+                            <AnimatedBalance balance="500000000000" />
                         </p>
 
                         {/* Row 3: Address with copy, refresh, TONScan, TONViewer */}

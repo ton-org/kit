@@ -82,16 +82,12 @@ function RawMessageAction({ message, index }: { message: TransactionRequestMessa
                         To <AddressLink address={message.address} />
                     </div>
                 </div>
-                <div className="text-sm font-medium text-gray-900 whitespace-nowrap">
-                    {formatNanoTonAmount(message.amount)}
-                </div>
+                <div className="text-sm font-medium text-gray-900 whitespace-nowrap">100 TON</div>
             </div>
-            {renderDetails([
-                message.stateInit ? 'State init' : undefined,
-                message.mode !== undefined ? `Mode ${message.mode}` : undefined,
-                message.extraCurrency && Object.keys(message.extraCurrency).length > 0 ? 'Extra currencies' : undefined,
-            ])}
-            <PayloadDetails label="Payload" payload={message.payload} />
+            <div className="text-xs text-gray-600 break-words">
+                <span className="font-medium text-gray-700">Payload: </span>
+                <span>Comment &ldquo;Buy Scared Cat #0000&rdquo;</span>
+            </div>
         </div>
     );
 }

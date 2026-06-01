@@ -7,15 +7,15 @@
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
-import type { SendTransactionRequestEvent, SignMessageRequestEvent, TransactionEmulatedPreview } from '@ton/walletkit';
-import { useAuth, useWalletKit, useWalletStore } from '@demo/wallet-core';
+import type { SendTransactionRequestEvent, SignMessageRequestEvent } from '@ton/walletkit';
+import { useAuth } from '@demo/wallet-core';
 import type { SavedWallet } from '@demo/wallet-core';
 import { toast } from 'sonner';
 
 import { Button } from './Button';
 import { HoldToSignButton } from './HoldToSignButton';
-import { JettonFlow } from './JettonFlow';
 import { SuccessCard } from './SuccessCard';
+import { TON_INFO } from '../hooks/useJettonInfo';
 import { createComponentLogger } from '../utils/logger';
 
 type RequestEvent = SendTransactionRequestEvent | SignMessageRequestEvent;
@@ -38,19 +38,6 @@ interface RequestModalProps {
     previewMode: 'send' | 'sign';
 }
 
-const WARNING_CLASSES: Record<WarningTone, { container: string; icon: string; text: string }> = {
-    red: {
-        container: 'bg-red-50 border-red-200',
-        icon: 'text-red-400',
-        text: 'text-red-800',
-    },
-    yellow: {
-        container: 'bg-yellow-50 border-yellow-200',
-        icon: 'text-yellow-400',
-        text: 'text-yellow-800',
-    },
-};
-
 export const RequestModal: React.FC<RequestModalProps> = ({
     request,
     savedWallets,
@@ -58,7 +45,6 @@ export const RequestModal: React.FC<RequestModalProps> = ({
     title,
     subtitle,
     details,
-    warning,
     approveLabel,
     successMessage,
     testIds,
@@ -67,13 +53,10 @@ export const RequestModal: React.FC<RequestModalProps> = ({
     loggerName,
     previewMode,
 }) => {
-    const walletKit = useWalletKit();
-    const isAuthenticated = useWalletStore((state) => state.walletManagement.isAuthenticated);
     const { holdToSign } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
     const [isExpired, setIsExpired] = useState(false);
-    const [localPreview, setLocalPreview] = useState<TransactionEmulatedPreview | undefined>(undefined);
 
     const log = useMemo(() => createComponentLogger(loggerName), [loggerName]);
 
@@ -96,21 +79,6 @@ export const RequestModal: React.FC<RequestModalProps> = ({
         const interval = setInterval(checkExpiration, 1000);
         return () => clearInterval(interval);
     }, [request.request?.validUntil]);
-
-    useEffect(() => {
-        if (!isAuthenticated) return;
-        async function updatePreview() {
-            if (request.preview.data) return;
-            await walletKit?.ensureInitialized();
-            const preview = await walletKit
-                ?.getWallet(request.walletId ?? '')
-                ?.getTransactionPreview(request.request, { mode: previewMode });
-            setLocalPreview(preview);
-        }
-        updatePreview();
-    }, [request.walletId, request.request, request.preview, walletKit, isAuthenticated, previewMode]);
-
-    const preview = useMemo(() => localPreview ?? request.preview.data, [request, localPreview]);
 
     useEffect(() => {
         if (!isOpen) {
@@ -138,15 +106,6 @@ export const RequestModal: React.FC<RequestModalProps> = ({
     if (!isOpen) return null;
     if (showSuccess) return <SuccessCard message={successMessage} />;
 
-    const warningClasses = WARNING_CLASSES[warning.tone];
-
-    let dAppHost: string | undefined;
-    try {
-        dAppHost = request.dAppInfo?.url ? new URL(request.dAppInfo.url).host : undefined;
-    } catch (_e) {
-        dAppHost = request.dAppInfo?.url;
-    }
-
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center sm:p-4 z-50">
             <div className="bg-white w-full h-full sm:rounded-lg sm:max-w-md sm:h-auto sm:max-h-[90vh] flex flex-col overflow-hidden">
@@ -164,31 +123,22 @@ export const RequestModal: React.FC<RequestModalProps> = ({
                         <div className="border rounded-lg bg-gray-50 overflow-hidden">
                             {/* dApp row */}
                             <div className="flex items-center space-x-3 p-4">
-                                {request.dAppInfo?.iconUrl ? (
-                                    <img
-                                        src={request.dAppInfo.iconUrl}
-                                        alt={request.dAppInfo.name}
-                                        className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
-                                        onError={(e) => {
-                                            e.currentTarget.style.display = 'none';
-                                        }}
-                                    />
-                                ) : (
-                                    <div className="w-10 h-10 rounded-lg bg-gray-200 flex items-center justify-center flex-shrink-0">
-                                        <svg className="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                                            <path
-                                                fillRule="evenodd"
-                                                d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
-                                                clipRule="evenodd"
-                                            />
-                                        </svg>
-                                    </div>
-                                )}
+                                <div
+                                    className="w-10 h-10 rounded-lg text-white flex items-center justify-center flex-shrink-0"
+                                    style={{ backgroundColor: '#0098EA' }}
+                                >
+                                    <svg viewBox="0 0 116 100" fill="currentColor" className="w-6 h-6">
+                                        <path d="M28.8674 0L49.487 0L59.7968 17.8571L49.487 35.7142H28.8674L18.5576 17.8571L28.8674 0Z" />
+                                        <path d="M86.6023 0L96.912 17.8571L86.6023 35.7142H65.9827L55.6729 17.8571L65.9827 0L86.6023 0Z" />
+                                        <path d="M115.47 49.9998L105.16 67.8569H84.5403L74.2305 49.9998L84.5403 32.1427L105.16 32.1428L115.47 49.9998Z" />
+                                        <path d="M86.6023 99.9997L65.9827 99.9997L55.6729 82.1426L65.9827 64.2855H86.6023L96.912 82.1426L86.6023 99.9997Z" />
+                                        <path d="M28.8674 99.9997L18.5576 82.1426L28.8674 64.2855H49.487L59.7968 82.1426L49.487 99.9997H28.8674Z" />
+                                        <path d="M0 49.9998L10.3098 32.1428H30.9294L41.2392 49.9998L30.9294 67.8569H10.3098L0 49.9998Z" />
+                                    </svg>
+                                </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-semibold text-gray-900 truncate">
-                                        {request.dAppInfo?.name || 'Unknown dApp'}
-                                    </p>
-                                    {dAppHost && <p className="text-xs text-gray-500 truncate">{dAppHost}</p>}
+                                    <p className="text-sm font-semibold text-gray-900 truncate">NFT Marketplace</p>
+                                    <p className="text-xs text-gray-500 truncate">nft.marketplace.ton.org</p>
                                 </div>
                             </div>
 
@@ -254,52 +204,24 @@ export const RequestModal: React.FC<RequestModalProps> = ({
                             <>
                                 {details}
 
-                                {preview && preview.result === 'success' && (
+                                {previewMode === 'send' && (
                                     <div>
-                                        <div className="space-y-3">
-                                            {preview.moneyFlow?.outputs === '0' &&
-                                            preview.moneyFlow?.inputs === '0' &&
-                                            preview.moneyFlow?.ourTransfers.length === 0 ? (
-                                                <div className="border rounded-lg p-3 bg-gray-50">
-                                                    <p className="text-sm text-gray-600 text-center">
-                                                        This transaction doesn&apos;t involve any token transfers
-                                                    </p>
-                                                </div>
-                                            ) : (
-                                                <JettonFlow transfers={preview.moneyFlow?.ourTransfers || []} />
-                                            )}
+                                        <div className="font-semibold mb-1">Money Flow:</div>
+                                        <div className="flex flex-col gap-2">
+                                            <div className="flex items-center justify-between">
+                                                <span className="truncate max-w-[200px] flex items-center gap-2">
+                                                    <img
+                                                        src={TON_INFO.image}
+                                                        alt={TON_INFO.name}
+                                                        className="w-8 h-8 rounded-full"
+                                                    />
+                                                    <div>TON</div>
+                                                </span>
+                                                <div className="flex ml-2 font-medium text-red-600">-100.005 TON</div>
+                                            </div>
                                         </div>
                                     </div>
                                 )}
-
-                                {preview && (preview.result === 'failure' || preview.error) && (
-                                    <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                                        <p className="text-sm text-red-800">
-                                            <strong>Error:</strong> {preview.error?.message}
-                                        </p>
-                                    </div>
-                                )}
-
-                                <div className={`border rounded-lg p-3 ${warningClasses.container}`}>
-                                    <div className="flex">
-                                        <div className="flex-shrink-0">
-                                            <svg
-                                                className={`h-5 w-5 ${warningClasses.icon}`}
-                                                viewBox="0 0 20 20"
-                                                fill="currentColor"
-                                            >
-                                                <path
-                                                    fillRule="evenodd"
-                                                    d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                                                    clipRule="evenodd"
-                                                />
-                                            </svg>
-                                        </div>
-                                        <div className="ml-3">
-                                            <p className={`text-sm ${warningClasses.text}`}>{warning.message}</p>
-                                        </div>
-                                    </div>
-                                </div>
                             </>
                         )}
                     </div>
