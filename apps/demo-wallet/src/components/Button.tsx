@@ -27,12 +27,12 @@ export const Button: React.FC<ButtonProps> = ({
     ...props
 }) => {
     const baseClasses =
-        'font-medium rounded-2xl transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center cursor-pointer';
+        'font-medium rounded-2xl transition-transform duration-[80ms] ease-out focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center cursor-pointer enabled:hover:scale-[1.02] enabled:active:scale-[0.98]';
 
     const variantClasses = {
-        primary: 'bg-[#007AFF] text-white hover:opacity-90 focus:ring-[#007AFF]',
-        secondary: 'bg-gray-200 text-gray-900 hover:bg-gray-300 focus:ring-gray-500',
-        danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
+        primary: 'bg-[#007AFF] text-white',
+        secondary: 'bg-gray-200 text-gray-900',
+        danger: 'bg-red-600 text-white',
     };
 
     const sizeClasses = {

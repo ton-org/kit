@@ -28,15 +28,6 @@ const log = createComponentLogger('SignMessageRequestModal');
 const NFT_NAME = 'Kissed Frog #0000';
 const NFT_IMAGE = '/frog.png';
 
-function Section({ label, children }: { label: string; children: React.ReactNode }) {
-    return (
-        <div className="rounded-xl bg-gray-100 p-3">
-            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">{label}</p>
-            <div className="mt-1.5">{children}</div>
-        </div>
-    );
-}
-
 export const SignMessageRequestModal: React.FC<SignMessageRequestModalProps> = ({
     wallet,
     isOpen,
