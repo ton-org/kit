@@ -6,67 +6,219 @@
  *
  */
 
-import React, { useMemo } from 'react';
-import type { SignMessageRequestEvent, TransactionTraceMoneyFlowItem } from '@ton/walletkit';
-import { AssetType } from '@ton/walletkit';
+import React, { useState } from 'react';
 import type { SavedWallet } from '@demo/wallet-core';
 import { useSignMessageRequests } from '@demo/wallet-core';
+import { Drawer } from 'vaul';
+import { toast } from 'sonner';
 
-import { RequestModal } from './RequestModal';
-import { TransactionRequestDetails } from './TransactionRequestDetails';
+import { Button } from './Button';
+import { createComponentLogger } from '../utils/logger';
 
 interface SignMessageRequestModalProps {
-    request: SignMessageRequestEvent;
-    savedWallets: SavedWallet[];
+    wallet: SavedWallet | null | undefined;
     isOpen: boolean;
+    showSuccess: boolean;
+    onPurchased: () => void;
+    onSuccessClose: () => void;
 }
 
-export const SignMessageRequestModal: React.FC<SignMessageRequestModalProps> = ({ request, savedWallets, isOpen }) => {
-    const { approveSignMessageRequest, rejectSignMessageRequest } = useSignMessageRequests();
+const log = createComponentLogger('SignMessageRequestModal');
 
-    // Demo-only: present a clean money flow — no TON spent, just the NFT price
-    // in USDT (the dApp covers the commission, so it is left out here).
-    const demoMoneyFlow = useMemo<TransactionTraceMoneyFlowItem[]>(() => {
-        const jettonItems = (request.request.items ?? []).filter((item) => item.type === 'jetton');
-        const first = jettonItems[0];
-        const flow: TransactionTraceMoneyFlowItem[] = [{ assetType: AssetType.ton, amount: '0' }];
-        if (first) {
-            flow.push({ assetType: AssetType.jetton, amount: (-100000000).toString(), tokenAddress: first.master });
+const NFT_NAME = 'Kissed Frog #0000';
+const NFT_IMAGE = '/frog.png';
+
+function Section({ label, children }: { label: string; children: React.ReactNode }) {
+    return (
+        <div className="rounded-xl bg-gray-100 p-3">
+            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">{label}</p>
+            <div className="mt-1.5">{children}</div>
+        </div>
+    );
+}
+
+export const SignMessageRequestModal: React.FC<SignMessageRequestModalProps> = ({
+    wallet,
+    isOpen,
+    showSuccess,
+    onPurchased,
+    onSuccessClose,
+}) => {
+    const { approveSignMessageRequest, rejectSignMessageRequest, pendingSignMessageRequest } = useSignMessageRequests();
+    const [isBuying, setIsBuying] = useState(false);
+    const [_savedRequest, setSavedRequest] = useState(pendingSignMessageRequest);
+
+    const handleBuy = async () => {
+        setIsBuying(true);
+        setSavedRequest(pendingSignMessageRequest);
+        try {
+            await approveSignMessageRequest();
+            onPurchased();
+        } catch (error) {
+            log.error('Failed to approve sign message request:', error);
+            toast.error('Failed to complete purchase', {
+                description: (error as Error)?.message,
+            });
+        } finally {
+            setIsBuying(false);
         }
-        return flow;
-    }, [request.request]);
-
-    const handleApprove = async () => {
-        await approveSignMessageRequest();
     };
 
-    const handleReject = () => {
+    const handleCancel = () => {
         rejectSignMessageRequest('User rejected the sign message request');
     };
 
+    const handleOpenChange = (open: boolean) => {
+        if (open) return;
+        if (showSuccess) {
+            onSuccessClose();
+            return;
+        }
+        handleCancel();
+    };
+
     return (
-        <RequestModal
-            request={request}
-            savedWallets={savedWallets}
-            isOpen={isOpen}
-            title="Sign Message Request"
-            subtitle="A dApp wants you to sign a transaction without broadcasting it"
-            hideDApp
-            details={
-                <TransactionRequestDetails request={request.request} title="The dApp can submit:" purchaseSummary />
-            }
-            moneyFlow={demoMoneyFlow}
-            approveLabel="Sign Message"
-            successMessage="Message signed successfully"
-            testIds={{
-                request: 'request',
-                approve: 'sign-message-approve',
-                reject: 'sign-message-reject',
-            }}
-            onApprove={handleApprove}
-            onReject={handleReject}
-            loggerName="SignMessageRequestModal"
-            previewMode="sign"
-        />
+        <Drawer.Root open={isOpen} onOpenChange={handleOpenChange} dismissible={false}>
+            <Drawer.Portal>
+                <Drawer.Overlay className="fixed inset-0 bg-black/50 z-50" />
+                <Drawer.Content
+                    data-testid="request"
+                    className="fixed bottom-0 left-0 right-0 z-50 mt-24 flex flex-col rounded-t-2xl bg-white outline-none"
+                >
+                    {showSuccess ? (
+                        <>
+                            <img
+                                src="./market-logo.png"
+                                alt="Market Logo"
+                                className="h-14 w-14 mx-auto mt-8 rounded-lg object-cover"
+                            />
+                            <Drawer.Title className="mt-4 mb-5 text-center text-2xl font-semibold text-gray-900">
+                                Success!
+                            </Drawer.Title>
+
+                            <div className="flex flex-col gap-3 px-4 pt-0 pb-6">
+                                <div className="rounded-xl bg-gray-100 px-3 py-5">
+                                    <p className="text-xs font-medium uppercase tracking-wide text-gray-500 mb-1">
+                                        Sent
+                                    </p>
+                                    <p className="text-base font-semibold text-gray-900">100 USDT</p>
+
+                                    <div className="my-4 w-full h-px bg-gray-300" />
+
+                                    <p className="text-xs font-medium uppercase tracking-wide text-gray-500 mb-2">
+                                        Received
+                                    </p>
+                                    <div className="flex items-center gap-3">
+                                        <img
+                                            src={NFT_IMAGE}
+                                            alt={NFT_NAME}
+                                            className="h-14 w-14 flex-shrink-0 rounded-lg object-cover"
+                                        />
+                                        <p className="text-base font-semibold text-gray-900">{NFT_NAME}</p>
+                                    </div>
+
+                                    <div className="my-4 w-full h-px bg-gray-300" />
+
+                                    <p className="text-xs font-medium uppercase tracking-wide text-gray-500 mb-1">
+                                        Fee
+                                    </p>
+                                    <p className="text-base font-semibold text-gray-900">0.1 USDT</p>
+                                    <p className="mt-0.5 text-xs text-gray-500">paid by dApp</p>
+
+                                    <div className="my-4 w-full h-px bg-gray-300" />
+
+                                    <p className="text-xs font-medium uppercase tracking-wide text-gray-500 mb-1">
+                                        Wallet
+                                    </p>
+                                    <p className="text-base font-semibold text-gray-900">
+                                        Wallet 1 ({wallet?.address.slice(0, 6)}...{wallet?.address.slice(-4)})
+                                    </p>
+                                </div>
+
+                                <Button onClick={onSuccessClose} className="w-full" data-testid="sign-message-approve">
+                                    Done
+                                </Button>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <img
+                                src="./market-logo.png"
+                                alt="Market Logo"
+                                className="h-14 w-14 mx-auto mt-8 rounded-lg object-cover"
+                            />
+                            <Drawer.Title className="mt-4 text-center text-2xl font-semibold text-gray-900">
+                                Confirm Action
+                            </Drawer.Title>
+
+                            <p className="mt-1 text-xs mb-5 text-gray-500 text-center">
+                                Confirm the purchase of {NFT_NAME} for 100 USDT.
+                            </p>
+
+                            <div className="flex flex-col gap-3 px-4 pt-0 pb-6">
+                                <div className="rounded-xl bg-gray-100 px-3 py-5">
+                                    <p className="text-xs font-medium uppercase tracking-wide text-gray-500 mb-1">
+                                        Send
+                                    </p>
+                                    <p className="text-base font-semibold text-gray-900">100 USDT</p>
+
+                                    <div className="my-4 w-full h-px bg-gray-300" />
+
+                                    <p className="text-xs font-medium uppercase tracking-wide text-gray-500 mb-2">
+                                        Receive
+                                    </p>
+                                    <div className="flex items-center gap-3">
+                                        <img
+                                            src={NFT_IMAGE}
+                                            alt={NFT_NAME}
+                                            className="h-14 w-14 flex-shrink-0 rounded-lg object-cover"
+                                        />
+                                        <p className="text-base font-semibold text-gray-900">{NFT_NAME}</p>
+                                    </div>
+
+                                    <div className="my-4 w-full h-px bg-gray-300" />
+
+                                    <p className="text-xs font-medium uppercase tracking-wide text-gray-500 mb-1">
+                                        Fee
+                                    </p>
+                                    <p className="text-base font-semibold text-gray-900">0.1 USDT</p>
+                                    <p className="mt-0.5 text-xs text-gray-500">paid by dApp</p>
+
+                                    <div className="my-4 w-full h-px bg-gray-300" />
+
+                                    <p className="text-xs font-medium uppercase tracking-wide text-gray-500 mb-1">
+                                        Wallet
+                                    </p>
+                                    <p className="text-base font-semibold text-gray-900">
+                                        Wallet 1 ({wallet?.address.slice(0, 6)}...{wallet?.address.slice(-4)})
+                                    </p>
+                                </div>
+
+                                <div className="mt-2 flex w-full flex-col gap-2">
+                                    <Button
+                                        onClick={handleBuy}
+                                        isLoading={isBuying}
+                                        disabled={isBuying}
+                                        className="w-full"
+                                        data-testid="sign-message-approve"
+                                    >
+                                        Confirm
+                                    </Button>
+                                    <Button
+                                        variant="secondary"
+                                        onClick={handleCancel}
+                                        disabled={isBuying}
+                                        className="w-full"
+                                        data-testid="sign-message-reject"
+                                    >
+                                        Cancel
+                                    </Button>
+                                </div>
+                            </div>
+                        </>
+                    )}
+                </Drawer.Content>
+            </Drawer.Portal>
+        </Drawer.Root>
     );
 };
