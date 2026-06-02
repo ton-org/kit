@@ -6,9 +6,14 @@
  *
  */
 
-import type { SwapProviderInterface, StakingProviderInterface, StreamingProvider } from '@ton/walletkit';
+import type {
+    SwapProviderInterface,
+    StakingProviderInterface,
+    StreamingProvider,
+    CrossChainProvider,
+} from '@ton/walletkit';
 
 /**
  * Available provider types in AppKit.
  */
-export type AppKitProvider = SwapProviderInterface | StakingProviderInterface | StreamingProvider;
+export type AppKitProvider = SwapProviderInterface | StakingProviderInterface | StreamingProvider | CrossChainProvider;

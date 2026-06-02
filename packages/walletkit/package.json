@@ -60,6 +60,16 @@
         "types": "./dist/cjs/defi/staking/tonstakers/index.d.ts",
         "default": "./dist/cjs/defi/staking/tonstakers/index.js"
       }
+    },
+    "./cross-chain/tac": {
+      "import": {
+        "types": "./dist/esm/cross-chain/tac/index.d.ts",
+        "default": "./dist/esm/cross-chain/tac/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/cross-chain/tac/index.d.ts",
+        "default": "./dist/cjs/cross-chain/tac/index.js"
+      }
     }
   },
   "typesVersions": {
@@ -75,6 +85,9 @@
       ],
       "staking/tonstakers": [
         "./dist/cjs/defi/staking/tonstakers/index.d.ts"
+      ],
+      "cross-chain/tac": [
+        "./dist/cjs/cross-chain/tac/index.d.ts"
       ]
     }
   },
@@ -119,10 +132,14 @@
   },
   "peerDependencies": {
     "@ton/core": "^0.62.0 || ^0.63.0",
-    "@ton/crypto": "^3.3.0"
+    "@ton/crypto": "^3.3.0",
+    "@tonappchain/sdk": "catalog:"
   },
   "peerDependenciesMeta": {
     "@ston-fi/omniston-sdk": {
+      "optional": true
+    },
+    "@tonappchain/sdk": {
       "optional": true
     }
   },
@@ -134,6 +151,7 @@
     "@stryker-mutator/core": "^9.6.1",
     "@ton/core": "catalog:",
     "@ton/crypto": "catalog:",
+    "@tonappchain/sdk": "catalog:",
     "@types/chrome": "^0.1.40",
     "@types/jest": "^30.0.0",
     "@types/webextension-polyfill": "^0.12.4",

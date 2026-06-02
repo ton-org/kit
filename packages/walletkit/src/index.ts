@@ -21,6 +21,7 @@ export { Initializer } from './core/Initializer';
 export { JettonsManager } from './core/JettonsManager';
 export { DefiError, DefiErrorCode } from './defi/errors';
 export { SwapManager, SwapProvider, SwapError, SwapErrorCode } from './defi/swap';
+export { CrossChainManager, CrossChainError, CrossChainErrorCode } from './cross-chain';
 export { StakingManager, StakingProvider, StakingError, StakingErrorCode } from './defi/staking';
 export { EventEmitter } from './core/EventEmitter';
 export type { EventListener, EventPayload, KitEvent } from './core/EventEmitter';

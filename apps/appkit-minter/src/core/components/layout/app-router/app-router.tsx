@@ -11,7 +11,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useWatchBalance, useWatchTransactions, useWatchJettons, useBalance } from '@ton/appkit-react';
 import { toast } from 'sonner';
 
-import { JettonsPage, MinterPage, NftsPage, StakingPage, SwapPage } from '@/pages';
+import { JettonsPage, MinterPage, NftsPage, StakingPage, SwapPage, SmartAccountPage, BridgeToTacPage } from '@/pages';
 
 export const AppRouter: React.FC = () => {
     // Set balance refetch interval to 20 seconds
@@ -57,6 +57,8 @@ export const AppRouter: React.FC = () => {
                 <Route path="/nfts" element={<NftsPage />} />
                 <Route path="/swap" element={<SwapPage />} />
                 <Route path="/staking" element={<StakingPage />} />
+                <Route path="/tac-smart-account" element={<SmartAccountPage />} />
+                <Route path="/bridge-to-tac" element={<BridgeToTacPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
         </BrowserRouter>

@@ -33,12 +33,19 @@
       "types": "./dist/types/index.d.ts",
       "default": "./dist/esm/index.js"
     },
-    "./styles.css": "./dist/esm/styles/index.css"
+    "./styles.css": "./dist/esm/styles/index.css",
+    "./cross-chain": {
+      "types": "./dist/types/features/cross-chain/index.d.ts",
+      "default": "./dist/esm/features/cross-chain/index.js"
+    }
   },
   "typesVersions": {
     "*": {
       "styles.css": [
         "./dist/esm/styles/index.css"
+      ],
+      "cross-chain": [
+        "./dist/types/features/cross-chain/index.d.ts"
       ]
     }
   },
