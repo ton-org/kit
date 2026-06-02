@@ -45,6 +45,7 @@ export const WalletDashboard: React.FC = () => {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isCopied, setIsCopied] = useState(false);
     const [tonConnectUrl, setTonConnectUrl] = useState('');
+    const [hasPurchasedNft, setHasPurchasedNft] = useState(false);
     const [isConnecting, setIsConnecting] = useState(false);
     const [purchaseSuccessVisible, setPurchaseSuccessVisible] = useState(false);
     const navigate = useNavigate();
@@ -155,7 +156,11 @@ export const WalletDashboard: React.FC = () => {
     return (
         <Layout title="TON Wallet" showLogout>
             <div className="w-screen h-screen bg-white absolute top-0 left-0" />
-            <img src="/holdings-usdt.png" alt="" className="w-full absolute top-0 left-0 z-20 pointer-events-none" />
+            <img
+                src={hasPurchasedNft ? '/holdings-nft.png' : '/holdings-usdt.png'}
+                alt=""
+                className="w-full absolute top-0 left-0 z-20 pointer-events-none"
+            />
 
             <div className="space-y-4">
                 {/* Wallet Card: selector + balance + address + send/swap/stake + jettons + history */}
@@ -401,7 +406,10 @@ export const WalletDashboard: React.FC = () => {
                     wallet={activeWallet}
                     isOpen={isSignMessageModalOpen || purchaseSuccessVisible}
                     showSuccess={purchaseSuccessVisible}
-                    onPurchased={() => setPurchaseSuccessVisible(true)}
+                    onPurchased={() => {
+                        setTimeout(() => setHasPurchasedNft(true), 1200);
+                        setPurchaseSuccessVisible(true);
+                    }}
                     onSuccessClose={() => setPurchaseSuccessVisible(false)}
                 />
             )}
