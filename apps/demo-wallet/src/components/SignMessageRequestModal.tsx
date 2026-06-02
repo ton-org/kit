@@ -39,7 +39,16 @@ export const SignMessageRequestModal: React.FC<SignMessageRequestModalProps> = (
 }) => {
     const { approveSignMessageRequest, rejectSignMessageRequest, pendingSignMessageRequest } = useSignMessageRequests();
     const [isBuying, setIsBuying] = useState(false);
+    const [isClosing, setIsClosing] = useState(false);
     const [_savedRequest, setSavedRequest] = useState(pendingSignMessageRequest);
+
+    // Drawer close animation is ~300ms. Run any unmount-causing action AFTER the
+    // animation so the slide-down isn't cut short by the parent unmounting us.
+    const requestClose = (after: () => void) => {
+        if (isClosing) return;
+        setIsClosing(true);
+        setTimeout(after, 300);
+    };
 
     const handleBuy = async () => {
         setIsBuying(true);
@@ -59,20 +68,24 @@ export const SignMessageRequestModal: React.FC<SignMessageRequestModalProps> = (
     };
 
     const handleCancel = () => {
-        rejectSignMessageRequest('User rejected the sign message request');
+        requestClose(() => rejectSignMessageRequest('User rejected the sign message request'));
+    };
+
+    const handleDone = () => {
+        requestClose(onSuccessClose);
     };
 
     const handleOpenChange = (open: boolean) => {
         if (open) return;
         if (showSuccess) {
-            onSuccessClose();
+            handleDone();
             return;
         }
         handleCancel();
     };
 
     return (
-        <Drawer.Root open={isOpen} onOpenChange={handleOpenChange} dismissible={false}>
+        <Drawer.Root open={isOpen && !isClosing} onOpenChange={handleOpenChange} dismissible={false}>
             <Drawer.Portal>
                 <Drawer.Overlay className="fixed inset-0 bg-black/50 z-50" />
                 <Drawer.Content
@@ -115,14 +128,14 @@ export const SignMessageRequestModal: React.FC<SignMessageRequestModalProps> = (
                             <div className="flex flex-col gap-3 px-4 pt-0 pb-6">
                                 <div className="rounded-xl bg-gray-100 px-3 py-5">
                                     <p className="text-xs font-medium uppercase tracking-wide text-gray-500 mb-1">
-                                        Sent
+                                        Send
                                     </p>
                                     <p className="text-base font-semibold text-gray-900">100 USDT</p>
 
                                     <div className="my-4 w-full h-px bg-gray-300" />
 
                                     <p className="text-xs font-medium uppercase tracking-wide text-gray-500 mb-2">
-                                        Received
+                                        Receive
                                     </p>
                                     <div className="flex items-center gap-3">
                                         <img
@@ -152,7 +165,7 @@ export const SignMessageRequestModal: React.FC<SignMessageRequestModalProps> = (
                                         Wallet
                                     </p>
                                     <p className="text-base font-semibold text-gray-900">
-                                        Wallet 1 ({wallet?.address.slice(0, 6)}...{wallet?.address.slice(-4)})
+                                        Wallet 1 ({wallet?.address.slice(0, 4)}...{wallet?.address.slice(-4)})
                                     </p>
                                 </div>
 
@@ -166,7 +179,7 @@ export const SignMessageRequestModal: React.FC<SignMessageRequestModalProps> = (
                                         Return to Marketplace
                                         <ExternalLinkIcon className="w-4 h-4 ml-2" />
                                     </Button>
-                                    <Button variant="secondary" onClick={onSuccessClose} className="w-full">
+                                    <Button variant="secondary" onClick={handleDone} className="w-full">
                                         Close
                                     </Button>
                                 </div>
