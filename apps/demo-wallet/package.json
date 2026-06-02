@@ -10,7 +10,7 @@
   "scripts": {
     "e2e:deps": "playwright install --with-deps",
     "e2e": "playwright test --config e2e.config.ts --retries=3",
-    "dev": "vite",
+    "dev": "vite --port 5555",
     "build": "pnpm build:extension && pnpm build:website",
     "dev:extension": "cross-env VITE_APP_ENV=extension vite build --watch --config vite.extension.config.ts",
     "build:extension": "pnpm build:extension:chrome && pnpm build:extension:firefox",

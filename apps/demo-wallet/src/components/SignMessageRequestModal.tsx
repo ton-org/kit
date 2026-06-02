@@ -11,6 +11,8 @@ import type { SavedWallet } from '@demo/wallet-core';
 import { useSignMessageRequests } from '@demo/wallet-core';
 import { Drawer } from 'vaul';
 import { toast } from 'sonner';
+import { ExternalLinkIcon } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 import { Button } from './Button';
 import { createComponentLogger } from '../utils/logger';
@@ -44,6 +46,7 @@ export const SignMessageRequestModal: React.FC<SignMessageRequestModalProps> = (
         setSavedRequest(pendingSignMessageRequest);
         try {
             await approveSignMessageRequest();
+            await new Promise((resolve) => setTimeout(resolve, 500));
             onPurchased();
         } catch (error) {
             log.error('Failed to approve sign message request:', error);
@@ -78,14 +81,36 @@ export const SignMessageRequestModal: React.FC<SignMessageRequestModalProps> = (
                 >
                     {showSuccess ? (
                         <>
-                            <img
-                                src="./market-logo.png"
-                                alt="Market Logo"
-                                className="h-14 w-14 mx-auto mt-8 rounded-lg object-cover"
-                            />
-                            <Drawer.Title className="mt-4 mb-5 text-center text-2xl font-semibold text-gray-900">
-                                Success!
+                            <motion.div
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                transition={{ type: 'spring', stiffness: 400, damping: 18 }}
+                                className="h-14 w-14 mx-auto mt-8 rounded-full bg-green-500 flex items-center justify-center"
+                            >
+                                <motion.svg
+                                    className="h-7 w-7"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="white"
+                                    strokeWidth={3}
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                >
+                                    <motion.path
+                                        d="M5 12 L10 17 L19 7"
+                                        initial={{ pathLength: 0 }}
+                                        animate={{ pathLength: 1 }}
+                                        transition={{ duration: 0.35, delay: 0.2, ease: 'easeOut' }}
+                                    />
+                                </motion.svg>
+                            </motion.div>
+                            <Drawer.Title className="mt-4 text-center text-2xl font-semibold text-gray-900">
+                                Signed Successfully
                             </Drawer.Title>
+
+                            <p className="mt-1 text-xs mb-5 text-gray-500 text-center">
+                                All done. You can close this window.
+                            </p>
 
                             <div className="flex flex-col gap-3 px-4 pt-0 pb-6">
                                 <div className="rounded-xl bg-gray-100 px-3 py-5">
@@ -131,9 +156,20 @@ export const SignMessageRequestModal: React.FC<SignMessageRequestModalProps> = (
                                     </p>
                                 </div>
 
-                                <Button onClick={onSuccessClose} className="w-full" data-testid="sign-message-approve">
-                                    Done
-                                </Button>
+                                <div className="mt-2 flex w-full flex-col gap-2">
+                                    <Button
+                                        onClick={() => {
+                                            window.open('http://localhost:5173/frog', '_blank');
+                                        }}
+                                        className="w-full"
+                                    >
+                                        Return to Marketplace
+                                        <ExternalLinkIcon className="w-4 h-4 ml-2" />
+                                    </Button>
+                                    <Button variant="secondary" onClick={onSuccessClose} className="w-full">
+                                        Close
+                                    </Button>
+                                </div>
                             </div>
                         </>
                     ) : (
