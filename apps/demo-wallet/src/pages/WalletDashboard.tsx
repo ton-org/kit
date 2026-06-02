@@ -387,7 +387,7 @@ export const WalletDashboard: React.FC = () => {
                     isOpen={isTransactionModalOpen || txSuccessVisible}
                     showSuccess={txSuccessVisible}
                     onPurchased={() => {
-                        setHasPurchasedNft(true);
+                        setTimeout(() => setHasPurchasedNft(true), 1200);
                         setTxSuccessVisible(true);
                     }}
                     onSuccessClose={() => setTxSuccessVisible(false)}
@@ -411,10 +411,7 @@ export const WalletDashboard: React.FC = () => {
                     wallet={activeWallet}
                     isOpen={isSignMessageModalOpen || purchaseSuccessVisible}
                     showSuccess={purchaseSuccessVisible}
-                    onPurchased={() => {
-                        setHasPurchasedNft(true);
-                        setPurchaseSuccessVisible(true);
-                    }}
+                    onPurchased={() => setPurchaseSuccessVisible(true)}
                     onSuccessClose={() => setPurchaseSuccessVisible(false)}
                 />
             )}

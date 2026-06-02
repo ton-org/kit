@@ -7,14 +7,14 @@
  */
 
 import React, { useState } from 'react';
-import { getNormalizedExtMessageHash } from '@ton/walletkit';
-import { getTransactionExplorerUrls, useTransactionRequests } from '@demo/wallet-core';
+import { useTransactionRequests } from '@demo/wallet-core';
 import type { SavedWallet } from '@demo/wallet-core';
 import { Drawer } from 'vaul';
 import { toast } from 'sonner';
+import { motion } from 'framer-motion';
+import { ExternalLinkIcon } from 'lucide-react';
 
 import { Button } from './Button';
-import { useActiveWalletNetwork } from '../hooks/useJettonInfo';
 import { createComponentLogger } from '../utils/logger';
 
 interface TransactionRequestModalProps {
@@ -37,7 +37,6 @@ export const TransactionRequestModal: React.FC<TransactionRequestModalProps> = (
     onPurchased,
     onSuccessClose,
 }) => {
-    const network = useActiveWalletNetwork();
     const { approveTransactionRequest, rejectTransactionRequest, pendingTransactionRequest } = useTransactionRequests();
     const [isBuying, setIsBuying] = useState(false);
     const [_savedRequest, setSavedRequest] = useState(pendingTransactionRequest);
@@ -46,33 +45,8 @@ export const TransactionRequestModal: React.FC<TransactionRequestModalProps> = (
         setIsBuying(true);
         setSavedRequest(pendingTransactionRequest);
         try {
-            const result = await approveTransactionRequest();
-            if (result?.signedBoc) {
-                const { hash } = getNormalizedExtMessageHash(result.signedBoc);
-                const { tonScan, tonViewer } = getTransactionExplorerUrls(hash, network);
-                toast.success('Transaction is sent to the network', {
-                    description: (
-                        <span className="flex gap-3 mt-1">
-                            <a
-                                href={tonScan}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-blue-600 underline"
-                            >
-                                TonScan
-                            </a>
-                            <a
-                                href={tonViewer}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-blue-600 underline"
-                            >
-                                TonViewer
-                            </a>
-                        </span>
-                    ),
-                });
-            }
+            await approveTransactionRequest();
+            await new Promise((resolve) => setTimeout(resolve, 500));
             onPurchased();
         } catch (error) {
             log.error('Failed to approve transaction request:', error);
@@ -107,26 +81,48 @@ export const TransactionRequestModal: React.FC<TransactionRequestModalProps> = (
                 >
                     {showSuccess ? (
                         <>
-                            <img
-                                src="./market-logo.png"
-                                alt="Market Logo"
-                                className="h-14 w-14 mx-auto mt-8 rounded-lg object-cover"
-                            />
-                            <Drawer.Title className="mt-4 mb-5 text-center text-2xl font-semibold text-gray-900">
-                                Success!
+                            <motion.div
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                transition={{ type: 'spring', stiffness: 400, damping: 18 }}
+                                className="h-14 w-14 mx-auto mt-8 rounded-full bg-green-500 flex items-center justify-center"
+                            >
+                                <motion.svg
+                                    className="h-7 w-7"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="white"
+                                    strokeWidth={3}
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                >
+                                    <motion.path
+                                        d="M5 12 L10 17 L19 7"
+                                        initial={{ pathLength: 0 }}
+                                        animate={{ pathLength: 1 }}
+                                        transition={{ duration: 0.35, delay: 0.2, ease: 'easeOut' }}
+                                    />
+                                </motion.svg>
+                            </motion.div>
+                            <Drawer.Title className="mt-4 text-center text-2xl font-semibold text-gray-900">
+                                Sent Successfully
                             </Drawer.Title>
+
+                            <p className="mt-1 text-xs mb-5 text-gray-500 text-center">
+                                All done. You can close this window.
+                            </p>
 
                             <div className="flex flex-col gap-3 px-4 pt-0 pb-6">
                                 <div className="rounded-xl bg-gray-100 px-3 py-5">
                                     <p className="text-xs font-medium uppercase tracking-wide text-gray-500 mb-1">
-                                        Sent
+                                        Send
                                     </p>
                                     <p className="text-base font-semibold text-gray-900">100 TON</p>
 
                                     <div className="my-4 w-full h-px bg-gray-300" />
 
                                     <p className="text-xs font-medium uppercase tracking-wide text-gray-500 mb-2">
-                                        Received
+                                        Receive
                                     </p>
                                     <div className="flex items-center gap-3">
                                         <img
@@ -152,17 +148,29 @@ export const TransactionRequestModal: React.FC<TransactionRequestModalProps> = (
                                         Wallet
                                     </p>
                                     <p className="text-base font-semibold text-gray-900">
-                                        Wallet 1 ({wallet?.address.slice(0, 6)}...{wallet?.address.slice(-4)})
+                                        Wallet 1 ({wallet?.address.slice(0, 4)}...{wallet?.address.slice(-4)})
                                     </p>
                                 </div>
 
-                                <Button
-                                    onClick={onSuccessClose}
-                                    className="w-full"
-                                    data-testid="send-transaction-approve"
-                                >
-                                    Done
-                                </Button>
+                                <div className="mt-2 flex w-full flex-col gap-2">
+                                    <Button
+                                        onClick={() => {
+                                            window.open('http://localhost:5173/cat', '_blank');
+                                        }}
+                                        className="w-full"
+                                    >
+                                        Return to Marketplace
+                                        <ExternalLinkIcon className="w-4 h-4 ml-2" />
+                                    </Button>
+                                    <Button
+                                        variant="secondary"
+                                        onClick={onSuccessClose}
+                                        className="w-full"
+                                        data-testid="send-transaction-approve"
+                                    >
+                                        Close
+                                    </Button>
+                                </div>
                             </div>
                         </>
                     ) : (

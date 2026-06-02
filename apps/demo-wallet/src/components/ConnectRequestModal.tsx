@@ -8,7 +8,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import type { ConnectionRequestEvent, Wallet } from '@ton/walletkit';
-import { getNetworkType, getNetworkLabel } from '@demo/wallet-core';
+import { getNetworkType } from '@demo/wallet-core';
 import type { SavedWallet } from '@demo/wallet-core';
 import { Drawer } from 'vaul';
 import { toast } from 'sonner';
@@ -89,9 +89,6 @@ export const ConnectRequestModal: React.FC<ConnectRequestModalProps> = ({
     };
 
     const selectedSavedWallet = selectedWallet ? walletDataMap.get(selectedWallet.getWalletId()) : null;
-    const network = selectedWallet ? getNetworkType(selectedWallet.getNetwork()) : null;
-    const networkLabel = network ? getNetworkLabel(network) : null;
-    const isTestnet = network && network !== 'mainnet';
 
     const dAppIcon = './market-logo.png';
     const dAppName = 'NFT Marketplace';
