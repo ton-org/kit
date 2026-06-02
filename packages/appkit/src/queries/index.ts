@@ -229,3 +229,14 @@ export {
     type GetTransactionStatusQueryConfig,
     type GetTransactionStatusQueryOptions,
 } from './transaction/get-transaction-status';
+
+// Cross-chain
+export {
+    getCrossChainTransactionStatusQueryOptions,
+    type GetCrossChainTransactionStatusData,
+    type GetCrossChainTransactionStatusErrorType,
+    type GetCrossChainTransactionStatusParameters,
+    type GetCrossChainTransactionStatusReturnType,
+    type GetCrossChainTransactionStatusQueryConfig,
+    type GetCrossChainTransactionStatusQueryOptions,
+} from './cross-chain/get-cross-chain-transaction-status';

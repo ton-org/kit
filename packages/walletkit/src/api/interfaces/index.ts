@@ -15,6 +15,8 @@ export type { DefiManagerAPI } from './DefiManagerAPI';
 export type { DefiProvider } from './DefiProvider';
 export type { SwapAPI, SwapProviderInterface } from './SwapAPI';
 export type { StakingAPI, StakingProviderInterface } from './StakingAPI';
+export type { CrossChainProvider } from '../../cross-chain/CrossChainProvider';
+export type { CrossChainManagerAPI } from './CrossChainManagerAPI';
 
 export type { TONConnectSessionManager } from './TONConnectSessionManager';
 

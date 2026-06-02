@@ -17,6 +17,7 @@ import {
 import { createDeDustProvider } from '@ton/appkit/swap/dedust';
 import { createOmnistonProvider } from '@ton/appkit/swap/omniston';
 import { createTonstakersProvider } from '@ton/appkit/staking/tonstakers';
+import { createTacProvider } from '@ton/appkit/cross-chain/tac';
 
 import { ENV_TON_API_KEY_TESTNET, ENV_TON_API_KEY_MAINNET, ENV_TONCONNECT_MANIFEST_URL } from '@/core/configs/env';
 
@@ -52,6 +53,7 @@ export const appKit = new AppKit({
         createOmnistonProvider(),
         createDeDustProvider(),
         createTonstakersProvider(),
+        createTacProvider(),
         createTonCenterStreamingProvider({ network: Network.mainnet(), apiKey: ENV_TON_API_KEY_MAINNET }),
         createTonCenterStreamingProvider({ network: Network.testnet(), apiKey: ENV_TON_API_KEY_TESTNET }),
     ],

@@ -60,6 +60,16 @@
         "types": "./dist/cjs/staking/tonstakers/index.d.ts",
         "default": "./dist/cjs/staking/tonstakers/index.js"
       }
+    },
+    "./cross-chain/tac": {
+      "import": {
+        "types": "./dist/esm/cross-chain/tac/index.d.ts",
+        "default": "./dist/esm/cross-chain/tac/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/cross-chain/tac/index.d.ts",
+        "default": "./dist/cross-chain/cjs/tac/index.js"
+      }
     }
   },
   "typesVersions": {
@@ -75,6 +85,9 @@
       ],
       "staking/tonstakers": [
         "./dist/esm/staking/tonstakers/index.d.ts"
+      ],
+      "cross-chain/tac": [
+        "./dist/esm/tac/index.d.ts"
       ]
     }
   },

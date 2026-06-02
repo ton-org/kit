@@ -11,3 +11,5 @@ export { JettonsPage } from './jettons-page';
 export { NftsPage } from './nfts-page';
 export { SwapPage } from './swap-page';
 export { StakingPage } from './staking-page';
+export { SmartAccountPage } from './smart-account-page';
+export { BridgeToTacPage } from './bridge-to-tac-page';

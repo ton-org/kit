@@ -230,3 +230,33 @@ export {
     type WatchConnectedWalletsParameters,
     type WatchConnectedWalletsReturnType,
 } from './wallets/watch-connected-wallets';
+
+// Cross-chain
+export { getCrossChainManager, type GetCrossChainManagerReturnType } from './cross-chain/get-cross-chain-manager';
+export {
+    getCrossChainProvider,
+    type GetCrossChainProviderOptions,
+    type GetCrossChainProviderReturnType,
+} from './cross-chain/get-cross-chain-provider';
+export { getCrossChainProviders, type GetCrossChainProvidersReturnType } from './cross-chain/get-cross-chain-providers';
+export {
+    getCrossChainTransactionStatus,
+    type GetCrossChainTransactionStatusParameters,
+    type GetCrossChainTransactionStatusReturnType,
+} from './cross-chain/get-cross-chain-transaction-status';
+export { getSmartAccountAddress, type GetSmartAccountAddressReturnType } from './cross-chain/get-smart-account-address';
+export {
+    buildCrossChainTransaction,
+    type BuildCrossChainTransactionOptions,
+    type BuildCrossChainTransactionReturnType,
+} from './cross-chain/build-cross-chain-transaction';
+export {
+    watchCrossChainProviders,
+    type WatchCrossChainProvidersParameters,
+    type WatchCrossChainProvidersReturnType,
+} from './cross-chain/watch-cross-chain-providers';
+export {
+    hasCrossChainProvider,
+    type HasCrossChainProviderOptions,
+    type HasCrossChainProviderReturnType,
+} from './cross-chain/has-cross-chain-provider';

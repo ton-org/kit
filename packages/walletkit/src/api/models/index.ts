@@ -175,3 +175,6 @@ export type { TransactionsUpdate } from './streaming/TransactionsUpdate';
 export type { JettonUpdate } from './streaming/JettonUpdate';
 export type { StreamingUpdate } from './streaming/StreamingUpdate';
 export type { StreamingEvents } from './streaming/StreamingEvents';
+
+// Cross-chain models
+export type { CrossChainSmartAccountParams } from './cross-chain/CrossChainSmartAccountParams';

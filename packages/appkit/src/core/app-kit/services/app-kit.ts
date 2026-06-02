@@ -6,8 +6,14 @@
  *
  */
 
-import { SwapManager, StreamingManager } from '@ton/walletkit';
-import type { ProviderInput, SwapProviderInterface, StakingProviderInterface, StreamingProvider } from '@ton/walletkit';
+import { SwapManager, StreamingManager, CrossChainManager } from '@ton/walletkit';
+import type {
+    ProviderInput,
+    SwapProviderInterface,
+    StakingProviderInterface,
+    CrossChainProvider,
+    StreamingProvider,
+} from '@ton/walletkit';
 
 import type { AppKitConfig } from '../types/config';
 import { CONNECTOR_EVENTS, WALLETS_EVENTS } from '../constants/events';
@@ -33,6 +39,7 @@ export class AppKit {
     readonly walletsManager: WalletsManager;
     readonly swapManager: SwapManager;
     readonly stakingManager: StakingManager;
+    readonly crossChainManager: CrossChainManager;
 
     readonly networkManager: AppKitNetworkManager;
     readonly streamingManager: StreamingManager;
@@ -57,6 +64,7 @@ export class AppKit {
         this.swapManager = new SwapManager(() => this.createFactoryContext());
         this.stakingManager = new StakingManager(() => this.createFactoryContext());
         this.streamingManager = new StreamingManager(() => this.createFactoryContext());
+        this.crossChainManager = new CrossChainManager(() => this.createFactoryContext());
 
         if (config.connectors) {
             config.connectors.forEach((input) => {
@@ -125,6 +133,9 @@ export class AppKit {
                 break;
             case 'streaming':
                 this.streamingManager.registerProvider(provider as StreamingProvider);
+                break;
+            case 'cross-chain':
+                this.crossChainManager.registerProvider(provider as CrossChainProvider);
                 break;
             default:
                 throw new Error('Unknown provider type');
