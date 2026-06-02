@@ -39,7 +39,16 @@ export const TransactionRequestModal: React.FC<TransactionRequestModalProps> = (
 }) => {
     const { approveTransactionRequest, rejectTransactionRequest, pendingTransactionRequest } = useTransactionRequests();
     const [isBuying, setIsBuying] = useState(false);
+    const [isClosing, setIsClosing] = useState(false);
     const [_savedRequest, setSavedRequest] = useState(pendingTransactionRequest);
+
+    // Drawer close animation is ~300ms. Run any unmount-causing action AFTER the
+    // animation so the slide-down isn't cut short by the parent unmounting us.
+    const requestClose = (after: () => void) => {
+        if (isClosing) return;
+        setIsClosing(true);
+        setTimeout(after, 300);
+    };
 
     const handleBuy = async () => {
         setIsBuying(true);
@@ -59,20 +68,24 @@ export const TransactionRequestModal: React.FC<TransactionRequestModalProps> = (
     };
 
     const handleCancel = () => {
-        rejectTransactionRequest('User rejected the transaction');
+        requestClose(() => rejectTransactionRequest('User rejected the transaction'));
+    };
+
+    const handleDone = () => {
+        requestClose(onSuccessClose);
     };
 
     const handleOpenChange = (open: boolean) => {
         if (open) return;
         if (showSuccess) {
-            onSuccessClose();
+            handleDone();
             return;
         }
         handleCancel();
     };
 
     return (
-        <Drawer.Root open={isOpen} onOpenChange={handleOpenChange} dismissible={false}>
+        <Drawer.Root open={isOpen && !isClosing} onOpenChange={handleOpenChange} dismissible={false}>
             <Drawer.Portal>
                 <Drawer.Overlay className="fixed inset-0 bg-black/50 z-50" />
                 <Drawer.Content
@@ -164,7 +177,7 @@ export const TransactionRequestModal: React.FC<TransactionRequestModalProps> = (
                                     </Button>
                                     <Button
                                         variant="secondary"
-                                        onClick={onSuccessClose}
+                                        onClick={handleDone}
                                         className="w-full"
                                         data-testid="send-transaction-approve"
                                     >
