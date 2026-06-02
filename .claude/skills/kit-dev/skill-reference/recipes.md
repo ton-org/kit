@@ -9,11 +9,15 @@ Create `packages/appkit/src/actions/<domain>/get-xxx.ts`:
 ```ts
 import type { AppKit } from '../../core/app-kit';
 
-export interface GetXxxOptions { /* ... */ }
-export type GetXxxReturnType = Promise<T>;
+export interface GetXxxOptions { /* input parameters */ }
+
+export type GetXxxReturnType = Promise<{
+    /* shape of what your action returns */
+}>;
 
 export const getXxx = async (appKit: AppKit, options: GetXxxOptions = {}): GetXxxReturnType => {
-    // business logic here
+    // your business logic here
+    return {};
 };
 ```
 
@@ -21,21 +25,48 @@ Export from `packages/appkit/src/actions/index.ts`.
 
 ## Watch action template (subscriptions / live updates)
 
-Use this pattern for any "real-time" or "live" feature — never polling, never `setInterval`. The action subscribes to `appKit.emitter` and returns an unsubscribe function:
+Use this pattern for any "real-time" or "live" feature — never polling, never `setInterval`. The action subscribes to `appKit.emitter`, re-reads the value via the paired `getXxx`, and returns an unsubscribe function.
+
+Create `packages/appkit/src/actions/<domain>/watch-xxx.ts`:
 
 ```ts
 import type { AppKit } from '../../core/app-kit';
 
+import { getXxx } from './get-xxx';
+import type { GetXxxReturnType } from './get-xxx';
+
 export interface WatchXxxParameters {
-    onChange: (value: T) => void;
-    // ...other inputs
+    onChange: (value: Awaited<GetXxxReturnType>) => void;
+    onError?: (error: unknown) => void;
 }
+
 export type WatchXxxReturnType = () => void; // unsubscribe
 
-export const watchXxx = (appKit: AppKit, params: WatchXxxParameters): WatchXxxReturnType => {
-    const handler = (value: T) => params.onChange(value);
-    const unsubscribe = appKit.emitter.on('xxxChanged', handler);
-    return unsubscribe;
+export const watchXxx = (appKit: AppKit, parameters: WatchXxxParameters): WatchXxxReturnType => {
+    const { onChange, onError } = parameters;
+    let cancelled = false;
+
+    const refresh = (): void => {
+        getXxx(appKit)
+            .then((value) => {
+                if (cancelled) return;
+                onChange(value);
+            })
+            .catch((error: unknown) => {
+                if (cancelled) return;
+                onError?.(error);
+            });
+    };
+
+    // Replace these AppKitEvents keys with the ones that signal a change in your domain.
+    const unsubscribeA = appKit.emitter.on('wallets:updated', refresh);
+    const unsubscribeB = appKit.emitter.on('networks:updated', refresh);
+
+    return () => {
+        cancelled = true;
+        unsubscribeA();
+        unsubscribeB();
+    };
 };
 ```
 
@@ -62,13 +93,20 @@ export type GetXxxQueryConfig<selectData = GetXxxData> =
     Compute<ExactPartial<GetXxxOptions>> &
     QueryParameter<GetXxxQueryFnData, GetXxxErrorType, selectData, GetXxxQueryKey>;
 
+export type GetXxxQueryOptions<selectData = GetXxxData> = QueryOptions<
+    GetXxxQueryFnData,
+    GetXxxErrorType,
+    selectData,
+    GetXxxQueryKey
+>;
+
 export const getXxxQueryKey = (options: Compute<ExactPartial<GetXxxOptions>> = {}): GetXxxQueryKey =>
     ['xxx', filterQueryOptions(options)] as const;
 
 export const getXxxQueryOptions = <selectData = GetXxxData>(
     appKit: AppKit,
     options: GetXxxQueryConfig<selectData> = {},
-) => ({
+): GetXxxQueryOptions<selectData> => ({
     ...options.query,
     queryFn: async (context: { queryKey: GetXxxQueryKey }) => {
         const [, parameters] = context.queryKey;
@@ -88,7 +126,8 @@ Create `packages/appkit-react/src/features/<domain>/hooks/use-xxx.ts`:
 ```ts
 import { getXxxQueryOptions } from '@ton/appkit/queries';
 import type { GetXxxData, GetXxxErrorType, GetXxxQueryConfig } from '@ton/appkit/queries';
-import { useAppKit } from '../../../hooks/use-app-kit';
+
+import { useAppKit } from '../../settings';
 import { useQuery } from '../../../libs/query';
 import type { UseQueryReturnType } from '../../../libs/query';
 
@@ -107,30 +146,39 @@ Export from `packages/appkit-react/src/features/<domain>/index.ts`.
 
 ## Watch hook templates (paired with watch action)
 
-Two valid patterns — pick based on whether there's a synchronous current value.
+Two valid patterns — pick based on whether you want the watch hook to expose the value directly (Pattern A) or to keep a sibling TanStack query fresh while consumers read it via `useXxx` (Pattern B).
 
 ### Pattern A — Snapshot via `useSyncExternalStore`
 
-Use when the action exposes a synchronous current value alongside the subscription (e.g., `getNetworks()` returns immediately):
+The hook caches the most recent value emitted by `watchXxx` and exposes it directly through `useSyncExternalStore`. Returns `null` until the first update fires.
 
 ```ts
 import { useSyncExternalStore, useCallback, useRef } from 'react';
-import { getXxx, watchXxx } from '@ton/appkit';
+import { watchXxx } from '@ton/appkit';
+import type { WatchXxxParameters } from '@ton/appkit';
+
 import { useAppKit } from '../../settings';
 
-export const useXxx = (): GetXxxReturnType => {
+type XxxValue = Parameters<WatchXxxParameters['onChange']>[0];
+
+export type UseXxxReturnType = XxxValue | null;
+
+export const useXxx = (): UseXxxReturnType => {
     const appKit = useAppKit();
-    const cachedRef = useRef<GetXxxReturnType>(initialValue);
+    const cachedRef = useRef<XxxValue | null>(null);
 
     const subscribe = useCallback(
-        (onChange: () => void) => watchXxx(appKit, { onChange }),
+        (onChange: () => void) =>
+            watchXxx(appKit, {
+                onChange: (value) => {
+                    cachedRef.current = value;
+                    onChange();
+                },
+            }),
         [appKit],
     );
-    const getSnapshot = useCallback(() => {
-        const next = getXxx(appKit);
-        // optional reference-stability check
-        return next;
-    }, [appKit]);
+
+    const getSnapshot = useCallback(() => cachedRef.current, []);
 
     return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 };
@@ -140,35 +188,35 @@ Reference: `packages/appkit-react/src/features/network/hooks/use-networks.ts`.
 
 ### Pattern B — Cache invalidation via `useEffect`
 
-Use when the watched value is async-fetched (returned by a `useXxxQuery`) and you want a parallel hook that keeps that query fresh. The watch hook returns `void`; consumers read the value via the paired `useXxxQuery` hook.
+Use when consumers already read the value via a paired `useXxx` (TanStack Query). The watch hook returns `void` and only nudges the query cache so the next read sees the latest value.
 
 ```ts
 import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { watchXxx, hasStreamingProvider, resolveNetwork } from '@ton/appkit';
-import { handleXxxUpdate, getXxxQueryKey } from '@ton/appkit/queries';
+import { watchXxx } from '@ton/appkit';
+import type { WatchXxxParameters } from '@ton/appkit';
+import { getXxxQueryKey } from '@ton/appkit/queries';
+
 import { useAppKit } from '../../settings';
 
-export const useWatchXxx = (parameters: WatchParams): void => {
+export type UseWatchXxxParameters = Partial<WatchXxxParameters>;
+
+export const useWatchXxx = (parameters: UseWatchXxxParameters = {}): void => {
+    const { onChange } = parameters;
     const appKit = useAppKit();
     const queryClient = useQueryClient();
 
     useEffect(() => {
-        const resolvedNetwork = resolveNetwork(appKit, parameters.network);
-        if (!resolvedNetwork || !hasStreamingProvider(appKit, resolvedNetwork)) return;
-
         return watchXxx(appKit, {
-            ...parameters,
-            network: resolvedNetwork,
             onChange: (value) => {
-                parameters.onChange?.(value);
-                // either write into cache directly...
-                handleXxxUpdate(queryClient, parameters, value);
-                // ...or invalidate so the next refetch picks up the new value:
-                // queryClient.invalidateQueries({ queryKey: getXxxQueryKey(parameters) });
+                onChange?.(value);
+                // Invalidate so the paired `useXxx` re-reads the fresh value:
+                queryClient.invalidateQueries({ queryKey: getXxxQueryKey() });
+                // Or write straight into cache via a hand-written `handleXxxUpdate(queryClient, parameters, value)`
+                // — see packages/appkit/src/queries/balances/get-balance-by-address.ts for an example.
             },
         });
-    }, [appKit, queryClient, /* relevant parameter deps */]);
+    }, [appKit, queryClient, onChange]);
 };
 ```
 

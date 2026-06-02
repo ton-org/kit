@@ -71,7 +71,7 @@
         {"text": "uses_removeQueries_not_invalidateQueries", "description": "Uses removeQueries (not invalidateQueries) because no wallet to refetch for"},
         {"text": "covers_multiple_query_key_prefixes", "description": "Removes multiple keys: ['balance'], ['nfts'], ['jettons'], ['jetton-balance'], ['stakedBalance'] (note: jetton keys are kebab-case)"},
         {"text": "preserves_callback_composition", "description": "Preserves any existing onSuccess callback the consumer may pass (calls user's onSuccess too)"},
-        {"text": "mentions_tests", "description": "Mentions adding/updating tests in demo/examples/src/appkit/hooks/wallets/wallets.test.tsx"}
+        {"text": "mentions_tests", "description": "Mentions adding/updating tests in use-disconnect.test.ts"}
       ]
     },
     {

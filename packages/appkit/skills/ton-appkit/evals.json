@@ -64,7 +64,9 @@
       "name": "ssr-nextjs",
       "prompt": "I'm using Next.js 15 App Router. I keep getting hydration errors when I add AppKit. What do I do?",
       "assertions": [
-        {"text": "ssr_true_config", "description": "Mentions ssr: true in AppKit config (the AppKit-specific bit beyond generic Next.js 'use client')"}
+        {"text": "use_client_directive", "description": "Recommends adding 'use client' to the providers (wallet-using) file."},
+        {"text": "mount_gate_or_dynamic_import", "description": "Recommends gating wallet-dependent UI on a useEffect-based mounted flag, or using next/dynamic(() => import(...), { ssr: false })."},
+        {"text": "does_not_recommend_ssr_true", "description": "Does NOT recommend `ssr: true` on the AppKit constructor — there is no such field on `AppKitConfig`. The fix is purely a React/Next concern."}
       ]
     },
     {
@@ -250,7 +252,7 @@
     {
       "id": 25,
       "name": "eq-vs-uq-address-format",
-      "prompt": "I have addresses in two formats: `EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c` and `UQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJKZ`. They look almost identical. When I send TON to a fresh user wallet using the EQ form, Tonkeeper sometimes warns about an uninitialized contract. Which form should I use for what, and are they interchangeable?",
+      "prompt": "I have addresses in two formats: `EQAg69D-buNwRdwwdmbQUkv2JLOQAuxJYJYM7VAR_BIxbnAm` and `UQAg69D-buNwRdwwdmbQUkv2JLOQAuxJYJYM7VAR_BIxbnAm`. They look almost identical. When I send TON to a fresh user wallet using the EQ form, Tonkeeper sometimes warns about an uninitialized contract. Which form should I use for what, and are they interchangeable?",
       "assertions": [
         {"text": "explains_bounceable_vs_non_bounceable", "description": "Explains EQ-prefix is the bounceable form, UQ-prefix is the non-bounceable form"},
         {"text": "same_underlying_account", "description": "Notes both forms refer to the same on-chain account/hash — only the bounce-flag and checksum differ"},
@@ -279,6 +281,122 @@
         {"text": "recommends_fallback_ui", "description": "Recommends rendering a fallback CTA when no wallets are detected — e.g., 'Install Tonkeeper'"},
         {"text": "deep_link_or_store_link", "description": "Mentions linking to wallet install (App Store / Google Play / browser extension / tonkeeper.com) as part of the fallback"},
         {"text": "mentions_TonConnect_handles_universal", "description": "Notes that TonConnect's universal/QR flow can also work for desktop users without a local wallet — useful nuance"}
+      ]
+    },
+    {
+      "id": 28,
+      "name": "balance-return-type-no-double-format",
+      "prompt": "I want to render the connected wallet's TON balance with two decimals — e.g. '1.50 TON'. Here's my code: ```const { data: balance } = useBalance(); return <p>{formatUnits(balance, 9)} TON</p>;``` Is this right? What is `balance` actually?",
+      "assertions": [
+        {"text": "useBalance_is_string_not_bigint", "description": "States that `useBalance().data` is a STRING (not a `bigint`, not raw nano). MUST FAIL if the answer says bigint or nano."},
+        {"text": "already_formatted_as_ton", "description": "Explains the string is already in human-readable TON units (e.g. \"0.500000000\"), having been pre-formatted by `formatUnits(_, 9)` inside `getBalanceByAddress`."},
+        {"text": "warns_against_double_formatUnits", "description": "Explicitly warns that calling `formatUnits(balance, 9)` again re-slices the string on the decimal point and produces garbage like \"0..500000000\" (two dots)."},
+        {"text": "correct_render_pattern", "description": "Shows a correct render: either bare `{balance}` or `parseFloat(balance).toFixed(2)` / `Intl.NumberFormat(...).format(Number(balance))` — NOT a second formatUnits call."}
+      ]
+    },
+    {
+      "id": 29,
+      "name": "jettons-hook-return-shape",
+      "prompt": "I'm rendering a list of the user's jettons: `const { data: jettons } = useJettons(); return jettons?.map(j => <Row symbol={j.symbol} balance={j.balance} />);` But `jettons.map is not a function` at runtime, and the symbol shows undefined. What's wrong?",
+      "assertions": [
+        {"text": "data_is_object_not_array", "description": "Says `useJettons().data` is `{ jettons, addressBook }`, NOT an array. You need `data?.jettons.map(...)`."},
+        {"text": "symbol_nested_under_info", "description": "Says jetton fields like symbol/name live under `j.info.symbol`/`j.info.name`, not on `j` directly."},
+        {"text": "balance_already_formatted", "description": "Notes `j.balance` is already a formatted decimal string in the jetton's own units (via internal `formatUnits` using `j.decimalsNumber`) — don't reformat."},
+        {"text": "image_url_field_names", "description": "Mentions image URLs live under `j.info.image.smallUrl` / `j.info.image.url` (with the `Url` suffix), not `j.info.image.small`/`medium`."}
+      ]
+    },
+    {
+      "id": 30,
+      "name": "nfts-hook-return-shape",
+      "prompt": "Same idea but for NFTs: `const { data: nfts } = useNfts(); nfts?.map(n => <Card nft={n} />);` — `nfts.map is not a function`. How do I read the list?",
+      "assertions": [
+        {"text": "data_is_object_with_nfts", "description": "Says `useNfts().data` is `{ nfts, addressBook? }`, NOT an array. The list is at `data?.nfts`."},
+        {"text": "uses_NftItem_or_destructures", "description": "Either uses `<NftItem nft={n} />` drop-in or shows correct destructuring; doesn't pass the whole `data` object as if it were an array."}
+      ]
+    },
+    {
+      "id": 31,
+      "name": "tonconnect-connector-factory",
+      "prompt": "I'm setting up AppKit and I see two ways to wire TonConnect online: `new TonConnectConnector(...)` (constructor) and `createTonConnectConnector(...)` (factory). Which is the current/correct one?",
+      "assertions": [
+        {"text": "uses_factory_function", "description": "Recommends `createTonConnectConnector(...)` — the factory."},
+        {"text": "rejects_constructor", "description": "Notes that `TonConnectConnector` is type-only in the current API and the `new TonConnectConnector(...)` form is no longer valid. MUST FAIL if the answer recommends `new TonConnectConnector`."},
+        {"text": "options_shape_correct", "description": "Shows the factory takes `{ tonConnectOptions: { manifestUrl, ... } }`."}
+      ]
+    },
+    {
+      "id": 32,
+      "name": "swap-widget-silent-continue",
+      "prompt": "I'm using `<SwapWidget />` and when the user clicks Continue, nothing happens — no modal, no Tonkeeper prompt, no error in the UI. The button is enabled and labeled 'Continue'. What's going on and how do I see what failed?",
+      "assertions": [
+        {"text": "build_or_send_error_swallowed", "description": "Explains that `useBuildSwapTransaction` / `useSendTransaction` errors inside `SwapWidget` are NOT surfaced into `ctx.error` (which is validation-only) and become unhandled promise rejections."},
+        {"text": "check_devtools_console", "description": "Tells the user to look at DevTools Console for `Unhandled rejection: SwapError: ...` or similar — this is the first diagnostic step."},
+        {"text": "wrap_in_try_catch_or_hooks", "description": "Recommends either wrapping `ctx.sendSwapTransaction()` in try/catch via the render-prop, or composing the flow directly from `useSwapQuote` + `useBuildSwapTransaction` + `useSendTransaction` to get proper `error` fields per step."}
+      ]
+    },
+    {
+      "id": 33,
+      "name": "tonstakers-rate-limit-cascade",
+      "prompt": "I added `createTonstakersProvider()` to my AppKit config alongside a keyless TonCenter API (`apiClient: { url: 'https://toncenter.com' }` with no key). Now `useBalance`, `useJettons`, and `useNfts` are all painfully slow or returning HTTP 429 errors. The staking widget itself shows nothing. What's happening?",
+      "assertions": [
+        {"text": "explains_tonstakers_polls_aggressively", "description": "Explains that Tonstakers provider polls TonCenter (`getPoolBalance` / `getPoolData` / APY endpoint) on its own internal timer (~1 request per second) once registered, regardless of TanStack `staleTime`."},
+        {"text": "burns_keyless_quota", "description": "Says this exhausts the IP's keyless TonCenter quota in seconds and cascades HTTP 429s into unrelated reads (useBalance, useJettons, useNfts)."},
+        {"text": "fix_with_api_key_or_remove_provider", "description": "Recommends either adding a real TonCenter API key (so the polling fits inside the keyed quota) OR removing `createTonstakersProvider()` from `providers` when no key is available."}
+      ]
+    },
+    {
+      "id": 34,
+      "name": "tonapi-streaming-requires-key",
+      "prompt": "I'm using `createTonApiStreamingProvider({ network: Network.mainnet() })` (no apiKey) and I'm seeing repeated WebSocket errors in the console — the WS to `wss://tonapi.io/streaming/v2/ws` keeps closing. Why?",
+      "assertions": [
+        {"text": "tonapi_ws_requires_token", "description": "Explains the TonAPI streaming WebSocket endpoint requires authentication — keyless connections are rejected with HTTP 401 during the WebSocket upgrade."},
+        {"text": "pass_apiKey", "description": "Says to pass `apiKey` to `createTonApiStreamingProvider({ network, apiKey })` — get a token from tonconsole.com."},
+        {"text": "alternative_toncenter_streaming", "description": "Notes that `createTonCenterStreamingProvider` is the alternative (TonCenter streaming also rate-limits but doesn't hard-fail without a key)."}
+      ]
+    },
+    {
+      "id": 35,
+      "name": "next-js-no-ssr-flag",
+      "prompt": "How do I configure AppKit for Next.js App Router so server-rendered pages don't crash on wallet hooks? Does `new AppKit({ ssr: true, ... })` work?",
+      "assertions": [
+        {"text": "no_ssr_field_on_AppKitConfig", "description": "Explicitly says there is NO `ssr` property on `AppKitConfig` — passing it does nothing. MUST FAIL if the answer recommends adding `ssr: true` to the AppKit constructor."},
+        {"text": "use_client_directive", "description": "Recommends adding `'use client'` to the providers file."},
+        {"text": "mount_gate_or_dynamic_import", "description": "Recommends either gating wallet-dependent UI behind a `useEffect`-based mount flag or using `dynamic(() => import(...), { ssr: false })`."}
+      ]
+    },
+    {
+      "id": 36,
+      "name": "omniston-build-error-handling",
+      "prompt": "My SwapWidget gets a valid quote, but when the user clicks Continue I see in the console: `Unhandled rejection: SwapError: Failed to build Omniston transaction: Internal server error: 5: [hash]`. The UI says nothing. What's happening, what should I do, and is this my code's bug?",
+      "assertions": [
+        {"text": "identifies_upstream_omniston", "description": "Identifies that this is an upstream STON.fi / Omniston server error (gRPC status 5 = NOT_FOUND on the build step), not a bug in the user's code or AppKit."},
+        {"text": "suggests_retry_or_different_route", "description": "Suggests retrying after a short wait, using a larger amount (close to a resolver's minimum quotes fail more often), or trying a different pair / a different swap provider."},
+        {"text": "fallback_provider", "description": "Mentions registering `createDeDustProvider()` as a fallback (DeDust uses direct pools, doesn't go through Omniston resolvers) and notes the user can switch providers from the SwapWidget settings gear."},
+        {"text": "widget_swallows_error", "description": "Notes that `<SwapWidget />` itself swallows this error (doesn't propagate it into `ctx.error`) — this is a kit-side UX bug, not the user's fault, and the diagnostic path is DevTools Console for unhandled rejections."}
+      ]
+    },
+    {
+      "id": 37,
+      "name": "send-jetton-button-shape",
+      "prompt": "I want to drop in `<SendJettonButton />` for sending 5 USDT to an address. What props does it need? Is `jetton` just the jetton address?",
+      "assertions": [
+        {"text": "jetton_is_object_not_string", "description": "Says the `jetton` prop is an OBJECT, not a string. Required shape is `{ address, symbol, decimals }`. MUST FAIL if the answer passes a bare address string."},
+        {"text": "amount_human_readable", "description": "Shows `amount` as a human-readable string (e.g. `'5'` for 5 USDT), and notes the button uses `jetton.decimals` to scale internally — don't pass raw units."},
+        {"text": "recipient_address_prop", "description": "Includes the `recipientAddress` string prop."}
+      ]
+    },
+    {
+      "id": 38,
+      "name": "html-balance-render",
+      "prompt": "Write a React component file BalanceDisplay.tsx (named export `BalanceDisplay`) that renders the connected wallet TON balance with 2 decimal places, e.g. '0.50 TON'. Use useBalance() from @ton/appkit-react. Component takes no props.",
+      "assertions": [
+        {"text": "compiles_cleanly", "description": "tsc + vite build succeeds on the file"},
+        {"text": "no_runtime_errors", "description": "page loads without console/runtime errors (favicon 404 ignored)"},
+        {"text": "renders_balance_with_decimal", "description": "rendered DOM contains a number with at most 4 decimal places"},
+        {"text": "no_double_dot_in_rendered_dom", "description": "CRITICAL: rendered text does NOT contain '..' sequence (double-formatUnits bug — would render '0..500000000')"},
+        {"text": "no_NaN", "description": "rendered text does NOT contain NaN (signs of wrong type assumptions)"},
+        {"text": "no_full_precision_leak", "description": "rendered text does NOT contain raw 9-decimal value '0.500000000' (formatter was bypassed entirely)"},
+        {"text": "reasonable_magnitude", "description": "rendered text contains '0.5' — balance not over-divided. If executor assumes balance is nano-bigint and writes Number(balance)/1e9, the result becomes 5e-10 and toFixed(2) renders '0.00' — this assertion catches it."}
       ]
     }
   ]

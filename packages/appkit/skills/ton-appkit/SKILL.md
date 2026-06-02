@@ -12,8 +12,8 @@ For contributing to the @ton/kit monorepo, use `kit-dev` instead. This skill is 
 ## Response workflow
 
 1. **Classify the task first.** If the user wants a complete feature quickly, prefer drop-in components. If they describe custom UX, use hooks. If they report stale data, real-time, network, or SSR symptoms, start with the relevant gotcha before writing code.
-2. **Give runnable integration shape.** Include provider setup when the bug could come from missing `QueryClientProvider`, `AppKitProvider`, connector config, CSS import, `ssr: true`, or streaming providers. Avoid isolated hook snippets that omit required context.
-3. **Use AppKit semantics exactly.** Balances are `bigint` nanoTON, transfer amounts are human-readable strings, mutations do not automatically invalidate caches, streaming is opt-in, and wallet state is client-only for SSR.
+2. **Give runnable integration shape.** Include provider setup when the bug could come from missing `QueryClientProvider`, `AppKitProvider`, connector config, CSS import, or streaming providers. Avoid isolated hook snippets that omit required context.
+3. **Use AppKit semantics exactly.** Balances are already-formatted decimal strings (TON or jetton units — never raw nano), transfer amounts are human-readable strings, mutations do not automatically invalidate caches, streaming is opt-in, and wallet state is client-only for SSR.
 4. **Name the tradeoff.** Drop-in components are fastest and safest; hooks are for custom UX and require explicit loading/error/cache handling.
 
 ## What do you want to do?
@@ -85,7 +85,7 @@ function App() {
 }
 ```
 
-For Next.js: add `'use client'` to providers file, pass `ssr: true` to `AppKit` config, and gate wallet-dependent UI until mount (or use `dynamic(() => import(...), { ssr: false })`).
+For Next.js: add `'use client'` to the providers file and gate wallet-dependent UI until mount, or use `dynamic(() => import(...), { ssr: false })`. **There is no `ssr` flag on `AppKitConfig`** — the SSR boundary is purely a React/Next concern, not an AppKit option. Wallet state (`useAddress`, balances, etc.) is client-only by construction; render a stable placeholder on the server and swap in wallet-dependent UI after `useEffect`/mount.
 
 ### Browser polyfills (Vite / Webpack / Rspack)
 
@@ -144,10 +144,16 @@ const { mutate: connect, isPending } = useConnect();
 If you need side effects, fire-and-forget them (no `await`) or run them in `mutation: { onSuccess }`.
 
 ### Balance & assets
-- `useBalance()` / `useBalanceByAddress({ address, network? })` — returns `bigint` (nanoTON, divide by 1e9 for TON). Pass `network` explicitly for cross-network reads: `useBalanceByAddress({ address, network: Network.testnet() })`.
+- `useBalance()` / `useBalanceByAddress({ address, network? })` — returns a **decimal TON string already formatted with 9 decimals** (e.g. `"0.500000000"` for a wallet holding 0.5 TON). It is NOT raw nano and NOT a `bigint`. Render directly or format with `Intl.NumberFormat`; do **not** pass it through `formatUnits(_, 9)` again — that re-slices on the decimal point and yields garbage like `"0..500000000"`. Pass `network` explicitly for cross-network reads: `useBalanceByAddress({ address, network: Network.testnet() })`.
 - `useWatchBalance()` / `useWatchBalanceByAddress(...)` — real-time updates (requires streaming provider)
-- `useJettons()` / `useJettonBalanceByAddress({ jettonAddress, ownerAddress })` / `useJettonInfo` / `useJettonWalletAddress` (note: parameter is `ownerAddress`, not `address`)
-- `useNfts()` / `useNft({ address })` (`address` is the NFT item's own contract address — NOT `tokenAddress`)
+- `useJettons()` — returns `{ jettons: Jetton[], addressBook }`. Use `data?.jettons`, not `data` directly. Each `Jetton.balance` is already formatted via the jetton's own `decimalsNumber` (e.g. `"1.5"` for 1.5 USDT) — same rule: don't re-format with `formatUnits`. Image URLs live under `info.image.smallUrl` / `info.image.url` (note the `Url` suffix).
+- `useJettonBalanceByAddress({ jettonAddress, ownerAddress, jettonDecimals?, network? })` — note the param is `ownerAddress`, not `address`. Returns a **pre-formatted** decimal string in the jetton's own units (e.g. `"1.5"` for 1.5 USDT). If `jettonDecimals` isn't passed, AppKit looks it up from jetton metadata (one extra read). Same rule as `useBalance`: don't pass the result through `formatUnits` again.
+- `useJettonInfo({ address, network? })` — `address` is the **jetton master** contract address. Returns `{ name, symbol, decimals?, image, … } | null`.
+- `useJettonWalletAddress({ jettonAddress, ownerAddress, network? })` — resolves the owner's individual jetton-wallet contract address for a given jetton.
+- `useWatchJettons()` / `useWatchJettonsByAddress(...)` — real-time jetton list updates (requires streaming provider).
+- `useWatchBalanceByAddress({ address, network? })` — real-time balance for an arbitrary address.
+- `useNfts()` — returns `{ nfts: NFT[], addressBook? }`. Use `data?.nfts`, not `data` directly.
+- `useNft({ address })` (`address` is the NFT item's own contract address — NOT `tokenAddress`)
 
 ### Sending
 `useTransferTon()` · `useTransferJetton()` · `useTransferNft()` · `useSendTransaction()`
@@ -187,7 +193,7 @@ Full-featured React components from `@ton/appkit-react`. They handle their own s
 |---|---|
 | `<TonConnectButton />` | Wallet connect/disconnect UI |
 | `<SendTonButton recipientAddress amount comment? onSuccess? onError? />` | Send TON |
-| `<SendJettonButton />` | Send jettons (NFT transfers via `useTransferNft` hook — no drop-in button) |
+| `<SendJettonButton jetton={{address, symbol, decimals}} recipientAddress amount comment? onSuccess? onError? />` | Send jettons. ⚠ `jetton` is an **object** with `{ address, symbol, decimals }` — NOT a bare address string. `address` is the jetton master. `amount` is human-readable (e.g. `"5"` for 5 USDT); decimals come from the prop, not metadata. NFT transfers go via `useTransferNft` hook — no drop-in button. |
 | `<SwapWidget tokens={...} />` | Full swap UI |
 | `<StakingWidget />` | Full staking UI |
 | `<NftItem nft={...} />` | NFT card (image, name, collection, badge) |
@@ -231,13 +237,17 @@ const appKit = new AppKit({
 
 ```tsx
 function BalanceDisplay() {
-    const { data: balance } = useBalance();
+    const { data: balance } = useBalance(); // already-formatted decimal string like "0.5"
     useWatchBalance(); // writes WS updates into useBalance cache
-    return <p>{balance?.toString()} nanoTON</p>;
+    return <p>{balance ?? '—'} TON</p>;
 }
 ```
 
-Without **both**, `useBalance` is one-shot. Alternative streaming providers: `createTonApiStreamingProvider`.
+Without **both**, `useBalance` is one-shot.
+
+**Streaming-provider auth quirks (keyless != work):**
+- `createTonCenterStreamingProvider({ network, apiKey })` — `apiKey` is optional; keyless works but is heavily rate-limited.
+- `createTonApiStreamingProvider({ network, apiKey })` — `apiKey` is **effectively required**. Keyless WebSocket connections to `wss://tonapi.io/streaming/v2/ws` are closed by the gateway with HTTP 401; the provider then reconnects in a loop and floods the console with `WebSocket error` lines. Get a token from <https://tonconsole.com> or fall back to `createTonCenterStreamingProvider` if you want a keyless option.
 
 ### 2. Cache after mutations
 
@@ -333,7 +343,7 @@ But for most apps the right answer is **just use `<TonConnectButton />`** and re
 ## Common Gotchas
 
 1. **`QueryClientProvider` wraps `AppKitProvider`** — not the other way around. `AppKitProvider` doesn't create its own QueryClient.
-2. **`useBalance` returns `bigint`** nanoTON. Divide by `1e9` for TON. `.toString()` at API/storage boundaries (`JSON.stringify` throws on BigInt).
+2. **`useBalance` returns a pre-formatted TON decimal string** (e.g. `"0.500000000"`), not raw nano and not `bigint`. Same for `useJettons().data.jettons[i].balance` (formatted using the jetton's own decimals). Render directly or format with `Intl.NumberFormat`; calling `formatUnits(balance, 9)` again will re-slice the string on the decimal point and produce `"0..500000000"`.
 3. **Amounts are strings** (`'0.5'`, not `500000000n`). AppKit applies token decimals internally.
 4. **Streaming is opt-in** — needs both a provider in config and `useWatchBalance` mounted.
 5. **Network mismatch breaks transactions** — if the connected wallet is on testnet but your `defaultNetwork` is mainnet (or vice versa), TonConnect rejects the tx and your `useTransferTon` mutation lands in `error` with a network-mismatch message. Set `defaultNetwork`, expose switching with `useDefaultNetwork()`, and pass `network` into address-based reads. Check before sending:
@@ -346,3 +356,5 @@ But for most apps the right answer is **just use `<TonConnectButton />`** and re
 6. **iOS deep links need synchronous click** — call `connect()` directly in the handler, no `await` before it (see Wallet section above for the anti-pattern).
 7. **Telegram Mini App return** — configure `tonConnectOptions.actionsConfiguration.returnStrategy`.
 8. **React 19 / Next 15 hook errors** — check `@tonconnect/ui-react` version + run `pnpm why react` for duplicates.
+9. **`createTonstakersProvider()` polls TonCenter ~1×/sec on init** — once registered in `AppKit.providers`, the staking provider starts its own internal cache fill (`getPoolBalance` / `getPoolData` / APY endpoint) at roughly 1 request per second, regardless of TanStack `staleTime` or whether `<StakingWidget />` is even mounted. With a **keyless** `apiClient: { url: 'https://toncenter.com' }`, this exhausts the IP's anonymous TonCenter quota in 2–3 seconds and cascades HTTP 429s into otherwise-unrelated reads (`useBalance`, `useJettons`, `useNfts`). Symptom: balance/jettons/nfts hang or fail, staking widget itself stays empty. Fix: either set a real TonCenter `apiKey` on the apiClient (so the polling fits the keyed quota), or omit `createTonstakersProvider()` until you have a key.
+10. **`<SwapWidget />` swallows build/send errors silently** — its `ctx.error` carries only client-side validation messages. Failures from `useBuildSwapTransaction` (e.g. Omniston returning `Internal server error: 5: [hash]`, an expired quote, no liquidity at execution time) and from `useSendTransaction` become **unhandled promise rejections**: the Continue button appears to do nothing, no toast, no in-widget error. Diagnose in DevTools Console (look for `Unhandled rejection: SwapError: …`). If you're composing your own UI via the render-prop, wrap `ctx.sendSwapTransaction()` in `try/catch` and surface the error yourself, or attach a `window.addEventListener('unhandledrejection', ...)` handler. For custom flows, the hooks (`useSwapQuote` → `useBuildSwapTransaction` → `useSendTransaction`) each expose their own `error` field — use them directly instead.

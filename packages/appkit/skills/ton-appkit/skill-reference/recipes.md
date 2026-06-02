@@ -10,8 +10,17 @@ When adapting these recipes, preserve AppKit's consumer-facing invariants: trans
 
 ### Drop-in (recommended)
 ```tsx
-import { SwapWidget } from '@ton/appkit-react';
-<SwapWidget tokens={[{ address: 'ton', ... }, { address: 'EQUSDT...', ... }]} />
+import { SwapWidget, Network } from '@ton/appkit-react';
+import type { AppkitUIToken } from '@ton/appkit-react';
+
+const tokens: AppkitUIToken[] = [
+    { address: 'ton', symbol: 'TON', name: 'Toncoin', decimals: 9, network: Network.mainnet() },
+    { address: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs', symbol: 'USDT', name: 'Tether USD', decimals: 6, network: Network.mainnet() },
+];
+
+function SwapPage() {
+    return <SwapWidget tokens={tokens} />;
+}
 ```
 For custom UI within the widget's state: pass render-prop children. Register DEX providers in AppKit config — imported from sub-path entries, NOT from the main `@ton/appkit` package:
 
@@ -19,14 +28,17 @@ For custom UI within the widget's state: pass render-prop children. Register DEX
 import { createDeDustProvider } from '@ton/appkit/swap/dedust';
 import { createOmnistonProvider } from '@ton/appkit/swap/omniston';
 
-providers: [createDeDustProvider({ /* ... */ }), createOmnistonProvider({ /* ... */ })]
+const providers = [createDeDustProvider(), createOmnistonProvider()];
 ```
 
 ### From hooks (custom UX)
 ```tsx
-import { useSwapQuote, useBuildSwapTransaction, useSendTransaction } from '@ton/appkit-react';
+import { useState } from 'react';
+import { useSwapQuote, useBuildSwapTransaction, useSendTransaction, useAddress } from '@ton/appkit-react';
+import type { SwapToken } from '@ton/appkit-react';
 
 function SwapForm({ fromToken, toToken }: { fromToken: SwapToken; toToken: SwapToken }) {
+    const userAddress = useAddress();
     const [amount, setAmount] = useState('1');
 
     // 1. Get a quote
@@ -42,8 +54,8 @@ function SwapForm({ fromToken, toToken }: { fromToken: SwapToken; toToken: SwapT
     const { mutate: sendTx, isPending: sending } = useSendTransaction();
 
     const handleSwap = async () => {
-        if (!quote) return;
-        const tx = await buildSwap({ quote });
+        if (!quote || !userAddress) return;
+        const tx = await buildSwap({ quote, userAddress });
         sendTx(tx);
     };
 
@@ -63,11 +75,18 @@ function SwapForm({ fromToken, toToken }: { fromToken: SwapToken; toToken: SwapT
 ## Staking Flow
 
 ```tsx
-import { useStakingProviders, useStakingQuote, useBuildStakeTransaction, useStakedBalance } from '@ton/appkit-react';
+import { useState } from 'react';
+import {
+    useStakingProviders,
+    useStakingQuote,
+    useBuildStakeTransaction,
+    useStakedBalance,
+    useSendTransaction,
+} from '@ton/appkit-react';
 
 function StakeForm({ userAddress }: { userAddress: string }) {
-    const { data: providers } = useStakingProviders();
-    const [providerId, setProviderId] = useState<string>();
+    const providers = useStakingProviders();
+    const [providerId, setProviderId] = useState<string | undefined>(providers[0]?.providerId);
     const [amount, setAmount] = useState('10');
 
     const { data: quote } = useStakingQuote({
@@ -76,21 +95,23 @@ function StakeForm({ userAddress }: { userAddress: string }) {
         providerId,
     });
 
-    const { data: stakedBalance } = useStakedBalance({ userAddress });
+    const { data: stakedBalance } = useStakedBalance({ userAddress, providerId });
     const { mutateAsync: buildStake } = useBuildStakeTransaction();
     const { mutate: sendTx } = useSendTransaction();
 
     return (
         <>
-            <select onChange={(e) => setProviderId(e.target.value)}>
-                {providers?.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+            <select value={providerId ?? ''} onChange={(e) => setProviderId(e.target.value)}>
+                {providers.map((p) => (
+                    <option key={p.providerId} value={p.providerId}>{p.providerId}</option>
+                ))}
             </select>
             <input value={amount} onChange={(e) => setAmount(e.target.value)} />
-            {quote && <p>You'll stake {quote.amountOut} (APY: {quote.apy}%)</p>}
+            {quote && <p>You'll stake {quote.amountIn} → receive {quote.amountOut}</p>}
             <p>Currently staked: {stakedBalance?.stakedBalance}</p>
             <button onClick={async () => {
-                if (!quote || !providerId) return;
-                const tx = await buildStake({ amount, direction: 'stake', providerId });
+                if (!quote) return;
+                const tx = await buildStake({ quote, userAddress });
                 sendTx(tx);
             }}>Stake</button>
         </>
@@ -98,15 +119,18 @@ function StakeForm({ userAddress }: { userAddress: string }) {
 }
 ```
 
-For unstake, change `direction: 'unstake'` and use `quote.unstakeMode` to handle different protocols.
+For unstake, pass `direction: 'unstake'` to `useStakingQuote`. The returned quote may include an `unstakeMode` that differs by protocol — read it from the quote and forward via `providerOptions` if your protocol needs it.
 
 ## Jetton Transfer
 
 ```tsx
+import { useState } from 'react';
 import { useJettons, useTransferJetton } from '@ton/appkit-react';
+import { useQueryClient } from '@tanstack/react-query';
 
 function SendJetton() {
-    const { data: jettons } = useJettons();
+    const { data } = useJettons(); // { jettons: Jetton[], addressBook }
+    const jettons = data?.jettons ?? [];
     const [selectedJetton, setSelectedJetton] = useState<string>();
     const [amount, setAmount] = useState('');
     const [recipient, setRecipient] = useState('');
@@ -131,9 +155,9 @@ function SendJetton() {
     return (
         <>
             <select onChange={(e) => setSelectedJetton(e.target.value)}>
-                {jettons?.map(j => (
+                {jettons.map((j) => (
                     <option key={j.address} value={j.address}>
-                        {j.symbol} ({j.balance})
+                        {j.info.symbol} ({j.balance /* already formatted */})
                     </option>
                 ))}
             </select>
@@ -155,10 +179,12 @@ Notes:
 ## NFT Transfer
 
 ```tsx
+import { useState } from 'react';
 import { useNfts, useTransferNft } from '@ton/appkit-react';
 
 function SendNft() {
-    const { data: nfts } = useNfts();
+    const { data } = useNfts(); // { nfts: NFT[], addressBook? }
+    const nfts = data?.nfts ?? [];
     const [selected, setSelected] = useState<string>();
     const [recipient, setRecipient] = useState('');
 
@@ -167,15 +193,16 @@ function SendNft() {
     return (
         <>
             <div>
-                {nfts?.map(nft => (
+                {nfts.map((nft) => (
                     <button key={nft.address} onClick={() => setSelected(nft.address)}>
-                        {nft.metadata?.name ?? nft.address}
+                        {nft.info?.name ?? nft.address}
                     </button>
                 ))}
             </div>
             <input value={recipient} onChange={(e) => setRecipient(e.target.value)} />
             <button
                 disabled={!selected || isPending}
+                // ⚠ The param is `nftAddress` (the NFT item's contract address) — NOT `tokenAddress`.
                 onClick={() => transfer({ nftAddress: selected!, recipientAddress: recipient })}
             >
                 Send NFT
@@ -188,19 +215,22 @@ function SendNft() {
 ## Watching Transactions
 
 ```tsx
+import { useState } from 'react';
 import { useWatchTransactions } from '@ton/appkit-react';
+import type { TransactionsUpdate } from '@ton/appkit-react';
 
 function TransactionFeed() {
-    const [transactions, setTransactions] = useState<Transaction[]>([]);
+    const [updates, setUpdates] = useState<TransactionsUpdate[]>([]);
 
     useWatchTransactions({
-        onChange: (tx) => setTransactions((prev) => [tx, ...prev]),
+        // onChange fires with a TransactionsUpdate that wraps one or more on-chain transactions.
+        onChange: (update) => setUpdates((prev) => [update, ...prev]),
     });
 
     return (
         <ul>
-            {transactions.map(tx => (
-                <li key={tx.hash}>{tx.hash}: {tx.status}</li>
+            {updates.flatMap((u) => u.transactions).map((tx) => (
+                <li key={tx.hash}>{tx.hash}: {tx.endStatus ?? '—'}</li>
             ))}
         </ul>
     );
@@ -212,7 +242,7 @@ Requires a streaming provider registered (see SKILL.md "Real-time balance update
 ## Multi-Network App
 
 ```ts
-import { Network, createTonCenterStreamingProvider } from '@ton/appkit';
+import { AppKit, Network, createTonCenterStreamingProvider, createTonConnectConnector } from '@ton/appkit';
 
 const appKit = new AppKit({
     defaultNetwork: Network.mainnet(),
@@ -235,7 +265,13 @@ const appKit = new AppKit({
 Hooks accept a `network` parameter to override:
 
 ```tsx
-const { data: balance } = useBalanceByAddress({ address, network: Network.testnet() });
+import { useBalanceByAddress } from '@ton/appkit-react';
+import { Network } from '@ton/appkit';
+
+function TestnetBalance({ address }: { address: string }) {
+    const { data: balance } = useBalanceByAddress({ address, network: Network.testnet() });
+    return <span>{balance ?? '—'}</span>;
+}
 ```
 
 ## Custom Mutation Cleanup
@@ -243,15 +279,21 @@ const { data: balance } = useBalanceByAddress({ address, network: Network.testne
 If you have your own mutations that change wallet state, use the same cache patterns:
 
 ```tsx
-const queryClient = useQueryClient();
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-const myCustomTransfer = useMutation({
-    mutationFn: async (params) => { /* ... */ },
-    onSuccess: () => {
-        // Invalidate everything that might be affected
-        queryClient.invalidateQueries({ queryKey: ['balance'] });
-        queryClient.invalidateQueries({ queryKey: ['jettons'] });
-        queryClient.invalidateQueries({ queryKey: ['transactionStatus'] });
-    },
-});
+function useMyCustomTransfer() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (params: { recipientAddress: string; amount: string }) => {
+            // ... your custom transfer implementation
+            return params;
+        },
+        onSuccess: () => {
+            // Invalidate everything that might be affected
+            queryClient.invalidateQueries({ queryKey: ['balance'] });
+            queryClient.invalidateQueries({ queryKey: ['jettons'] });
+            queryClient.invalidateQueries({ queryKey: ['transactionStatus'] });
+        },
+    });
+}
 ```
