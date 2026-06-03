@@ -1,5 +1,11 @@
 # @ton/mcp
 
+## Unreleased
+
+### Patch Changes
+
+- Added optional `broadcast` parameter to `send_ton`, `send_jetton`, `send_raw_transaction`, `send_nft`, and `deploy_agentic_subwallet`. When `broadcast` is `false`, the wallet signs with a real signature and returns `boc`/`normalizedBoc` without sending to the network.
+
 ## 0.1.15-alpha.18
 
 ### Patch Changes

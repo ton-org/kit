@@ -202,6 +202,22 @@ npx @ton/mcp@alpha get_transaction_status --normalizedHash <NORMALIZED_HASH>
 
 > `foundation.ton` was resolved to TON address `EQ...`. The `1 TON` transfer was sent with `normalizedHash: <NORMALIZED_HASH>`. Transaction status: `completed`.
 
+### Sign a TON transfer without broadcasting
+
+**User request**
+
+`Prepare a 0.5 TON payment to UQAbc... but don't send it yet`
+
+**Approximate command list**
+
+```bash
+npx @ton/mcp@alpha send_ton --toAddress UQAbc... --amount 0.5 --broadcast false
+```
+
+**Approximate agent response**
+
+> The transfer was signed but not broadcast. Response includes `boc` and `normalizedBoc` (base64 signed external-in message) plus `normalizedHash`. Broadcast the BoC separately when ready; do not poll `get_transaction_status` until then.
+
 ### Send a jetton
 
 **User request**

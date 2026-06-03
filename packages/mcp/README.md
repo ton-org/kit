@@ -217,25 +217,31 @@ Get the status of a transaction by its normalized hash to know if it is pending,
 
 ### Transfers
 
+Send tools accept an optional `broadcast` parameter (default `true`). When `broadcast` is `false`, the wallet signs the transaction with a real signature and returns the signed external-in BoC (`boc`, `normalizedBoc`, base64) without sending it to the network. Do not poll `get_transaction_status` until the BoC is broadcast separately.
+
+Use `emulate_transaction` to preview expected balance changes with a fake signature. Use `broadcast: false` when you need the actual signed BoC to broadcast later or submit elsewhere.
+
 #### `send_ton`
-Send TON to an address. Amount is in human-readable format (e.g., `"1.5"` means 1.5 TON). Returns top-level `normalizedHash`. Default flow: poll `get_transaction_status` until completed or failed; user can skip.
+Send TON to an address. Amount is in human-readable format (e.g., `"1.5"` means 1.5 TON). Returns top-level `normalizedHash`. With `broadcast: false`, also returns `boc` and `normalizedBoc`. Default flow after broadcast: poll `get_transaction_status` until completed or failed; user can skip.
 
 **Parameters:**
 - `toAddress` (required): Recipient TON address
 - `amount` (required): Amount in TON (e.g., `"1.5"`)
 - `comment` (optional): Transaction comment/memo
+- `broadcast` (optional): If `false`, sign and return BoC without sending (default: `true`)
 
 #### `send_jetton`
-Send Jettons to an address. Amount is in human-readable format. Returns top-level `normalizedHash`. Default flow: poll `get_transaction_status` until completed or failed; user can skip.
+Send Jettons to an address. Amount is in human-readable format. Returns top-level `normalizedHash`. With `broadcast: false`, also returns `boc` and `normalizedBoc`. Default flow after broadcast: poll `get_transaction_status` until completed or failed; user can skip.
 
 **Parameters:**
 - `toAddress` (required): Recipient TON address
 - `jettonAddress` (required): Jetton master contract address
 - `amount` (required): Amount in human-readable format (e.g., `"100"`)
 - `comment` (optional): Transaction comment/memo
+- `broadcast` (optional): If `false`, sign and return BoC without sending (default: `true`)
 
 #### `send_raw_transaction`
-Send a raw transaction with full control over messages. Supports multiple messages. Returns top-level `normalizedHash`. Default flow: poll `get_transaction_status` until completed or failed; user can skip.
+Send a raw transaction with full control over messages. Supports multiple messages. Returns top-level `normalizedHash`. With `broadcast: false`, also returns `boc` and `normalizedBoc`. Default flow after broadcast: poll `get_transaction_status` until completed or failed; user can skip.
 
 **Parameters:**
 - `messages` (required): Array of messages, each with:
@@ -245,9 +251,10 @@ Send a raw transaction with full control over messages. Supports multiple messag
   - `payload` (optional): Message payload data (Base64)
 - `validUntil` (optional): Unix timestamp after which the transaction becomes invalid
 - `fromAddress` (optional): Sender wallet address
+- `broadcast` (optional): If `false`, sign and return BoC without sending (default: `true`)
 
 #### `emulate_transaction`
-Dry-run a raw transaction without broadcasting it. Accepts the same `messages` format as `send_raw_transaction` and returns the expected TON and Jetton balance changes, fees, and high-level actions so agents can verify a transaction before sending.
+Simulate a raw transaction without broadcasting it. Uses a fake signature and returns the expected TON and Jetton balance changes, fees, and high-level actions so agents can verify a transaction before sending. Accepts the same `messages` format as `send_raw_transaction`. For a real signed BoC without broadcast, use `send_raw_transaction` with `broadcast: false` instead.
 
 **Parameters:**
 - `messages` (required): Array of messages, each with `address`, `amount` in nanotons, and optional `stateInit` / `payload`
@@ -288,12 +295,13 @@ Get detailed information about a specific NFT by its address.
 - `nftAddress` (required): NFT item contract address
 
 #### `send_nft`
-Transfer an NFT from the wallet to another address. Returns `normalizedHash`. Default flow: poll `get_transaction_status` until completed or failed; user can skip.
+Transfer an NFT from the wallet to another address. Returns `normalizedHash`. With `broadcast: false`, also returns `boc` and `normalizedBoc`. Default flow after broadcast: poll `get_transaction_status` until completed or failed; user can skip.
 
 **Parameters:**
 - `nftAddress` (required): NFT item contract address to transfer
 - `toAddress` (required): Recipient TON address
 - `comment` (optional): Transaction comment/memo
+- `broadcast` (optional): If `false`, sign and return BoC without sending (default: `true`)
 
 ### DNS
 

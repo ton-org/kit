@@ -93,10 +93,10 @@ Without `MNEMONIC` or `PRIVATE_KEY`, the CLI uses the local config registry at `
 
 | Tool | Required args | Optional args |
 | ---- | ------------- | ------------- |
-| `send_ton` | `--toAddress`, `--amount` | `--comment`, `--walletSelector` |
-| `send_jetton` | `--toAddress`, `--jettonAddress`, `--amount` | `--comment`, `--walletSelector` |
-| `send_nft` | `--nftAddress`, `--toAddress` | `--comment`, `--walletSelector` |
-| `send_raw_transaction` | `--messages` | `--validUntil`, `--fromAddress`, `--walletSelector` |
+| `send_ton` | `--toAddress`, `--amount` | `--comment`, `--broadcast`, `--walletSelector` |
+| `send_jetton` | `--toAddress`, `--jettonAddress`, `--amount` | `--comment`, `--broadcast`, `--walletSelector` |
+| `send_nft` | `--nftAddress`, `--toAddress` | `--comment`, `--broadcast`, `--walletSelector` |
+| `send_raw_transaction` | `--messages` | `--broadcast`, `--validUntil`, `--fromAddress`, `--walletSelector` |
 | `emulate_transaction` | `--messages` | `--validUntil`, `--walletSelector` |
 
 ### Swaps
@@ -165,7 +165,8 @@ npx @ton/mcp@alpha generate_ton_proof --domain getgems.io --payload getgems-llm
 
 ## Notes
 
-- Use `emulate_transaction` to dry-run any transaction before sending — it returns expected balance changes, fees, and high-level actions
+- Use `emulate_transaction` to preview expected balance changes before sending (fake signature)
+- Use `--broadcast false` on send tools when you need a real signed BoC (`boc`, `normalizedBoc`) without broadcasting; do not poll `get_transaction_status` until the BoC is sent separately
 - Use `generate_ton_proof` only with the exact domain and payload supplied by the user or verifying service; do not alter the payload before signing
 - `generate_ton_proof` requires signing access even though it does not broadcast a transaction
 - Always confirm with the user before running `send_ton`, `send_jetton`, `send_nft`, or `send_raw_transaction`;

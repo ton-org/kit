@@ -55,7 +55,7 @@ Amounts for `get_swap_quote` are **human-readable** strings (respect jetton deci
 | `get_swap_quote` | amount | `--amount` (human-readable) |
 | `get_swap_quote` | slippageBps | `--slippageBps` (default 100 = 1%) |
 | `emulate_transaction` | messages | `--messages` (JSON array from quote's `transaction.messages`) |
-| `send_raw_transaction` | messages | `--messages` (same JSON array) |
+| `send_raw_transaction` | messages | `--messages` (same JSON array), `--broadcast` (optional, default true) |
 | `get_transaction_status` | normalizedHash | `--normalizedHash` |
 
 ## Pre-fund USDT (auto, when needed)

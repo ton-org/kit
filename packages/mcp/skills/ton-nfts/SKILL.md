@@ -16,7 +16,7 @@ View and transfer NFTs on the TON blockchain.
 | `get_nfts` | — | `limit`, `offset`, `walletSelector` |
 | `get_nfts_by_address` | `address` | `limit`, `offset` |
 | `get_nft` | `nftAddress` | — |
-| `send_nft` | `nftAddress`, `toAddress` | `comment`, `walletSelector` |
+| `send_nft` | `nftAddress`, `toAddress` | `comment`, `broadcast`, `walletSelector` |
 | `emulate_transaction` | `messages` | `validUntil` |
 
 ## Workflows
@@ -36,6 +36,7 @@ View and transfer NFTs on the TON blockchain.
 
 ## Notes
 
-- Use `emulate_transaction` to dry-run any transaction before sending — it returns expected balance changes, fees, and high-level actions so you can verify the outcome
+- Use `emulate_transaction` to preview expected balance changes before sending (fake signature)
+- Use `broadcast: false` on `send_nft` when you need a real signed BoC without broadcasting; do not poll `get_transaction_status` until the BoC is sent separately
 - Always confirm with the user before transferring an NFT; prefer the host client's structured confirmation UI when available, otherwise accept natural-language yes/no and do not require a fixed confirmation phrase
 - If no wallet is configured, use the `ton-create-wallet` skill first
