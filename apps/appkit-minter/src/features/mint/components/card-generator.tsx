@@ -9,7 +9,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import type React from 'react';
 import { AlertCircle, Coins, Sparkles } from 'lucide-react';
-import { Button, ButtonWithConnect, SettingsButton, useSelectedWallet } from '@ton/appkit-react';
+import {
+    Button,
+    ButtonWithConnect,
+    LowBalanceModal,
+    SettingsButton,
+    useGaslessConfig,
+    useSelectedWallet,
+} from '@ton/appkit-react';
 import { getErrorMessage } from '@ton/appkit';
 
 import { CardPreview } from './card-preview';
@@ -17,6 +24,8 @@ import { MintConfirmModal } from './mint-confirm-modal';
 import { MintSettingsModal } from './mint-settings-modal';
 import { useCardGenerator } from '../hooks/use-card-generator';
 import { useMintNft } from '../hooks/use-mint-nft';
+import type { MintShortfall } from '../hooks/use-mint-nft';
+import { enableGasless } from '../store/actions/enable-gasless';
 import { mintCard } from '../store/actions/mint-card';
 import { setMintError } from '../store/actions/set-mint-error';
 
@@ -37,10 +46,12 @@ export const CardGenerator: React.FC<CardGeneratorProps> = ({ className }) => {
     const { currentCard, isGenerating, generate } = useCardGenerator();
     const [wallet] = useSelectedWallet();
     const mint = useMintNft();
+    const { data: gaslessConfig } = useGaslessConfig();
 
     const [mintErrorLocal, setMintErrorLocal] = useState<string | null>(null);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+    const [pendingShortfall, setPendingShortfall] = useState<MintShortfall | undefined>(undefined);
 
     // Wallet disconnect closes any open mint-flow modals so the user can't
     // confirm a quote whose `from` no longer matches the active wallet.
@@ -48,10 +59,18 @@ export const CardGenerator: React.FC<CardGeneratorProps> = ({ className }) => {
         if (!wallet) {
             setIsSettingsOpen(false);
             setIsConfirmOpen(false);
+            setPendingShortfall(undefined);
         }
     }, [wallet]);
 
     const handleConfirm = useCallback(async () => {
+        const shortfall = mint.checkShortfall();
+        if (shortfall) {
+            setIsConfirmOpen(false);
+            setPendingShortfall(shortfall);
+            return;
+        }
+
         setIsConfirmOpen(false);
         try {
             await mint.send();
@@ -64,6 +83,14 @@ export const CardGenerator: React.FC<CardGeneratorProps> = ({ className }) => {
             setMintError(msg);
         }
     }, [mint]);
+
+    const handleSwitchToGasless = useCallback(() => {
+        enableGasless({ supportedAssets: gaslessConfig?.supportedAssets });
+        setPendingShortfall(undefined);
+        setIsConfirmOpen(true);
+    }, [gaslessConfig]);
+
+    const dismissShortfall = useCallback(() => setPendingShortfall(undefined), []);
 
     return (
         <div className={cn('mx-auto flex w-full max-w-[434px] flex-col gap-4', className)}>
@@ -130,6 +157,16 @@ export const CardGenerator: React.FC<CardGeneratorProps> = ({ className }) => {
 
             <MintSettingsModal open={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
             <MintConfirmModal open={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} onConfirm={handleConfirm} />
+
+            {pendingShortfall && (
+                <LowBalanceModal
+                    open
+                    mode={pendingShortfall.mode}
+                    requiredTon={pendingShortfall.requiredTon}
+                    onCancel={dismissShortfall}
+                    onSwitchToGasless={handleSwitchToGasless}
+                />
+            )}
         </div>
     );
 };

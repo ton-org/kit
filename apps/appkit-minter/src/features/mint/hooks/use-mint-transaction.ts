@@ -6,9 +6,10 @@
  *
  */
 
+import { useMemo } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { useSelectedWallet } from '@ton/appkit-react';
-import type { TransactionRequest } from '@ton/appkit';
+import { useAddress } from '@ton/appkit-react';
+import type { TransactionRequest, TransactionRequestMessage } from '@ton/appkit';
 
 import { useMinterStore } from '../store/minter-store';
 import { buildMintMessageData } from '../lib/build-mint-message-data';
@@ -17,46 +18,54 @@ import { buildMintMessageData } from '../lib/build-mint-message-data';
 const VALID_UNTIL_SECONDS = 600;
 
 export interface UseMintTransactionReturn {
-    /** Builds a fresh NFT deploy `TransactionRequest`. Throws when inputs aren't ready. */
+    /**
+     * Pre-computed deploy messages (eager). Available when card + wallet are ready.
+     * Reused by downstream checks like `getTonShortfall` without invoking the build mutation.
+     */
+    messages: TransactionRequestMessage[] | undefined;
+    /** Wraps current `messages` with a fresh `validUntil` and returns a ready-to-send `TransactionRequest`. */
     build: () => Promise<TransactionRequest>;
-    /** Current card and connected wallet are both present. */
+    /** Card + wallet are present, so `messages` is non-undefined. */
     isReady: boolean;
-    /** Build is in flight (negligible — build is sync; tracked for parity with other mutations). */
+    /** Build mutation is in flight. */
     isBuilding: boolean;
     /** Latest build error from the mutation. */
     buildError: Error | undefined;
 }
 
 /**
- * Builder for the regular (non-gasless) NFT deploy `TransactionRequest`.
- * Wraps the build in a `useMutation` so the request is constructed lazily at
- * `build()`-time — `validUntil` is computed from `Date.now()` and would be
- * stale if pre-computed at mount.
+ * Builder for the regular (non-gasless) NFT deploy.
+ *
+ * The deploy `messages` are derived eagerly from card + wallet so callers can
+ * pre-check them (e.g. against the user's TON balance) without invoking the
+ * build mutation. The mutation itself only adds a freshly stamped
+ * `validUntil` at click-time.
  */
 export const useMintTransaction = (): UseMintTransactionReturn => {
     const currentCard = useMinterStore((state) => state.currentCard);
-    const [wallet] = useSelectedWallet();
+    const walletAddress = useAddress();
 
-    const isReady = !!currentCard && !!wallet;
+    const messages = useMemo<TransactionRequestMessage[] | undefined>(() => {
+        if (!currentCard || !walletAddress) return undefined;
+        return [buildMintMessageData({ card: currentCard, ownerAddress: walletAddress })];
+    }, [currentCard, walletAddress]);
 
     const mutation = useMutation<TransactionRequest>({
         mutationFn: async () => {
-            if (!currentCard || !wallet) {
+            if (!messages) {
                 throw new Error('Cannot build mint transaction: no current card or wallet');
             }
-
-            const data = buildMintMessageData({ card: currentCard, ownerAddress: wallet.getAddress() });
-
             return {
                 validUntil: Math.floor(Date.now() / 1000) + VALID_UNTIL_SECONDS,
-                messages: [data],
+                messages,
             };
         },
     });
 
     return {
+        messages,
         build: mutation.mutateAsync,
-        isReady,
+        isReady: !!messages,
         isBuilding: mutation.isPending,
         buildError: mutation.error ?? undefined,
     };

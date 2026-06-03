@@ -6,14 +6,23 @@
  *
  */
 
+import { useCallback } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { useGaslessQuote, useSendGaslessTransaction, useSendTransaction } from '@ton/appkit-react';
+import { toNano } from '@ton/core';
+import { useBalance, useGaslessQuote, useSendGaslessTransaction, useSendTransaction } from '@ton/appkit-react';
+import { checkTonBalance, formatUnits } from '@ton/appkit';
 import type { GaslessQuote } from '@ton/appkit';
 
 import { useMinterStore } from '../store/minter-store';
+import { useCanEnableGasless } from './use-can-enable-gasless';
 import { useGaslessMintFee } from './use-gasless-mint-fee';
 import { useGaslessMintMessage } from './use-gasless-mint-message';
 import { useMintTransaction } from './use-mint-transaction';
+
+/** TON buffer beyond the deploy amount when checking shortfall for the regular flow. */
+const REGULAR_MINT_GAS_BUFFER = toNano('0.01');
+
+export type MintShortfall = { mode: 'gasless' | 'topup'; requiredTon: string };
 
 export interface UseMintNftReturn {
     /** Trigger the mint — picks the right flow based on `gaslessEnabled` in store. */
@@ -24,6 +33,14 @@ export interface UseMintNftReturn {
     error: Error | undefined;
     /** Inputs are resolved and (when gasless) a fresh quote is in hand. */
     canSend: boolean;
+    /**
+     * Run a pre-flight shortfall check. Returns `undefined` when the user can proceed
+     * (or when the gasless flow is active — the relayer fronts gas there). Otherwise
+     * returns a `MintShortfall` describing which path to suggest:
+     * - `'gasless'` if the user could switch flows to bypass the TON requirement.
+     * - `'topup'` if gasless isn't available — the user must add TON.
+     */
+    checkShortfall: () => MintShortfall | undefined;
 
     gasless: {
         /** Derived from the store flag — convenience for UI gating. */
@@ -48,14 +65,17 @@ export interface UseMintNftReturn {
  * - **Regular**: emits the raw NFT deploy via {@link useSendTransaction}, building
  *   the request lazily at click-time via {@link useMintTransaction}.
  *
- * The `send` action is itself a `useMutation` so its state is tracked
- * end-to-end (covering both the inner build and the inner send call).
+ * The `send` action focuses on the send itself — pre-flight balance check is
+ * exposed separately as {@link UseMintNftReturn.checkShortfall} so the UI can
+ * intercept and offer alternatives (e.g. switch to gasless) before signing.
  */
 export const useMintNft = (): UseMintNftReturn => {
     const gaslessEnabled = useMinterStore((state) => state.gaslessEnabled);
     const gaslessFeeAsset = useMinterStore((state) => state.gaslessFeeAsset);
 
-    const { build: buildMintTransaction, isReady: isMintReady } = useMintTransaction();
+    const { messages, build: buildMintTransaction, isReady: isMintReady } = useMintTransaction();
+    const canEnableGasless = useCanEnableGasless();
+    const { data: tonBalance } = useBalance();
 
     // Gasless path
     const { data: message } = useGaslessMintMessage();
@@ -86,6 +106,25 @@ export const useMintNft = (): UseMintNftReturn => {
         },
     });
 
+    const checkShortfall = useCallback((): MintShortfall | undefined => {
+        // Gasless flow: relayer fronts gas — no pre-flight check needed.
+        if (gaslessEnabled) return undefined;
+        if (!messages) return undefined;
+
+        const shortfall = checkTonBalance({
+            messages,
+            tonBalance,
+            gasBufferNanos: REGULAR_MINT_GAS_BUFFER,
+        });
+
+        if (!shortfall) return undefined;
+
+        return {
+            mode: canEnableGasless ? 'gasless' : 'topup',
+            requiredTon: formatUnits(shortfall.requiredNanos, 9),
+        };
+    }, [gaslessEnabled, messages, tonBalance, canEnableGasless]);
+
     const canSend =
         isMintReady && !sendMutation.isPending && (!gaslessEnabled || (!!quote && !isLoadingQuote && !quoteError));
 
@@ -94,6 +133,7 @@ export const useMintNft = (): UseMintNftReturn => {
         isSending: sendMutation.isPending,
         error: sendMutation.error ?? undefined,
         canSend,
+        checkShortfall,
         gasless: {
             enabled: gaslessEnabled,
             quote: quote ?? undefined,

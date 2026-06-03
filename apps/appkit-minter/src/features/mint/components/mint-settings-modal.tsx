@@ -9,14 +9,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { FC } from 'react';
 import { Button, Modal, Switch, useGaslessConfig, useNetwork, useSelectedWallet } from '@ton/appkit-react';
-import { compareAddress } from '@ton/appkit';
-import type { UserFriendlyAddress } from '@ton/appkit';
 
 import { useMinterStore } from '../store/minter-store';
+import { enableGasless } from '../store/actions/enable-gasless';
 import { setGaslessEnabled } from '../store/actions/set-gasless-enabled';
-import { setGaslessFeeAsset } from '../store/actions/set-gasless-fee-asset';
 import { getMintForwardAddress } from '../constants';
-import { USDT_MASTER_MAINNET } from '../../../core/constants/tokens';
+import { useCanEnableGasless } from '../hooks/use-can-enable-gasless';
 
 interface MintSettingsModalProps {
     open: boolean;
@@ -34,11 +32,11 @@ interface MintSettingsModalProps {
  */
 export const MintSettingsModal: FC<MintSettingsModalProps> = ({ open, onClose }) => {
     const gaslessEnabled = useMinterStore((state) => state.gaslessEnabled);
-    const gaslessFeeAsset = useMinterStore((state) => state.gaslessFeeAsset);
 
     const [wallet] = useSelectedWallet();
     const network = useNetwork();
     const { data: gaslessConfig } = useGaslessConfig();
+    const canEnableGasless = useCanEnableGasless();
 
     const supportsSignMessage = useMemo(() => {
         const features = wallet?.getSupportedFeatures();
@@ -47,7 +45,6 @@ export const MintSettingsModal: FC<MintSettingsModalProps> = ({ open, onClose })
     }, [wallet]);
 
     const isNetworkSupported = network ? !!getMintForwardAddress(network.chainId) : false;
-    const canEnableGasless = supportsSignMessage && isNetworkSupported;
 
     const [stagedEnabled, setStagedEnabled] = useState(gaslessEnabled);
 
@@ -59,17 +56,10 @@ export const MintSettingsModal: FC<MintSettingsModalProps> = ({ open, onClose })
 
     const handleSave = () => {
         if (stagedEnabled !== gaslessEnabled) {
-            setGaslessEnabled(stagedEnabled);
-
-            // Auto-seed fee-asset on first enable so the confirm modal renders
-            // with a valid selection. Pick USDT when the relayer accepts it,
-            // otherwise fall back to the first listed asset.
-            if (stagedEnabled && !gaslessFeeAsset && gaslessConfig?.supportedAssets?.length) {
-                const preferred = gaslessConfig.supportedAssets.find((asset) =>
-                    compareAddress(asset.address, USDT_MASTER_MAINNET),
-                );
-                const seed: UserFriendlyAddress = preferred?.address ?? gaslessConfig.supportedAssets[0].address;
-                setGaslessFeeAsset(seed);
+            if (stagedEnabled) {
+                enableGasless({ supportedAssets: gaslessConfig?.supportedAssets });
+            } else {
+                setGaslessEnabled(false);
             }
         }
         onClose();

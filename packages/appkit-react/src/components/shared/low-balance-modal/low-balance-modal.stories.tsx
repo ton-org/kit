@@ -18,7 +18,7 @@ const meta: Meta<typeof LowBalanceModal> = {
 export default meta;
 type Story = StoryObj<typeof LowBalanceModal>;
 
-export const Default: Story = {
+export const Reduce: Story = {
     args: {
         open: true,
         mode: 'reduce',
@@ -33,7 +33,16 @@ export const Topup: Story = {
         open: true,
         mode: 'topup',
         requiredTon: '0.423',
-        onChange: () => {},
+        onCancel: () => {},
+    },
+};
+
+export const Gasless: Story = {
+    args: {
+        open: true,
+        mode: 'gasless',
+        requiredTon: '0.011',
+        onSwitchToGasless: () => {},
         onCancel: () => {},
     },
 };
