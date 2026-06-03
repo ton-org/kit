@@ -7,14 +7,21 @@
  */
 
 import { toNano } from '@ton/core';
+import { Network } from '@ton/appkit';
 import type { UserFriendlyAddress } from '@ton/appkit';
 
 /**
- * Pre-deployed forwarder contract on mainnet. Receives a TEP-74 jetton-transfer
+ * Pre-deployed forwarder contract per network. Receives a TEP-74 jetton-transfer
  * with the NFT deploy spec in `forward_payload` and emits the actual NFT deploy
  * message itself — so TonAPI gasless only ever sees a plain jetton transfer.
  */
-export const MINT_FORWARD_ADDRESS = 'EQD_fO0VDlkmjRFcpiyOAFz8CWhLDoyOM9jFN4Gw7tP86YgR' as UserFriendlyAddress;
+const MINT_FORWARD_ADDRESS_BY_CHAIN_ID: Record<string, UserFriendlyAddress> = {
+    [Network.mainnet().chainId]: 'EQD_fO0VDlkmjRFcpiyOAFz8CWhLDoyOM9jFN4Gw7tP86YgR' as UserFriendlyAddress,
+    // [Network.testnet().chainId]: 'kQD_fO0VDlkmjRFcpiyOAFz8CWhLDoyOM9jFN4Gw7tP86TOb' as UserFriendlyAddress,
+};
+
+export const getMintForwardAddress = (chainId: string): UserFriendlyAddress | undefined =>
+    MINT_FORWARD_ADDRESS_BY_CHAIN_ID[chainId];
 
 /** TEP-74 jetton transfer opcode. */
 export const JETTON_TRANSFER_OP = 0x0f8a7ea5;

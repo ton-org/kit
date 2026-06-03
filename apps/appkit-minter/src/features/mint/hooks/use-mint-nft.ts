@@ -6,27 +6,21 @@
  *
  */
 
-import { useCallback } from 'react';
-import {
-    useGaslessQuote,
-    useJettonInfo,
-    useSelectedWallet,
-    useSendGaslessTransaction,
-    useSendTransaction,
-} from '@ton/appkit-react';
-import { formatUnits } from '@ton/appkit';
+import { useMutation } from '@tanstack/react-query';
+import { useGaslessQuote, useSendGaslessTransaction, useSendTransaction } from '@ton/appkit-react';
 import type { GaslessQuote } from '@ton/appkit';
 
 import { useMinterStore } from '../store/minter-store';
+import { useGaslessMintFee } from './use-gasless-mint-fee';
 import { useGaslessMintMessage } from './use-gasless-mint-message';
 import { useMintTransaction } from './use-mint-transaction';
 
 export interface UseMintNftReturn {
     /** Trigger the mint — picks the right flow based on `gaslessEnabled` in store. */
     send: () => Promise<void>;
-    /** True while either the gasless or the regular send mutation is in flight. */
+    /** Send mutation is in flight. */
     isSending: boolean;
-    /** Latest send error from either flow. */
+    /** Latest send error. */
     error: Error | undefined;
     /** Inputs are resolved and (when gasless) a fresh quote is in hand. */
     canSend: boolean;
@@ -54,18 +48,17 @@ export interface UseMintNftReturn {
  * - **Regular**: emits the raw NFT deploy via {@link useSendTransaction}, building
  *   the request lazily at click-time via {@link useMintTransaction}.
  *
- * Common state lives on the top-level return shape (`send`, `isSending`,
- * `error`, `canSend`); gasless-only state hangs off the `gasless` block.
+ * The `send` action is itself a `useMutation` so its state is tracked
+ * end-to-end (covering both the inner build and the inner send call).
  */
 export const useMintNft = (): UseMintNftReturn => {
-    const [wallet] = useSelectedWallet();
     const gaslessEnabled = useMinterStore((state) => state.gaslessEnabled);
     const gaslessFeeAsset = useMinterStore((state) => state.gaslessFeeAsset);
 
     const { build: buildMintTransaction, isReady: isMintReady } = useMintTransaction();
 
     // Gasless path
-    const { message } = useGaslessMintMessage();
+    const { data: message } = useGaslessMintMessage();
     const {
         data: quote,
         isFetching: isLoadingQuote,
@@ -76,49 +69,30 @@ export const useMintNft = (): UseMintNftReturn => {
         query: { enabled: gaslessEnabled && !!message },
     });
 
-    const { data: feeAssetInfo } = useJettonInfo({
-        address: gaslessFeeAsset ?? undefined,
-        query: { enabled: gaslessEnabled && !!gaslessFeeAsset },
+    const fee = useGaslessMintFee(quote, gaslessFeeAsset);
+
+    const { mutateAsync: sendGasless } = useSendGaslessTransaction();
+    const { mutateAsync: sendRegular } = useSendTransaction();
+
+    const sendMutation = useMutation({
+        mutationFn: async (): Promise<void> => {
+            if (gaslessEnabled) {
+                if (!quote) throw new Error('Gasless quote not ready');
+                await sendGasless({ quote });
+                return;
+            }
+            const request = await buildMintTransaction();
+            await sendRegular(request);
+        },
     });
 
-    const fee =
-        quote && feeAssetInfo?.decimals != null
-            ? `${formatUnits(quote.fee, feeAssetInfo.decimals)} ${feeAssetInfo.symbol ?? ''}`.trim()
-            : undefined;
-
-    const {
-        mutateAsync: sendGasless,
-        isPending: isSendingGasless,
-        error: gaslessSendError,
-    } = useSendGaslessTransaction();
-
-    // Regular path
-    const { mutateAsync: sendRegular, isPending: isSendingRegular, error: regularSendError } = useSendTransaction();
-
-    const isSending = isSendingGasless || isSendingRegular;
-    const error = gaslessSendError ?? regularSendError ?? undefined;
-
-    const canSendGasless = isMintReady && !!message && !!quote && !isLoadingQuote && !quoteError && !isSending;
-    const canSendRegular = isMintReady && !isSending;
-    const canSend = gaslessEnabled ? canSendGasless : canSendRegular;
-
-    const send = useCallback(async (): Promise<void> => {
-        if (!wallet) throw new Error('Wallet not connected');
-
-        if (gaslessEnabled) {
-            if (!quote) throw new Error('Gasless quote not ready');
-            await sendGasless({ quote });
-            return;
-        }
-
-        const request = await buildMintTransaction();
-        await sendRegular(request);
-    }, [wallet, gaslessEnabled, quote, sendGasless, buildMintTransaction, sendRegular]);
+    const canSend =
+        isMintReady && !sendMutation.isPending && (!gaslessEnabled || (!!quote && !isLoadingQuote && !quoteError));
 
     return {
-        send,
-        isSending,
-        error,
+        send: sendMutation.mutateAsync,
+        isSending: sendMutation.isPending,
+        error: sendMutation.error ?? undefined,
         canSend,
         gasless: {
             enabled: gaslessEnabled,

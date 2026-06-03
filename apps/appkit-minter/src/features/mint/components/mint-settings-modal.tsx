@@ -9,12 +9,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { FC } from 'react';
 import { Button, Modal, Switch, useGaslessConfig, useNetwork, useSelectedWallet } from '@ton/appkit-react';
-import { compareAddress, Network } from '@ton/appkit';
+import { compareAddress } from '@ton/appkit';
 import type { UserFriendlyAddress } from '@ton/appkit';
 
 import { useMinterStore } from '../store/minter-store';
 import { setGaslessEnabled } from '../store/actions/set-gasless-enabled';
 import { setGaslessFeeAsset } from '../store/actions/set-gasless-fee-asset';
+import { getMintForwardAddress } from '../constants';
 import { USDT_MASTER_MAINNET } from '../../../core/constants/tokens';
 
 interface MintSettingsModalProps {
@@ -28,8 +29,8 @@ interface MintSettingsModalProps {
  * pre-seed `gaslessFeeAsset` (USDT preferred, falling back to the first
  * relayer-supported asset) so the confirm modal always has a valid default.
  *
- * Disabled when the wallet lacks `SignMessage` or the active network isn't
- * mainnet — the supporting hint surfaces the exact reason.
+ * Disabled when the wallet lacks `SignMessage` or the active network has no
+ * deployed mint-forwarder — the supporting hint surfaces the exact reason.
  */
 export const MintSettingsModal: FC<MintSettingsModalProps> = ({ open, onClose }) => {
     const gaslessEnabled = useMinterStore((state) => state.gaslessEnabled);
@@ -45,8 +46,8 @@ export const MintSettingsModal: FC<MintSettingsModalProps> = ({ open, onClose })
         return features.some((feature) => typeof feature === 'object' && feature.name === 'SignMessage');
     }, [wallet]);
 
-    const isMainnet = network?.chainId === Network.mainnet().chainId;
-    const canEnableGasless = supportsSignMessage && isMainnet;
+    const isNetworkSupported = network ? !!getMintForwardAddress(network.chainId) : false;
+    const canEnableGasless = supportsSignMessage && isNetworkSupported;
 
     const [stagedEnabled, setStagedEnabled] = useState(gaslessEnabled);
 
@@ -76,8 +77,8 @@ export const MintSettingsModal: FC<MintSettingsModalProps> = ({ open, onClose })
 
     const hint = !supportsSignMessage
         ? 'Connected wallet does not support gasless (no SignMessage feature).'
-        : !isMainnet
-          ? 'Gasless is available on mainnet only.'
+        : !isNetworkSupported
+          ? 'Gasless is not available on this network.'
           : null;
 
     return (
