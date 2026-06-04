@@ -51,8 +51,8 @@ import { UINT_256_MAX } from '../utils/math.js';
 import { onchainMetadataKey } from '../utils/tep64.js';
 import { readAgenticLimitsHash } from '../utils/agentic.js';
 import { normalizeAddressForComparison } from '../utils/address.js';
-import { evaluateLimits } from '../limits/enforce.js';
-import type { CachedLimits, LimitsCache, LimitsEnv, SyncedLimits } from '../limits/enforce.js';
+import { computeLimitsUsage, evaluateLimits, loadActiveLimits, maxConfiguredWindow } from '../limits/enforce.js';
+import type { AssetUsage, CachedLimits, LimitsCache, LimitsEnv, SyncedLimits } from '../limits/enforce.js';
 import { getJettonWalletInfoFromClient, parseJettonOutflowAmount } from '../limits/jetton.js';
 import { computeLimitsHash, limitsDictToStored, parseLimitsDictFromMessageBody } from '../limits/limits-codec.js';
 import { transactionsToSpend } from '../limits/spend-window.js';
@@ -105,6 +105,19 @@ export interface AddressBalanceResult {
     address: string;
     balanceNano: string;
     balanceTon: string;
+}
+
+/**
+ * Active spend-limit config and usage for the wallet, in base units (matching the on-chain
+ * `limitsDict`). `enabled: false` means no limits in force; `reason` says why.
+ */
+export interface LimitsInfoResult {
+    enabled: boolean;
+    reason?: 'not-agentic' | 'no-limits' | 'unverifiable';
+    message?: string;
+    limitsHash?: string;
+    checkedAt?: number;
+    assets?: AssetUsage[];
 }
 
 /**
@@ -809,6 +822,31 @@ export class McpWalletService {
             }
         }
         return masters;
+    }
+
+    /**
+     * Current spend-limit config and usage, without sending. Resolves limits via the same
+     * {@link loadActiveLimits} path enforcement uses, then meters spend over the largest window.
+     */
+    async getLimitsInfo(): Promise<LimitsInfoResult> {
+        if (!this.isAgenticWallet()) {
+            return { enabled: false, reason: 'not-agentic' };
+        }
+        const env = this.createLimitsEnv();
+        const loaded = await loadActiveLimits(env);
+        if (loaded.status === 'none') {
+            return { enabled: false, reason: 'no-limits' };
+        }
+        if (loaded.status === 'error') {
+            return { enabled: false, reason: 'unverifiable', message: loaded.message };
+        }
+
+        // One `now` so the fetch cutoff and window math share a boundary.
+        const now = env.now();
+        const maxWindow = maxConfiguredWindow(loaded.limits);
+        const spendEntries = maxWindow > 0 ? await env.fetchSpendEntries(maxWindow, now) : [];
+        const assets = computeLimitsUsage(loaded.limits, spendEntries, now);
+        return { enabled: true, limitsHash: loaded.hash, checkedAt: now, assets };
     }
 
     private createLimitsEnv(): LimitsEnv {

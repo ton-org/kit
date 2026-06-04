@@ -227,14 +227,18 @@ export interface LimitsEnv {
 
 export type LimitsDecision = { allowed: true } | { allowed: false; message: string };
 
+/** Active limits resolved against the on-chain hash: none set, verified, or unverifiable. */
+export type LoadedLimits =
+    | { status: 'none' }
+    | { status: 'active'; limits: StoredLimits; hash: string }
+    | { status: 'error'; message: string };
+
 /**
- * Decide whether a pending transaction may broadcast:
- *  1. read the on-chain limits_hash; absent -> allow and clear any stale cache;
- *  2. hash matches cache -> use cached limits, else re-sync and persist;
- *  3. a hash that cannot be verified against an on-chain tx is a hard failure;
- *  4. measure spend over the largest relevant window and apply the per-asset checks.
+ * Resolve a wallet's active limits without metering spend (shared by enforcement and the
+ * read-only query): no on-chain hash -> `none` and clear stale cache; hash matches cache ->
+ * use it; else re-sync from chain and persist; an unverifiable hash -> `error`.
  */
-export async function evaluateLimits(env: LimitsEnv, spend: PendingSpend): Promise<LimitsDecision> {
+export async function loadActiveLimits(env: LimitsEnv): Promise<LoadedLimits> {
     const onchainHash = await env.readOnchainLimitsHash();
 
     if (!onchainHash) {
@@ -242,34 +246,48 @@ export async function evaluateLimits(env: LimitsEnv, spend: PendingSpend): Promi
         if (cached.limits || cached.limits_hash) {
             await env.writeCache({});
         }
-        return { allowed: true };
+        return { status: 'none' };
     }
 
-    let limits: StoredLimits;
     const cached = env.readCache();
     if (cached.limits && cached.limits_hash === onchainHash) {
-        limits = cached.limits;
-    } else {
-        const synced = await env.syncLimitsFromChain();
-        if (!synced) {
-            return {
-                allowed: false,
-                message:
-                    `Wallet has on-chain limits (limits_hash=${onchainHash}) but no limits-change ` +
-                    `transaction was found to verify them; refusing to send.`,
-            };
-        }
-        if (synced.hash !== onchainHash) {
-            return {
-                allowed: false,
-                message:
-                    `On-chain limits_hash (${onchainHash}) does not match the hash of the latest ` +
-                    `limits-change transaction (${synced.hash}); refusing to send.`,
-            };
-        }
-        limits = synced.limits;
-        await env.writeCache({ limits, limits_hash: onchainHash });
+        return { status: 'active', limits: cached.limits, hash: onchainHash };
     }
+
+    const synced = await env.syncLimitsFromChain();
+    if (!synced) {
+        return {
+            status: 'error',
+            message:
+                `Wallet has on-chain limits (limits_hash=${onchainHash}) but no limits-change ` +
+                `transaction was found to verify them; refusing to send.`,
+        };
+    }
+    if (synced.hash !== onchainHash) {
+        return {
+            status: 'error',
+            message:
+                `On-chain limits_hash (${onchainHash}) does not match the hash of the latest ` +
+                `limits-change transaction (${synced.hash}); refusing to send.`,
+        };
+    }
+    await env.writeCache({ limits: synced.limits, limits_hash: onchainHash });
+    return { status: 'active', limits: synced.limits, hash: onchainHash };
+}
+
+/**
+ * Decide whether a pending transaction may broadcast: resolve the active limits,
+ * then measure spend over the largest relevant window and apply the per-asset checks.
+ */
+export async function evaluateLimits(env: LimitsEnv, spend: PendingSpend): Promise<LimitsDecision> {
+    const loaded = await loadActiveLimits(env);
+    if (loaded.status === 'none') {
+        return { allowed: true };
+    }
+    if (loaded.status === 'error') {
+        return { allowed: false, message: loaded.message };
+    }
+    const { limits } = loaded;
 
     // Capture `now` once so the history-fetch cutoff and the window math share a boundary.
     const now = env.now();
@@ -277,4 +295,66 @@ export async function evaluateLimits(env: LimitsEnv, spend: PendingSpend): Promi
     const spendEntries = maxWindow > 0 ? await env.fetchSpendEntries(maxWindow, now) : [];
     const violation = findLimitViolation(limits, spend, spendEntries, now);
     return violation ? { allowed: false, message: formatLimitViolation(violation) } : { allowed: true };
+}
+
+/** Per-window usage of one asset's limit. Amounts in base units (decimal strings); window `0` = per-transaction. */
+export interface AssetWindowUsage {
+    windowSeconds: number;
+    limit: string;
+    spent: string;
+    remaining: string;
+}
+
+/** Configured limits and current usage for a single asset (`'TON'` or a jetton master). */
+export interface AssetUsage {
+    asset: string;
+    /** Windows sorted ascending (a per-transaction `0` window, if present, comes first). */
+    windows: AssetWindowUsage[];
+}
+
+/** Largest rolling window (seconds > 0) configured across every asset; `0` if none. */
+export function maxConfiguredWindow(limits: StoredLimits): number {
+    let maxWindow = 0;
+    for (const assetLimit of Object.values(limits.assets)) {
+        for (const windowSeconds of Object.keys(assetLimit.windows)) {
+            const seconds = Number(windowSeconds);
+            if (Number.isInteger(seconds) && seconds > maxWindow) {
+                maxWindow = seconds;
+            }
+        }
+    }
+    return maxWindow;
+}
+
+/**
+ * Per-asset/per-window used and remaining amounts, metered exactly like
+ * {@link findLimitViolation} so they match what enforcement would decide. Throws on a
+ * malformed asset key.
+ */
+export function computeLimitsUsage(limits: StoredLimits, spendEntries: SpendEntry[], now: number): AssetUsage[] {
+    const usage: AssetUsage[] = [];
+    for (const [displayKey, assetLimit] of Object.entries(limits.assets)) {
+        const normalizedKey = normalizeAssetKey(displayKey);
+        if (normalizedKey === null) {
+            throw new Error(`Invalid spend-limit config: asset key "${displayKey}" is not a valid address.`);
+        }
+        const windows: AssetWindowUsage[] = Object.entries(assetLimit.windows)
+            .map(([windowSeconds, amount]) => [Number(windowSeconds), BigInt(amount)] as const)
+            .sort((a, b) => a[0] - b[0])
+            .map(([windowSeconds, limit]) => {
+                const spent =
+                    windowSeconds === PER_TX_WINDOW
+                        ? 0n
+                        : sumSpendWithinWindow(spendEntries, normalizedKey, now, windowSeconds);
+                const remaining = limit > spent ? limit - spent : 0n;
+                return {
+                    windowSeconds,
+                    limit: limit.toString(),
+                    spent: spent.toString(),
+                    remaining: remaining.toString(),
+                };
+            });
+        usage.push({ asset: displayKey, windows });
+    }
+    return usage;
 }

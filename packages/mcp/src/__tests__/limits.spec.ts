@@ -20,7 +20,15 @@ import {
     parseLimitsDictFromMessageBody,
     storedToLimitsDict,
 } from '../limits/limits-codec.js';
-import { evaluateLimits, findLimitViolation, formatLimitViolation, maxRelevantWindow } from '../limits/enforce.js';
+import {
+    computeLimitsUsage,
+    evaluateLimits,
+    findLimitViolation,
+    formatLimitViolation,
+    loadActiveLimits,
+    maxConfiguredWindow,
+    maxRelevantWindow,
+} from '../limits/enforce.js';
 import type { LimitsEnv } from '../limits/enforce.js';
 import { getJettonWalletInfoFromClient, parseJettonOutflowAmount } from '../limits/jetton.js';
 import { sumSpendWithinWindow, transactionsToSpend } from '../limits/spend-window.js';
@@ -275,6 +283,113 @@ describe('evaluateLimits', () => {
         const decision = await evaluateLimits(env({}), ton(6n));
         expect(decision).toMatchObject({ allowed: false });
         expect(decision.allowed === false && decision.message).toContain('spend limit');
+    });
+});
+
+describe('loadActiveLimits', () => {
+    function env(overrides: Partial<LimitsEnv>): LimitsEnv {
+        return {
+            now: () => NOW,
+            readOnchainLimitsHash: async () => 'hash-1',
+            readCache: () => ({}),
+            writeCache: async () => {},
+            syncLimitsFromChain: async () => ({ limits: LIMITS, hash: 'hash-1' }),
+            fetchSpendEntries: async () => [],
+            ...overrides,
+        };
+    }
+
+    it('reports none and clears a stale cache when no on-chain limits are set', async () => {
+        const writeCache = vi.fn(async () => {});
+        const loaded = await loadActiveLimits(
+            env({
+                readOnchainLimitsHash: async () => undefined,
+                readCache: () => ({ limits_hash: 'old' }),
+                writeCache,
+            }),
+        );
+        expect(loaded).toEqual({ status: 'none' });
+        expect(writeCache).toHaveBeenCalledWith({});
+    });
+
+    it('returns the cached limits without re-syncing when the hash matches', async () => {
+        const syncLimitsFromChain = vi.fn(async () => ({ limits: LIMITS, hash: 'hash-1' }));
+        const loaded = await loadActiveLimits(
+            env({ readCache: () => ({ limits: LIMITS, limits_hash: 'hash-1' }), syncLimitsFromChain }),
+        );
+        expect(loaded).toEqual({ status: 'active', limits: LIMITS, hash: 'hash-1' });
+        expect(syncLimitsFromChain).not.toHaveBeenCalled();
+    });
+
+    it('re-syncs and persists when the cache is stale', async () => {
+        const writeCache = vi.fn(async () => {});
+        const loaded = await loadActiveLimits(env({ readCache: () => ({}), writeCache }));
+        expect(loaded).toEqual({ status: 'active', limits: LIMITS, hash: 'hash-1' });
+        expect(writeCache).toHaveBeenCalledWith({ limits: LIMITS, limits_hash: 'hash-1' });
+    });
+
+    it('reports an error when no limits-change transaction can be found', async () => {
+        const loaded = await loadActiveLimits(env({ syncLimitsFromChain: async () => null }));
+        expect(loaded.status).toBe('error');
+        expect(loaded.status === 'error' && loaded.message).toContain('no limits-change');
+    });
+
+    it('reports an error when the synced hash does not match the on-chain hash', async () => {
+        const loaded = await loadActiveLimits(
+            env({ syncLimitsFromChain: async () => ({ limits: LIMITS, hash: 'other' }) }),
+        );
+        expect(loaded.status).toBe('error');
+        expect(loaded.status === 'error' && loaded.message).toContain('does not match');
+    });
+});
+
+describe('maxConfiguredWindow', () => {
+    it('returns the largest rolling window across all assets', () => {
+        expect(maxConfiguredWindow(LIMITS)).toBe(86400);
+    });
+
+    it('returns 0 when only per-transaction limits are configured', () => {
+        expect(maxConfiguredWindow({ assets: { [TON_ASSET_KEY]: { windows: { '0': '5' } } } })).toBe(0);
+    });
+});
+
+describe('computeLimitsUsage', () => {
+    it('reports spent and remaining per asset and window, with per-tx windows un-metered', () => {
+        const entries: SpendEntry[] = [
+            { timestamp: NOW - 100, asset: TON_ASSET_KEY, amount: 12n },
+            { timestamp: NOW - 100, asset: JETTON_KEY, amount: 400n },
+        ];
+        const usage = computeLimitsUsage(LIMITS, entries, NOW);
+
+        const ton = usage.find((a) => a.asset === TON_ASSET_KEY);
+        expect(ton?.windows).toEqual([
+            { windowSeconds: 0, limit: '5', spent: '0', remaining: '5' },
+            { windowSeconds: 3600, limit: '20', spent: '12', remaining: '8' },
+        ]);
+
+        const jetton = usage.find((a) => a.asset === JETTON.toString());
+        expect(jetton?.windows).toEqual([{ windowSeconds: 86400, limit: '1000', spent: '400', remaining: '600' }]);
+    });
+
+    it('clamps remaining at zero when spend already exceeds the cap', () => {
+        const entries: SpendEntry[] = [{ timestamp: NOW - 100, asset: TON_ASSET_KEY, amount: 25n }];
+        const ton = computeLimitsUsage(LIMITS, entries, NOW).find((a) => a.asset === TON_ASSET_KEY);
+        expect(ton?.windows.find((w) => w.windowSeconds === 3600)).toEqual({
+            windowSeconds: 3600,
+            limit: '20',
+            spent: '25',
+            remaining: '0',
+        });
+    });
+
+    it('excludes spend older than the window', () => {
+        const entries: SpendEntry[] = [{ timestamp: NOW - 4000, asset: TON_ASSET_KEY, amount: 12n }];
+        const ton = computeLimitsUsage(LIMITS, entries, NOW).find((a) => a.asset === TON_ASSET_KEY);
+        expect(ton?.windows.find((w) => w.windowSeconds === 3600)?.spent).toBe('0');
+    });
+
+    it('fails closed (throws) on a malformed asset key', () => {
+        expect(() => computeLimitsUsage({ assets: { xyz: { windows: { '0': '5' } } } }, [], NOW)).toThrow();
     });
 });
 
