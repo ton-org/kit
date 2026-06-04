@@ -6,7 +6,7 @@
  *
  */
 
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { toNano } from '@ton/core';
 import { useBalance, useGaslessQuote, useSendGaslessTransaction, useSendTransaction } from '@ton/appkit-react';
@@ -14,6 +14,7 @@ import { checkTonBalance, formatUnits } from '@ton/appkit';
 import type { GaslessQuote } from '@ton/appkit';
 
 import { useMinterStore } from '../store/minter-store';
+import { setGaslessEnabled } from '../store/actions/set-gasless-enabled';
 import { useCanEnableGasless } from './use-can-enable-gasless';
 import { useGaslessMintFee } from './use-gasless-mint-fee';
 import { useGaslessMintMessage } from './use-gasless-mint-message';
@@ -124,6 +125,15 @@ export const useMintNft = (): UseMintNftReturn => {
             requiredTon: formatUnits(shortfall.requiredNanos, 9),
         };
     }, [gaslessEnabled, messages, tonBalance, canEnableGasless]);
+
+    // Reconcile the persisted `gaslessEnabled` flag with current availability:
+    // switching to a wallet/network that can't do gasless (no `SignMessage`, no
+    // deployed forwarder) must drop the flag — otherwise the settings switch
+    // stays disabled-on and the gasless send path waits forever on a quote that
+    // can never be produced.
+    useEffect(() => {
+        if (gaslessEnabled && !canEnableGasless) setGaslessEnabled(false);
+    }, [gaslessEnabled, canEnableGasless]);
 
     const canSend =
         isMintReady && !sendMutation.isPending && (!gaslessEnabled || (!!quote && !isLoadingQuote && !quoteError));
