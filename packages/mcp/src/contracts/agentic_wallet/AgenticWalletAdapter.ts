@@ -47,7 +47,7 @@ import {
 } from '@ton/walletkit';
 
 import { AgenticWalletCodeCell } from './AgenticWallet.source.js';
-import { ActionSendMsg, packActionsList } from './actions.js';
+import { ActionSendMsg, packOutActionList } from './actions.js';
 
 export const defaultAgenticWorkchain = 0;
 
@@ -313,7 +313,7 @@ export class AgenticWalletAdapter implements WalletAdapter {
         options: SignedSendTransactionOptions | undefined,
         authType: AgenticWalletAuthType,
     ): Promise<Cell> {
-        const actions = packActionsList(input.messages.map((message) => this.createTransferAction(message)));
+        const outActions = packOutActionList(input.messages.map((message) => this.createTransferAction(message)));
 
         let seqno = 0;
         try {
@@ -323,7 +323,7 @@ export class AgenticWalletAdapter implements WalletAdapter {
         }
 
         const walletNftIndex = await this.getWalletNftIndex();
-        return this.createSignedBody(seqno, walletNftIndex, actions, {
+        return this.createSignedBody(seqno, walletNftIndex, outActions, {
             ...options,
             authType,
             validUntil: this.resolveValidUntil(input.validUntil),
