@@ -6,35 +6,19 @@
  *
  */
 
-import { compareAddress } from '@ton/appkit';
-import type { GaslessSupportedAsset, UserFriendlyAddress } from '@ton/appkit';
-
 import { useMinterStore } from '../minter-store';
-import { USDT_MASTER_MAINNET } from '../../../../core/constants/tokens';
-
-export interface EnableGaslessParams {
-    /** Relayer-accepted assets. Used to seed `gaslessFeeAsset` on first enable. */
-    supportedAssets: GaslessSupportedAsset[] | undefined;
-}
 
 /**
- * Turns gasless on and seeds `gaslessFeeAsset` if it isn't set yet — picks
- * USDT when the relayer accepts it, otherwise the first listed asset.
+ * Turns the gasless mint flow on.
  *
- * Shared between the mint settings modal (Save) and the low-balance modal
- * (Switch to gasless) so both call sites converge on the same behaviour.
+ * The fee asset is seeded separately and reactively via {@link seedGaslessFeeAsset}
+ * as the relayer config resolves — so the USDT default survives even when the
+ * config hasn't loaded yet at the moment gasless is enabled (settings Save or the
+ * low-balance "switch to gasless").
+ *
+ * Shared between the mint settings modal (Save) and the low-balance modal so both
+ * call sites converge on the same behaviour.
  */
-export const enableGasless = ({ supportedAssets }: EnableGaslessParams): void => {
-    const { gaslessFeeAsset } = useMinterStore.getState();
-
-    const next: Partial<{ gaslessEnabled: boolean; gaslessFeeAsset: UserFriendlyAddress | null }> = {
-        gaslessEnabled: true,
-    };
-
-    if (!gaslessFeeAsset && supportedAssets?.length) {
-        const preferred = supportedAssets.find((asset) => compareAddress(asset.address, USDT_MASTER_MAINNET));
-        next.gaslessFeeAsset = preferred?.address ?? supportedAssets[0].address;
-    }
-
-    useMinterStore.setState(next);
+export const enableGasless = (): void => {
+    useMinterStore.setState({ gaslessEnabled: true });
 };

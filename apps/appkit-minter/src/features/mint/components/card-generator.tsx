@@ -9,14 +9,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type React from 'react';
 import { AlertCircle, Coins, Sparkles } from 'lucide-react';
-import {
-    Button,
-    ButtonWithConnect,
-    LowBalanceModal,
-    SettingsButton,
-    useGaslessConfig,
-    useSelectedWallet,
-} from '@ton/appkit-react';
+import { Button, ButtonWithConnect, LowBalanceModal, SettingsButton, useSelectedWallet } from '@ton/appkit-react';
 import { getErrorMessage } from '@ton/appkit';
 
 import { CardPreview } from './card-preview';
@@ -46,7 +39,6 @@ export const CardGenerator: React.FC<CardGeneratorProps> = ({ className }) => {
     const { currentCard, isGenerating, generate } = useCardGenerator();
     const [wallet] = useSelectedWallet();
     const mint = useMintNft();
-    const { data: gaslessConfig } = useGaslessConfig();
 
     const [mintErrorLocal, setMintErrorLocal] = useState<string | null>(null);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -85,10 +77,10 @@ export const CardGenerator: React.FC<CardGeneratorProps> = ({ className }) => {
     }, [mint]);
 
     const handleSwitchToGasless = useCallback(() => {
-        enableGasless({ supportedAssets: gaslessConfig?.supportedAssets });
+        enableGasless();
         setPendingShortfall(undefined);
         setIsConfirmOpen(true);
-    }, [gaslessConfig]);
+    }, []);
 
     const dismissShortfall = useCallback(() => setPendingShortfall(undefined), []);
 

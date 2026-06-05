@@ -9,12 +9,19 @@
 import { useCallback, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { toNano } from '@ton/core';
-import { useBalance, useGaslessQuote, useSendGaslessTransaction, useSendTransaction } from '@ton/appkit-react';
+import {
+    useBalance,
+    useGaslessConfig,
+    useGaslessQuote,
+    useSendGaslessTransaction,
+    useSendTransaction,
+} from '@ton/appkit-react';
 import { checkTonBalance, formatUnits } from '@ton/appkit';
 import type { GaslessQuote } from '@ton/appkit';
 
 import { useMinterStore } from '../store/minter-store';
 import { setGaslessEnabled } from '../store/actions/set-gasless-enabled';
+import { seedGaslessFeeAsset } from '../store/actions/seed-gasless-fee-asset';
 import { useCanEnableGasless } from './use-can-enable-gasless';
 import { useGaslessMintFee } from './use-gasless-mint-fee';
 import { useGaslessMintMessage } from './use-gasless-mint-message';
@@ -77,6 +84,7 @@ export const useMintNft = (): UseMintNftReturn => {
     const { messages, build: buildMintTransaction, isReady: isMintReady } = useMintTransaction();
     const canEnableGasless = useCanEnableGasless();
     const { data: tonBalance } = useBalance();
+    const { data: gaslessConfig } = useGaslessConfig({ query: { enabled: gaslessEnabled } });
 
     // Gasless path
     const { data: message } = useGaslessMintMessage();
@@ -134,6 +142,17 @@ export const useMintNft = (): UseMintNftReturn => {
     useEffect(() => {
         if (gaslessEnabled && !canEnableGasless) setGaslessEnabled(false);
     }, [gaslessEnabled, canEnableGasless]);
+
+    // Seed the fee asset once the relayer config resolves. Enabling gasless only
+    // flips the flag; seeding here (rather than at the enable call site) means the
+    // USDT default is applied even if the config hadn't loaded when gasless was
+    // turned on — otherwise the confirm modal would open on an empty "Select" and
+    // the quote (hence Confirm) would stay blocked until a manual pick.
+    useEffect(() => {
+        if (gaslessEnabled && !gaslessFeeAsset && gaslessConfig?.supportedAssets?.length) {
+            seedGaslessFeeAsset(gaslessConfig.supportedAssets);
+        }
+    }, [gaslessEnabled, gaslessFeeAsset, gaslessConfig]);
 
     const canSend =
         isMintReady && !sendMutation.isPending && (!gaslessEnabled || (!!quote && !isLoadingQuote && !quoteError));

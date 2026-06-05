@@ -17,3 +17,4 @@ export { setMintError } from './actions/set-mint-error';
 export { setGaslessEnabled } from './actions/set-gasless-enabled';
 export { setGaslessFeeAsset } from './actions/set-gasless-fee-asset';
 export { enableGasless } from './actions/enable-gasless';
+export { seedGaslessFeeAsset } from './actions/seed-gasless-fee-asset';

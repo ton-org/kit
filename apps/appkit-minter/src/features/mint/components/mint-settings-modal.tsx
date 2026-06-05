@@ -8,7 +8,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import type { FC } from 'react';
-import { Button, Modal, Switch, useGaslessConfig, useNetwork, useSelectedWallet } from '@ton/appkit-react';
+import { Button, Modal, Switch, useNetwork, useSelectedWallet } from '@ton/appkit-react';
 
 import { useMinterStore } from '../store/minter-store';
 import { enableGasless } from '../store/actions/enable-gasless';
@@ -35,7 +35,6 @@ export const MintSettingsModal: FC<MintSettingsModalProps> = ({ open, onClose })
 
     const [wallet] = useSelectedWallet();
     const network = useNetwork();
-    const { data: gaslessConfig } = useGaslessConfig();
     const canEnableGasless = useCanEnableGasless();
 
     const supportsSignMessage = useMemo(() => {
@@ -57,7 +56,7 @@ export const MintSettingsModal: FC<MintSettingsModalProps> = ({ open, onClose })
     const handleSave = () => {
         if (stagedEnabled !== gaslessEnabled) {
             if (stagedEnabled) {
-                enableGasless({ supportedAssets: gaslessConfig?.supportedAssets });
+                enableGasless();
             } else {
                 setGaslessEnabled(false);
             }
