@@ -53,10 +53,16 @@ import { readAgenticLimitsHash } from '../utils/agentic.js';
 import { normalizeAddressForComparison } from '../utils/address.js';
 import { computeLimitsUsage, evaluateLimits, loadActiveLimits, maxConfiguredWindow } from '../limits/enforce.js';
 import type { AssetUsage, CachedLimits, LimitsCache, LimitsEnv, SyncedLimits } from '../limits/enforce.js';
-import { getJettonWalletInfoFromClient, parseJettonOutflowAmount } from '../limits/jetton.js';
-import { computeLimitsHash, limitsDictToStored, parseLimitsDictFromMessageBody } from '../limits/limits-codec.js';
-import { transactionsToSpend } from '../limits/spend-window.js';
-import type { JettonSpendProbe, PendingSpend, SpendEntry } from '../limits/types.js';
+import { buildReverseJettonMap } from '../limits/pending.js';
+import {
+    TON_ASSET_KEY,
+    computeLimitsHash,
+    limitsDictToStored,
+    parseLimitsDictFromMessageBody,
+} from '../limits/limits-codec.js';
+import { resolveJettonProbes, transactionsToSpend } from '../limits/spend-window.js';
+import type { JettonSpendProbe, SpendEntry } from '../limits/types.js';
+import type { StoredLimits } from '../registry/config.js';
 
 /** History fetch bounds for limit enforcement. */
 const LIMITS_HISTORY_PAGE = 1000;
@@ -66,19 +72,6 @@ const OP_DEPLOY_WALLET = 0x0609e47b;
 const AGENTIC_DEFAULT_VALID_UNTIL = 600;
 const TEP64_ONCHAIN_CONTENT_PREFIX = 0x00;
 const TEP64_SNAKE_CONTENT_PREFIX = 0x00;
-
-/** Parse a message `amount` (nanotons) into a non-negative bigint; 0 on absence/garbage. */
-function parseMessageAmount(amount: string | undefined): bigint {
-    if (!amount) {
-        return 0n;
-    }
-    try {
-        const value = BigInt(amount);
-        return value > 0n ? value : 0n;
-    } catch {
-        return 0n;
-    }
-}
 
 /**
  * Jetton information
@@ -734,8 +727,7 @@ export class McpWalletService {
 
         if (this.isAgenticWallet()) {
             try {
-                const spend = await this.buildPendingSpend(request);
-                const decision = await evaluateLimits(this.createLimitsEnv(), spend);
+                const decision = await evaluateLimits(this.createLimitsEnv(), request.messages);
                 if (!decision.allowed) {
                     return { success: false, message: decision.message };
                 }
@@ -760,70 +752,6 @@ export class McpWalletService {
         return this.walletVersion === 'agentic';
     }
 
-    /** Sum the TON and (master-resolved) jetton outflows a pending request will spend. */
-    private async buildPendingSpend(request: TransactionRequest): Promise<PendingSpend> {
-        let ton = 0n;
-        const jettonProbes: Array<{ jettonWalletAddress: string; amount: bigint }> = [];
-        for (const message of request.messages) {
-            const amount = parseMessageAmount(message.amount);
-            if (amount > 0n) {
-                ton += amount;
-            }
-            const outflow = parseJettonOutflowAmount(message.payload);
-            if (outflow && outflow > 0n) {
-                jettonProbes.push({ jettonWalletAddress: message.address, amount: outflow });
-            }
-        }
-
-        const jettons = new Map<string, bigint>();
-        if (jettonProbes.length > 0) {
-            const masters = await this.resolveOwnedJettonMasters(
-                jettonProbes.map((probe) => probe.jettonWalletAddress),
-            );
-            for (const probe of jettonProbes) {
-                const master = masters.get(probe.jettonWalletAddress);
-                if (master) {
-                    jettons.set(master, (jettons.get(master) ?? 0n) + probe.amount);
-                }
-            }
-        }
-
-        return { ton, jettons };
-    }
-
-    /**
-     * Resolve jetton-wallet addresses to their normalized master address via
-     * `get_wallet_data`, keeping only wallets actually owned by this wallet. Each
-     * distinct address is resolved once; wallets that resolve to a different owner
-     * are dropped. A lookup that cannot be resolved at all (RPC failure) rejects
-     * rather than being dropped, so the caller fails closed instead of metering an
-     * unverifiable jetton as zero. Shared by the pending-spend estimate and the
-     * historical spend scan so both decide ownership identically.
-     */
-    private async resolveOwnedJettonMasters(jettonWalletAddresses: Iterable<string>): Promise<Map<string, string>> {
-        const owner = normalizeAddressForComparison(this.wallet.getAddress());
-        const masters = new Map<string, string>();
-        if (!owner) {
-            return masters;
-        }
-        const client = this.wallet.getClient();
-        const resolved = await Promise.all(
-            [...new Set(jettonWalletAddresses)].map(
-                async (address) => [address, await getJettonWalletInfoFromClient(client, address)] as const,
-            ),
-        );
-        for (const [address, info] of resolved) {
-            if (!info || normalizeAddressForComparison(info.owner) !== owner) {
-                continue;
-            }
-            const master = normalizeAddressForComparison(info.master);
-            if (master) {
-                masters.set(address, master);
-            }
-        }
-        return masters;
-    }
-
     /**
      * Current spend-limit config and usage, without sending. Resolves limits via the same
      * {@link loadActiveLimits} path enforcement uses, then meters spend over the largest window.
@@ -843,8 +771,9 @@ export class McpWalletService {
 
         // One `now` so the fetch cutoff and window math share a boundary.
         const now = env.now();
+        const reverseJettonMap = buildReverseJettonMap(loaded.jettonWallets);
         const maxWindow = maxConfiguredWindow(loaded.limits);
-        const spendEntries = maxWindow > 0 ? await env.fetchSpendEntries(maxWindow, now) : [];
+        const spendEntries = maxWindow > 0 ? await env.fetchSpendEntries(maxWindow, now, reverseJettonMap) : [];
         const assets = computeLimitsUsage(loaded.limits, spendEntries, now);
         return { enabled: true, limitsHash: loaded.hash, checkedAt: now, assets };
     }
@@ -856,7 +785,8 @@ export class McpWalletService {
             readCache: () => this.limitsCache?.read() ?? {},
             writeCache: (next: CachedLimits) => this.limitsCache?.write(next) ?? Promise.resolve(),
             syncLimitsFromChain: () => this.syncLimitsFromChain(),
-            fetchSpendEntries: (maxWindowSeconds: number, now: number) => this.fetchSpendEntries(maxWindowSeconds, now),
+            fetchSpendEntries: (maxWindowSeconds: number, now: number, reverseJettonMap: Map<string, string>) =>
+                this.fetchSpendEntries(maxWindowSeconds, now, reverseJettonMap),
         };
     }
 
@@ -866,7 +796,11 @@ export class McpWalletService {
         return readAgenticLimitsHash(accountState, address);
     }
 
-    /** Find the most recent limits-change tx, parse its limitsDict, and hash it. */
+    /**
+     * Find the most recent limits-change tx, parse its limitsDict, hash it, and
+     * compute the forward jetton-wallet map for the configured masters. The map is
+     * derived once here (same lifecycle as `limits_hash`) so metering needs no RPC.
+     */
     private async syncLimitsFromChain(): Promise<SyncedLimits | null> {
         const client = this.wallet.getClient();
         const address = this.wallet.getAddress();
@@ -891,7 +825,9 @@ export class McpWalletService {
                     // Malformed base64 body; treat as not a limits-change tx.
                 }
                 if (dict && dict.size > 0) {
-                    return { limits: limitsDictToStored(dict), hash: computeLimitsHash(dict) };
+                    const limits = limitsDictToStored(dict);
+                    const jettonWallets = await this.computeJettonWalletMap(limits);
+                    return { limits, hash: computeLimitsHash(dict), jettonWallets };
                 }
             }
             if (response.transactions.length < LIMITS_HISTORY_PAGE) {
@@ -902,6 +838,34 @@ export class McpWalletService {
     }
 
     /**
+     * Compute our jetton-wallet address for every configured jetton master (the TON
+     * sentinel is skipped). The `(owner, master) -> wallet` mapping is a deterministic,
+     * immutable function of the jetton-wallet code, so it is computed once per limits
+     * sync and cached. Keyed by the master display-key exactly as it appears in
+     * `limits.assets`, valued by the normalized wallet address.
+     *
+     * Fails closed, all-or-nothing: if any master's wallet cannot be resolved (RPC
+     * error or unparseable result), the whole map is rejected — a missing master at
+     * metering time would otherwise be treated as unlimited and bypass its cap.
+     */
+    private async computeJettonWalletMap(limits: StoredLimits): Promise<Record<string, string>> {
+        const owner = this.wallet.getAddress();
+        const client = this.wallet.getClient();
+        const masters = Object.keys(limits.assets).filter((assetKey) => assetKey !== TON_ASSET_KEY);
+        const resolved = await Promise.all(
+            masters.map(async (master) => {
+                const walletAddress = await getJettonWalletAddressFromClient(client, master, owner);
+                const normalized = normalizeAddressForComparison(walletAddress);
+                if (!normalized) {
+                    throw new Error(`Could not resolve a jetton-wallet address for master ${master}.`);
+                }
+                return [master, normalized] as const;
+            }),
+        );
+        return Object.fromEntries(resolved);
+    }
+
+    /**
      * Page raw account transactions (newest first) until older than the window, then
      * meter outgoing spend from the messages directly. Uses `getAccountTransactions`
      * rather than `getEvents`: the events API is unreliable, carries pre-decoded data
@@ -909,8 +873,16 @@ export class McpWalletService {
      * page budget is exhausted while history still extends into the window: a truncated
      * history would under-count spend and could pass a cap that should have been
      * exceeded.
+     *
+     * Jetton outflows are resolved to their masters through the in-memory reverse map
+     * ({@link resolveJettonProbes}) rather than a per-wallet `get_wallet_data` call, so
+     * a full history scan adds no extra RPC beyond the transaction paging itself.
      */
-    private async fetchSpendEntries(maxWindowSeconds: number, now: number): Promise<SpendEntry[]> {
+    private async fetchSpendEntries(
+        maxWindowSeconds: number,
+        now: number,
+        reverseJettonMap: Map<string, string>,
+    ): Promise<SpendEntry[]> {
         const client = this.wallet.getClient();
         const address = this.wallet.getAddress();
         const cutoff = now - maxWindowSeconds;
@@ -923,7 +895,7 @@ export class McpWalletService {
                 offset: page * LIMITS_HISTORY_PAGE,
             });
             if (response.transactions.length === 0) {
-                return this.resolveSpendEntries(tonEntries, jettonProbes);
+                return [...tonEntries, ...resolveJettonProbes(jettonProbes, reverseJettonMap)];
             }
             const within: typeof response.transactions = [];
             let reachedCutoff = false;
@@ -938,38 +910,13 @@ export class McpWalletService {
             tonEntries.push(...spend.tonEntries);
             jettonProbes.push(...spend.jettonProbes);
             if (reachedCutoff || response.transactions.length < LIMITS_HISTORY_PAGE) {
-                return this.resolveSpendEntries(tonEntries, jettonProbes);
+                return [...tonEntries, ...resolveJettonProbes(jettonProbes, reverseJettonMap)];
             }
         }
         throw new Error(
             `Spend history exceeds ${LIMITS_HISTORY_MAX_PAGES * LIMITS_HISTORY_PAGE} transactions within the limit ` +
                 `window; cannot verify limits without truncating history.`,
         );
-    }
-
-    /**
-     * Resolve the jetton-wallet addresses gathered while paging history to their
-     * masters and emit one spend entry per outflow we own, merged with the already
-     * netted TON entries. Jetton resolution is deferred to here so the per-page
-     * transaction parse stays synchronous and the `get_wallet_data` calls run once
-     * over the whole window rather than per page.
-     */
-    private async resolveSpendEntries(
-        tonEntries: SpendEntry[],
-        jettonProbes: JettonSpendProbe[],
-    ): Promise<SpendEntry[]> {
-        if (jettonProbes.length === 0) {
-            return tonEntries;
-        }
-        const masters = await this.resolveOwnedJettonMasters(jettonProbes.map((probe) => probe.jettonWalletAddress));
-        const entries = [...tonEntries];
-        for (const probe of jettonProbes) {
-            const master = masters.get(probe.jettonWalletAddress);
-            if (master) {
-                entries.push({ timestamp: probe.timestamp, asset: master, amount: probe.amount });
-            }
-        }
-        return entries;
     }
 
     /**

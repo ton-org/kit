@@ -16,6 +16,8 @@
 
 import type { StoredLimits } from '../registry/config.js';
 import { TON_ASSET_KEY, normalizeAssetKey } from './limits-codec.js';
+import { buildPendingSpend, buildReverseJettonMap } from './pending.js';
+import type { SpendMessage } from './pending.js';
 import { sumSpendWithinWindow } from './spend-window.js';
 import type { PendingSpend, SpendEntry } from './types.js';
 
@@ -193,6 +195,12 @@ function humanizeWindow(seconds: number): string {
 export interface CachedLimits {
     limits?: StoredLimits;
     limits_hash?: string;
+    /**
+     * Forward map `masterDisplayKey -> our normalized jetton-wallet address`,
+     * computed once per `limits_hash`. Absent on a legacy cache (pre-forward-map),
+     * which {@link loadActiveLimits} treats as a miss and re-syncs.
+     */
+    jetton_wallets?: Record<string, string>;
 }
 
 /** Read-through/write-through port over a single wallet's cached limits. */
@@ -205,6 +213,12 @@ export interface LimitsCache {
 export interface SyncedLimits {
     limits: StoredLimits;
     hash: string;
+    /**
+     * Forward map keyed by the master display-key exactly as it appears in
+     * `limits.assets` (the TON sentinel excluded), valued by our normalized
+     * jetton-wallet address for that master. Computed all-or-nothing at sync.
+     */
+    jettonWallets: Record<string, string>;
 }
 
 /** IO surface the enforcement flow depends on; implemented by the wallet service. */
@@ -219,10 +233,15 @@ export interface LimitsEnv {
     syncLimitsFromChain(): Promise<SyncedLimits | null>;
     /**
      * Outgoing spend entries within `[now - maxWindowSeconds, now]`. Receives the
-     * same `now` the check uses so the fetch cutoff and the window math agree.
+     * same `now` the check uses so the fetch cutoff and the window math agree, plus
+     * the reverse jetton map used to resolve jetton outflows with no extra RPC.
      * Must throw rather than return a truncated history (fail closed).
      */
-    fetchSpendEntries(maxWindowSeconds: number, now: number): Promise<SpendEntry[]>;
+    fetchSpendEntries(
+        maxWindowSeconds: number,
+        now: number,
+        reverseJettonMap: Map<string, string>,
+    ): Promise<SpendEntry[]>;
 }
 
 export type LimitsDecision = { allowed: true } | { allowed: false; message: string };
@@ -230,13 +249,17 @@ export type LimitsDecision = { allowed: true } | { allowed: false; message: stri
 /** Active limits resolved against the on-chain hash: none set, verified, or unverifiable. */
 export type LoadedLimits =
     | { status: 'none' }
-    | { status: 'active'; limits: StoredLimits; hash: string }
+    | { status: 'active'; limits: StoredLimits; hash: string; jettonWallets: Record<string, string> }
     | { status: 'error'; message: string };
 
 /**
  * Resolve a wallet's active limits without metering spend (shared by enforcement and the
- * read-only query): no on-chain hash -> `none` and clear stale cache; hash matches cache ->
- * use it; else re-sync from chain and persist; an unverifiable hash -> `error`.
+ * read-only query): no on-chain hash -> `none` and clear stale cache; hash matches cache
+ * (and the cache carries the forward jetton map) -> use it; else re-sync from chain and
+ * persist limits + hash + jetton map together; an unverifiable hash -> `error`.
+ *
+ * A cache holding `limits` but no `jetton_wallets` is a legacy entry from before the
+ * forward map existed; it is treated as a miss so the map is recomputed and persisted.
  */
 export async function loadActiveLimits(env: LimitsEnv): Promise<LoadedLimits> {
     const onchainHash = await env.readOnchainLimitsHash();
@@ -250,8 +273,8 @@ export async function loadActiveLimits(env: LimitsEnv): Promise<LoadedLimits> {
     }
 
     const cached = env.readCache();
-    if (cached.limits && cached.limits_hash === onchainHash) {
-        return { status: 'active', limits: cached.limits, hash: onchainHash };
+    if (cached.limits && cached.limits_hash === onchainHash && cached.jetton_wallets) {
+        return { status: 'active', limits: cached.limits, hash: onchainHash, jettonWallets: cached.jetton_wallets };
     }
 
     const synced = await env.syncLimitsFromChain();
@@ -271,15 +294,17 @@ export async function loadActiveLimits(env: LimitsEnv): Promise<LoadedLimits> {
                 `limits-change transaction (${synced.hash}); refusing to send.`,
         };
     }
-    await env.writeCache({ limits: synced.limits, limits_hash: onchainHash });
-    return { status: 'active', limits: synced.limits, hash: onchainHash };
+    await env.writeCache({ limits: synced.limits, limits_hash: onchainHash, jetton_wallets: synced.jettonWallets });
+    return { status: 'active', limits: synced.limits, hash: onchainHash, jettonWallets: synced.jettonWallets };
 }
 
 /**
- * Decide whether a pending transaction may broadcast: resolve the active limits,
- * then measure spend over the largest relevant window and apply the per-asset checks.
+ * Decide whether a pending transaction may broadcast. Resolves the active limits
+ * first, derives the reverse jetton map from the cached forward map, then meters
+ * both the pending spend and the spend history against it (a pure in-memory lookup,
+ * no per-send RPC), and applies the per-asset checks over the largest relevant window.
  */
-export async function evaluateLimits(env: LimitsEnv, spend: PendingSpend): Promise<LimitsDecision> {
+export async function evaluateLimits(env: LimitsEnv, messages: readonly SpendMessage[]): Promise<LimitsDecision> {
     const loaded = await loadActiveLimits(env);
     if (loaded.status === 'none') {
         return { allowed: true };
@@ -287,12 +312,14 @@ export async function evaluateLimits(env: LimitsEnv, spend: PendingSpend): Promi
     if (loaded.status === 'error') {
         return { allowed: false, message: loaded.message };
     }
-    const { limits } = loaded;
+    const { limits, jettonWallets } = loaded;
+    const reverseJettonMap = buildReverseJettonMap(jettonWallets);
+    const spend = buildPendingSpend(messages, reverseJettonMap);
 
     // Capture `now` once so the history-fetch cutoff and the window math share a boundary.
     const now = env.now();
     const maxWindow = maxRelevantWindow(limits, spend);
-    const spendEntries = maxWindow > 0 ? await env.fetchSpendEntries(maxWindow, now) : [];
+    const spendEntries = maxWindow > 0 ? await env.fetchSpendEntries(maxWindow, now, reverseJettonMap) : [];
     const violation = findLimitViolation(limits, spend, spendEntries, now);
     return violation ? { allowed: false, message: formatLimitViolation(violation) } : { allowed: true };
 }

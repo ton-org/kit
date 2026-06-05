@@ -66,6 +66,12 @@ export interface StoredAgenticWallet extends StoredWalletBase {
     limits?: StoredLimits;
     /** Hex of the on-chain `limits_hash` the cached `limits` correspond to. */
     limits_hash?: string;
+    /**
+     * Forward map `jettonMasterDisplayKey -> our normalized jetton-wallet address`,
+     * computed once per `limits_hash` alongside the cached limits. Lets spend metering
+     * resolve a jetton transfer to its master with no `get_wallet_data` call.
+     */
+    jetton_wallets?: Record<string, string>;
 }
 
 /** Decoded mirror of the on-chain limitsDict, JSON-friendly. */
@@ -206,6 +212,7 @@ function normalizeConfig(raw: TonConfig): TonConfig {
                   // Carry limits explicitly so they survive normalization round-trips.
                   ...(wallet.limits ? { limits: wallet.limits } : {}),
                   ...(wallet.limits_hash ? { limits_hash: wallet.limits_hash } : {}),
+                  ...(wallet.jetton_wallets ? { jetton_wallets: wallet.jetton_wallets } : {}),
               };
     const normalizeSetupSession = (session: StoredAgenticSetupSession): StoredAgenticSetupSession => ({
         ...session,
@@ -607,31 +614,46 @@ export async function persistAgenticWalletNftIndex(walletId: string, walletNftIn
     return true;
 }
 
+/** Shallow equality for the `jetton_wallets` forward map (presence-sensitive). */
+function sameJettonWallets(a: Record<string, string> | undefined, b: Record<string, string> | undefined): boolean {
+    if (a === undefined || b === undefined) {
+        return a === b;
+    }
+    const aKeys = Object.keys(a);
+    if (aKeys.length !== Object.keys(b).length) {
+        return false;
+    }
+    return aKeys.every((key) => a[key] === b[key]);
+}
+
 /**
- * Set or clear the cached limits for an agentic wallet. Identity-keyed on
- * `limits_hash`: passing the hash already stored is a no-op; passing `undefined`
- * clears both `limits` and `limits_hash`.
+ * Set or clear the cached limits for an agentic wallet. A no-op only when both the
+ * `limits_hash` and the `jetton_wallets` forward map already match — so a legacy
+ * record carrying limits without a forward map is still upgraded in place. Passing
+ * `undefined` for all three clears `limits`, `limits_hash`, and `jetton_wallets`.
  */
 export function updateAgenticWalletLimits(
     config: TonConfig,
     walletId: string,
     limits: StoredLimits | undefined,
     limitsHash: string | undefined,
+    jettonWallets: Record<string, string> | undefined,
 ): TonConfig {
     let changed = false;
     const nextWallets = config.wallets.map((item) => {
         if (item.id !== walletId || item.type !== 'agentic' || isWalletRemoved(item)) {
             return item;
         }
-        if (item.limits_hash === limitsHash) {
+        if (item.limits_hash === limitsHash && sameJettonWallets(item.jetton_wallets, jettonWallets)) {
             return item;
         }
         changed = true;
-        const { limits: _limits, limits_hash: _limitsHash, ...rest } = item;
+        const { limits: _limits, limits_hash: _limitsHash, jetton_wallets: _jettonWallets, ...rest } = item;
         return {
             ...rest,
             ...(limits ? { limits } : {}),
             ...(limitsHash ? { limits_hash: limitsHash } : {}),
+            ...(jettonWallets ? { jetton_wallets: jettonWallets } : {}),
             updated_at: nowIso(),
         };
     });
@@ -650,12 +672,13 @@ export async function persistAgenticWalletLimits(
     walletId: string,
     limits: StoredLimits | undefined,
     limitsHash: string | undefined,
+    jettonWallets: Record<string, string> | undefined,
 ): Promise<boolean> {
     const config = await loadConfigWithMigration();
     if (!config) {
         return false;
     }
-    const nextConfig = updateAgenticWalletLimits(config, walletId, limits, limitsHash);
+    const nextConfig = updateAgenticWalletLimits(config, walletId, limits, limitsHash, jettonWallets);
     if (nextConfig === config) {
         return false;
     }
@@ -994,6 +1017,7 @@ export function createAgenticWalletRecord(input: {
     deployedByUser?: boolean;
     limits?: StoredLimits;
     limitsHash?: string;
+    jettonWallets?: Record<string, string>;
     idPrefix?: string;
 }): StoredAgenticWallet {
     const now = nowIso();
@@ -1015,6 +1039,7 @@ export function createAgenticWalletRecord(input: {
         ...(typeof input.deployedByUser === 'boolean' ? { deployed_by_user: input.deployedByUser } : {}),
         ...(input.limits ? { limits: input.limits } : {}),
         ...(input.limitsHash ? { limits_hash: input.limitsHash } : {}),
+        ...(input.jettonWallets ? { jetton_wallets: input.jettonWallets } : {}),
         created_at: now,
         updated_at: now,
     };

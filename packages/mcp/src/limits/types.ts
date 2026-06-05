@@ -35,9 +35,10 @@ export interface SpendEntry {
 
 /**
  * A single outgoing jetton transfer recovered from a transaction's out-messages,
- * before its jetton-wallet address is resolved to a master. Resolution and
- * per-master aggregation happen in the service (they require a `get_wallet_data`
- * call), keeping the transaction parser pure and synchronous.
+ * before its jetton-wallet address is resolved to a master. Resolution
+ * (`resolveJettonProbes`) is an in-memory lookup against the cached forward jetton
+ * map — no `get_wallet_data` call — keeping the transaction parser pure and
+ * synchronous and the history scan RPC-free beyond transaction paging.
  */
 export interface JettonSpendProbe {
     /** Unix timestamp in seconds of the transaction that emitted the transfer. */

@@ -29,9 +29,9 @@ import type { JettonSpendProbe, SpendEntry, TransactionSpend } from './types.js'
  *   A send that later bounces is not refunded here: its outflow stays counted until
  *   the rolling window rolls past it (conservative — it over-blocks, never bypasses).
  * - Jettons: every out-message carrying a TEP-74 transfer/burn op yields a probe
- *   (amount + jetton-wallet address); the service resolves the wallet to a master
- *   and aggregates. Incoming jettons arrive as transfer-notifications, never as a
- *   transfer/burn op, so they are not picked up here.
+ *   (amount + jetton-wallet address); {@link resolveJettonProbes} maps the wallet to
+ *   its master via the cached forward map and aggregates. Incoming jettons arrive as
+ *   transfer-notifications, never as a transfer/burn op, so they are not picked up here.
  *
  * Transactions whose compute phase explicitly failed are skipped; their actions
  * were reverted and moved no funds.
@@ -73,6 +73,25 @@ export function transactionsToSpend(transactions: Transaction[], walletAddress: 
     }
 
     return { tonEntries, jettonProbes };
+}
+
+/**
+ * Resolve unresolved jetton outflows to spend entries via the cached reverse map
+ * (`our-jetton-wallet -> master`). A probe whose destination is not one of our own
+ * jetton-wallets (no configured limit) yields no entry — the same in-memory lookup
+ * the pending-spend estimate uses, so history and pending meter identically with no
+ * `get_wallet_data` calls.
+ */
+export function resolveJettonProbes(probes: JettonSpendProbe[], reverseJettonMap: Map<string, string>): SpendEntry[] {
+    const entries: SpendEntry[] = [];
+    for (const probe of probes) {
+        const walletKey = normalizeAddressForComparison(probe.jettonWalletAddress);
+        const master = walletKey ? reverseJettonMap.get(walletKey) : undefined;
+        if (master) {
+            entries.push({ timestamp: probe.timestamp, asset: master, amount: probe.amount });
+        }
+    }
+    return entries;
 }
 
 /** Sum recorded spend for `asset` within the last `windowSeconds` (inclusive of `now - window`). */

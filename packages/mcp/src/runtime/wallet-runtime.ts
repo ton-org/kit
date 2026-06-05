@@ -165,13 +165,14 @@ function createConfigBackedLimitsCache(wallet: StoredAgenticWallet): LimitsCache
     let snapshot: CachedLimits = {
         ...(wallet.limits ? { limits: wallet.limits } : {}),
         ...(wallet.limits_hash ? { limits_hash: wallet.limits_hash } : {}),
+        ...(wallet.jetton_wallets ? { jetton_wallets: wallet.jetton_wallets } : {}),
     };
     return {
         read: () => snapshot,
         write: async (next) => {
             // Persist first, then update the in-memory snapshot, so a failed (or
             // out-of-order concurrent) write never leaves memory ahead of disk.
-            await persistAgenticWalletLimits(wallet.id, next.limits, next.limits_hash);
+            await persistAgenticWalletLimits(wallet.id, next.limits, next.limits_hash, next.jetton_wallets);
             snapshot = next;
         },
     };

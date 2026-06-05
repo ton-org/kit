@@ -6,8 +6,9 @@
  *
  */
 
-import { Address, beginCell } from '@ton/core';
-import type { ApiClient, Base64String, Hex, Transaction } from '@ton/walletkit';
+import { Address, Dictionary, beginCell } from '@ton/core';
+import type { Cell } from '@ton/core';
+import type { Base64String, Hex, Transaction } from '@ton/walletkit';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
@@ -29,12 +30,15 @@ import {
     maxConfiguredWindow,
     maxRelevantWindow,
 } from '../limits/enforce.js';
-import type { LimitsEnv } from '../limits/enforce.js';
-import { getJettonWalletInfoFromClient, parseJettonOutflowAmount } from '../limits/jetton.js';
-import { sumSpendWithinWindow, transactionsToSpend } from '../limits/spend-window.js';
-import type { LimitsDict, PendingSpend, SpendEntry } from '../limits/types.js';
+import type { LimitsCache, LimitsEnv } from '../limits/enforce.js';
+import { parseJettonOutflowAmount } from '../limits/jetton.js';
+import { buildPendingSpend, buildReverseJettonMap } from '../limits/pending.js';
+import type { SpendMessage } from '../limits/pending.js';
+import { resolveJettonProbes, sumSpendWithinWindow, transactionsToSpend } from '../limits/spend-window.js';
+import type { JettonSpendProbe, LimitsDict, PendingSpend, SpendEntry } from '../limits/types.js';
 import type { StoredLimits } from '../registry/config.js';
 import { McpWalletService } from '../services/McpWalletService.js';
+import { onchainMetadataKey } from '../utils/tep64.js';
 
 const SENTINEL = new Address(0, Buffer.alloc(32));
 const JETTON = new Address(0, Buffer.alloc(32, 7));
@@ -127,6 +131,11 @@ function ton(amount: bigint): PendingSpend {
     return { ton: amount, jettons: new Map() };
 }
 
+/** A single TON-only message carrying `amount` nanotons, for the message-based enforcement path. */
+function tonMessages(amount: bigint): SpendMessage[] {
+    return [{ address: RECIPIENT, amount: amount.toString() }];
+}
+
 describe('findLimitViolation', () => {
     it('blocks a transaction over the per-transaction (window 0) cap', () => {
         const v = findLimitViolation(LIMITS, ton(6n), [], NOW);
@@ -198,70 +207,44 @@ describe('evaluateLimits', () => {
             readOnchainLimitsHash: async () => 'hash-1',
             readCache: () => ({}),
             writeCache: async () => {},
-            syncLimitsFromChain: async () => ({ limits: LIMITS, hash: 'hash-1' }),
+            syncLimitsFromChain: async () => ({ limits: LIMITS, hash: 'hash-1', jettonWallets: {} }),
             fetchSpendEntries: async () => [],
             ...overrides,
         };
     }
 
-    it('allows and clears a stale cache when the wallet has no on-chain limits', async () => {
-        const writeCache = vi.fn(async () => {});
+    it('allows when the wallet has no on-chain limits (none -> allowed)', async () => {
         const decision = await evaluateLimits(
             env({
                 readOnchainLimitsHash: async () => undefined,
                 readCache: () => ({ limits_hash: 'old' }),
-                writeCache,
             }),
-            ton(1n),
+            tonMessages(1n),
         );
         expect(decision.allowed).toBe(true);
-        expect(writeCache).toHaveBeenCalledWith({});
     });
 
     it('does not write when there is no on-chain hash and no cache to clear', async () => {
         const writeCache = vi.fn(async () => {});
-        await evaluateLimits(env({ readOnchainLimitsHash: async () => undefined, writeCache }), ton(1n));
+        await evaluateLimits(env({ readOnchainLimitsHash: async () => undefined, writeCache }), tonMessages(1n));
         expect(writeCache).not.toHaveBeenCalled();
     });
 
-    it('uses the cache without re-syncing when the hash matches', async () => {
-        const syncLimitsFromChain = vi.fn(async () => ({ limits: LIMITS, hash: 'hash-1' }));
-        const decision = await evaluateLimits(
-            env({ readCache: () => ({ limits: LIMITS, limits_hash: 'hash-1' }), syncLimitsFromChain }),
-            ton(1n),
-        );
-        expect(decision.allowed).toBe(true);
-        expect(syncLimitsFromChain).not.toHaveBeenCalled();
-    });
-
-    it('re-syncs and persists when the on-chain hash differs from the cache', async () => {
-        const writeCache = vi.fn(async () => {});
-        const decision = await evaluateLimits(env({ readCache: () => ({}), writeCache }), ton(1n));
-        expect(decision.allowed).toBe(true);
-        expect(writeCache).toHaveBeenCalledWith({ limits: LIMITS, limits_hash: 'hash-1' });
-    });
-
     it('refuses to send when no limits-change transaction can be found', async () => {
-        const decision = await evaluateLimits(env({ syncLimitsFromChain: async () => null }), ton(1n));
+        const decision = await evaluateLimits(env({ syncLimitsFromChain: async () => null }), tonMessages(1n));
         expect(decision).toMatchObject({ allowed: false });
         expect(decision.allowed === false && decision.message).toContain('no limits-change');
-    });
-
-    it('refuses to send when the synced hash does not match the on-chain hash', async () => {
-        const decision = await evaluateLimits(
-            env({ syncLimitsFromChain: async () => ({ limits: LIMITS, hash: 'other' }) }),
-            ton(1n),
-        );
-        expect(decision).toMatchObject({ allowed: false });
-        expect(decision.allowed === false && decision.message).toContain('does not match');
     });
 
     it('skips the history fetch when only a per-transaction limit applies', async () => {
         const fetchSpendEntries = vi.fn(async () => []);
         const perTxOnly: StoredLimits = { assets: { [TON_ASSET_KEY]: { windows: { '0': '5' } } } };
         await evaluateLimits(
-            env({ syncLimitsFromChain: async () => ({ limits: perTxOnly, hash: 'hash-1' }), fetchSpendEntries }),
-            ton(1n),
+            env({
+                syncLimitsFromChain: async () => ({ limits: perTxOnly, hash: 'hash-1', jettonWallets: {} }),
+                fetchSpendEntries,
+            }),
+            tonMessages(1n),
         );
         expect(fetchSpendEntries).not.toHaveBeenCalled();
     });
@@ -274,26 +257,57 @@ describe('evaluateLimits', () => {
                         throw new Error('rpc down');
                     },
                 }),
-                ton(1n),
+                tonMessages(1n),
             ),
         ).rejects.toThrow('rpc down');
     });
 
+    it('meters a configured jetton via the cached forward map with no extra resolution', async () => {
+        const fetchSpendEntries = vi.fn(async () => []);
+        const decision = await evaluateLimits(
+            env({
+                readCache: () => ({
+                    limits: LIMITS,
+                    limits_hash: 'hash-1',
+                    jetton_wallets: { [JETTON.toString()]: JETTON_WALLET },
+                }),
+                fetchSpendEntries,
+            }),
+            [{ address: JETTON_WALLET, amount: '0', payload: jettonTransferPayload(2000n) }],
+        );
+        // JETTON cap is 1000 over 86400s; a 2000 transfer breaches it.
+        expect(decision).toMatchObject({ allowed: false });
+        expect(decision.allowed === false && decision.message).toContain('spend limit');
+        expect(fetchSpendEntries).toHaveBeenCalledWith(86400, NOW, expect.any(Map));
+    });
+
+    it('ignores a jetton transfer whose wallet is not in the forward map (unlimited jetton)', async () => {
+        const decision = await evaluateLimits(
+            env({
+                readCache: () => ({ limits: LIMITS, limits_hash: 'hash-1', jetton_wallets: {} }),
+            }),
+            [{ address: JETTON_WALLET, amount: '0', payload: jettonTransferPayload(10n ** 18n) }],
+        );
+        expect(decision.allowed).toBe(true);
+    });
+
     it('blocks an over-limit spend with a descriptive message', async () => {
-        const decision = await evaluateLimits(env({}), ton(6n));
+        const decision = await evaluateLimits(env({}), tonMessages(6n));
         expect(decision).toMatchObject({ allowed: false });
         expect(decision.allowed === false && decision.message).toContain('spend limit');
     });
 });
 
 describe('loadActiveLimits', () => {
+    const FORWARD_MAP = { [JETTON.toString()]: JETTON_WALLET };
+
     function env(overrides: Partial<LimitsEnv>): LimitsEnv {
         return {
             now: () => NOW,
             readOnchainLimitsHash: async () => 'hash-1',
             readCache: () => ({}),
             writeCache: async () => {},
-            syncLimitsFromChain: async () => ({ limits: LIMITS, hash: 'hash-1' }),
+            syncLimitsFromChain: async () => ({ limits: LIMITS, hash: 'hash-1', jettonWallets: FORWARD_MAP }),
             fetchSpendEntries: async () => [],
             ...overrides,
         };
@@ -312,20 +326,55 @@ describe('loadActiveLimits', () => {
         expect(writeCache).toHaveBeenCalledWith({});
     });
 
-    it('returns the cached limits without re-syncing when the hash matches', async () => {
-        const syncLimitsFromChain = vi.fn(async () => ({ limits: LIMITS, hash: 'hash-1' }));
+    it('returns the cached limits and forward map without re-syncing when both are present', async () => {
+        const syncLimitsFromChain = vi.fn(async () => ({ limits: LIMITS, hash: 'hash-1', jettonWallets: FORWARD_MAP }));
         const loaded = await loadActiveLimits(
-            env({ readCache: () => ({ limits: LIMITS, limits_hash: 'hash-1' }), syncLimitsFromChain }),
+            env({
+                readCache: () => ({ limits: LIMITS, limits_hash: 'hash-1', jetton_wallets: FORWARD_MAP }),
+                syncLimitsFromChain,
+            }),
         );
-        expect(loaded).toEqual({ status: 'active', limits: LIMITS, hash: 'hash-1' });
+        expect(loaded).toEqual({ status: 'active', limits: LIMITS, hash: 'hash-1', jettonWallets: FORWARD_MAP });
         expect(syncLimitsFromChain).not.toHaveBeenCalled();
     });
 
-    it('re-syncs and persists when the cache is stale', async () => {
+    it('re-syncs and persists limits, hash, and forward map when the cache is stale', async () => {
         const writeCache = vi.fn(async () => {});
         const loaded = await loadActiveLimits(env({ readCache: () => ({}), writeCache }));
-        expect(loaded).toEqual({ status: 'active', limits: LIMITS, hash: 'hash-1' });
-        expect(writeCache).toHaveBeenCalledWith({ limits: LIMITS, limits_hash: 'hash-1' });
+        expect(loaded).toEqual({ status: 'active', limits: LIMITS, hash: 'hash-1', jettonWallets: FORWARD_MAP });
+        expect(writeCache).toHaveBeenCalledWith({ limits: LIMITS, limits_hash: 'hash-1', jetton_wallets: FORWARD_MAP });
+    });
+
+    it('treats a legacy cache that has limits but no forward map as a miss and re-syncs', async () => {
+        const writeCache = vi.fn(async () => {});
+        const syncLimitsFromChain = vi.fn(async () => ({ limits: LIMITS, hash: 'hash-1', jettonWallets: FORWARD_MAP }));
+        const loaded = await loadActiveLimits(
+            env({
+                // Same hash as on-chain, but no jetton_wallets (pre-forward-map record).
+                readCache: () => ({ limits: LIMITS, limits_hash: 'hash-1' }),
+                writeCache,
+                syncLimitsFromChain,
+            }),
+        );
+        expect(syncLimitsFromChain).toHaveBeenCalledOnce();
+        expect(loaded).toEqual({ status: 'active', limits: LIMITS, hash: 'hash-1', jettonWallets: FORWARD_MAP });
+        expect(writeCache).toHaveBeenCalledWith({ limits: LIMITS, limits_hash: 'hash-1', jetton_wallets: FORWARD_MAP });
+    });
+
+    it('does not persist a partial cache when the forward-map sync throws', async () => {
+        const writeCache = vi.fn(async () => {});
+        await expect(
+            loadActiveLimits(
+                env({
+                    readCache: () => ({}),
+                    writeCache,
+                    syncLimitsFromChain: async () => {
+                        throw new Error('jetton-wallet unresolved');
+                    },
+                }),
+            ),
+        ).rejects.toThrow('jetton-wallet unresolved');
+        expect(writeCache).not.toHaveBeenCalled();
     });
 
     it('reports an error when no limits-change transaction can be found', async () => {
@@ -336,7 +385,7 @@ describe('loadActiveLimits', () => {
 
     it('reports an error when the synced hash does not match the on-chain hash', async () => {
         const loaded = await loadActiveLimits(
-            env({ syncLimitsFromChain: async () => ({ limits: LIMITS, hash: 'other' }) }),
+            env({ syncLimitsFromChain: async () => ({ limits: LIMITS, hash: 'other', jettonWallets: FORWARD_MAP }) }),
         );
         expect(loaded.status).toBe('error');
         expect(loaded.status === 'error' && loaded.message).toContain('does not match');
@@ -394,22 +443,16 @@ describe('computeLimitsUsage', () => {
 });
 
 // -------------------------------------------------------------------------------------------------
-// limits-jetton (parseJettonOutflowAmount / getJettonWalletInfoFromClient)
+// limits-jetton (parseJettonOutflowAmount)
 // -------------------------------------------------------------------------------------------------
-
-const OWNER = new Address(0, Buffer.alloc(32, 1));
-const MASTER = new Address(0, Buffer.alloc(32, 9));
 
 function opBody(op: number, amount: bigint): string {
     return beginCell().storeUint(op, 32).storeUint(0n, 64).storeCoins(amount).endCell().toBoc().toString('base64');
 }
 
+/** TVM stack item carrying an address as a serialized cell, as `runGetMethod` returns it. */
 function addressStackItem(address: Address) {
     return { type: 'cell' as const, value: beginCell().storeAddress(address).endCell().toBoc().toString('base64') };
-}
-
-function clientWithRunGetMethod(impl: ApiClient['runGetMethod']): ApiClient {
-    return { runGetMethod: impl } as unknown as ApiClient;
 }
 
 describe('parseJettonOutflowAmount', () => {
@@ -426,33 +469,53 @@ describe('parseJettonOutflowAmount', () => {
     });
 });
 
-describe('getJettonWalletInfoFromClient', () => {
-    it('resolves owner and master from a successful get_wallet_data', async () => {
-        const client = clientWithRunGetMethod(
-            vi.fn(async () => ({
-                gasUsed: 0,
-                exitCode: 0,
-                stack: [{ type: 'num' as const, value: '100' }, addressStackItem(OWNER), addressStackItem(MASTER)],
-            })),
-        );
-        await expect(getJettonWalletInfoFromClient(client, OWNER.toString())).resolves.toEqual({
-            owner: OWNER.toString(),
-            master: MASTER.toString(),
-        });
+// -------------------------------------------------------------------------------------------------
+// pending-spend forward map (buildReverseJettonMap / buildPendingSpend / resolveJettonProbes)
+// -------------------------------------------------------------------------------------------------
+
+describe('forward jetton-wallet map metering', () => {
+    const reverse = buildReverseJettonMap({ [JETTON.toString()]: JETTON_WALLET });
+
+    it('maps our jetton-wallet address to the normalized master key', () => {
+        expect(reverse.get(normalizeAssetKey(JETTON_WALLET)!)).toBe(JETTON_KEY);
     });
 
-    it('returns null when get_wallet_data ran but exited non-zero (not a jetton wallet)', async () => {
-        const client = clientWithRunGetMethod(vi.fn(async () => ({ gasUsed: 0, exitCode: -13, stack: [] })));
-        await expect(getJettonWalletInfoFromClient(client, OWNER.toString())).resolves.toBeNull();
+    it('meters a configured jetton transfer against its master with no resolution call', () => {
+        const spend = buildPendingSpend(
+            [{ address: JETTON_WALLET, amount: '0', payload: jettonTransferPayload(600n) }],
+            reverse,
+        );
+        expect(spend.ton).toBe(0n);
+        expect(spend.jettons).toEqual(new Map([[JETTON_KEY, 600n]]));
     });
 
-    it('propagates (fails closed) when the get_wallet_data call itself throws', async () => {
-        const client = clientWithRunGetMethod(
-            vi.fn(async () => {
-                throw new Error('429 Too Many Requests');
-            }),
+    it('sums TON and jetton outflows across messages, aggregating per master', () => {
+        const spend = buildPendingSpend(
+            [
+                { address: RECIPIENT, amount: '1000' },
+                { address: JETTON_WALLET, amount: '50', payload: jettonTransferPayload(200n) },
+                { address: JETTON_WALLET, amount: '50', payload: jettonTransferPayload(300n) },
+            ],
+            reverse,
         );
-        await expect(getJettonWalletInfoFromClient(client, OWNER.toString())).rejects.toThrow('429');
+        expect(spend.ton).toBe(1100n);
+        expect(spend.jettons).toEqual(new Map([[JETTON_KEY, 500n]]));
+    });
+
+    it('ignores a jetton transfer to a wallet outside the forward map (unlimited jetton)', () => {
+        const spend = buildPendingSpend(
+            [{ address: OTHER, amount: '0', payload: jettonTransferPayload(10n ** 18n) }],
+            reverse,
+        );
+        expect(spend.jettons.size).toBe(0);
+    });
+
+    it('resolves history probes through the same map and drops unknown wallets', () => {
+        const probes: JettonSpendProbe[] = [
+            { timestamp: 100, jettonWalletAddress: JETTON_WALLET, amount: 400n },
+            { timestamp: 200, jettonWalletAddress: OTHER, amount: 999n },
+        ];
+        expect(resolveJettonProbes(probes, reverse)).toEqual([{ timestamp: 100, asset: JETTON_KEY, amount: 400n }]);
     });
 });
 
@@ -604,12 +667,71 @@ interface FakeWallet {
     createTransferTonTransaction?: ReturnType<typeof vi.fn>;
 }
 
-function makeService(wallet: FakeWallet): McpWalletService {
+function makeService(wallet: FakeWallet, limitsCache: LimitsCache | null = null): McpWalletService {
     const service = Object.create(McpWalletService.prototype) as McpWalletService;
     Object.defineProperty(service, 'wallet', { value: wallet, configurable: true });
     Object.defineProperty(service, 'config', { value: {}, configurable: true });
-    Object.defineProperty(service, 'limitsCache', { value: null, configurable: true });
+    Object.defineProperty(service, 'limitsCache', { value: limitsCache, configurable: true });
     return service;
+}
+
+// A jetton-only, per-transaction cap of 1000; its dict and canonical hash anchor the
+// account state (on-chain limits_hash) and the limits-change transaction the sync reads.
+const SERVICE_LIMITS: StoredLimits = { assets: { [JETTON.toString()]: { windows: { '0': '1000' } } } };
+const SERVICE_LIMITS_DICT = storedToLimitsDict(SERVICE_LIMITS);
+const SERVICE_LIMITS_HASH = computeLimitsHash(SERVICE_LIMITS_DICT);
+const SERVICE_FORWARD_MAP = { [JETTON.toString()]: JETTON_WALLET };
+
+// A jetton rolling-window cap (1000 per day). Unlike the per-transaction SERVICE_LIMITS
+// above, this opens a real spend window, so enforcement must page history and resolve the
+// recovered jetton outflows through the cached forward map.
+const ROLLING_LIMITS: StoredLimits = { assets: { [JETTON.toString()]: { windows: { '86400': '1000' } } } };
+const ROLLING_LIMITS_HASH = computeLimitsHash(storedToLimitsDict(ROLLING_LIMITS));
+
+/** A TEP-64 onchain content cell carrying a single `limits_hash` attribute. */
+function limitsHashContent(limitsHashHex: string): Cell {
+    const dict = Dictionary.empty(Dictionary.Keys.BigUint(256), Dictionary.Values.Cell());
+    dict.set(
+        onchainMetadataKey('limits_hash'),
+        beginCell().storeUint(0x00, 8).storeStringTail(limitsHashHex).endCell(),
+    );
+    return beginCell().storeUint(0x00, 8).storeDict(dict).endCell();
+}
+
+/** A minimal agentic-wallet account state whose nft content advertises `limitsHashHex`. */
+function agenticAccountState(limitsHashHex: string): { data: string } {
+    const walletData = beginCell()
+        .storeAddress(Address.parse(WALLET))
+        .storeMaybeRef(limitsHashContent(limitsHashHex))
+        .storeUint(0n, 256)
+        .storeUint(0n, 256)
+        .storeBit(false)
+        .endCell();
+    const state = beginCell()
+        .storeUint(0n, 256)
+        .storeAddress(new Address(0, Buffer.alloc(32, 5)))
+        .storeBit(true)
+        .storeUint(0, 32)
+        .storeBit(false)
+        .storeMaybeRef(walletData)
+        .endCell();
+    return { data: state.toBoc().toString('base64') };
+}
+
+/** A getAccountTransactions response carrying one limits-change tx for `dict`. */
+function limitsChangeResponse(dict: LimitsDict) {
+    const body = changeContentBody(dict).toBoc().toString('base64');
+    return { transactions: [{ inMessage: { messageContent: { body } } }] };
+}
+
+/** A runGetMethod that answers `get_wallet_address` with `walletAddress`. */
+function walletAddressGetMethod(walletAddress: Address) {
+    return vi.fn(async (_address: string, method: string) => {
+        if (method === 'get_wallet_address') {
+            return { gasUsed: 0, exitCode: 0, stack: [addressStackItem(walletAddress)] };
+        }
+        throw new Error(`unexpected get-method: ${method}`);
+    });
 }
 
 describe('McpWalletService send choke point', () => {
@@ -655,15 +777,23 @@ describe('McpWalletService send choke point', () => {
         expect(sendTransaction).not.toHaveBeenCalled();
     });
 
-    it('fails closed when a pending jetton wallet cannot be resolved (no silent TON-only metering)', async () => {
+    it('fails closed all-or-nothing when a jetton master wallet cannot be resolved at sync', async () => {
         const sendTransaction = vi.fn();
+        const write = vi.fn(async () => {});
         const runGetMethod = vi.fn().mockRejectedValue(new Error('429 Too Many Requests'));
-        const service = makeService({
-            version: 'agentic',
-            getAddress: () => WALLET,
-            getClient: () => ({ runGetMethod, getAccountState: vi.fn() }),
-            sendTransaction,
-        });
+        const service = makeService(
+            {
+                version: 'agentic',
+                getAddress: () => WALLET,
+                getClient: () => ({
+                    getAccountState: vi.fn().mockResolvedValue(agenticAccountState(SERVICE_LIMITS_HASH)),
+                    getAccountTransactions: vi.fn().mockResolvedValue(limitsChangeResponse(SERVICE_LIMITS_DICT)),
+                    runGetMethod,
+                }),
+                sendTransaction,
+            },
+            { read: () => ({}), write },
+        );
 
         const result = await service.sendRawTransaction({
             messages: [{ address: JETTON_WALLET, amount: '50000000', payload: jettonTransferPayload(500n) }],
@@ -672,5 +802,151 @@ describe('McpWalletService send choke point', () => {
         expect(result.success).toBe(false);
         expect(result.message).toContain('Could not verify spend limits');
         expect(sendTransaction).not.toHaveBeenCalled();
+        // No partial persist: a half-computed forward map must never reach the cache.
+        expect(write).not.toHaveBeenCalled();
+    });
+
+    it('meters a configured jetton via the synced forward map without any get_wallet_data call', async () => {
+        const sendTransaction = vi.fn();
+        const runGetMethod = walletAddressGetMethod(new Address(0, Buffer.alloc(32, 3)));
+        const getAccountTransactions = vi.fn().mockResolvedValue(limitsChangeResponse(SERVICE_LIMITS_DICT));
+        const service = makeService({
+            version: 'agentic',
+            getAddress: () => WALLET,
+            getClient: () => ({
+                getAccountState: vi.fn().mockResolvedValue(agenticAccountState(SERVICE_LIMITS_HASH)),
+                getAccountTransactions,
+                runGetMethod,
+            }),
+            sendTransaction,
+        });
+
+        // 2000 > the per-transaction cap of 1000 -> blocked by the jetton limit.
+        const result = await service.sendRawTransaction({
+            messages: [{ address: JETTON_WALLET, amount: '50000000', payload: jettonTransferPayload(2000n) }],
+        });
+
+        expect(result.success).toBe(false);
+        expect(result.message).toContain('spend limit');
+        expect(sendTransaction).not.toHaveBeenCalled();
+        // Per-transaction cap -> no rolling window -> no history paging beyond the sync read.
+        // (The walletAddressGetMethod mock throws on any method but get_wallet_address, so
+        // reaching here already proves no get_wallet_data was issued.)
+        expect(getAccountTransactions).toHaveBeenCalledOnce();
+    });
+
+    it('allows a within-cap jetton spend metered through the forward map', async () => {
+        const sendTransaction = vi.fn().mockResolvedValue({ normalizedHash: 'ok' });
+        const service = makeService({
+            version: 'agentic',
+            getAddress: () => WALLET,
+            getClient: () => ({
+                getAccountState: vi.fn().mockResolvedValue(agenticAccountState(SERVICE_LIMITS_HASH)),
+                getAccountTransactions: vi.fn().mockResolvedValue(limitsChangeResponse(SERVICE_LIMITS_DICT)),
+                runGetMethod: walletAddressGetMethod(new Address(0, Buffer.alloc(32, 3))),
+            }),
+            sendTransaction,
+        });
+
+        const result = await service.sendRawTransaction({
+            messages: [{ address: JETTON_WALLET, amount: '50000000', payload: jettonTransferPayload(500n) }],
+        });
+
+        expect(result.success).toBe(true);
+        expect(sendTransaction).toHaveBeenCalledOnce();
+    });
+
+    it('meters from the cached forward map on a hash hit with zero metering RPC', async () => {
+        const sendTransaction = vi.fn().mockResolvedValue({ normalizedHash: 'ok' });
+        const getAccountTransactions = vi.fn();
+        const runGetMethod = vi.fn();
+        const service = makeService(
+            {
+                version: 'agentic',
+                getAddress: () => WALLET,
+                getClient: () => ({
+                    getAccountState: vi.fn().mockResolvedValue(agenticAccountState(SERVICE_LIMITS_HASH)),
+                    getAccountTransactions,
+                    runGetMethod,
+                }),
+                sendTransaction,
+            },
+            {
+                read: () => ({
+                    limits: SERVICE_LIMITS,
+                    limits_hash: SERVICE_LIMITS_HASH,
+                    jetton_wallets: SERVICE_FORWARD_MAP,
+                }),
+                write: vi.fn(async () => {}),
+            },
+        );
+
+        const result = await service.sendRawTransaction({
+            messages: [{ address: JETTON_WALLET, amount: '50000000', payload: jettonTransferPayload(500n) }],
+        });
+
+        expect(result.success).toBe(true);
+        expect(sendTransaction).toHaveBeenCalledOnce();
+        // Cache hit -> no re-sync and no get_wallet_address/get_wallet_data at metering time.
+        expect(getAccountTransactions).not.toHaveBeenCalled();
+        expect(runGetMethod).not.toHaveBeenCalled();
+    });
+
+    it('blocks a jetton send when rolling-window history resolved via the cached map tips it over the cap', async () => {
+        const sendTransaction = vi.fn();
+        const runGetMethod = vi.fn();
+        // A prior outgoing jetton transfer of 700 sitting inside the 1-day window, recovered
+        // from account history. `now` is read from the same real clock the service uses, so
+        // `now - 100` is comfortably within the 86400s window with sub-second test skew.
+        const nowSeconds = Math.floor(Date.now() / 1000);
+        const history = {
+            transactions: [
+                makeTx({
+                    now: nowSeconds - 100,
+                    outs: [
+                        {
+                            source: WALLET,
+                            destination: JETTON_WALLET,
+                            value: '50000000',
+                            body: jettonTransferBody(700n),
+                        },
+                    ],
+                }),
+            ],
+        };
+        const getAccountTransactions = vi.fn().mockResolvedValue(history);
+        const service = makeService(
+            {
+                version: 'agentic',
+                getAddress: () => WALLET,
+                getClient: () => ({
+                    getAccountState: vi.fn().mockResolvedValue(agenticAccountState(ROLLING_LIMITS_HASH)),
+                    getAccountTransactions,
+                    runGetMethod,
+                }),
+                sendTransaction,
+            },
+            {
+                read: () => ({
+                    limits: ROLLING_LIMITS,
+                    limits_hash: ROLLING_LIMITS_HASH,
+                    jetton_wallets: SERVICE_FORWARD_MAP,
+                }),
+                write: vi.fn(async () => {}),
+            },
+        );
+
+        // 700 already spent in-window + 500 pending = 1200 > the 1000 daily cap.
+        const result = await service.sendRawTransaction({
+            messages: [{ address: JETTON_WALLET, amount: '50000000', payload: jettonTransferPayload(500n) }],
+        });
+
+        expect(result.success).toBe(false);
+        expect(result.message).toContain('spend limit');
+        expect(sendTransaction).not.toHaveBeenCalled();
+        // The whole history->master->window->violation seam ran through the cached forward
+        // map: history was paged, but no jetton-wallet RPC (get_wallet_address/get_wallet_data).
+        expect(getAccountTransactions).toHaveBeenCalled();
+        expect(runGetMethod).not.toHaveBeenCalled();
     });
 });
