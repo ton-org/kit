@@ -7,7 +7,7 @@
  */
 
 import { useCallback, useEffect } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toNano } from '@ton/core';
 import {
     useBalance,
@@ -92,6 +92,7 @@ export const useMintNft = (): UseMintNftReturn => {
         data: quote,
         isFetching: isLoadingQuote,
         error: quoteError,
+        queryKey: gaslessQuoteKey,
     } = useGaslessQuote({
         messages: message ? [message] : [],
         feeAsset: gaslessFeeAsset ?? undefined,
@@ -103,6 +104,8 @@ export const useMintNft = (): UseMintNftReturn => {
     const { mutateAsync: sendGasless } = useSendGaslessTransaction();
     const { mutateAsync: sendRegular } = useSendTransaction();
 
+    const queryClient = useQueryClient();
+
     const sendMutation = useMutation({
         mutationFn: async (): Promise<void> => {
             if (gaslessEnabled) {
@@ -112,6 +115,16 @@ export const useMintNft = (): UseMintNftReturn => {
             }
             const request = await buildMintTransaction();
             await sendRegular(request);
+        },
+        onError: () => {
+            // On a failed gasless send, drop the cached quote so a retry refetches a
+            // fresh one (new `validUntil`) instead of re-submitting the same — e.g.
+            // after a quote-expiry or relayer error. This doesn't touch the on-chain
+            // seqno guard (the send still re-signs at click-time); it just refreshes
+            // the relayer estimate the confirm modal shows and the next send uses.
+            if (gaslessEnabled) {
+                void queryClient.invalidateQueries({ queryKey: gaslessQuoteKey });
+            }
         },
     });
 

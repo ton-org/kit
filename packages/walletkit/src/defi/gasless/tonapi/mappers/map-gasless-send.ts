@@ -28,12 +28,14 @@ export const buildGaslessSendRequest = (params: GaslessSendParams): TonApiGasles
 /**
  * Wire → domain: turn TonAPI's `GaslessTx` response into a `SendTransactionResponse`.
  *
- * The OpenAPI description claims `external` is a "Normalized hash of the
- * external message", but the wire payload is actually the **full BoC** of the
- * external-in message the relayer broadcasted (hex-encoded). We re-encode it
- * to base64 and normalize via `getNormalizedExtMessageHash` so consumers get
- * the same `{ boc, normalizedBoc, normalizedHash }` triple as
- * `wallet.sendTransaction` returns.
+ * Despite the OpenAPI description ("Normalized hash of the external message"),
+ * `external` is the **full hex BoC** of the external-in message the relayer
+ * actually broadcast — verified against live TonAPI. Crucially it is the
+ * *relayer's own* external message (addressed to the relayer's wallet), which
+ * differs from the external message we submit (addressed to the user's wallet),
+ * so it is the only source for the real on-chain hash. We re-encode it to base64
+ * and normalize via `getNormalizedExtMessageHash` to yield the same
+ * `{ boc, normalizedBoc, normalizedHash }` triple as `wallet.sendTransaction`.
  */
 export const mapGaslessSend = (raw: TonApiGaslessSendResponse): SendTransactionResponse => {
     if (!raw.external) {
@@ -42,7 +44,18 @@ export const mapGaslessSend = (raw: TonApiGaslessSendResponse): SendTransactionR
         });
     }
 
-    const boc = hexBocToBase64(raw.external);
-    const { hash: normalizedHash, boc: normalizedBoc } = getNormalizedExtMessageHash(boc);
-    return { boc, normalizedBoc, normalizedHash };
+    try {
+        const boc = hexBocToBase64(raw.external);
+        const { hash: normalizedHash, boc: normalizedBoc } = getNormalizedExtMessageHash(boc);
+        return { boc, normalizedBoc, normalizedHash };
+    } catch (cause) {
+        // Guards the OpenAPI-divergence risk: if TonAPI ever returns a bare hash
+        // (or anything that isn't a parseable external-in BoC), fail loudly with a
+        // typed error instead of crashing cryptically or returning a wrong hash.
+        throw new GaslessError(
+            'Relayer `external` is not a parseable external-message BoC — TonAPI response format may have changed.',
+            GaslessErrorCode.SendFailed,
+            { external: raw.external, cause },
+        );
+    }
 };

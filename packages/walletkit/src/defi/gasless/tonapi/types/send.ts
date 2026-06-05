@@ -18,8 +18,11 @@ export interface TonApiGaslessSendRequest {
 /**
  * Wire-format response from `POST /v2/gasless/send` (TonAPI `GaslessTx`).
  *
- * `external` is the TEP-467 normalized hash of the external message the relayer
- * broadcasted. Optional in the schema; required field is `protocol_name`.
+ * `external` is optional in the schema; `protocol_name` is required. The OpenAPI
+ * labels `external` as a "normalized hash", but in practice (verified against
+ * live TonAPI) it is the full hex BoC of the external-in message the relayer
+ * broadcast — and it's the relayer's own message, distinct from the one we
+ * submit, so it's the source of truth for the on-chain hash (see `mapGaslessSend`).
  */
 export interface TonApiGaslessSendResponse {
     external?: string;

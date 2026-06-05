@@ -417,8 +417,9 @@ describe('TonApiGaslessProvider.sendTransaction', () => {
         internalBoc: buildSignedInternalBoc(),
     };
 
-    // TonAPI's `external` is the hex BoC of the broadcasted external-in message.
-    // The provider expects it to be present; build a valid one once and reuse.
+    // TonAPI's `external` is the hex BoC of the broadcasted external-in message
+    // (NOT a hash, despite the OpenAPI description). The provider derives the
+    // result from it; build a valid one once and reuse.
     const validExternalHex = internalBocToExternalMessageBoc(buildSignedInternalBoc()).toBoc().toString('hex');
     const successfulSendResponse = () => jsonResponse({ protocol_name: 'tonapi', external: validExternalHex });
 
@@ -448,13 +449,26 @@ describe('TonApiGaslessProvider.sendTransaction', () => {
 
         const result = await provider.sendTransaction(baseSendParams);
 
-        // All three SendTransactionResponse fields populated
+        // boc/hash come from `raw.external` (the actual broadcasted external message).
         expect(result.boc).toBe(externalCell.toBoc().toString('base64'));
         expect(result.normalizedBoc).toBeDefined();
         expect(() => Cell.fromBase64(result.normalizedBoc)).not.toThrow();
         expect(result.normalizedHash).toMatch(/^0x[0-9a-f]{64}$/);
         // Plus the gasless-specific internalBoc echoed back from params
         expect(result.internalBoc).toBe(baseSendParams.internalBoc);
+    });
+
+    it('throws GaslessError(SEND_FAILED) when `external` is not a parseable BoC (e.g. a bare hash)', async () => {
+        const fetchApi = makeFetch();
+        const provider = makeProvider(fetchApi);
+        // OpenAPI describes `external` as a normalized hash; if TonAPI ever actually
+        // returns one, it can't be parsed as a BoC — fail loudly, not cryptically.
+        fetchApi.mockResolvedValueOnce(jsonResponse({ protocol_name: 'tonapi', external: '00'.repeat(32) }));
+
+        await expect(provider.sendTransaction(baseSendParams)).rejects.toMatchObject({
+            name: 'GaslessError',
+            code: GaslessErrorCode.SendFailed,
+        });
     });
 
     it('throws GaslessError(SEND_FAILED) when the relayer omits the external field', async () => {
