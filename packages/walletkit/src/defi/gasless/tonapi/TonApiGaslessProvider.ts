@@ -22,12 +22,15 @@ import { ApiClientTonApi } from '../../../clients/tonapi/ApiClientTonApi';
 import { globalLogger } from '../../../core/Logger';
 import type { ProviderFactoryContext } from '../../../types/factory';
 import { delay } from '../../../utils/delay';
+import { CallForSuccess } from '../../../utils/retry';
 import { GaslessError, GaslessErrorCode } from '../errors';
 import { GaslessProvider } from '../GaslessProvider';
 import {
     DEFAULT_CONFIG_CACHE_TTL_MS,
     DEFAULT_METADATA,
     DEFAULT_PROVIDER_ID,
+    DEFAULT_QUOTE_RETRIES,
+    DEFAULT_QUOTE_RETRY_DELAY_MS,
     DEFAULT_SEND_RETRIES,
     DEFAULT_SEND_RETRY_DELAY_MS,
 } from './constants';
@@ -69,6 +72,8 @@ export class TonApiGaslessProvider extends GaslessProvider {
     private readonly clients: Record<string, ApiClientTonApi> = {};
     private readonly sendRetries: number;
     private readonly sendRetryDelayMs: number;
+    private readonly quoteRetries: number;
+    private readonly quoteRetryDelayMs: number;
     private readonly configCacheTtlMs: number;
     private readonly configCache?: LRUCache<string, GaslessConfig, Network>;
 
@@ -81,6 +86,8 @@ export class TonApiGaslessProvider extends GaslessProvider {
         this.providerId = options.providerId ?? DEFAULT_PROVIDER_ID;
         this.sendRetries = options.sendRetries ?? DEFAULT_SEND_RETRIES;
         this.sendRetryDelayMs = options.sendRetryDelayMs ?? DEFAULT_SEND_RETRY_DELAY_MS;
+        this.quoteRetries = options.quoteRetries ?? DEFAULT_QUOTE_RETRIES;
+        this.quoteRetryDelayMs = options.quoteRetryDelayMs ?? DEFAULT_QUOTE_RETRY_DELAY_MS;
         this.configCacheTtlMs = options.configCacheTtlMs ?? DEFAULT_CONFIG_CACHE_TTL_MS;
 
         if (this.configCacheTtlMs > 0) {
@@ -185,8 +192,21 @@ export class TonApiGaslessProvider extends GaslessProvider {
 
         try {
             const http = this.getClient(params.network);
-            const raw = await http.postJson<TonApiGaslessEstimateResponse>(`/v2/gasless/estimate/${masterId}`, body);
-            return mapGaslessQuote(raw, params.network);
+            // Retry transient failures (5xx / network) with a fixed delay. The
+            // quote is read-only and idempotent, so a stale/flaky relayer response
+            // is safe to re-request; 4xx are surfaced immediately via `isTransientError`.
+            return await CallForSuccess(
+                async () => {
+                    const raw = await http.postJson<TonApiGaslessEstimateResponse>(
+                        `/v2/gasless/estimate/${masterId}`,
+                        body,
+                    );
+                    return mapGaslessQuote(raw, params.network);
+                },
+                this.quoteRetries + 1,
+                this.quoteRetryDelayMs,
+                isTransientError,
+            );
         } catch (error) {
             log.error('Failed to quote gasless transaction', { error, params });
             throw mapTonApiGaslessError(error, GaslessErrorCode.QuoteFailed, 'Failed to quote gasless transaction');

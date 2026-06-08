@@ -56,6 +56,8 @@ const makeProvider = (
     return TonApiGaslessProvider.createFromContext(ctxWith(networks), {
         sendRetries: 1,
         sendRetryDelayMs: 0,
+        quoteRetries: 1,
+        quoteRetryDelayMs: 0,
         ...config,
     });
 };
@@ -350,12 +352,56 @@ describe('TonApiGaslessProvider.getQuote', () => {
     });
 
     it('wraps fetch errors in GaslessError(QUOTE_FAILED)', async () => {
-        fetchApi.mockResolvedValueOnce(new Response('relayer down', { status: 502 }));
+        // 502 is transient, so the provider retries it — return it for every attempt.
+        fetchApi.mockResolvedValue(new Response('relayer down', { status: 502 }));
 
         await expect(provider.getQuote(baseQuoteParams)).rejects.toMatchObject({
             name: 'GaslessError',
             code: GaslessErrorCode.QuoteFailed,
         });
+    });
+
+    it('retries on transient 5xx failures up to quoteRetries', async () => {
+        const retryFetch = makeFetch();
+        const retryProvider = makeProvider(retryFetch, { quoteRetries: 2 });
+        retryFetch
+            .mockResolvedValueOnce(new Response('transient', { status: 500 }))
+            .mockResolvedValueOnce(new Response('transient', { status: 503 }))
+            .mockResolvedValueOnce(jsonResponse(makeRawQuote()));
+
+        const result = await retryProvider.getQuote(baseQuoteParams);
+
+        expect(retryFetch).toHaveBeenCalledTimes(3);
+        expect(result.fee).toBe('1234');
+    });
+
+    it('does NOT retry the quote on 4xx client errors', async () => {
+        const fourxxFetch = makeFetch();
+        const retryProvider = makeProvider(fourxxFetch, { quoteRetries: 3 });
+        fourxxFetch.mockResolvedValue(
+            new Response(JSON.stringify({ error: 'bad request' }), {
+                status: 400,
+                headers: { 'content-type': 'application/json' },
+            }),
+        );
+
+        await expect(retryProvider.getQuote(baseQuoteParams)).rejects.toMatchObject({
+            name: 'GaslessError',
+            code: GaslessErrorCode.QuoteFailed,
+        });
+        expect(fourxxFetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('wraps persistent 5xx errors in GaslessError(QUOTE_FAILED) after exhausting retries', async () => {
+        const persistentFetch = makeFetch();
+        const retryProvider = makeProvider(persistentFetch, { quoteRetries: 2 });
+        persistentFetch.mockResolvedValue(new Response('boom', { status: 500 }));
+
+        await expect(retryProvider.getQuote(baseQuoteParams)).rejects.toMatchObject({
+            name: 'GaslessError',
+            code: GaslessErrorCode.QuoteFailed,
+        });
+        expect(persistentFetch).toHaveBeenCalledTimes(3);
     });
 
     it('maps TonAPI error_code 40000 to GaslessError(UNSUPPORTED_FEE_ASSET)', async () => {

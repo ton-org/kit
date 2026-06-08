@@ -23,6 +23,12 @@ export const DEFAULT_SEND_RETRIES = 3;
 /** Base delay between send retries (ms). Subsequent retries use exponential backoff (2× per attempt). */
 export const DEFAULT_SEND_RETRY_DELAY_MS = 2000;
 
+/** Default number of retries for `/v2/gasless/estimate` on transient failures (5xx / network). */
+export const DEFAULT_QUOTE_RETRIES = 2;
+
+/** Fixed delay between quote retries (ms). */
+export const DEFAULT_QUOTE_RETRY_DELAY_MS = 1000;
+
 /**
  * Default TTL for the in-memory `/v2/gasless/config` cache (ms). The relayer
  * config (relay address + supported fee jettons) is essentially static, so a

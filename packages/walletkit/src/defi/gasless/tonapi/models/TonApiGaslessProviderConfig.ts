@@ -44,6 +44,16 @@ export interface TonApiGaslessProviderConfig {
      */
     sendRetryDelayMs?: number;
     /**
+     * Number of quote retries on transient errors (5xx / network). Defaults to 2.
+     * @format int
+     */
+    quoteRetries?: number;
+    /**
+     * Fixed delay between quote retries in ms. Defaults to 1000.
+     * @format int
+     */
+    quoteRetryDelayMs?: number;
+    /**
      * TTL for the in-memory `/v2/gasless/config` cache (ms). Defaults to
      * 5 minutes. Set to `0` to disable caching.
      * @format int
