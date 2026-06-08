@@ -32,6 +32,7 @@ import type { JettonsAPI } from '../types/jettons';
 import { ConnectHandler } from '../handlers/ConnectHandler';
 import { SwapManager } from '../defi/swap';
 import { StakingManager } from '../defi/staking';
+import type { GaslessProvider } from '../defi/gasless';
 import { GaslessManager } from '../defi/gasless';
 import type {
     RawBridgeEventConnect,
@@ -876,6 +877,9 @@ export class TonWalletKit implements ITonWalletKit {
                 break;
             case 'streaming':
                 this.streamingManager.registerProvider(provider as StreamingProvider);
+                break;
+            case 'gasless':
+                this.gaslessManager.registerProvider(provider as GaslessProvider);
                 break;
             default:
                 throw new Error('Unknown provider type');
