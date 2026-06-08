@@ -19,6 +19,7 @@ import * as staking from './staking';
 import * as browser from './browser';
 import * as streaming from './streaming';
 import * as swap from './swap';
+import * as walletClient from './walletClient';
 import { eventListeners } from './eventListeners';
 
 export { eventListeners };
@@ -43,6 +44,7 @@ export const api = {
     getWallets: wallets.getWallets,
     getWallet: wallets.getWalletById,
     getWalletAddress: wallets.getWalletAddress,
+    getWalletNetwork: wallets.getWalletNetwork,
     removeWallet: wallets.removeWallet,
     getBalance: wallets.getBalance,
 
@@ -100,21 +102,40 @@ export const api = {
 
     createTonStakersStakingProvider: staking.createTonStakersStakingProvider,
     registerStakingProvider: staking.registerStakingProvider,
+    removeStakingProvider: staking.removeStakingProvider,
     setDefaultStakingProvider: staking.setDefaultStakingProvider,
+    getRegisteredStakingProviders: staking.getRegisteredStakingProviders,
+    hasStakingProvider: staking.hasStakingProvider,
     getStakingQuote: staking.getStakingQuote,
     buildStakeTransaction: staking.buildStakeTransaction,
     getStakedBalance: staking.getStakedBalance,
     getStakingProviderInfo: staking.getStakingProviderInfo,
     getStakingProviderMetadata: staking.getStakingProviderMetadata,
+    getStakingProviderSupportedNetworks: staking.getStakingProviderSupportedNetworks,
     registerKotlinStakingProvider: staking.registerKotlinStakingProvider,
 
     createOmnistonSwapProvider: swap.createOmnistonSwapProvider,
     createDeDustSwapProvider: swap.createDeDustSwapProvider,
     registerSwapProvider: swap.registerSwapProvider,
+    removeSwapProvider: swap.removeSwapProvider,
     setDefaultSwapProvider: swap.setDefaultSwapProvider,
     getRegisteredSwapProviders: swap.getRegisteredSwapProviders,
+    getSwapProviderMetadata: swap.getSwapProviderMetadata,
+    getSwapProviderSupportedNetworks: swap.getSwapProviderSupportedNetworks,
     hasSwapProvider: swap.hasSwapProvider,
     getSwapQuote: swap.getSwapQuote,
     buildSwapTransaction: swap.buildSwapTransaction,
     registerKotlinSwapProvider: swap.registerKotlinSwapProvider,
+
+    walletClientSendBoc: walletClient.walletClientSendBoc,
+    walletClientRunGetMethod: walletClient.walletClientRunGetMethod,
+    walletClientGetBalance: walletClient.walletClientGetBalance,
+    walletClientGetMasterchainInfo: walletClient.walletClientGetMasterchainInfo,
+    walletClientNftItemsByAddress: walletClient.walletClientNftItemsByAddress,
+    walletClientNftItemsByOwner: walletClient.walletClientNftItemsByOwner,
+    walletClientFetchEmulation: walletClient.walletClientFetchEmulation,
+    walletClientAccountState: walletClient.walletClientAccountState,
+    walletClientAccountStates: walletClient.walletClientAccountStates,
+    walletClientResolveDnsWallet: walletClient.walletClientResolveDnsWallet,
+    walletClientBackResolveDnsWallet: walletClient.walletClientBackResolveDnsWallet,
 } as unknown as WalletKitBridgeApi;
