@@ -39,6 +39,8 @@ import type {
     TransactionRequest,
     TransactionStatusResponse,
     ProofMessage,
+    BaseProvider,
+    ProviderInput,
 } from '@ton/walletkit';
 import type { OmnistonProviderOptions } from '@ton/walletkit/swap/omniston';
 import { OmnistonSwapProvider } from '@ton/walletkit/swap/omniston';
@@ -217,6 +219,8 @@ export interface McpWalletServiceConfig {
         mainnet?: NetworkConfig;
         testnet?: NetworkConfig;
     };
+
+    providers?: Array<ProviderInput<BaseProvider>>;
 }
 
 interface McpWalletServiceInternalConfig {
@@ -227,6 +231,8 @@ interface McpWalletServiceInternalConfig {
         mainnet?: NetworkConfig;
         testnet?: NetworkConfig;
     };
+
+    providers?: Array<ProviderInput<BaseProvider>>;
 }
 
 interface DeployAgenticSubwalletParams {
@@ -454,6 +460,12 @@ export class McpWalletService {
                 defaultSlippageBps: 100,
             });
             this.kit.swap.registerProvider(omnistonProvider);
+
+            if (this.config.providers) {
+                for (const providerInput of this.config.providers) {
+                    this.kit.registerProvider(providerInput);
+                }
+            }
         }
         return this.kit;
     }
