@@ -19,7 +19,7 @@ import { createOmnistonProvider } from '@ton/appkit/swap/omniston';
 import { createTonstakersProvider } from '@ton/appkit/staking/tonstakers';
 import { createTonApiGaslessProvider } from '@ton/appkit/gasless/tonapi';
 
-import { ENV_TON_API_KEY_TESTNET, ENV_TON_API_KEY_MAINNET } from '@/core/configs/env';
+import { ENV_TON_API_KEY_TESTNET, ENV_TON_API_KEY_MAINNET, ENV_TONCONNECT_MANIFEST_URL } from '@/core/configs/env';
 
 const mainnetApiClient = new ApiClientToncenter({
     network: Network.mainnet(),
@@ -45,7 +45,7 @@ export const appKit = new AppKit({
     connectors: [
         createTonConnectConnector({
             tonConnectOptions: {
-                manifestUrl: 'https://tonconnect-sdk-demo-dapp.vercel.app/tonconnect-manifest.json',
+                manifestUrl: ENV_TONCONNECT_MANIFEST_URL,
             },
         }),
     ],

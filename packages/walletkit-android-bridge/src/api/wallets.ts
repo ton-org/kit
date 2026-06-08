@@ -128,6 +128,10 @@ export async function getWalletAddress(args: { walletId: string }) {
     return wallet(args.walletId, 'getAddress');
 }
 
+export async function getWalletNetwork(args: { walletId: string }) {
+    return wallet(args.walletId, 'getNetwork');
+}
+
 export async function removeWallet(args: { walletId: string }) {
     return kit('removeWallet', args.walletId);
 }

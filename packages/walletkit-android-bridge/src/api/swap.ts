@@ -93,6 +93,11 @@ export async function registerSwapProvider(args: { providerId: string }): Promis
     (await getSwap()).registerProvider(get(args.providerId) as SwapProviderInterface);
 }
 
+export async function removeSwapProvider(args: { providerId: string }): Promise<void> {
+    const swap = await getSwap();
+    swap.removeProvider(swap.getProvider(args.providerId));
+}
+
 export async function setDefaultSwapProvider(args: { providerId: string }): Promise<void> {
     (await getSwap()).setDefaultProvider(args.providerId);
 }
@@ -100,6 +105,15 @@ export async function setDefaultSwapProvider(args: { providerId: string }): Prom
 export async function getRegisteredSwapProviders(): Promise<{ providerIds: string[] }> {
     const providerIds = (await getSwap()).getProviders().map((provider) => provider.providerId);
     return { providerIds };
+}
+
+export async function getSwapProviderMetadata(args: { providerId: string }): Promise<SwapProviderMetadata> {
+    return (await getSwap()).getProvider(args.providerId).getMetadata();
+}
+
+export async function getSwapProviderSupportedNetworks(args: { providerId: string }): Promise<{ networks: Network[] }> {
+    const networks = (await getSwap()).getProvider(args.providerId).getSupportedNetworks();
+    return { networks };
 }
 
 export async function hasSwapProvider(args: { providerId: string }): Promise<{ result: boolean }> {

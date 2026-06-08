@@ -1,5 +1,20 @@
 # @ton/walletkit
 
+## 1.0.0-alpha.3
+
+### Patch Changes
+
+- update version for new android bridge bindings
+
+## 1.0.0-alpha.2
+
+### Patch Changes
+
+- c1f0edf: - Added confirmation modals for the swap and staking widgets.
+    - Improved error handling across swap and staking flows, especially when the network is unavailable — failures now surface in the submit button instead of hanging.
+    - Moved `cancelPromise` from `@ton/appkit` to `@ton/walletkit` and renamed it to `withTimeout` to reflect what it actually does (it does not abort the underlying operation). `@ton/appkit` re-exports it.
+- 864636c: Added option to pass fetchManifest to TonWalletKitOptions, so you can use your custom proxy for manifest fething
+
 ## 1.0.0-alpha.1
 
 ### Minor Changes

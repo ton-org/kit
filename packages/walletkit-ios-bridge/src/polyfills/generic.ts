@@ -9,29 +9,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable no-console */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable import/order */
-
-// import 'url-polyfill';
-
-import { URL, URLSearchParams } from 'whatwg-url';
-
-import { Buffer } from 'buffer';
-
-if (typeof window !== 'undefined') {
-    window.Buffer = Buffer;
-    window.URL = URL as any;
-    window.URLSearchParams = URLSearchParams as any;
-}
-if (typeof globalThis !== 'undefined') {
-    globalThis.Buffer = Buffer;
-    globalThis.URL = URL as any;
-    globalThis.URLSearchParams = URLSearchParams as any;
-}
-if (typeof global !== 'undefined') {
-    global.Buffer = Buffer;
-    global.URL = URL as any;
-    global.URLSearchParams = URLSearchParams as any;
-}
 
 // Polyfills for iOS JavaScriptCore
 
@@ -299,3 +276,5 @@ if (typeof window !== 'undefined') {
         };
     }
 }
+
+export {};

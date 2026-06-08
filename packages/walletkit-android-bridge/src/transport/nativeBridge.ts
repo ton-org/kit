@@ -15,13 +15,55 @@ import { sendToNative } from './port';
 
 const pendingRequests = new Map<string, { resolve: (v: unknown) => void; reject: (e: Error) => void }>();
 
-// Sync host call via @JavascriptInterface — WebMessagePort is async and can't satisfy sync getters.
+export type BridgeFailureKind = 'bridge_unavailable' | 'native_threw' | 'decode_failed';
+
+/** Structured failure for every bridge call. Distinguishes wire-level vs. host vs. decode. */
+export class BridgeError extends Error {
+    constructor(
+        public readonly kind: BridgeFailureKind,
+        public readonly method: string,
+        options?: { cause?: unknown; raw?: string },
+    ) {
+        super(`[bridge:${kind}] ${method}${options?.raw ? ` raw=${truncate(options.raw)}` : ''}`);
+        this.name = 'BridgeError';
+        if (options?.cause !== undefined) (this as { cause?: unknown }).cause = options.cause;
+    }
+}
+
+function truncate(s: string, max = 200): string {
+    return s.length <= max ? s : `${s.slice(0, max)}…(${s.length} chars)`;
+}
+
+/** Sync host call via @JavascriptInterface — returns the raw string the host produced. */
 export function bridgeRequestSync(method: string, params: Record<string, unknown>): string {
     const native = window.WalletKitNative;
     if (!native || typeof native.adapterCallSync !== 'function') {
-        throw new Error('WalletKitNative.adapterCallSync not available');
+        throw new BridgeError('bridge_unavailable', method);
     }
-    return native.adapterCallSync(method, JSON.stringify(params));
+    try {
+        return native.adapterCallSync(method, JSON.stringify(params, bigIntReplacer));
+    } catch (cause) {
+        throw new BridgeError('native_threw', method, { cause });
+    }
+}
+
+/** Sync host call with JSON-parsed return. Optional [decode] runs after parse. */
+export function bridgeRequestSyncTyped<T>(
+    method: string,
+    params: Record<string, unknown>,
+    decode?: (parsed: unknown) => T,
+): T {
+    const raw = bridgeRequestSync(method, params);
+    try {
+        const parsed = JSON.parse(raw);
+        return decode ? decode(parsed) : (parsed as T);
+    } catch (cause) {
+        throw new BridgeError('decode_failed', method, { cause, raw });
+    }
+}
+
+export function isBridgeAvailable(): boolean {
+    return typeof window.WalletKitNative?.adapterCallSync === 'function';
 }
 
 export function bridgeRequest(method: string, params: Record<string, unknown>): Promise<unknown> {
