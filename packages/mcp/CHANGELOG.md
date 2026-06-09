@@ -1,5 +1,11 @@
 # @ton/mcp
 
+## 0.1.15-alpha.19
+
+### Patch Changes
+
+- Fixed a transaction creation bug caused by an incorrect input cell format. Thanks @trypartyhard for the report.
+
 ## 0.1.15-alpha.18
 
 ### Patch Changes

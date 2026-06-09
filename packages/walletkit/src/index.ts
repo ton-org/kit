@@ -80,6 +80,7 @@ export {
 export type { ToncenterTransaction } from './types/toncenter/emulation';
 export { TonProofParsedMessage } from './utils/tonProof';
 export type { ITonWalletKit } from './types/kit';
+export type { ProviderInput } from './types/factory';
 export type {
     JSBridgeInjectOptions,
     JSBridgeTransportFunction,

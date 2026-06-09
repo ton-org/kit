@@ -42,7 +42,7 @@ import { EventEmitter } from './EventEmitter';
 import type { StorageEventProcessor } from './EventProcessor';
 import type { BridgeManager } from './BridgeManager';
 import type { BridgeEventMessageInfo, InjectedToExtensionBridgeRequestPayload } from '../types/jsBridge';
-import type { ApiClient } from '../api/interfaces';
+import type { ApiClient, StakingProviderInterface, StreamingProvider, SwapProviderInterface } from '../api/interfaces';
 import { StreamingManager } from '../streaming/StreamingManager';
 import type { WalletKitEvents, WalletKitEventEmitter } from '../types/emitter';
 import { AnalyticsManager } from '../analytics';
@@ -69,10 +69,11 @@ import type {
     TONConnectSession,
     ConnectionApprovalResponse,
     EmbeddedRequestEvent,
+    BaseProvider,
 } from '../api/models';
 import { asAddressFriendly } from '../utils';
 import { parseEmbeddedRequestFromReqParam } from '../utils/embeddedRequest';
-import type { ProviderFactoryContext } from '../types/factory';
+import type { ProviderFactoryContext, ProviderInput } from '../types/factory';
 
 const log = globalLogger.createChild('TonWalletKit');
 
@@ -855,6 +856,26 @@ export class TonWalletKit implements ITonWalletKit {
         }
 
         this.isInitialized = false;
+    }
+
+    /**
+     * Add a provider
+     */
+    registerProvider(input: ProviderInput<BaseProvider>): void {
+        const provider = typeof input === 'function' ? input(this.createFactoryContext()) : input;
+        switch (provider.type) {
+            case 'swap':
+                this.swapManager.registerProvider(provider as SwapProviderInterface);
+                break;
+            case 'staking':
+                this.stakingManager.registerProvider(provider as StakingProviderInterface);
+                break;
+            case 'streaming':
+                this.streamingManager.registerProvider(provider as StreamingProvider);
+                break;
+            default:
+                throw new Error('Unknown provider type');
+        }
     }
 
     // === Jettons API ===

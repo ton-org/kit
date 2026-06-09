@@ -30,10 +30,11 @@ import type {
     SendTransactionApprovalResponse,
     ConnectionApprovalResponse,
     EmbeddedRequestEvent,
+    BaseProvider,
 } from '../api/models';
 import type { SwapAPI, StakingAPI } from '../api/interfaces';
 import type { NetworkManager } from '../core/NetworkManager';
-import type { ProviderFactoryContext } from './factory';
+import type { ProviderFactoryContext, ProviderInput } from './factory';
 
 /**
  * Main TonWalletKit interface
@@ -173,6 +174,8 @@ export interface ITonWalletKit {
     removeSignMessageRequestCallback(cb: (event: SignMessageRequestEvent) => void): void;
     removeDisconnectCallback(cb: (event: DisconnectionEvent) => void): void;
     removeErrorCallback(cb: (event: RequestErrorEvent) => void): void;
+
+    registerProvider(input: ProviderInput<BaseProvider>): void;
 
     // === Jettons API ===
 
