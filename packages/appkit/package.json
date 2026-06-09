@@ -61,26 +61,6 @@
         "default": "./dist/cjs/staking/tonstakers/index.js"
       }
     },
-    "./onramp": {
-      "import": {
-        "types": "./dist/esm/onramp/index.d.ts",
-        "default": "./dist/esm/onramp/index.js"
-      },
-      "require": {
-        "types": "./dist/cjs/onramp/index.d.ts",
-        "default": "./dist/cjs/onramp/index.js"
-      }
-    },
-    "./onramp/ton-pay": {
-      "import": {
-        "types": "./dist/esm/onramp/ton-pay/index.d.ts",
-        "default": "./dist/esm/onramp/ton-pay/index.js"
-      },
-      "require": {
-        "types": "./dist/cjs/onramp/ton-pay/index.d.ts",
-        "default": "./dist/cjs/onramp/ton-pay/index.js"
-      }
-    },
     "./crypto-onramp/decent": {
       "import": {
         "types": "./dist/esm/crypto-onramp/decent/index.d.ts",
@@ -115,12 +95,6 @@
       ],
       "staking/tonstakers": [
         "./dist/esm/staking/tonstakers/index.d.ts"
-      ],
-      "onramp": [
-        "./dist/esm/onramp/index.d.ts"
-      ],
-      "onramp/ton-pay": [
-        "./dist/esm/onramp/ton-pay/index.d.ts"
       ],
       "crypto-onramp/decent": [
         "./dist/esm/crypto-onramp/decent/index.d.ts"

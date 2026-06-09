@@ -6,12 +6,9 @@
  *
  */
 
-// export * from './widgets/fiat-onramp/onramp-widget';  // fiat-onramp: not ready
-
 export * from './widgets/crypto-onramp/crypto-onramp-widget';
 export * from './widgets/crypto-onramp/crypto-onramp-widget-ui';
 export * from './widgets/crypto-onramp/crypto-onramp-widget-provider';
-export * from './widgets/ton-pay-widget';
 
 export { useCryptoOnrampProvider, type UseCryptoOnrampProviderReturnType } from './hooks/use-crypto-onramp-provider';
 export {

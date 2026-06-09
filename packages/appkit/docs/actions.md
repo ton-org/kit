@@ -429,56 +429,6 @@ const result = await transferNft(appKit, {
 console.log('NFT Transfer Result:', result);
 ```
 
-## Onramp
-
-### `getOnrampManager`
-
-Get the `OnrampManager` instance.
-
-### `getOnrampProvider`
-
-Get a specific onramp provider by its ID.
-
-### `getOnrampProviders`
-
-Get all registered onramp providers.
-
-### `watchOnrampProviders`
-
-Watch for new onramp providers registration.
-
-### `getOnrampQuote`
-
-Get an onramp quote from registered providers.
-
-```ts
-const quote = await getOnrampQuote(appKit, {
-    fiatCurrency: 'USD',
-    cryptoCurrency: 'TON',
-    amount: '100',
-    isFiatAmount: true,
-});
-console.log('Onramp Quote:', quote);
-```
-
-### `buildOnrampUrl`
-
-Build an onramp URL for redirecting the user to the provider.
-
-```ts
-const quote = await getOnrampQuote(appKit, {
-    fiatCurrency: 'USD',
-    cryptoCurrency: 'TON',
-    amount: '100',
-});
-
-const url = await buildOnrampUrl(appKit, {
-    quote,
-    userAddress: 'UQ...wallet-address...',
-});
-console.log('Onramp URL:', url);
-```
-
 ## Crypto Onramp
 
 ### `getCryptoOnrampProvider`

@@ -6,28 +6,6 @@
  *
  */
 
-export interface OnrampCurrency {
-    id: string;
-    code: string;
-    name: string;
-    symbol?: string;
-    logo?: string;
-}
-
-export interface OnrampProvider {
-    id: string;
-    name: string;
-    description?: string;
-    logo?: string;
-}
-
-export interface CurrencySectionConfig {
-    title: string;
-    ids: string[];
-}
-
-export type AmountInputMode = 'token' | 'currency';
-
 export interface OnrampAmountPreset {
     amount: string;
     label: string;
