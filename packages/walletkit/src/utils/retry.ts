@@ -31,7 +31,7 @@ export async function CallForSuccess<T extends (...args: any[]) => any>(
         } catch (err) {
             lastError = err;
 
-            if (shouldRetry && !shouldRetry(err)) {
+            if (typeof shouldRetry === 'function' && shouldRetry(err) === false) {
                 throw err;
             }
 

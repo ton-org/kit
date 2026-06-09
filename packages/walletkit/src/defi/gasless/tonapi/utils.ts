@@ -110,15 +110,32 @@ export const networkFromChainId = (chainId: string): Network => {
 };
 
 /**
- * Decide whether a TonAPI gasless request failure (`/v2/gasless/estimate` or
- * `/v2/gasless/send`) is worth retrying.
- *
- * Retry on 5xx server errors and HTTP 408/429 (timeout / rate limit), and on
- * non-HTTP errors (network failures: fetch `TypeError`, `AbortError`).
+ * If this function returns true — that means we should retry request
+ * We should only retry false if we are sure that retrying will not help (for example, wrong input data, abort)
  */
 export const isTransientError = (error: unknown): boolean => {
     if (error instanceof TonClientError) {
-        return error.status >= 500 || error.status === 408 || error.status === 429;
+        // retry codes <400 and >=500
+        if (error.status >= 500 || error.status < 400) {
+            return true;
+        }
+
+        // retry codes 408 and 429
+        if (error.status === 408 || error.status === 429) {
+            return true;
+        }
+
+        // do not retry every other 400s errors
+        return false;
     }
-    return error instanceof Error;
+
+    // do not retry AbortError
+    if (typeof error === 'object' && error !== null && 'name' in error) {
+        if (error.name === 'AbortError') {
+            return false;
+        }
+    }
+
+    // Retry anything unknown
+    return true;
 };
