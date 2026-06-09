@@ -45,6 +45,7 @@ describe('Transaction Actions Examples', () => {
             getAddress: () => 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c',
             getWalletId: () => 'mock-wallet-id',
             getNetwork: () => Network.mainnet(),
+            getSupportedFeatures: () => [{ name: 'SignMessage', maxMessages: 4 }],
             sendTransaction: mockSendTransaction,
             signMessage: mockSignMessage,
         } as unknown as WalletInterface;

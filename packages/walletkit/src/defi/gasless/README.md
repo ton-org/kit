@@ -70,7 +70,7 @@ const { normalizedHash } = await kit.gasless.sendTransaction({
 });
 ```
 
-The `validUntil` timestamp is set by the relayer (typically ~2 minutes). In `@ton/appkit-react`, `useGaslessQuote` already refreshes quotes automatically via a 2-minute `staleTime`; if you wire `getQuote` manually, re-call it for long-running UIs before signing.
+The `validUntil` timestamp is set by the relayer (typically ~2 minutes). In `@ton/appkit-react`, `useGaslessQuote` marks the quote stale after a 2-minute `staleTime`, so the next trigger (re-render, refocus, or wallet/network switch) refetches it — note `staleTime` does not run a background timer. If you wire `getQuote` manually, re-call it for long-running UIs before signing.
 
 ## Error Codes
 
@@ -78,8 +78,6 @@ The `validUntil` timestamp is set by the relayer (typically ~2 minutes). In `@to
 
 | Code | Meaning |
 |---|---|
-| `UNSUPPORTED_FEE_ASSET` | The relayer does not accept the chosen fee asset. |
-| `FEE_ASSET_NOT_OWNED` | The user has never held the chosen fee asset, so the relayer cannot resolve its (uninitialized) jetton wallet. |
 | `UNSUPPORTED_OPERATION` | The provider does not implement the requested mode (e.g. a jetton-fee-only provider called without `feeAsset`). |
 | `QUOTE_FAILED` | Relayer rejected the quote (insufficient liquidity, malformed messages, …). |
 | `SEND_FAILED` | Relayer rejected the signed BoC, or all retries were exhausted. |

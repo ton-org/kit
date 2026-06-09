@@ -11,6 +11,7 @@
 interface ImportMetaEnv {
     readonly VITE_BRIDGE_URL?: string;
     readonly VITE_TON_API_KEY?: string;
+    readonly VITE_TONCONNECT_MANIFEST_URL: string;
 }
 
 interface ImportMeta {

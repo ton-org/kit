@@ -1335,6 +1335,16 @@ return (
 );
 ```
 
+### `useSignMessageSupport`
+
+Hook to check whether the selected wallet advertises the `SignMessage` feature (required for gasless). Reactive to wallet selection changes; fail-closed (`false`) when no wallet is selected or features aren't advertised.
+
+```tsx
+const hasSignMessageSupport = useSignMessageSupport();
+
+return <p>{hasSignMessageSupport ? 'Wallet supports SignMessage' : 'SignMessage not supported'}</p>;
+```
+
 <!--
 This file is auto-generated. Do not edit manually.
 Changes will be overwritten when running the docs update script.

@@ -7,6 +7,7 @@
  */
 
 import { useCallback } from 'react';
+import { toast } from 'sonner';
 import type { ITonWalletKit, Jetton, SendTransactionResponse, Wallet } from '@ton/walletkit';
 
 import { parseUnits } from '@/utils/units';
@@ -62,6 +63,14 @@ export const useSendToken = ({
     const send = useCallback(async (): Promise<SendTransactionResponse | undefined> => {
         if (!wallet) throw new Error('No wallet available');
 
+        // The regular flow routes the built tx through the kit's transaction queue;
+        // without the kit it would silently no-op and the page would still report
+        // success. Surface it instead of pretending the transfer went through.
+        if (!walletKit) {
+            toast.error('Cannot send transaction', { description: 'WalletKit is not initialized yet.' });
+            throw new Error('WalletKit is not initialized');
+        }
+
         // Gasless jetton transfer: relay the already-fetched, locally-signed quote.
         if (gasless.effective && jetton) {
             return gasless.send();
@@ -72,7 +81,7 @@ export const useSendToken = ({
                 recipientAddress: recipient,
                 transferAmount: parseUnits(amount, TON_DECIMALS).toString(),
             });
-            if (walletKit) await walletKit.handleNewTransaction(wallet, tx);
+            await walletKit.handleNewTransaction(wallet, tx);
             return undefined;
         }
 
@@ -85,7 +94,7 @@ export const useSendToken = ({
                 jettonAddress: jetton.address,
                 transferAmount: parseUnits(amount, decimals).toString(),
             });
-            if (walletKit) await walletKit.handleNewTransaction(wallet, tx);
+            await walletKit.handleNewTransaction(wallet, tx);
         }
 
         return undefined;

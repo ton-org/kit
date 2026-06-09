@@ -14,9 +14,10 @@ import type {
 } from '../../actions/gasless/get-gasless-jetton-transfer-quote';
 import { getSelectedWallet } from '../../actions/wallets/get-selected-wallet';
 import type { AppKit } from '../../core/app-kit';
+import type { Network } from '../../types/network';
 import type { QueryOptions, QueryParameter } from '../../types/query';
 import type { Compute, ExactPartial } from '../../types/utils';
-import { filterQueryOptions } from '../../utils';
+import { filterQueryOptions, resolveNetwork } from '../../utils';
 import { GASLESS_QUOTE_STALE_TIME_MS } from './get-gasless-quote';
 
 export type { GetGaslessJettonTransferQuoteErrorType };
@@ -34,14 +35,17 @@ export type GetGaslessJettonTransferQuoteQueryConfig<selectData = GetGaslessJett
 export const getGaslessJettonTransferQuoteQueryOptions = <selectData = GetGaslessJettonTransferQuoteData>(
     appKit: AppKit,
     options: GetGaslessJettonTransferQuoteQueryConfig<selectData> = {},
+    network?: Network,
 ): GetGaslessJettonTransferQuoteQueryOptions<selectData> => {
     // Bind the quote to the selected wallet's address and network so a
     // wallet/network switch produces a distinct cache entry and refetch
-    // (mirrors `getGaslessQuoteQueryOptions`). The quote is always built for the
-    // selected wallet's network, so the key tracks that — not a caller override.
+    // (mirrors `getGaslessQuoteQueryOptions`). The quote is always built on the
+    // selected wallet's network — the action resolves it internally, there is no
+    // caller override — so `network` here is a key dimension only, never forwarded
+    // to the action.
     const wallet = getSelectedWallet(appKit);
     const walletAddress = wallet?.getAddress();
-    const resolvedOptions = { ...options, network: wallet?.getNetwork() };
+    const networkChainId = resolveNetwork(appKit, network).chainId;
 
     return {
         staleTime: GASLESS_QUOTE_STALE_TIME_MS,
@@ -61,10 +65,11 @@ export const getGaslessJettonTransferQuoteQueryOptions = <selectData = GetGasles
                 string,
                 GetGaslessJettonTransferQuoteOptions,
                 string | undefined,
+                string | undefined,
             ];
             return getGaslessJettonTransferQuote(appKit, parameters);
         },
-        queryKey: getGaslessJettonTransferQuoteQueryKey(resolvedOptions, walletAddress),
+        queryKey: getGaslessJettonTransferQuoteQueryKey(options, walletAddress, networkChainId),
     };
 };
 
@@ -75,17 +80,20 @@ export type GetGaslessJettonTransferQuoteData = GetGaslessJettonTransferQuoteQue
 export const getGaslessJettonTransferQuoteQueryKey = (
     options: Compute<ExactPartial<GetGaslessJettonTransferQuoteOptions>> = {},
     walletAddress?: string,
+    networkChainId?: string,
 ): GetGaslessJettonTransferQuoteQueryKey => {
     return [
         'gaslessJettonTransferQuote',
         filterQueryOptions(options as unknown as Record<string, unknown>),
         walletAddress,
+        networkChainId,
     ] as const;
 };
 
 export type GetGaslessJettonTransferQuoteQueryKey = readonly [
     'gaslessJettonTransferQuote',
     Compute<ExactPartial<GetGaslessJettonTransferQuoteOptions>>,
+    string | undefined,
     string | undefined,
 ];
 

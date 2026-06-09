@@ -12,7 +12,6 @@ import type { AppKit } from '../../core/app-kit';
 import { createTransferJettonTransaction } from '../jettons/create-transfer-jetton-transaction';
 import { getGaslessConfig } from './get-gasless-config';
 import { getGaslessQuote } from './get-gasless-quote';
-import type { Network } from '../../types/network';
 
 export interface GetGaslessJettonTransferQuoteOptions {
     /** Jetton master address to transfer */
@@ -30,8 +29,6 @@ export interface GetGaslessJettonTransferQuoteOptions {
      * Omit only for free / sponsored providers — see {@link getGaslessQuote}.
      */
     feeAsset?: UserFriendlyAddress;
-    /** Network to query the quote for. Defaults to the selected wallet's network. */
-    network?: Network;
     /** Gasless provider id. Uses the default provider when omitted. */
     providerId?: string;
 }
@@ -61,9 +58,9 @@ export const getGaslessJettonTransferQuote = async (
     appKit: AppKit,
     options: GetGaslessJettonTransferQuoteOptions,
 ): GetGaslessJettonTransferQuoteReturnType => {
-    const { jettonAddress, recipientAddress, amount, jettonDecimals, comment, feeAsset, network, providerId } = options;
+    const { jettonAddress, recipientAddress, amount, jettonDecimals, comment, feeAsset, providerId } = options;
 
-    const { relayAddress } = await getGaslessConfig(appKit, { providerId, network });
+    const { relayAddress } = await getGaslessConfig(appKit, { providerId });
     const { messages } = await createTransferJettonTransaction(appKit, {
         jettonAddress,
         recipientAddress,
@@ -73,5 +70,5 @@ export const getGaslessJettonTransferQuote = async (
         responseDestination: relayAddress,
     });
 
-    return getGaslessQuote(appKit, { messages, feeAsset, providerId, network });
+    return getGaslessQuote(appKit, { messages, feeAsset, providerId });
 };

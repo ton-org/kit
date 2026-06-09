@@ -22,8 +22,7 @@
     "quality:bridge": "turbo quality:bridge",
     "typecheck": "turbo typecheck",
     "e2e": "turbo e2e",
-    "clean": "rimraf node_modules",
-    "clean:workspaces": "turbo run clean",
+    "clean": "turbo run clean && rimraf --glob node_modules .turbo 'packages/*/node_modules' 'apps/*/node_modules' 'demo/*/node_modules'",
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "pnpm build && changeset publish",
@@ -41,6 +40,7 @@
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-license-header": "^0.9.0",
     "globals": "^17.5.0",
+    "prettier": "^3.8.3",
     "rimraf": "catalog:",
     "turbo": "2.9.14"
   },

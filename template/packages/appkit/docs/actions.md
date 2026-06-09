@@ -450,3 +450,15 @@ Watch for changes in the list of connected wallets.
 Watch for changes in the selected wallet.
 
 %%demo/examples/src/appkit/actions/wallets#WATCH_SELECTED_WALLET%%
+
+### `getSignMessageSupport`
+
+Whether the selected wallet advertises the `SignMessage` feature (required for gasless). Fail-closed: returns `false` when no wallet is selected or features aren't advertised.
+
+%%demo/examples/src/appkit/actions/wallets#GET_SIGN_MESSAGE_SUPPORT%%
+
+### `watchSignMessageSupport`
+
+Watch whether the selected wallet supports `SignMessage`, re-evaluated on every selection change.
+
+%%demo/examples/src/appkit/actions/wallets#WATCH_SIGN_MESSAGE_SUPPORT%%

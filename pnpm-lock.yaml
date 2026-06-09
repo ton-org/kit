@@ -86,6 +86,9 @@ importers:
       globals:
         specifier: ^17.5.0
         version: 17.6.0
+      prettier:
+        specifier: ^3.8.3
+        version: 3.8.3
       rimraf:
         specifier: 'catalog:'
         version: 6.1.3

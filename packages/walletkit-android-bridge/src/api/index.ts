@@ -139,7 +139,6 @@ export const api = {
     getGaslessConfig: gasless.getGaslessConfig,
     getGaslessQuote: gasless.getGaslessQuote,
     gaslessSendTransaction: gasless.gaslessSendTransaction,
-
     walletClientSendBoc: walletClient.walletClientSendBoc,
     walletClientRunGetMethod: walletClient.walletClientRunGetMethod,
     walletClientGetBalance: walletClient.walletClientGetBalance,

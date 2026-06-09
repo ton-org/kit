@@ -25,17 +25,38 @@ import type { TonApiGaslessChainConfig } from './TonApiGaslessChainConfig';
  * ```
  */
 export interface TonApiGaslessProviderConfig {
-    /** Per-chain settings keyed by `Network#chainId`. */
+    /**
+     * Per-chain settings keyed by `Network#chainId`.
+     */
     chains?: { [chainId: string]: TonApiGaslessChainConfig };
-    /** Provider id. Defaults to `tonapi`. */
+    /**
+     * Provider id. Defaults to `tonapi`.
+     */
     providerId?: string;
-    /** Number of send retries on transient errors. Defaults to 5. */
+    /**
+     * Number of send retries on transient errors. Defaults to 5.
+     * @format int
+     */
     sendRetries?: number;
-    /** Delay between send retries in ms. Defaults to 2000. */
+    /**
+     * Delay between send retries in ms. Defaults to 1000.
+     * @format int
+     */
     sendRetryDelayMs?: number;
+    /**
+     * Number of quote retries on transient errors (5xx / network). Defaults to 5.
+     * @format int
+     */
+    quoteRetries?: number;
+    /**
+     * Fixed delay between quote retries in ms. Defaults to 1000.
+     * @format int
+     */
+    quoteRetryDelayMs?: number;
     /**
      * TTL for the in-memory `/v2/gasless/config` cache (ms). Defaults to
      * 5 minutes. Set to `0` to disable caching.
+     * @format int
      */
     configCacheTtlMs?: number;
 }

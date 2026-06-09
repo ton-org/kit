@@ -8,6 +8,7 @@
 
 import type { AppKit } from '@ton/appkit';
 import {
+    asBase64,
     getGaslessConfig,
     getGaslessJettonTransferQuote,
     getGaslessManager,
@@ -66,7 +67,7 @@ export const gaslessExample = async (appKit: AppKit) => {
             {
                 address: 'EQ...jetton_wallet_address',
                 amount: '60000000', // 0.06 TON gas budget
-                payload: 'te6cckEBAQEAAgAAAA==' as never,
+                payload: asBase64('te6cckEBAQEAAgAAAA=='),
             },
         ],
     });

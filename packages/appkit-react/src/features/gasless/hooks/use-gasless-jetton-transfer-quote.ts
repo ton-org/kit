@@ -42,10 +42,5 @@ export const useGaslessJettonTransferQuote = <selectData = GetGaslessJettonTrans
     const appKit = useAppKit();
     const walletNetwork = useNetwork();
 
-    return useQuery(
-        getGaslessJettonTransferQuoteQueryOptions(appKit, {
-            ...parameters,
-            network: parameters.network ?? walletNetwork,
-        }),
-    );
+    return useQuery(getGaslessJettonTransferQuoteQueryOptions(appKit, parameters, walletNetwork));
 };

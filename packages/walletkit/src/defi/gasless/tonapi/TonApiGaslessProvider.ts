@@ -21,17 +21,19 @@ import type {
 import { ApiClientTonApi } from '../../../clients/tonapi/ApiClientTonApi';
 import { globalLogger } from '../../../core/Logger';
 import type { ProviderFactoryContext } from '../../../types/factory';
-import { delay } from '../../../utils/delay';
+import { CallForSuccess } from '../../../utils/retry';
 import { GaslessError, GaslessErrorCode } from '../errors';
 import { GaslessProvider } from '../GaslessProvider';
 import {
     DEFAULT_CONFIG_CACHE_TTL_MS,
     DEFAULT_METADATA,
     DEFAULT_PROVIDER_ID,
+    DEFAULT_QUOTE_RETRIES,
+    DEFAULT_QUOTE_RETRY_DELAY_MS,
     DEFAULT_SEND_RETRIES,
     DEFAULT_SEND_RETRY_DELAY_MS,
 } from './constants';
-import { isTransientError, networkFromChainId } from './helpers';
+import { isTransientError, networkFromChainId } from './utils';
 import { mapGaslessConfig } from './mappers/map-gasless-config';
 import { mapTonApiGaslessError } from './mappers/map-gasless-error';
 import { buildGaslessQuoteRequest, mapGaslessQuote } from './mappers/map-gasless-quote';
@@ -69,6 +71,8 @@ export class TonApiGaslessProvider extends GaslessProvider {
     private readonly clients: Record<string, ApiClientTonApi> = {};
     private readonly sendRetries: number;
     private readonly sendRetryDelayMs: number;
+    private readonly quoteRetries: number;
+    private readonly quoteRetryDelayMs: number;
     private readonly configCacheTtlMs: number;
     private readonly configCache?: LRUCache<string, GaslessConfig, Network>;
 
@@ -81,6 +85,8 @@ export class TonApiGaslessProvider extends GaslessProvider {
         this.providerId = options.providerId ?? DEFAULT_PROVIDER_ID;
         this.sendRetries = options.sendRetries ?? DEFAULT_SEND_RETRIES;
         this.sendRetryDelayMs = options.sendRetryDelayMs ?? DEFAULT_SEND_RETRY_DELAY_MS;
+        this.quoteRetries = options.quoteRetries ?? DEFAULT_QUOTE_RETRIES;
+        this.quoteRetryDelayMs = options.quoteRetryDelayMs ?? DEFAULT_QUOTE_RETRY_DELAY_MS;
         this.configCacheTtlMs = options.configCacheTtlMs ?? DEFAULT_CONFIG_CACHE_TTL_MS;
 
         if (this.configCacheTtlMs > 0) {
@@ -185,7 +191,18 @@ export class TonApiGaslessProvider extends GaslessProvider {
 
         try {
             const http = this.getClient(params.network);
-            const raw = await http.postJson<TonApiGaslessEstimateResponse>(`/v2/gasless/estimate/${masterId}`, body);
+            // Retry only the network request (5xx / network failures) with a fixed
+            // delay — the quote is read-only and idempotent, so a flaky relayer
+            // response is safe to re-request; 4xx are surfaced immediately via
+            // `isTransientError`. Mapping runs once, outside the retry: it's
+            // deterministic, so retrying it is pointless and would misclassify a
+            // domain `GaslessError` as transient.
+            const raw = await CallForSuccess(
+                () => http.postJson<TonApiGaslessEstimateResponse>(`/v2/gasless/estimate/${masterId}`, body),
+                this.quoteRetries + 1,
+                this.quoteRetryDelayMs,
+                isTransientError,
+            );
             return mapGaslessQuote(raw, params.network);
         } catch (error) {
             log.error('Failed to quote gasless transaction', { error, params });
@@ -197,33 +214,24 @@ export class TonApiGaslessProvider extends GaslessProvider {
         const body = buildGaslessSendRequest(params);
         const http = this.getClient(params.network);
 
-        // Exponential backoff, transient-only retry. The wallet's seqno guard
-        // protects against on-chain double-spend if a retry duplicates a BoC
-        // that was actually accepted; we still avoid hammering 4xx errors to
-        // keep relayer gas burn down and surface real failures fast.
-        const attemptsTotal = this.sendRetries + 1;
-        let attempt = 0;
-        let lastError: unknown;
-
-        while (attempt < attemptsTotal) {
-            try {
-                const raw = await http.postJson<TonApiGaslessSendResponse>('/v2/gasless/send', body);
-                return { ...mapGaslessSend(raw), internalBoc: params.internalBoc };
-            } catch (error) {
-                lastError = error;
-
-                const lastAttempt = attempt === attemptsTotal - 1;
-                if (lastAttempt || !isTransientError(error)) {
-                    break;
-                }
-
-                await delay(this.sendRetryDelayMs * 2 ** attempt);
-                attempt++;
-            }
+        // Retry only the network request (5xx / network failures) with a fixed delay.
+        // The wallet's seqno guard protects against on-chain double-spend if a retry
+        // duplicates a BoC that was actually accepted; 4xx are surfaced immediately
+        // (`isTransientError`) to keep relayer gas burn down. Mapping runs once,
+        // outside the retry — a 2xx-but-unparseable response is a domain
+        // `GaslessError(SEND_FAILED)` that must fail fast, not be re-sent.
+        try {
+            const raw = await CallForSuccess(
+                () => http.postJson<TonApiGaslessSendResponse>('/v2/gasless/send', body),
+                this.sendRetries + 1,
+                this.sendRetryDelayMs,
+                isTransientError,
+            );
+            return { ...mapGaslessSend(raw), internalBoc: params.internalBoc };
+        } catch (error) {
+            log.error('Failed to send gasless transaction', { error, chainId: params.network.chainId });
+            throw mapTonApiGaslessError(error, GaslessErrorCode.SendFailed, 'Failed to send gasless transaction');
         }
-
-        log.error('Failed to send gasless transaction', { error: lastError, chainId: params.network.chainId });
-        throw mapTonApiGaslessError(lastError, GaslessErrorCode.SendFailed, 'Failed to send gasless transaction');
     }
 
     private getClient(network: Network): ApiClientTonApi {

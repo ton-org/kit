@@ -888,6 +888,30 @@ const unsubscribe = watchSelectedWallet(appKit, {
 // Later: unsubscribe();
 ```
 
+### `getSignMessageSupport`
+
+Whether the selected wallet advertises the `SignMessage` feature (required for gasless). Fail-closed: returns `false` when no wallet is selected or features aren't advertised.
+
+```ts
+const supported = getSignMessageSupport(appKit);
+
+console.log(supported ? 'Wallet supports SignMessage (gasless available)' : 'SignMessage not supported');
+```
+
+### `watchSignMessageSupport`
+
+Watch whether the selected wallet supports `SignMessage`, re-evaluated on every selection change.
+
+```ts
+const unsubscribe = watchSignMessageSupport(appKit, {
+    onChange: (supported) => {
+        console.log('SignMessage support changed:', supported);
+    },
+});
+
+// Later: unsubscribe();
+```
+
 <!--
 This file is auto-generated. Do not edit manually.
 Changes will be overwritten when running the docs update script.

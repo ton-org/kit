@@ -6,9 +6,8 @@
  *
  */
 
-import { useMemo } from 'react';
 import type { FC } from 'react';
-import { useSelectedWallet } from '@ton/appkit-react';
+import { useSignMessageSupport } from '@ton/appkit-react';
 import { getErrorMessage } from '@ton/appkit';
 import type { UserFriendlyAddress } from '@ton/appkit';
 
@@ -37,12 +36,7 @@ export const GaslessControls: FC<GaslessControlsProps> = ({
     fee,
     quoteError,
 }) => {
-    const [selectedWallet] = useSelectedWallet();
-    const supportsSignMessage = useMemo(() => {
-        const features = selectedWallet?.getSupportedFeatures();
-        if (features === undefined) return true;
-        return features.some((feature) => typeof feature === 'object' && feature.name === 'SignMessage');
-    }, [selectedWallet]);
+    const hasSignMessage = useSignMessageSupport();
 
     return (
         <div className="space-y-2">
@@ -50,13 +44,13 @@ export const GaslessControls: FC<GaslessControlsProps> = ({
                 <input
                     type="checkbox"
                     checked={enabled}
-                    disabled={!supportsSignMessage}
+                    disabled={!hasSignMessage}
                     onChange={(event) => onEnabledChange(event.target.checked)}
                 />
                 <span>Gasless — pay the gas fee in another token</span>
             </label>
 
-            {!supportsSignMessage && (
+            {!hasSignMessage && (
                 <p className="text-xs text-tertiary-foreground">
                     Connected wallet does not support gasless (no SignMessage feature).
                 </p>

@@ -73,6 +73,7 @@ export {
 export type { ToncenterTransaction } from './types/toncenter/emulation';
 export { TonProofParsedMessage } from './utils/tonProof';
 export type { ITonWalletKit } from './types/kit';
+export type { ProviderInput } from './types/factory';
 export type {
     JSBridgeInjectOptions,
     JSBridgeTransportFunction,
@@ -103,9 +104,8 @@ export type { NftTransferParamsHuman, NftTransferParamsRaw } from './types/nfts'
 export { isValidAddress, compareAddress, asAddressFriendly } from './utils/address';
 export { withTimeout } from './utils/withTimeout';
 export { validateTransactionMessage } from './validation';
-export { createDeviceInfo, createWalletManifest, getMaxOutgoingMessages } from './utils/getDefaultWalletConfig';
-export { checkSignMessageSupport, SupportError, SupportErrorCode } from './utils/checkSignMessageSupport';
-export type { CheckSignMessageSupportOptions } from './utils/checkSignMessageSupport';
+export { createDeviceInfo, createWalletManifest } from './utils/getDefaultWalletConfig';
+export { getMaxOutgoingMessages, hasSignMessageSupport } from './utils/features';
 export { Signer } from './utils/Signer';
 export { ParseStack, SerializeStack } from './utils/tvmStack';
 export { Transport } from './bridge/transport/Transport';

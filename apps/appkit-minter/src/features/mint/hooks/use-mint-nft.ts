@@ -82,7 +82,7 @@ export const useMintNft = (): UseMintNftReturn => {
     const gaslessFeeAsset = useMinterStore((state) => state.gaslessFeeAsset);
 
     const { messages, build: buildMintTransaction, isReady: isMintReady } = useMintTransaction();
-    const canEnableGasless = useCanEnableGasless();
+    const { canEnable: canEnableGasless } = useCanEnableGasless();
     const { data: tonBalance } = useBalance();
     const { data: gaslessConfig } = useGaslessConfig({ query: { enabled: gaslessEnabled } });
 

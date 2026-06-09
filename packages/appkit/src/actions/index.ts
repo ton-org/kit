@@ -280,6 +280,12 @@ export {
     type WatchSelectedWalletParameters,
     type WatchSelectedWalletReturnType,
 } from './wallets/watch-selected-wallet';
+export { getSignMessageSupport, type GetSignMessageSupportReturnType } from './wallets/get-sign-message-support';
+export {
+    watchSignMessageSupport,
+    type WatchSignMessageSupportParameters,
+    type WatchSignMessageSupportReturnType,
+} from './wallets/watch-sign-message-support';
 export {
     watchConnectedWallets,
     type WatchConnectedWalletsParameters,

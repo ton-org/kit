@@ -14,6 +14,7 @@ import type { GetGaslessConfigData, GetGaslessConfigErrorType, GetGaslessConfigQ
 import { useAppKit } from '../../settings';
 import { useQuery } from '../../../libs/query';
 import type { UseQueryReturnType } from '../../../libs/query';
+import { useNetwork } from '../../network';
 
 export type UseGaslessConfigParameters<selectData = GetGaslessConfigData> = GetGaslessConfigQueryConfig<selectData>;
 
@@ -30,6 +31,9 @@ export const useGaslessConfig = <selectData = GetGaslessConfigData>(
     parameters: UseGaslessConfigParameters<selectData> = {},
 ): UseGaslessConfigReturnType<selectData> => {
     const appKit = useAppKit();
+    const walletNetwork = useNetwork();
 
-    return useQuery(getGaslessConfigQueryOptions(appKit, parameters));
+    return useQuery(
+        getGaslessConfigQueryOptions(appKit, { ...parameters, network: parameters.network ?? walletNetwork }),
+    );
 };

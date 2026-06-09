@@ -56,6 +56,8 @@ const makeProvider = (
     return TonApiGaslessProvider.createFromContext(ctxWith(networks), {
         sendRetries: 1,
         sendRetryDelayMs: 0,
+        quoteRetries: 1,
+        quoteRetryDelayMs: 0,
         ...config,
     });
 };
@@ -350,7 +352,8 @@ describe('TonApiGaslessProvider.getQuote', () => {
     });
 
     it('wraps fetch errors in GaslessError(QUOTE_FAILED)', async () => {
-        fetchApi.mockResolvedValueOnce(new Response('relayer down', { status: 502 }));
+        // 502 is transient, so the provider retries it — return it for every attempt.
+        fetchApi.mockResolvedValue(new Response('relayer down', { status: 502 }));
 
         await expect(provider.getQuote(baseQuoteParams)).rejects.toMatchObject({
             name: 'GaslessError',
@@ -358,7 +361,52 @@ describe('TonApiGaslessProvider.getQuote', () => {
         });
     });
 
-    it('maps TonAPI error_code 40000 to GaslessError(UNSUPPORTED_FEE_ASSET)', async () => {
+    it('retries on transient 5xx failures up to quoteRetries', async () => {
+        const retryFetch = makeFetch();
+        const retryProvider = makeProvider(retryFetch, { quoteRetries: 2 });
+        retryFetch
+            .mockResolvedValueOnce(new Response('transient', { status: 500 }))
+            .mockResolvedValueOnce(new Response('transient', { status: 503 }))
+            .mockResolvedValueOnce(jsonResponse(makeRawQuote()));
+
+        const result = await retryProvider.getQuote(baseQuoteParams);
+
+        expect(retryFetch).toHaveBeenCalledTimes(3);
+        expect(result.fee).toBe('1234');
+    });
+
+    it('does NOT retry the quote on 4xx client errors', async () => {
+        const fourxxFetch = makeFetch();
+        const retryProvider = makeProvider(fourxxFetch, { quoteRetries: 3 });
+        fourxxFetch.mockResolvedValue(
+            new Response(JSON.stringify({ error: 'bad request' }), {
+                status: 400,
+                headers: { 'content-type': 'application/json' },
+            }),
+        );
+
+        await expect(retryProvider.getQuote(baseQuoteParams)).rejects.toMatchObject({
+            name: 'GaslessError',
+            code: GaslessErrorCode.QuoteFailed,
+        });
+        expect(fourxxFetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('wraps persistent 5xx errors in GaslessError(QUOTE_FAILED) after exhausting retries', async () => {
+        const persistentFetch = makeFetch();
+        const retryProvider = makeProvider(persistentFetch, { quoteRetries: 2 });
+        persistentFetch.mockResolvedValue(new Response('boom', { status: 500 }));
+
+        await expect(retryProvider.getQuote(baseQuoteParams)).rejects.toMatchObject({
+            name: 'GaslessError',
+            code: GaslessErrorCode.QuoteFailed,
+        });
+        expect(persistentFetch).toHaveBeenCalledTimes(3);
+    });
+
+    // Skipped: TonAPI numeric error_code mapping is temporarily disabled
+    // (see map-gasless-error.ts). Re-enable alongside that mapping.
+    it.skip('maps TonAPI error_code 40000 to GaslessError(UNSUPPORTED_FEE_ASSET)', async () => {
         fetchApi.mockResolvedValueOnce(
             new Response(JSON.stringify({ error: 'Jetton is not supported.', error_code: 40000 }), {
                 status: 400,
@@ -373,7 +421,10 @@ describe('TonApiGaslessProvider.getQuote', () => {
         });
     });
 
-    it('maps TonAPI error_code 40007 to GaslessError(FEE_ASSET_NOT_OWNED)', async () => {
+    // Skipped: the 40007 → FEE_ASSET_NOT_OWNED mapping is temporarily disabled
+    // (TonAPI returns 40007 for more than just "fee asset not owned" — see
+    // map-gasless-error.ts). Re-enable alongside that mapping.
+    it.skip('maps TonAPI error_code 40007 to GaslessError(FEE_ASSET_NOT_OWNED)', async () => {
         fetchApi.mockResolvedValueOnce(
             new Response(
                 JSON.stringify({
@@ -469,6 +520,9 @@ describe('TonApiGaslessProvider.sendTransaction', () => {
             name: 'GaslessError',
             code: GaslessErrorCode.SendFailed,
         });
+        // A 2xx-but-unparseable response is a domain failure, not transient — it must
+        // NOT be re-sent (the BoC may have been accepted). One POST, then fail fast.
+        expect(fetchApi).toHaveBeenCalledTimes(1);
     });
 
     it('throws GaslessError(SEND_FAILED) when the relayer omits the external field', async () => {
@@ -480,6 +534,8 @@ describe('TonApiGaslessProvider.sendTransaction', () => {
             name: 'GaslessError',
             code: GaslessErrorCode.SendFailed,
         });
+        // Missing `external` on a 2xx is a domain failure — fail fast, do not re-send.
+        expect(fetchApi).toHaveBeenCalledTimes(1);
     });
 
     it('routes to the chain-specific endpoint based on params.network', async () => {

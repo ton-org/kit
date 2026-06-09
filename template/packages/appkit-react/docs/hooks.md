@@ -366,4 +366,10 @@ Hook to get and set the currently selected wallet.
 
 %%demo/examples/src/appkit/hooks/wallets#USE_SELECTED_WALLET%%
 
+### `useSignMessageSupport`
+
+Hook to check whether the selected wallet advertises the `SignMessage` feature (required for gasless). Reactive to wallet selection changes; fail-closed (`false`) when no wallet is selected or features aren't advertised.
+
+%%demo/examples/src/appkit/hooks/wallets#USE_SIGN_MESSAGE_SUPPORT%%
+
 

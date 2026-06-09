@@ -9,6 +9,7 @@
 import type { TransactionRequest } from '../../types/transaction';
 import type { SignMessageResponse } from '../../types/signing';
 import type { AppKit } from '../../core/app-kit';
+import { getMaxOutgoingMessages, hasSignMessageSupport } from '../../utils';
 import { getSelectedWallet } from '../wallets/get-selected-wallet';
 
 export type SignMessageParameters = TransactionRequest;
@@ -24,7 +25,9 @@ export type SignMessageErrorType = Error;
  * (e.g. a gasless relayer). Unlike sendTransaction, the message is NOT submitted to the
  * network by the wallet.
  *
- * Requires the wallet to support the SignMessage feature.
+ * Throws when the connected wallet does not advertise the `SignMessage` feature, or when
+ * the request carries more messages than the wallet's `SignMessage` `maxMessages` cap —
+ * surfacing a clear error before prompting instead of an opaque bridge rejection.
  */
 export const signMessage = async (
     appKit: AppKit,
@@ -34,6 +37,19 @@ export const signMessage = async (
 
     if (!wallet) {
         throw new Error('Wallet not connected');
+    }
+
+    const features = wallet.getSupportedFeatures() ?? [];
+
+    if (!hasSignMessageSupport(features)) {
+        throw new Error('Connected wallet does not support the SignMessage feature.');
+    }
+
+    const maxMessages = getMaxOutgoingMessages(features, 'SignMessage');
+    if (parameters.messages.length > maxMessages) {
+        throw new Error(
+            `SignMessage request has ${parameters.messages.length} messages but the wallet supports up to ${maxMessages}.`,
+        );
     }
 
     return wallet.signMessage(parameters);
