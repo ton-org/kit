@@ -21,6 +21,7 @@ const logger = console;
 const RENAME_FILES: Record<string, string> = {
     _gitignore: '.gitignore',
     _npmrc: '.npmrc',
+    _env: '.env',
 };
 
 const TEMPLATES = [{ name: 'react', display: 'React + TypeScript', color: 'cyan' as const }];
@@ -31,6 +32,16 @@ function detectPackageManager(): { name: string; install: string; run: string } 
     if (agent.startsWith('pnpm')) return { name: 'pnpm', install: 'pnpm install', run: 'pnpm' };
     if (agent.startsWith('bun')) return { name: 'bun', install: 'bun install', run: 'bun' };
     return { name: 'npm', install: 'npm install', run: 'npm run' };
+}
+
+function toValidPackageName(input: string): string {
+    const name = input
+        .trim()
+        .toLowerCase()
+        .replace(/^[._]+/, '')
+        .replace(/[^a-z0-9-~]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+    return name || 'ton-app';
 }
 
 function isEmpty(dirPath: string): boolean {
@@ -57,7 +68,7 @@ function copyDir(srcDir: string, destDir: string): void {
     }
 }
 
-function replaceInFile(filePath: string, search: string | RegExp, replacement: string): void {
+function replaceInFile(filePath: string, search: string | RegExp, replacement: () => string): void {
     if (!fs.existsSync(filePath)) return;
     const content = fs.readFileSync(filePath, 'utf-8');
     fs.writeFileSync(filePath, content.replace(search, replacement));
@@ -127,10 +138,16 @@ async function run(): Promise<void> {
         }
     }
 
-    const projectName = path.basename(targetDir);
     const root = path.resolve(process.cwd(), targetDir);
+    // Resolve "." to the real folder name so the package name is never "."
+    const projectName = path.basename(root);
+    const packageName = toValidPackageName(projectName);
 
     // 2. Handle existing directory
+    if (fs.existsSync(root) && !fs.statSync(root).isDirectory()) {
+        prompts.cancel(`"${targetDir}" exists and is not a directory.`);
+        process.exit(1);
+    }
     if (fs.existsSync(root) && !isEmpty(root)) {
         if (argv.overwrite || useDefaults) {
             emptyDir(root);
@@ -204,16 +221,17 @@ async function run(): Promise<void> {
     // Rewrite package.json name
     const pkgPath = path.join(root, 'package.json');
     const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8')) as Record<string, unknown>;
-    pkg.name = projectName;
+    pkg.name = packageName;
     fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 4) + '\n');
 
     // Rewrite index.html <title>
-    replaceInFile(path.join(root, 'index.html'), /<title>.*<\/title>/, `<title>${projectName}</title>`);
+    replaceInFile(path.join(root, 'index.html'), /<title>.*<\/title>/, () => `<title>${projectName}</title>`);
 
     // Rewrite tonconnect-manifest.json
     const manifestPath = path.join(root, 'public', 'tonconnect-manifest.json');
     if (fs.existsSync(manifestPath)) {
         const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8')) as Record<string, unknown>;
+        manifest.name = projectName;
         manifest.url = appUrl;
         manifest.iconUrl = `${appUrl}/favicon.svg`;
         fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 4) + '\n');
@@ -228,10 +246,7 @@ async function run(): Promise<void> {
             ? ''
             : `  cd ${path.relative(process.cwd(), root).includes(' ') ? `"${path.relative(process.cwd(), root)}"` : path.relative(process.cwd(), root)}`;
 
-    prompts.note(
-        [cdCmd, `  ${pm.install}`, '  cp .env.example .env', `  ${pm.run} dev`].filter(Boolean).join('\n'),
-        'Next steps',
-    );
+    prompts.note([cdCmd, `  ${pm.install}`, `  ${pm.run} dev`].filter(Boolean).join('\n'), 'Next steps');
 
     prompts.outro('Done! Docs: https://docs.ton.org/applications/appkit/overview');
 }

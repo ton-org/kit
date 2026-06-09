@@ -14,15 +14,17 @@ Minimal Vite + React + TypeScript template that showcases the core capabilities 
 
 ```bash
 pnpm install
-cp .env.example .env   # add VITE_TONCENTER_API_KEY
 pnpm dev
 ```
+
+Optional: add a TonCenter API key to `.env` (`VITE_TONCENTER_API_KEY`) — recommended for everything,
+required for Tonstakers.
 
 Other scripts: `pnpm build`, `pnpm typecheck`, `pnpm lint`, `pnpm preview`.
 
 ## Configure
 
-All runtime config is in `.env` (see `.env.example`) and `src/appKit.ts`.
+All runtime config is in `.env` (created from the template) and `src/appKit.ts`.
 
 - **`VITE_TONCENTER_API_KEY`** — free key at <https://docs.ton.org/applications/api/toncenter/get-api-key>. Required for
   Tonstakers (polls ~1×/sec); recommended for everything else.

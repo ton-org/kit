@@ -18,14 +18,16 @@
         "template"
     ],
     "engines": {
-        "node": ">=20.12.0"
+        "node": ">=22.12.0"
     },
     "bin": {
         "create-appkit": "dist/index.js"
     },
     "files": [
         "dist",
-        "template-*/**"
+        "template-*/**",
+        "!template-*/dist",
+        "!template-*/node_modules"
     ],
     "scripts": {
         "build": "tsc -p tsconfig.json",
