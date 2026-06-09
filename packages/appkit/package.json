@@ -4,7 +4,7 @@
   "description": "",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ton-connect/kit"
+    "url": "https://github.com/ton-org/kit"
   },
   "sideEffects": false,
   "main": "dist/cjs/index.js",

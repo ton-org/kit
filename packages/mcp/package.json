@@ -65,7 +65,7 @@
   "author": "TON Tech",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ton-connect/kit"
+    "url": "https://github.com/ton-org/kit"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
