@@ -16,6 +16,28 @@ import { Logo } from '../../ui/logo';
 import { LogoWithNetwork } from '../../ui/logo-with-network';
 import { Skeleton } from '../../ui/skeleton';
 
+interface TokenSelectorIconProps {
+    title: string;
+    icon?: string;
+    iconFallback?: string;
+    networkIcon?: string;
+    empty?: boolean;
+}
+
+const TokenSelectorIcon: FC<TokenSelectorIconProps> = ({ title, icon, iconFallback, networkIcon, empty }) => {
+    if (empty) {
+        return <span className={styles.placeholderIcon} />;
+    }
+
+    const fallback = iconFallback || title[0];
+
+    if (networkIcon) {
+        return <LogoWithNetwork size={24} src={icon} fallback={fallback} alt={title} networkSrc={networkIcon} />;
+    }
+
+    return <Logo size={24} src={icon} fallback={fallback} alt={title} />;
+};
+
 export interface TokenSelectorProps extends ButtonProps {
     title: string;
     icon?: string;
@@ -24,9 +46,9 @@ export interface TokenSelectorProps extends ButtonProps {
     networkIcon?: string;
     /** Hide chevron and suppress click handling — use when there's nothing to pick */
     readOnly?: boolean;
-    /** Skip the icon slot entirely (no logo, no fallback letter) — use for empty/placeholder states. */
-    hideIcon?: boolean;
-    /** Show skeletons for the icon and title inside the pill — pill outline stays. */
+    /** No token picked yet — render a neutral placeholder circle instead of a logo or fallback letter. */
+    empty?: boolean;
+    /** Replace the icon and title with a single skeleton bar while the selection loads — pill outline stays. */
     loading?: boolean;
 }
 
@@ -36,7 +58,7 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
     iconFallback,
     networkIcon,
     readOnly,
-    hideIcon,
+    empty,
     loading,
     onClick,
     className,
@@ -51,25 +73,22 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
             {...props}
         >
             {loading ? (
-                <Skeleton width={24} height={24} className={styles.iconSkeleton} />
+                <Skeleton height={24} className={styles.titleSkeleton} />
             ) : (
-                !hideIcon &&
-                (networkIcon ? (
-                    <LogoWithNetwork
-                        size={24}
-                        src={icon}
-                        fallback={iconFallback || title[0]}
-                        alt={title}
-                        networkSrc={networkIcon}
+                <>
+                    <TokenSelectorIcon
+                        title={title}
+                        icon={icon}
+                        iconFallback={iconFallback}
+                        networkIcon={networkIcon}
+                        empty={empty}
                     />
-                ) : (
-                    <Logo size={24} src={icon} fallback={iconFallback || title[0]} alt={title} />
-                ))
+
+                    <span className={styles.symbol}>{title}</span>
+                </>
             )}
 
-            <span className={styles.symbol}>{loading ? <Skeleton width={80} height={16} /> : title}</span>
-
-            {!readOnly && !loading && (
+            {!readOnly && (
                 <svg width="12" height="8" viewBox="0 0 12 8" fill="none" className={styles.chevron}>
                     <path
                         d="M1 1.5L6 6.5L11 1.5"

@@ -22,6 +22,17 @@
   margin-left: auto;
 }
 
-.iconSkeleton {
+.placeholderIcon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
   border-radius: 50%;
+  background-color: var(--ta-color-background-tertiary);
+}
+
+.titleSkeleton {
+  width: calc(100% - 20px);
+  min-width: 60px;
+  margin-right: auto;
+  border-radius: var(--ta-border-radius-full);
 }

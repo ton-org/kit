@@ -39,9 +39,21 @@ export const NoIcon: Story = {
     },
 };
 
+// `empty` and `loading` are only used on the onramp's `secondary` pill — the placeholder
+// circle and skeleton are `tertiary`, so they'd disappear against the default `gray` pill.
 export const Empty: Story = {
     args: {
-        title: 'Select token',
+        title: 'Buy token',
+        empty: true,
+        variant: 'secondary',
+    },
+};
+
+export const Loading: Story = {
+    args: {
+        title: '',
+        loading: true,
+        variant: 'secondary',
     },
 };
 

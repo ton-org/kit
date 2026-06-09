@@ -48,7 +48,7 @@ export const OnrampTokenSelectors: FC<OnrampTokenSelectorsProps> = ({
                 className={styles.tokenSelector}
                 title={from.title ? t('onramp.buyToken', { symbol: from.title }) : (from.placeholder ?? '')}
                 icon={from.logoSrc}
-                hideIcon={!from.title}
+                empty={!from.title}
                 loading={from.loading}
                 onClick={onFromClick}
             />
@@ -60,7 +60,7 @@ export const OnrampTokenSelectors: FC<OnrampTokenSelectorsProps> = ({
                 title={to.title ? t('onramp.forCurrency', { symbol: to.title }) : (to.placeholder ?? '')}
                 icon={to.logoSrc}
                 networkIcon={to.networkLogoSrc}
-                hideIcon={!to.title}
+                empty={!to.title}
                 loading={to.loading}
                 onClick={onToClick}
             />
