@@ -404,7 +404,9 @@ describe('TonApiGaslessProvider.getQuote', () => {
         expect(persistentFetch).toHaveBeenCalledTimes(3);
     });
 
-    it('maps TonAPI error_code 40000 to GaslessError(UNSUPPORTED_FEE_ASSET)', async () => {
+    // Skipped: TonAPI numeric error_code mapping is temporarily disabled
+    // (see map-gasless-error.ts). Re-enable alongside that mapping.
+    it.skip('maps TonAPI error_code 40000 to GaslessError(UNSUPPORTED_FEE_ASSET)', async () => {
         fetchApi.mockResolvedValueOnce(
             new Response(JSON.stringify({ error: 'Jetton is not supported.', error_code: 40000 }), {
                 status: 400,
@@ -419,7 +421,10 @@ describe('TonApiGaslessProvider.getQuote', () => {
         });
     });
 
-    it('maps TonAPI error_code 40007 to GaslessError(FEE_ASSET_NOT_OWNED)', async () => {
+    // Skipped: the 40007 → FEE_ASSET_NOT_OWNED mapping is temporarily disabled
+    // (TonAPI returns 40007 for more than just "fee asset not owned" — see
+    // map-gasless-error.ts). Re-enable alongside that mapping.
+    it.skip('maps TonAPI error_code 40007 to GaslessError(FEE_ASSET_NOT_OWNED)', async () => {
         fetchApi.mockResolvedValueOnce(
             new Response(
                 JSON.stringify({

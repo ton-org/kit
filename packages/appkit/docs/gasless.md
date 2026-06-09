@@ -110,8 +110,6 @@ For React projects, the same flow is available as hooks (`useSendTransaction` / 
 
 | Code | When it happens |
 |---|---|
-| `UNSUPPORTED_FEE_ASSET` | The relayer does not accept the chosen `feeAsset`. |
-| `FEE_ASSET_NOT_OWNED` | The user has never held the chosen `feeAsset`, so the relayer cannot resolve its (uninitialized) jetton wallet. Pick a fee asset the user already owns. |
 | `UNSUPPORTED_OPERATION` | The provider does not implement the requested mode (e.g. a jetton-fee provider called without `feeAsset`). |
 | `QUOTE_FAILED` | Relayer rejected the quote (insufficient liquidity, malformed messages, …). |
 | `SEND_FAILED` | Relayer rejected the signed BoC, or all retries were exhausted. |

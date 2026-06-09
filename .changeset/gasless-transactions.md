@@ -9,7 +9,7 @@ Added gasless transactions support. A relayer pays the TON gas; the user pays a 
 - `@ton/walletkit`:
     - `GaslessManager` and the `GaslessProvider` abstract base — parallel to `StakingManager` / `SwapManager`. Extend `GaslessProvider` to plug in your own relayer.
     - `TonApiGaslessProvider` / `createTonApiGaslessProvider()` — gasless via the TonAPI relayer. Auto-discovers networks from the kit; per-chain `apiKey` / `endpoint` overrides supported.
-    - `GaslessError` with `GaslessErrorCode`: `UnsupportedFeeAsset`, `FeeAssetNotOwned`, `UnsupportedOperation`, `QuoteFailed`, `SendFailed`, `ConfigFailed`, `SignMessageNotSupported`, `TooManyMessages`, `QuoteExpired`, `WalletMismatch`.
+    - `GaslessError` with `GaslessErrorCode`: `UnsupportedOperation`, `QuoteFailed`, `SendFailed`, `ConfigFailed`, `SignMessageNotSupported`, `TooManyMessages`, `QuoteExpired`, `WalletMismatch`.
     - `TonApiGaslessProvider` retries transient (5xx / network) failures for both quote and send — configurable via `quoteRetries` / `quoteRetryDelayMs` and `sendRetries` / `sendRetryDelayMs` on `createTonApiGaslessProvider`.
     - Wallet-feature helpers: `hasSignMessageSupport(features)` (whether a wallet's advertised features include `SignMessage`, the capability gasless requires) and `getMaxOutgoingMessages(features, featureName?)` — now takes an optional feature name so it reads the `maxMessages` cap of either `SendTransaction` (default) or `SignMessage`.
 
