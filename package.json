@@ -12,6 +12,7 @@
     "demo-wallet": "pnpm --filter demo-wallet",
     "demo-wallet-native": "pnpm --filter demo-wallet-native",
     "appkit-minter": "pnpm --filter appkit-minter",
+    "template": "pnpm exec turbo build --filter=@ton/appkit --filter=@ton/appkit-react && pnpm --filter template dev",
     "build": "turbo build",
     "dev": "turbo dev",
     "lint-files": "eslint --max-warnings 0",

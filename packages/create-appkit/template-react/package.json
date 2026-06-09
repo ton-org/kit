@@ -1,0 +1,36 @@
+{
+    "name": "appkit-template",
+    "private": true,
+    "version": "0.0.0",
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "tsc -b && vite build",
+        "lint": "eslint .",
+        "typecheck": "tsc -b --noEmit",
+        "preview": "vite preview"
+    },
+    "dependencies": {
+        "@tanstack/react-query": "^5.100.14",
+        "@ton/appkit": "^1.0.0-alpha.1",
+        "@ton/appkit-react": "^1.0.0-alpha.1",
+        "@tonconnect/ui": "^2.4.4",
+        "@tonconnect/ui-react": "^2.4.4",
+        "buffer": "^6.0.3",
+        "react": "^19.2.3",
+        "react-dom": "^19.2.3"
+    },
+    "devDependencies": {
+        "@eslint/js": "^10.0.1",
+        "@types/react": "^19.2.3",
+        "@types/react-dom": "^19.2.3",
+        "@vitejs/plugin-react": "^6.0.1",
+        "eslint": "^10.3.0",
+        "eslint-plugin-react-hooks": "^7.1.1",
+        "eslint-plugin-react-refresh": "^0.5.2",
+        "globals": "^17.6.0",
+        "typescript": "~6.0.2",
+        "typescript-eslint": "^8.59.2",
+        "vite": "^8.0.14"
+    }
+}
