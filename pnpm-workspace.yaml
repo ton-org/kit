@@ -1,6 +1,5 @@
 packages:
   - packages/*
-  - packages/create-appkit/template-*
   - apps/*
   - demo/*
 
