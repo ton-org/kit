@@ -37,7 +37,7 @@ If no chain ends up configured, the factory throws.
 
 `sendTransaction` and `getQuote` retry on transient failures only (HTTP 5xx, 408, 429, network errors) with a fixed delay (`sendRetryDelayMs` / `quoteRetryDelayMs`). 4xx responses fail fast. The wallet's seqno guard protects against on-chain double-spend if a retry duplicates an accepted BoC.
 
-`getConfig` does not retry — its result is cached in-memory (`configCacheTtlMs`) and again at the React Query layer.
+`getConfig` does not retry — its result is cached in-memory (`configCacheTtlMs`).
 
 ## BoC encoding
 

@@ -20,7 +20,7 @@ const VALID_UNTIL_SECONDS = 600;
 export interface UseMintTransactionReturn {
     /**
      * Pre-computed deploy messages (eager). Available when card + wallet are ready.
-     * Reused by downstream checks like `getTonShortfall` without invoking the build mutation.
+     * Reused by downstream checks like `checkTonBalance` without invoking the build mutation.
      */
     messages: TransactionRequestMessage[] | undefined;
     /** Wraps current `messages` with a fresh `validUntil` and returns a ready-to-send `TransactionRequest`. */

@@ -18,7 +18,9 @@ import {
     storeMessageRelaxed,
 } from '@ton/core';
 
+import { Network } from '../../../api/models';
 import type { Base64String, TransactionRequestMessage } from '../../../api/models';
+import { TonClientError } from '../../../clients/TonClientError';
 import { asBase64, HexToBase64 } from '../../../utils/base64';
 import { asHex } from '../../../utils/hex';
 import { GaslessError, GaslessErrorCode } from '../errors';
@@ -88,4 +90,35 @@ export const internalBocToExternalMessageBoc = (internalBoc: Base64String): Cell
             ),
         )
         .endCell();
+};
+
+/**
+ * Reconstruct a `Network` instance from a chainId string. Used to map
+ * `Object.keys(chainConfig)` back to `Network` objects.
+ */
+export const networkFromChainId = (chainId: string): Network => {
+    switch (chainId) {
+        case Network.mainnet().chainId:
+            return Network.mainnet();
+        case Network.testnet().chainId:
+            return Network.testnet();
+        case Network.tetra().chainId:
+            return Network.tetra();
+        default:
+            return Network.custom(chainId);
+    }
+};
+
+/**
+ * Decide whether a TonAPI gasless request failure (`/v2/gasless/estimate` or
+ * `/v2/gasless/send`) is worth retrying.
+ *
+ * Retry on 5xx server errors and HTTP 408/429 (timeout / rate limit), and on
+ * non-HTTP errors (network failures: fetch `TypeError`, `AbortError`).
+ */
+export const isTransientError = (error: unknown): boolean => {
+    if (error instanceof TonClientError) {
+        return error.status >= 500 || error.status === 408 || error.status === 429;
+    }
+    return error instanceof Error;
 };

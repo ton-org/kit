@@ -33,7 +33,7 @@ import {
     DEFAULT_SEND_RETRIES,
     DEFAULT_SEND_RETRY_DELAY_MS,
 } from './constants';
-import { isTransientError, networkFromChainId } from './helpers';
+import { isTransientError, networkFromChainId } from './utils';
 import { mapGaslessConfig } from './mappers/map-gasless-config';
 import { mapTonApiGaslessError } from './mappers/map-gasless-error';
 import { buildGaslessQuoteRequest, mapGaslessQuote } from './mappers/map-gasless-quote';
