@@ -39,12 +39,12 @@ export interface TonApiGaslessProviderConfig {
      */
     sendRetries?: number;
     /**
-     * Delay between send retries in ms. Defaults to 2000.
+     * Delay between send retries in ms. Defaults to 1000.
      * @format int
      */
     sendRetryDelayMs?: number;
     /**
-     * Number of quote retries on transient errors (5xx / network). Defaults to 2.
+     * Number of quote retries on transient errors (5xx / network). Defaults to 5.
      * @format int
      */
     quoteRetries?: number;

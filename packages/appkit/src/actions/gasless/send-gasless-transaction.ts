@@ -10,7 +10,7 @@ import { GaslessError, GaslessErrorCode } from '../../gasless';
 import type { GaslessQuote, GaslessSendResponse } from '../../gasless';
 import type { AppKit } from '../../core/app-kit';
 import { getSelectedWallet } from '../wallets/get-selected-wallet';
-import { checkSignMessageSupport, compareAddress, SupportError, SupportErrorCode } from '../../utils';
+import { compareAddress, getMaxOutgoingMessages, hasSignMessageSupport } from '../../utils';
 
 export interface SendGaslessTransactionParameters {
     /** Pre-computed quote obtained via `getGaslessQuote` */
@@ -89,31 +89,27 @@ export const sendGaslessTransaction = async (
         );
     }
 
-    try {
-        checkSignMessageSupport(wallet.getSupportedFeatures() ?? [], {
-            requiredMessagesNumber: quote.messages.length,
-        });
-    } catch (error) {
-        if (error instanceof SupportError) {
-            if (error.code === SupportErrorCode.NotSupported) {
-                throw new GaslessError(
-                    'Connected wallet does not support the SignMessage feature required for gasless transactions.',
-                    GaslessErrorCode.SignMessageNotSupported,
-                );
-            }
+    // Gasless signs via `signMessage`, so the wallet must advertise the
+    // `SignMessage` feature, and the quote's message bundle must fit the wallet's
+    // `SignMessage` `maxMessages` cap. Checked before prompting so a wallet that
+    // can't satisfy the request fails with a typed error instead of an opaque
+    // bridge rejection.
+    const features = wallet.getSupportedFeatures() ?? [];
 
-            if (error.code === SupportErrorCode.TooManyMessages) {
-                const maxMessages = error.feature?.maxMessages;
-                throw new GaslessError(
-                    `Quote has ${quote.messages.length} messages but the wallet only supports up to ${maxMessages}.`,
-                    GaslessErrorCode.TooManyMessages,
-                    { messages: quote.messages.length, maxMessages },
-                );
-            }
+    if (!hasSignMessageSupport(features)) {
+        throw new GaslessError(
+            'Connected wallet does not support the SignMessage feature required for gasless transactions.',
+            GaslessErrorCode.SignMessageNotSupported,
+        );
+    }
 
-            throw new GaslessError(error.message, GaslessErrorCode.SignMessageNotSupported, { code: error.code });
-        }
-        throw error;
+    const maxMessages = getMaxOutgoingMessages(features, 'SignMessage');
+    if (quote.messages.length > maxMessages) {
+        throw new GaslessError(
+            `Quote has ${quote.messages.length} messages but the wallet only supports up to ${maxMessages}.`,
+            GaslessErrorCode.TooManyMessages,
+            { messages: quote.messages.length, maxMessages },
+        );
     }
 
     const { internalBoc } = await wallet.signMessage({

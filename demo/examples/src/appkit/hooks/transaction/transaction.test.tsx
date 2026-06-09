@@ -31,6 +31,7 @@ describe('Transaction Hooks Examples', () => {
     const mockWallet = {
         getAddress: () => 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c',
         getNetwork: () => mockNetwork,
+        getSupportedFeatures: () => [{ name: 'SignMessage', maxMessages: 4 }],
         sendTransaction: vi.fn(),
         signMessage: vi.fn(),
     };

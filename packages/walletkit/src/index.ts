@@ -104,14 +104,8 @@ export type { NftTransferParamsHuman, NftTransferParamsRaw } from './types/nfts'
 export { isValidAddress, compareAddress, asAddressFriendly } from './utils/address';
 export { withTimeout } from './utils/withTimeout';
 export { validateTransactionMessage } from './validation';
-export { createDeviceInfo, createWalletManifest, getMaxOutgoingMessages } from './utils/getDefaultWalletConfig';
-export {
-    checkSignMessageSupport,
-    hasSignMessageSupport,
-    SupportError,
-    SupportErrorCode,
-} from './utils/checkSignMessageSupport';
-export type { CheckSignMessageSupportOptions } from './utils/checkSignMessageSupport';
+export { createDeviceInfo, createWalletManifest } from './utils/getDefaultWalletConfig';
+export { getMaxOutgoingMessages, hasSignMessageSupport } from './utils/features';
 export { Signer } from './utils/Signer';
 export { ParseStack, SerializeStack } from './utils/tvmStack';
 export { Transport } from './bridge/transport/Transport';

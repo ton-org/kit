@@ -14,11 +14,8 @@ export {
     asAddressFriendly,
     asBase64,
     asHex,
-    checkSignMessageSupport,
     hasSignMessageSupport,
-    SupportError,
-    SupportErrorCode,
-    type CheckSignMessageSupportOptions,
+    getMaxOutgoingMessages,
 } from '@ton/walletkit';
 
 export * from './address/is-valid-address';

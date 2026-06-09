@@ -20,10 +20,12 @@ const config: TonApiGaslessProviderConfig = {
         },
         [Network.testnet().chainId]: { apiKey: process.env.TON_API_KEY_TESTNET },
     },
-    fetchApi: customFetch, // optional fetch impl (testing / SSR)
     providerId: 'tonapi', // optional id; defaults to 'tonapi'
-    sendRetries: 3, // optional override; defaults to 3
-    sendRetryDelayMs: 2000, // optional override; defaults to 2000
+    sendRetries: 5, // optional override; defaults to 5
+    sendRetryDelayMs: 1000, // optional override; defaults to 1000
+    quoteRetries: 5, // optional override; defaults to 5
+    quoteRetryDelayMs: 1000, // optional override; defaults to 1000
+    configCacheTtlMs: 300000, // optional; in-memory /v2/gasless/config cache TTL, defaults to 5 min (0 disables)
 };
 ```
 
@@ -33,9 +35,9 @@ If no chain ends up configured, the factory throws.
 
 ## Retry policy
 
-`sendTransaction` retries on transient failures only (HTTP 5xx, 408, 429, network errors) with exponential backoff (`sendRetryDelayMs * 2 ** attempt`, starting at 2000ms). 4xx responses fail fast. The wallet's seqno guard protects against on-chain double-spend if a retry duplicates an accepted BoC.
+`sendTransaction` and `getQuote` retry on transient failures only (HTTP 5xx, 408, 429, network errors) with a fixed delay (`sendRetryDelayMs` / `quoteRetryDelayMs`). 4xx responses fail fast. The wallet's seqno guard protects against on-chain double-spend if a retry duplicates an accepted BoC.
 
-`getQuote` and `getConfig` do not retry — quotes are short-lived (~2 min `validUntil`), and the config is cached at the React Query layer.
+`getConfig` does not retry — its result is cached in-memory (`configCacheTtlMs`) and again at the React Query layer.
 
 ## BoC encoding
 
