@@ -49,8 +49,8 @@ export type {
 export { JettonError, JettonErrorCode } from './jettons';
 
 // Toncenter types
+export type { ToncenterEmulationResponse } from '../clients/toncenter/types/raw-emulation';
 export type {
-    ToncenterEmulationResponse,
     ToncenterResponseJettonWallets,
     ToncenterResponseJettonMasters,
     ToncenterJettonWallet,
@@ -63,25 +63,9 @@ export type {
     TraceMeta,
 } from './toncenter/emulation';
 
-export type { FullAccountState } from './toncenter/api';
+export type { AccountState, AccountStates, TransactionId } from '../api/models';
 
-export type { MasterchainInfo } from '../api/models';
-
-export type {
-    TransactionsByAddressRequest,
-    GetTransactionByHashRequest,
-    GetPendingTransactionsRequest,
-    GetTraceRequest,
-    GetPendingTraceRequest,
-    GetJettonsByOwnerRequest,
-    GetJettonsByAddressRequest,
-    GetEventsRequest,
-    GetEventsResponse,
-} from './toncenter/ApiClient';
-
-export type { NftItem } from './toncenter/NftItem';
-
-export type { NftItems } from './toncenter/NftItems';
+export type { NftItem, NftItems } from '../clients/toncenter/types/nfts';
 export { emulationEvent, toEvent, toAddressBook } from './toncenter/AccountEvent';
 
 // Account Event types

@@ -27,7 +27,7 @@ type UseNftTransactionType =
 /**
  * Hook to create NFT mint transaction request
  */
-export function useNftMintTransaction(): UseNftTransactionType {
+export const useNftMintTransaction = (): UseNftTransactionType => {
     const currentCard = useMinterStore((state) => state.currentCard);
     const [wallet] = useSelectedWallet();
 
@@ -65,7 +65,7 @@ export function useNftMintTransaction(): UseNftTransactionType {
             messages: [
                 {
                     address: nftAddress.toString(),
-                    amount: toNano('0.05').toString(), // 0.05 TON for deployment
+                    amount: toNano('0.001').toString(), // 0.001 TON for deployment
                     stateInit: stateInitCell.toBoc().toString('base64') as Base64String,
                 },
             ],
@@ -85,4 +85,4 @@ export function useNftMintTransaction(): UseNftTransactionType {
             canMint: false,
         };
     }
-}
+};

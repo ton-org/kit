@@ -12,7 +12,7 @@ import type { CONNECT_EVENT_ERROR_CODES, SendTransactionRpcResponseError } from 
 
 import type { JettonsAPI } from './jettons';
 import type { StreamingAPI } from '../api/interfaces';
-import type { ApiClient } from './toncenter/ApiClient';
+import type { ApiClient } from '../api/interfaces';
 import type { Wallet, WalletAdapter } from '../api/interfaces';
 import type { Network } from '../api/models/core/Network';
 import type { WalletId } from '../utils/walletId';
@@ -22,15 +22,19 @@ import type {
     RequestErrorEvent,
     DisconnectionEvent,
     SignDataRequestEvent,
+    SignMessageRequestEvent,
     ConnectionRequestEvent,
     SignDataApprovalResponse,
+    SignMessageApprovalResponse,
     TONConnectSession,
     SendTransactionApprovalResponse,
     ConnectionApprovalResponse,
+    EmbeddedRequestEvent,
+    BaseProvider,
 } from '../api/models';
 import type { SwapAPI, StakingAPI } from '../api/interfaces';
 import type { NetworkManager } from '../core/NetworkManager';
-import type { ProviderFactoryContext } from './factory';
+import type { ProviderFactoryContext, ProviderInput } from './factory';
 
 /**
  * Main TonWalletKit interface
@@ -101,8 +105,11 @@ export interface ITonWalletKit {
 
     // === Request Processing ===
 
-    /** Approve a connect request */
-    approveConnectRequest(event: ConnectionRequestEvent, response?: ConnectionApprovalResponse): Promise<void>;
+    /** Approve a connect request. Returns an EmbeddedRequestEvent if the event carries an embedded request. */
+    approveConnectRequest(
+        event: ConnectionRequestEvent,
+        response?: ConnectionApprovalResponse,
+    ): Promise<EmbeddedRequestEvent | undefined>;
     /** Reject a connect request */
     rejectConnectRequest(
         event: ConnectionRequestEvent,
@@ -131,6 +138,15 @@ export interface ITonWalletKit {
     /** Reject a sign data request */
     rejectSignDataRequest(event: SignDataRequestEvent, reason?: string): Promise<void>;
 
+    /** Approve a sign message (sign-only transaction) request */
+    approveSignMessageRequest(
+        event: SignMessageRequestEvent,
+        response?: SignMessageApprovalResponse,
+    ): Promise<SignMessageApprovalResponse>;
+
+    /** Reject a sign message request */
+    rejectSignMessageRequest(event: SignMessageRequestEvent, reason?: string): Promise<void>;
+
     // === Event Handlers ===
 
     /** Register connect request handler */
@@ -142,6 +158,9 @@ export interface ITonWalletKit {
     /** Register sign data request handler */
     onSignDataRequest(cb: (event: SignDataRequestEvent) => void): void;
 
+    /** Register sign message request handler */
+    onSignMessageRequest(cb: (event: SignMessageRequestEvent) => void): void;
+
     /** Register disconnect handler */
     onDisconnect(cb: (event: DisconnectionEvent) => void): void;
 
@@ -152,8 +171,13 @@ export interface ITonWalletKit {
     removeConnectRequestCallback(cb: (event: ConnectionRequestEvent) => void): void;
     removeTransactionRequestCallback(cb: (event: SendTransactionRequestEvent) => void): void;
     removeSignDataRequestCallback(cb: (event: SignDataRequestEvent) => void): void;
+    removeSignMessageRequestCallback(cb: (event: SignMessageRequestEvent) => void): void;
     removeDisconnectCallback(cb: (event: DisconnectionEvent) => void): void;
     removeErrorCallback(cb: (event: RequestErrorEvent) => void): void;
+
+    registerProvider(input: ProviderInput<BaseProvider>): void;
+
+    // === Jettons API ===
 
     /** Jettons API access */
     jettons: JettonsAPI;

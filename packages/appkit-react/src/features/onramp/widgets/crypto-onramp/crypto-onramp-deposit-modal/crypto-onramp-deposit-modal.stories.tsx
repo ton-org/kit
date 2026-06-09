@@ -14,7 +14,7 @@ const ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
 const TOKEN_LOGO = 'https://assets.coingecko.com/coins/images/6319/standard/USDC.png?1769615602';
 
 const meta: Meta<typeof CryptoOnrampDepositModal> = {
-    title: 'Public/Features/Onramp/Internal/CryptoOnrampDepositModal',
+    title: 'Features/Onramp/Internal/CryptoOnrampDepositModal',
     component: CryptoOnrampDepositModal,
 };
 
@@ -43,10 +43,17 @@ export const WithMemo: Story = {
     },
 };
 
-export const WithNetworkWarning: Story = {
+export const WithRefundAddress: Story = {
     args: {
         ...Default.args,
-        networkWarning: 'This address only accepts USDC on the Base network. Sending other assets will result in loss.',
+        refundAddress: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
+    },
+};
+
+export const WithChainWarning: Story = {
+    args: {
+        ...Default.args,
+        chainWarning: 'This address only accepts USDC on the Base network. Sending other assets will result in loss.',
     },
 };
 

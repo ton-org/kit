@@ -1,9 +1,3 @@
-<!--
-This file is auto-generated. Do not edit manually.
-Changes will be overwritten when running the docs update script.
-Source template: template/packages/walletkit/src/defi/swap/dedust/README.md
--->
-
 # DeDust Swap Provider
 
 DeDust Router v2 is a DEX aggregator that finds the best swap rates across multiple pools and protocols on TON blockchain.
@@ -131,3 +125,10 @@ const quote2 = await getSwapQuote(appKit, {
 - [Quote API](https://hub.dedust.io/apis/router-v2/quote/) - Get swap quotes
 - [Swap API](https://hub.dedust.io/apis/router-v2/swap/) - Build swap transactions
 - [Demo Implementation](https://github.com/ton-connect/kit/blob/main/apps/demo-wallet/src/pages/Swap.tsx) - Working example
+
+<!--
+This file is auto-generated. Do not edit manually.
+Changes will be overwritten when running the docs update script.
+Source template: template/packages/walletkit/src/defi/swap/dedust/README.md
+-->
+

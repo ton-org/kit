@@ -6,6 +6,8 @@
  *
  */
 
+import './polyfills';
+
 import type { Preview } from '@storybook/react-vite';
 import type { Decorator } from '@storybook/react-vite';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';

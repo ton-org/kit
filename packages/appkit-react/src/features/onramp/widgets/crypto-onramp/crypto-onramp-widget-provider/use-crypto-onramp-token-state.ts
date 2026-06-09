@@ -8,40 +8,29 @@
 
 import { useCallback, useState } from 'react';
 import { validateNumericString } from '@ton/appkit';
+import type { CryptoOnrampDestinationCurrency, CryptoOnrampSourceCurrency } from '@ton/appkit';
 
-import { CRYPTO_PAYMENT_METHODS } from '../../../mock-data/crypto-payment-methods';
-import type { CryptoOnrampToken, CryptoPaymentMethod } from '../../../types';
 import type { CryptoAmountInputMode } from './crypto-onramp-context';
 
 interface UseCryptoOnrampTokenStateOptions {
-    tokens: CryptoOnrampToken[];
-    paymentMethods: CryptoPaymentMethod[];
-    defaultTokenId?: string;
-    defaultMethodId?: string;
+    defaultDestination?: CryptoOnrampDestinationCurrency;
+    defaultSource?: CryptoOnrampSourceCurrency;
 }
 
-const pickToken = (tokens: CryptoOnrampToken[], defaultId?: string): CryptoOnrampToken | null =>
-    tokens.find((t) => t.id === defaultId) ?? tokens[0] ?? null;
-
-const pickMethod = (methods: CryptoPaymentMethod[], defaultId?: string): CryptoPaymentMethod =>
-    methods.find((m) => m.id === defaultId) ?? methods[0] ?? CRYPTO_PAYMENT_METHODS[0]!;
-
-export const useCryptoOnrampTokenState = ({
-    tokens,
-    paymentMethods,
-    defaultTokenId,
-    defaultMethodId,
-}: UseCryptoOnrampTokenStateOptions) => {
-    const [selectedToken, setSelectedToken] = useState<CryptoOnrampToken | null>(() =>
-        pickToken(tokens, defaultTokenId),
+export const useCryptoOnrampTokenState = ({ defaultDestination, defaultSource }: UseCryptoOnrampTokenStateOptions) => {
+    // Seed from consumer-supplied defaults when given; otherwise leave empty so the UI can
+    // show skeletons/placeholders until the user picks. Selection isn't validated against
+    // the live list — if the pair isn't supported, the quote request surfaces the
+    // provider's error verbatim.
+    const [selectedToken, setSelectedToken] = useState<CryptoOnrampDestinationCurrency | null>(
+        defaultDestination ?? null,
     );
-    const [selectedMethod, setSelectedMethod] = useState<CryptoPaymentMethod>(() =>
-        pickMethod(paymentMethods, defaultMethodId),
-    );
+    const [selectedMethod, setSelectedMethod] = useState<CryptoOnrampSourceCurrency | null>(defaultSource ?? null);
     const [amount, setAmountRaw] = useState('');
     const [amountInputMode, setAmountInputMode] = useState<CryptoAmountInputMode>('method');
 
-    const amountDecimals = amountInputMode === 'method' ? selectedMethod.decimals : (selectedToken?.decimals ?? 0);
+    const amountDecimals =
+        amountInputMode === 'method' ? (selectedMethod?.decimals ?? 0) : (selectedToken?.decimals ?? 0);
 
     const setAmount = useCallback(
         (value: string) => {

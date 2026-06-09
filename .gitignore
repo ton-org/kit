@@ -5,6 +5,7 @@
 dist-android
 .idea
 .turbo
+.cache
 apps/demo-wallet/dist-extension.pem
 apps/demo-wallet/dist-extension.crx
 coverage
@@ -13,7 +14,9 @@ reports
 *-results
 *-report
 generated
+storybook-static
 .local/
+settings.local.json
 
 apps/TONWalletApp/Packages/TONWalletKit/.swiftpm/xcode/xcuserdata/
 apps/TONWalletApp/Packages/TONWalletKit/Sources/TONWalletKit/Resources/JS/walletkit-ios-bridge.mjs
@@ -35,3 +38,5 @@ packages/walletkit-android-bridge/*.sh
 release-artifacts
 *.tgz
 apps/appkit-minter/Caddyfile
+Caddyfile
+.superset

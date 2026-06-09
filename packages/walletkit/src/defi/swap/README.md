@@ -1,9 +1,3 @@
-<!--
-This file is auto-generated. Do not edit manually.
-Changes will be overwritten when running the docs update script.
-Source template: template/packages/walletkit/src/defi/swap/README.md
--->
-
 # Swap Manager
 
 SwapManager provides a unified interface for token swaps across multiple DEX protocols on TON blockchain.
@@ -166,3 +160,10 @@ Set default provider for swap operations.
 ## Examples
 
 See the [demo wallet](https://github.com/ton-connect/kit/blob/main/apps/demo-wallet/src/pages/Swap.tsx) for a complete implementation.
+
+<!--
+This file is auto-generated. Do not edit manually.
+Changes will be overwritten when running the docs update script.
+Source template: template/packages/walletkit/src/defi/swap/README.md
+-->
+

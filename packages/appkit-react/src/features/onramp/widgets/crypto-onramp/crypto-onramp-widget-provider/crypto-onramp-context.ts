@@ -7,37 +7,39 @@
  */
 
 import { createContext, useContext } from 'react';
-import type { CryptoOnrampDeposit, CryptoOnrampQuote, CryptoOnrampStatus } from '@ton/appkit';
-
-import { CRYPTO_ONRAMP_TARGET_TOKENS } from '../../../mock-data/crypto-onramp-tokens';
-import { CRYPTO_PAYMENT_METHODS } from '../../../mock-data/crypto-payment-methods';
-import { DEFAULT_ONRAMP_PRESETS } from '../../../constants';
 import type {
-    CryptoOnrampToken,
-    CryptoOnrampTokenSectionConfig,
-    CryptoPaymentMethod,
-    OnrampAmountPreset,
-    PaymentMethodSectionConfig,
-} from '../../../types';
+    CryptoOnrampDeposit,
+    CryptoOnrampDestinationCurrency,
+    CryptoOnrampProvider,
+    CryptoOnrampQuote,
+    CryptoOnrampSourceCurrency,
+    CryptoOnrampStatus,
+} from '@ton/appkit';
+
+import type { CryptoOnrampProvidersMetadata } from './use-crypto-onramp-providers-with-metadata';
+import { DEFAULT_ONRAMP_PRESETS } from '../../../constants';
+import type { ChainInfo } from '../utils/chains';
+import { DEFAULT_CHAINS } from '../utils/chains';
+import type { OnrampAmountPreset } from '../../../types';
 
 export type CryptoAmountInputMode = 'token' | 'method';
 
 export interface CryptoOnrampContextType {
-    /** Full list of tokens to buy */
-    tokens: CryptoOnrampToken[];
-    /** Optional section configs for grouping tokens */
-    tokenSections?: CryptoOnrampTokenSectionConfig[];
+    /** Full list of tokens to buy (TON-side) */
+    tokens: CryptoOnrampDestinationCurrency[];
     /** Currently selected token to buy */
-    selectedToken: CryptoOnrampToken | null;
-    setSelectedToken: (token: CryptoOnrampToken) => void;
+    selectedToken: CryptoOnrampDestinationCurrency | null;
+    setSelectedToken: (token: CryptoOnrampDestinationCurrency) => void;
 
-    /** Available crypto payment methods */
-    paymentMethods: CryptoPaymentMethod[];
-    /** Optional section configs for grouping payment methods */
-    methodSections?: PaymentMethodSectionConfig[];
+    /** Available crypto payment methods (source side) */
+    paymentMethods: CryptoOnrampSourceCurrency[];
     /** Currently selected payment method */
-    selectedMethod: CryptoPaymentMethod;
-    setSelectedMethod: (method: CryptoPaymentMethod) => void;
+    selectedMethod: CryptoOnrampSourceCurrency | null;
+    setSelectedMethod: (method: CryptoOnrampSourceCurrency) => void;
+    /** True while the provider's `/supportedCurrencies` is in its first load. */
+    isLoadingSupportedCurrencies: boolean;
+    /** CAIP-2 → chain display info map (defaults merged with consumer overrides) */
+    chains: Record<string, ChainInfo>;
 
     /** Current amount input value */
     amount: string;
@@ -49,14 +51,23 @@ export interface CryptoOnrampContextType {
     convertedAmount: string;
     presetAmounts: OnrampAmountPreset[];
 
+    /** Currently selected crypto-onramp provider (defaults to the first registered one) */
+    provider: CryptoOnrampProvider | undefined;
+    /** All registered crypto-onramp providers */
+    providers: CryptoOnrampProvider[];
+    /** Resolved metadata for each provider, keyed by `providerId`. Entry is `undefined` while loading or on error. */
+    providersMetadata: CryptoOnrampProvidersMetadata;
+    /** True while any provider's metadata query is in its first load. */
+    isProvidersMetadataLoading: boolean;
+    /** Updates the selected crypto-onramp provider */
+    setProviderId: (providerId: string) => void;
+
     /** Current quote from provider */
     quote: CryptoOnrampQuote | null;
     /** Whether quote is being fetched */
     isLoadingQuote: boolean;
     /** Error from quote fetch (i18n key) */
     quoteError: string | null;
-    /** Display name of the provider behind the current quote, when one is available. */
-    quoteProviderName: string | null;
 
     /** Current deposit offer from provider */
     deposit: CryptoOnrampDeposit | null;
@@ -66,18 +77,19 @@ export interface CryptoOnrampContextType {
     depositError: string | null;
     /** Formatted deposit amount */
     depositAmount: string;
-    /** Function to trigger deposit creation */
-    createDeposit: () => void;
+    /** Function to trigger deposit creation, optionally with a refund address */
+    createDeposit: (refundAddress?: string) => void;
     /** Deposit status */
     depositStatus: CryptoOnrampStatus | null;
 
-    /** Whether the current quote provider requires a refund address */
-    isRefundAddressRequired: boolean;
+    /**
+     * Refund-address collection mode for the current provider:
+     * `'off'` — skip the address modal; `'optional'` — show modal with a Skip button;
+     * `'required'` — show modal, address mandatory.
+     */
+    refundAddressMode: 'off' | 'optional' | 'required';
     /** Whether the current quote provider supports reversed (target-amount) input */
     isReversedAmountSupported: boolean;
-    /** Refund address */
-    refundAddress: string;
-    setRefundAddress: (address: string) => void;
 
     /** User's balance of the selected target token (formatted, token units) */
     targetBalance: string;
@@ -94,14 +106,14 @@ export interface CryptoOnrampContextType {
 }
 
 const defaultContext: CryptoOnrampContextType = {
-    tokens: CRYPTO_ONRAMP_TARGET_TOKENS,
-    tokenSections: undefined,
-    selectedToken: CRYPTO_ONRAMP_TARGET_TOKENS[0]!,
+    tokens: [],
+    selectedToken: null,
     setSelectedToken: () => {},
-    paymentMethods: CRYPTO_PAYMENT_METHODS,
-    methodSections: undefined,
-    selectedMethod: CRYPTO_PAYMENT_METHODS[0]!,
+    paymentMethods: [],
+    selectedMethod: null,
     setSelectedMethod: () => {},
+    isLoadingSupportedCurrencies: false,
+    chains: DEFAULT_CHAINS,
     amount: '',
     setAmount: () => {},
     amountInputMode: 'method',
@@ -109,10 +121,15 @@ const defaultContext: CryptoOnrampContextType = {
     convertedAmount: '',
     presetAmounts: DEFAULT_ONRAMP_PRESETS,
 
+    provider: undefined,
+    providers: [],
+    providersMetadata: {},
+    isProvidersMetadataLoading: false,
+    setProviderId: () => {},
+
     quote: null,
     isLoadingQuote: false,
     quoteError: null,
-    quoteProviderName: null,
 
     deposit: null,
     isCreatingDeposit: false,
@@ -121,10 +138,8 @@ const defaultContext: CryptoOnrampContextType = {
     createDeposit: () => {},
     depositStatus: null,
 
-    isRefundAddressRequired: false,
+    refundAddressMode: 'off',
     isReversedAmountSupported: true,
-    refundAddress: '',
-    setRefundAddress: () => {},
 
     targetBalance: '',
     isLoadingTargetBalance: false,

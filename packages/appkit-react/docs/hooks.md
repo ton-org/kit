@@ -1,9 +1,3 @@
-<!--
-This file is auto-generated. Do not edit manually.
-Changes will be overwritten when running the docs update script.
-Source template: template/packages/appkit-react/docs/hooks.md
--->
-
 # Hooks
 
 AppKit React provides a set of hooks to interact with the blockchain and wallets.
@@ -263,7 +257,6 @@ const handleTransfer = () => {
         recipientAddress: 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c',
         amount: '100', // 100 USDT
         jettonAddress: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs',
-        jettonDecimals: 6,
     });
 };
 
@@ -731,7 +724,7 @@ return (
 Hook to get a registered crypto-onramp provider by id, or the default one when no id is given.
 
 ```tsx
-const provider = useCryptoOnrampProvider({ id: 'layerswap' });
+const provider = useCryptoOnrampProviderById({ id: 'layerswap' });
 
 return <div>Provider: {provider?.providerId}</div>;
 ```
@@ -750,6 +743,17 @@ return (
         ))}
     </ul>
 );
+```
+
+### `useCryptoOnrampProviderMetadata`
+
+Hook to get static metadata for a crypto-onramp provider (display name, logo, url).
+
+```tsx
+const { data: metadata } = useCryptoOnrampProviderMetadata({
+    providerId: 'layerswap',
+});
+return <div>Provider name: {metadata?.name}</div>;
 ```
 
 ## Staking
@@ -1162,4 +1166,9 @@ return (
 );
 ```
 
+<!--
+This file is auto-generated. Do not edit manually.
+Changes will be overwritten when running the docs update script.
+Source template: template/packages/appkit-react/docs/hooks.md
+-->
 

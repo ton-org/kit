@@ -1,9 +1,3 @@
-<!--
-This file is auto-generated. Do not edit manually.
-Changes will be overwritten when running the docs update script.
-Source template: template/packages/appkit/docs/connectors.md
--->
-
 # Connectors
 
 AppKit supports wallet connections through connectors. The primary connector is `TonConnect`.
@@ -116,26 +110,12 @@ interface TonConnectConnectorConfig {
      * @default 'tonconnect'
      */
     id?: string;
-    /**
-     * Connector metadata
-     */
-    metadata?: ConnectorMetadata;
 }
 ```
 
-### Connector Metadata
+<!--
+This file is auto-generated. Do not edit manually.
+Changes will be overwritten when running the docs update script.
+Source template: template/packages/appkit/docs/connectors.md
+-->
 
-You can provide metadata for the connector, which can be used to display connector information in the UI.
-
-```typescript
-interface ConnectorMetadata {
-    /**
-     * Connector name
-     */
-    name: string;
-    /**
-     * Connector icon URL
-     */
-    iconUrl?: string;
-}
-```

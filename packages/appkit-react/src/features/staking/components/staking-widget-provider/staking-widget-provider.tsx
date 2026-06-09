@@ -6,10 +6,16 @@
  *
  */
 
-import { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { FC, PropsWithChildren } from 'react';
-import type { Network, StakingQuoteDirection, TonShortfall } from '@ton/appkit';
-import { calcMaxSpendable, formatUnits, getTonShortfall, validateNumericString } from '@ton/appkit';
+import type { Network, StakingProvider, StakingQuoteDirection, TonShortfall } from '@ton/appkit';
+import {
+    calcMaxSpendable,
+    formatUnits,
+    getTonShortfall,
+    setDefaultStakingProvider,
+    validateNumericString,
+} from '@ton/appkit';
 import type {
     StakingQuote,
     StakingProviderInfo,
@@ -20,9 +26,11 @@ import type {
 import { UnstakeMode } from '@ton/appkit';
 
 import { useNetwork } from '../../../network';
+import { useAppKit } from '../../../settings/hooks/use-app-kit';
 import { useStakingQuote } from '../../hooks/use-staking-quote';
 import type { UseStakingQuoteParameters } from '../../hooks/use-staking-quote';
 import { useStakingProvider } from '../../hooks/use-staking-provider';
+import { useStakingProviders } from '../../hooks/use-staking-providers';
 import { useStakingProviderInfo } from '../../hooks/use-staking-provider-info';
 import { useStakingProviderMetadata } from '../../hooks/use-staking-provider-metadata';
 import { useStakedBalance } from '../../hooks/use-staked-balance';
@@ -53,6 +61,14 @@ export interface StakingContextType {
     providerInfo: StakingProviderInfo | undefined;
     /** Staking provider static metadata */
     providerMetadata: StakingProviderMetadata | undefined;
+    /** Currently selected staking provider (defaults to the first registered one) */
+    provider: StakingProvider | undefined;
+    /** All registered staking providers */
+    providers: StakingProvider[];
+    /** Updates the selected staking provider */
+    setProviderId: (providerId: string) => void;
+    /** Network the widget is operating on (resolved from prop or wallet) */
+    network: Network | undefined;
     /** Current operation direction: 'stake' or 'unstake' */
     direction: StakingQuoteDirection;
     /** True while provider info is being fetched */
@@ -105,6 +121,10 @@ export const StakingContext = createContext<StakingContextType>({
     error: null,
     providerInfo: undefined,
     providerMetadata: undefined,
+    provider: undefined,
+    providers: [],
+    setProviderId: () => {},
+    network: undefined,
     direction: 'stake',
     isProviderInfoLoading: false,
     balance: undefined,
@@ -158,14 +178,19 @@ export const StakingWidgetProvider: FC<StakingProviderProps> = ({ children, netw
     const network = networkProp ?? walletNetwork;
 
     const address = useAddress();
-    const stakingProvider = useStakingProvider();
+    const appKit = useAppKit();
+    const provider = useStakingProvider();
+    const providers = useStakingProviders();
+    const setProviderId = useCallback(
+        (providerId: string) => {
+            setDefaultStakingProvider(appKit, { providerId });
+        },
+        [appKit],
+    );
 
     const isNetworkSupported = useMemo(
-        () =>
-            !stakingProvider ||
-            !network ||
-            stakingProvider.getSupportedNetworks().some((n) => n.chainId === network.chainId),
-        [stakingProvider, network],
+        () => !provider || !network || provider.getSupportedNetworks().some((n) => n.chainId === network.chainId),
+        [provider, network],
     );
 
     const { data: providerInfo, isLoading: isProviderInfoLoading } = useStakingProviderInfo({ network });
@@ -196,8 +221,39 @@ export const StakingWidgetProvider: FC<StakingProviderProps> = ({ children, netw
         query: { refetchInterval: 5000 },
     });
 
-    const { mutateAsync: buildTransaction } = useBuildStakeTransaction();
-    const { mutateAsync: sendTransaction, isPending: isSendingTransaction } = useSendTransaction();
+    const {
+        mutateAsync: buildTransaction,
+        isPending: isBuildingTransaction,
+        error: buildError,
+        reset: resetBuild,
+    } = useBuildStakeTransaction({ mutation: { networkMode: 'always' } });
+    const {
+        mutateAsync: sendTransaction,
+        isPending: isSendingPending,
+        error: sendMutationError,
+        reset: resetSend,
+    } = useSendTransaction({ mutation: { networkMode: 'always' } });
+    const isSendingTransaction = isBuildingTransaction || isSendingPending;
+    const sendError = sendMutationError ?? buildError;
+
+    const resetSendError = useCallback(() => {
+        resetBuild();
+        resetSend();
+    }, [resetBuild, resetSend]);
+
+    // Drop the previous send error when the user changes anything that invalidates it —
+    // the next attempt is conceptually a new stake, no need to keep the old message on screen.
+    useEffect(() => {
+        resetSendError();
+    }, [direction, amount, isReversed, resetSendError]);
+
+    // Auto-clear the send error after a short delay so a stale failure doesn't linger in the
+    // submit button — the user is expected to act on it within seconds or move on.
+    useEffect(() => {
+        if (!sendError) return;
+        const id = setTimeout(resetSendError, 5000);
+        return () => clearTimeout(id);
+    }, [sendError, resetSendError]);
 
     const amountDecimals = useMemo(() => {
         const unstakeDecimals = isReversed
@@ -228,7 +284,10 @@ export const StakingWidgetProvider: FC<StakingProviderProps> = ({ children, netw
         data: quote,
         isFetching: isQuoteLoading,
         error: quoteError,
-    } = useStakingQuote({ ...quoteParamsDebounced, query: { enabled: isNetworkSupported } });
+    } = useStakingQuote({
+        ...quoteParamsDebounced,
+        query: { enabled: isNetworkSupported, networkMode: 'always', retry: false, gcTime: 0 },
+    });
 
     const reversedAmount = useMemo(() => {
         if (direction === 'unstake' && isReversed) return quote?.amountIn || '0';
@@ -309,6 +368,7 @@ export const StakingWidgetProvider: FC<StakingProviderProps> = ({ children, netw
         amountDebounced: quoteParamsDebounced.amount || '',
         balance,
         quoteError,
+        sendError,
         direction,
         stakedBalance: stakedBalanceData?.stakedBalance,
         quote,
@@ -327,6 +387,10 @@ export const StakingWidgetProvider: FC<StakingProviderProps> = ({ children, netw
             error,
             providerInfo,
             providerMetadata,
+            provider,
+            providers,
+            setProviderId,
+            network,
             isProviderInfoLoading,
             balance,
             isBalanceLoading,
@@ -358,6 +422,10 @@ export const StakingWidgetProvider: FC<StakingProviderProps> = ({ children, netw
             error,
             providerInfo,
             providerMetadata,
+            provider,
+            providers,
+            setProviderId,
+            network,
             isProviderInfoLoading,
             balance,
             isBalanceLoading,

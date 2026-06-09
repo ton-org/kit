@@ -18,7 +18,9 @@ A production-ready wallet-side integration layer for TON Connect, designed for b
 - 🎨 **Previews for actions** - Transaction emulation with money flow analysis
 - 🪙 **Asset Support** - TON, Jettons, NFTs with metadata
 
-**Live Demo**: [https://walletkit-demo-wallet.vercel.app/](https://walletkit-demo-wallet.vercel.app/)
+**WalletKit Demo**: [https://walletkit-demo-wallet.vercel.app/](https://walletkit-demo-wallet.vercel.app/)
+
+**AppKit Demo**: [https://appkit-minter.vercel.app/](https://appkit-minter.vercel.app/)
 
 ## Documentation
 
@@ -147,7 +149,8 @@ The store slices [walletCoreSlice.ts](https://github.com/ton-connect/kit/blob/ma
 ## Resources
 
 - [TON Connect Protocol](https://github.com/ton-blockchain/ton-connect) - Official TON Connect protocol specification
-- [Live Demo](https://walletkit-demo-wallet.vercel.app/) - Reference implementation [sources](https://github.com/ton-connect/kit/tree/main/apps/demo-wallet)
+- [WalletKit Demo](https://walletkit-demo-wallet.vercel.app/) - Reference implementation [sources](https://github.com/ton-connect/kit/tree/main/apps/demo-wallet)
+- [AppKit Demo](https://appkit-minter.vercel.app/staking) - AppKit demo dApp for testing WalletKit connections and DeFi flows
 - [Complete development guide](https://github.com/ton-connect/kit/blob/main/packages/walletkit/DEVELOPMENT.md)
 
 ## License

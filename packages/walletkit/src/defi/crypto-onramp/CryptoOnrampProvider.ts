@@ -14,6 +14,7 @@ import type {
     CryptoOnrampQuoteParams,
     CryptoOnrampStatus,
     CryptoOnrampStatusParams,
+    CryptoOnrampSupportedCurrencies,
     Network,
 } from '../../api/models';
 import type { CryptoOnrampProviderInterface } from '../../api/interfaces';
@@ -47,8 +48,9 @@ export abstract class CryptoOnrampProvider<
 
     /**
      * Get static metadata for the provider (display name, logo, url).
+     * @returns Promise resolving to provider metadata
      */
-    abstract getMetadata(): CryptoOnrampProviderMetadata;
+    abstract getMetadata(): Promise<CryptoOnrampProviderMetadata>;
 
     /**
      * Get a quote for onramping from another crypto asset into a TON asset
@@ -70,4 +72,11 @@ export abstract class CryptoOnrampProvider<
      * @returns Promise resolving to the deposit status
      */
     abstract getStatus(params: CryptoOnrampStatusParams): Promise<CryptoOnrampStatus>;
+
+    /**
+     * Discover supported source/destination currencies. May involve network calls (e.g.
+     * Layerswap `/sources`) or return a statically-curated list when the provider has no
+     * enumeration API (e.g. Decent).
+     */
+    abstract getSupportedCurrencies(): Promise<CryptoOnrampSupportedCurrencies>;
 }

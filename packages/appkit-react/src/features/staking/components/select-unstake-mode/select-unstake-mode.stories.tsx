@@ -12,7 +12,7 @@ import { UnstakeMode } from '@ton/appkit';
 import { SelectUnstakeMode } from './select-unstake-mode';
 
 const meta: Meta<typeof SelectUnstakeMode> = {
-    title: 'Public/Features/Staking/Internal/SelectUnstakeMode',
+    title: 'Features/Staking/Internal/SelectUnstakeMode',
     component: SelectUnstakeMode,
 };
 
@@ -34,7 +34,7 @@ const mockMetadata = {
 
 const mockProviderInfo = {
     instantUnstakeAvailable: '10000000000',
-    exchangeRate: '1.05',
+    exchangeRate: '0.909090909',
     apy: 4.5,
 };
 

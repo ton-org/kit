@@ -7,6 +7,7 @@
  */
 
 import { useMinterStore } from '../minter-store';
+import { createRandomCard } from '../../lib/card-data';
 
 export const mintCard = async (): Promise<void> => {
     const { currentCard } = useMinterStore.getState();
@@ -19,7 +20,7 @@ export const mintCard = async (): Promise<void> => {
         // This just updates the local state after successful mint
         useMinterStore.setState((state) => ({
             mintedCards: [...state.mintedCards, currentCard],
-            currentCard: null,
+            currentCard: createRandomCard(),
             isMinting: false,
         }));
     } catch (error) {

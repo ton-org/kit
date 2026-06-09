@@ -11,7 +11,7 @@
  */
 export interface CryptoOnrampProviderMetadata {
     /**
-     * Human-readable provider name (e.g. 'Swaps.xyz')
+     * Human-readable provider name (e.g. 'Decent')
      */
     name: string;
 
@@ -26,10 +26,14 @@ export interface CryptoOnrampProviderMetadata {
     url?: string;
 
     /**
-     * Whether this provider requires a refund address on the source chain.
-     * When true, the UI must collect a refund address before creating a deposit.
+     * Refund-address collection mode for this provider:
+     * - `'off'` (default): no refund address — the UI skips the address modal entirely.
+     * - `'optional'`: the UI shows the address modal with a "Skip" button — users may
+     *   enter an address or proceed without one.
+     * - `'required'`: the UI shows the address modal and blocks submission until a
+     *   non-empty address is entered.
      */
-    isRefundAddressRequired?: boolean;
+    refundAddressMode?: 'off' | 'optional' | 'required';
 
     /**
      * Whether this provider supports reversed (target-amount) quotes.

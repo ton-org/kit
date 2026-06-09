@@ -6,7 +6,7 @@
  *
  */
 
-import type { StateInit } from '@ton/core';
+import type { CommonMessageInfoInternal } from '@ton/core';
 import {
     Address,
     beginCell,
@@ -16,6 +16,7 @@ import {
     loadStateInit,
     SendMode,
     storeMessage,
+    storeMessageRelaxed,
     storeStateInit,
 } from '@ton/core';
 import { external, internal } from '@ton/core';
@@ -32,6 +33,7 @@ import type {
     Base64String,
     Feature,
     WalletId,
+    SignedSendTransactionOptions,
 } from '@ton/walletkit';
 import {
     WalletKitError,
@@ -49,6 +51,13 @@ import { ActionSendMsg, packActionsList } from './actions.js';
 
 export const defaultAgenticWorkchain = 0;
 
+type AgenticWalletAuthType = 'external' | 'internal';
+
+interface CreateAgenticBodyOptions extends SignedSendTransactionOptions {
+    validUntil: number | undefined;
+    authType: AgenticWalletAuthType;
+}
+
 export interface AgenticWalletAdapterConfig {
     signer: WalletSigner;
     publicKey: Hex;
@@ -58,6 +67,7 @@ export interface AgenticWalletAdapterConfig {
     walletAddress?: Address;
     walletNftIndex?: bigint;
     collectionAddress?: Address;
+    onWalletNftIndexResolved?: (walletNftIndex: bigint) => void | Promise<void>;
 }
 
 function parseHexOrDecBigInt(input: string): bigint {
@@ -105,7 +115,7 @@ export class AgenticWalletAdapter implements WalletAdapter {
     public readonly version = 'agentic';
     public readonly address: Address;
 
-    private readonly walletInit?: { code: Cell; data: Cell };
+    private walletInit?: { code: Cell; data: Cell };
     private walletNftIndexCache?: bigint;
 
     static async create(
@@ -117,6 +127,7 @@ export class AgenticWalletAdapter implements WalletAdapter {
             walletAddress?: string | Address;
             walletNftIndex?: bigint;
             collectionAddress?: string | Address;
+            onWalletNftIndexResolved?: (walletNftIndex: bigint) => void | Promise<void>;
         },
     ): Promise<AgenticWalletAdapter> {
         return new AgenticWalletAdapter({
@@ -132,6 +143,7 @@ export class AgenticWalletAdapter implements WalletAdapter {
                 typeof options.collectionAddress === 'string'
                     ? parseAddress(options.collectionAddress)
                     : options.collectionAddress,
+            onWalletNftIndexResolved: options.onWalletNftIndexResolved,
         });
     }
 
@@ -198,105 +210,71 @@ export class AgenticWalletAdapter implements WalletAdapter {
     }
 
     async getStateInit(): Promise<Base64String> {
-        if (!this.walletInit) {
+        const walletInit = await this.ensureWalletInit();
+        if (!walletInit) {
             throw new Error(
                 'Agentic wallet init is not configured. Provide AGENTIC_WALLET_NFT_INDEX and AGENTIC_COLLECTION_ADDRESS to enable state init.',
             );
         }
 
-        const stateInit = beginCell()
-            .store(storeStateInit(this.walletInit as unknown as StateInit))
-            .endCell();
+        const stateInit = beginCell().store(storeStateInit(walletInit)).endCell();
         return stateInit.toBoc().toString('base64') as Base64String;
+    }
+
+    private async ensureWalletInit(): Promise<{ code: Cell; data: Cell } | undefined> {
+        if (this.walletInit) {
+            return this.walletInit;
+        }
+        if (!this.config.collectionAddress) {
+            return undefined;
+        }
+        const walletNftIndex = await this.getWalletNftIndex();
+        this.walletInit = {
+            code: AgenticWalletCodeCell,
+            data: buildAgenticInitData(walletNftIndex, this.config.collectionAddress),
+        };
+        return this.walletInit;
     }
 
     async getSignedSendTransaction(
         input: TransactionRequest,
-        options: { fakeSignature: boolean },
+        options?: SignedSendTransactionOptions,
     ): Promise<Base64String> {
-        const actions = packActionsList(
-            input.messages.map((m) => {
-                let bounce = true;
-                const parsedAddress = Address.parseFriendly(m.address);
-                if (parsedAddress.isBounceable === false) {
-                    bounce = false;
-                }
-
-                const msg = internal({
-                    to: m.address,
-                    value: BigInt(m.amount),
-                    bounce,
-                    extracurrency: m.extraCurrency
-                        ? Object.fromEntries(Object.entries(m.extraCurrency).map(([k, v]) => [Number(k), BigInt(v)]))
-                        : undefined,
-                });
-
-                if (m.payload) {
-                    try {
-                        msg.body = Cell.fromBase64(m.payload);
-                    } catch (error) {
-                        throw WalletKitError.fromError(
-                            ERROR_CODES.CONTRACT_VALIDATION_FAILED,
-                            'Failed to parse transaction payload',
-                            error,
-                        );
-                    }
-                }
-
-                if (m.stateInit) {
-                    try {
-                        msg.init = loadStateInit(Cell.fromBase64(m.stateInit).asSlice());
-                    } catch (error) {
-                        throw WalletKitError.fromError(
-                            ERROR_CODES.CONTRACT_VALIDATION_FAILED,
-                            'Failed to parse state init',
-                            error,
-                        );
-                    }
-                }
-
-                return new ActionSendMsg(SendMode.PAY_GAS_SEPARATELY + SendMode.IGNORE_ERRORS, msg);
-            }),
-        );
-
-        const createBodyOptions: { validUntil: number | undefined; fakeSignature: boolean } = {
-            ...options,
-            validUntil: undefined,
-        };
-
-        if (input.validUntil) {
-            const now = Math.floor(Date.now() / 1000);
-            const maxValidUntil = now + 600;
-            if (input.validUntil < now) {
-                throw new WalletKitError(
-                    ERROR_CODES.VALIDATION_ERROR,
-                    'Transaction validUntil timestamp is in the past',
-                    undefined,
-                    { validUntil: input.validUntil, currentTime: now },
-                );
-            }
-
-            createBodyOptions.validUntil = input.validUntil > maxValidUntil ? maxValidUntil : input.validUntil;
-        }
-
-        let seqno = 0;
-        try {
-            seqno = await CallForSuccess(async () => this.getSeqno(), 5, 1000);
-        } catch (_) {
-            // allow seqno fallback to 0 for undeployed contracts
-        }
-
-        const walletNftIndex = await this.getWalletNftIndex();
-        const outActions = this.extractOutActions(actions);
-        const transfer = await this.createSignedBody(seqno, walletNftIndex, outActions, createBodyOptions);
+        const transfer = await this.createSignedTransferBody(input, options, 'external');
+        const walletInit = await this.ensureWalletInit();
 
         const ext = external({
             to: this.address,
-            init: this.walletInit,
+            init: walletInit,
             body: transfer,
         });
 
         return beginCell().store(storeMessage(ext)).endCell().toBoc().toString('base64') as Base64String;
+    }
+
+    async getSignedSignMessage(
+        input: TransactionRequest,
+        options?: SignedSendTransactionOptions,
+    ): Promise<Base64String> {
+        const transfer = await this.createSignedTransferBody(input, options, 'internal');
+
+        const msg = internal({
+            to: this.address,
+            value: 0n,
+            body: transfer,
+            bounce: false,
+            init: this.walletInit,
+        });
+        msg.info = msg.info as CommonMessageInfoInternal;
+        msg.info.createdLt = 0n;
+        msg.info.createdAt = 0;
+        msg.info.ihrFee = 0n;
+        msg.info.forwardFee = 0n;
+        msg.info.ihrDisabled = false;
+        msg.info.bounce = false;
+        msg.info.bounced = false;
+        msg.info.src = new Address(0, Buffer.alloc(32));
+        return beginCell().store(storeMessageRelaxed(msg)).endCell().toBoc().toString('base64') as Base64String;
     }
 
     async getSeqno(): Promise<number> {
@@ -320,25 +298,120 @@ export class AgenticWalletAdapter implements WalletAdapter {
 
         const nftIndex = parseTopStackInt(data.stack);
         this.walletNftIndexCache = nftIndex;
+        if (this.config.onWalletNftIndexResolved) {
+            try {
+                await this.config.onWalletNftIndexResolved(nftIndex);
+            } catch {
+                // Callback is best-effort; ignore failures so signing isn't blocked.
+            }
+        }
         return nftIndex;
     }
 
-    private extractOutActions(actionsList: Cell): Cell | null {
-        const slice = actionsList.beginParse();
-        return slice.loadMaybeRef();
+    private async createSignedTransferBody(
+        input: TransactionRequest,
+        options: SignedSendTransactionOptions | undefined,
+        authType: AgenticWalletAuthType,
+    ): Promise<Cell> {
+        const actions = packActionsList(input.messages.map((message) => this.createTransferAction(message)));
+        const outActions = extractOutActions(actions);
+
+        let seqno = 0;
+        try {
+            seqno = await CallForSuccess(async () => this.getSeqno(), 5, 1000);
+        } catch (_) {
+            // allow seqno fallback to 0 for undeployed contracts
+        }
+
+        const walletNftIndex = await this.getWalletNftIndex();
+        return this.createSignedBody(seqno, walletNftIndex, outActions, {
+            ...options,
+            authType,
+            validUntil: this.resolveValidUntil(input.validUntil),
+        });
+    }
+
+    private createTransferAction(message: TransactionRequest['messages'][number]): ActionSendMsg {
+        let bounce = true;
+        try {
+            const parsedAddress = Address.parseFriendly(message.address);
+            if (parsedAddress.isBounceable === false) {
+                bounce = false;
+            }
+        } catch {
+            // raw address has no bounceable flag, keep default true
+        }
+
+        const msg = internal({
+            to: message.address,
+            value: BigInt(message.amount),
+            bounce,
+            extracurrency: message.extraCurrency
+                ? Object.fromEntries(Object.entries(message.extraCurrency).map(([k, v]) => [Number(k), BigInt(v)]))
+                : undefined,
+        });
+
+        if (message.payload) {
+            try {
+                msg.body = Cell.fromBase64(message.payload);
+            } catch (error) {
+                throw WalletKitError.fromError(
+                    ERROR_CODES.CONTRACT_VALIDATION_FAILED,
+                    'Failed to parse transaction payload',
+                    error,
+                );
+            }
+        }
+
+        if (message.stateInit) {
+            try {
+                msg.init = loadStateInit(Cell.fromBase64(message.stateInit).asSlice());
+            } catch (error) {
+                throw WalletKitError.fromError(
+                    ERROR_CODES.CONTRACT_VALIDATION_FAILED,
+                    'Failed to parse state init',
+                    error,
+                );
+            }
+        }
+
+        return new ActionSendMsg(SendMode.PAY_GAS_SEPARATELY + SendMode.IGNORE_ERRORS, msg);
+    }
+
+    private resolveValidUntil(validUntil: number | undefined): number | undefined {
+        if (!validUntil) {
+            return undefined;
+        }
+
+        const now = Math.floor(Date.now() / 1000);
+        const maxValidUntil = now + 600;
+        if (validUntil < now) {
+            throw new WalletKitError(
+                ERROR_CODES.VALIDATION_ERROR,
+                'Transaction validUntil timestamp is in the past',
+                undefined,
+                { validUntil, currentTime: now },
+            );
+        }
+
+        return validUntil > maxValidUntil ? maxValidUntil : validUntil;
     }
 
     async createSignedBody(
         seqno: number,
         walletNftIndex: bigint,
         outActions: Cell | null,
-        options: { validUntil: number | undefined; fakeSignature: boolean },
+        options: CreateAgenticBodyOptions,
     ): Promise<Cell> {
-        const authSigned = 0xbf235204;
+        const Opcodes = {
+            auth_signed: 0xbf235204,
+            auth_signed_internal: 0xbf235204,
+        };
+        const opcode = options.authType === 'internal' ? Opcodes.auth_signed_internal : Opcodes.auth_signed;
         const expireAt = options.validUntil ?? Math.floor(Date.now() / 1000) + 300;
 
         const payload = beginCell()
-            .storeUint(authSigned, 32)
+            .storeUint(opcode, 32)
             .storeUint(walletNftIndex, 256)
             .storeUint(expireAt, 32)
             .storeUint(seqno, 32)
@@ -366,14 +439,28 @@ export class AgenticWalletAdapter implements WalletAdapter {
 
     getSupportedFeatures(): Feature[] | undefined {
         return [
+            'SendTransaction',
             {
                 name: 'SendTransaction',
                 maxMessages: 255,
+                extraCurrencySupported: true,
+                itemTypes: ['ton', 'jetton', 'nft'],
+            },
+            { name: 'SignData', types: ['text', 'binary', 'cell'] },
+            {
+                name: 'SignMessage',
+                maxMessages: 255,
+                extraCurrencySupported: true,
+                itemTypes: ['ton', 'jetton', 'nft'],
             },
             {
-                name: 'SignData',
-                types: ['binary', 'cell', 'text'],
+                name: 'EmbeddedRequest',
             },
-        ];
+        ] as Feature[];
     }
+}
+
+function extractOutActions(actionsList: Cell): Cell | null {
+    const slice = actionsList.beginParse();
+    return slice.loadMaybeRef();
 }

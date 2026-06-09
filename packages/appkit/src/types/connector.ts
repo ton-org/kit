@@ -21,8 +21,6 @@ export interface Connector {
     /** Protocol type (e.g. 'tonconnect') */
     readonly type: string;
 
-    readonly metadata: ConnectorMetadata;
-
     /** Cleanup connector resources */
     destroy(): void;
 
@@ -36,18 +34,12 @@ export interface Connector {
     getConnectedWallets(): WalletInterface[];
 }
 
-export interface ConnectorMetadata {
-    name: string;
-    iconUrl?: string;
-}
-
 /**
  * Context passed to connector factory functions.
  */
 export interface ConnectorFactoryContext {
     networkManager: AppKitNetworkManager;
     eventEmitter: AppKitEmitter;
-    ssr?: boolean;
 }
 
 /** Factory function that creates a connector from context */

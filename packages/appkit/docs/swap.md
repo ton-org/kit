@@ -1,9 +1,3 @@
-<!--
-This file is auto-generated. Do not edit manually.
-Changes will be overwritten when running the docs update script.
-Source template: template/packages/appkit/docs/swap.md
--->
-
 # Swap
 
 AppKit supports swapping assets through the `SwapProvider` interface. Available providers:
@@ -75,3 +69,10 @@ registerProvider(appKit, createDeDustProvider({ defaultSlippageBps: 100 }));
 
 - **Omniston**: [Omniston SDK documentation](https://docs.ston.org/docs/developer-section/sdk/omniston-sdk) and [provider README](https://github.com/ton-connect/kit/blob/main/packages/walletkit/src/defi/swap/omniston/README.md)
 - **DeDust**: [provider README](https://github.com/ton-connect/kit/blob/main/packages/walletkit/src/defi/swap/dedust/README.md)
+
+<!--
+This file is auto-generated. Do not edit manually.
+Changes will be overwritten when running the docs update script.
+Source template: template/packages/appkit/docs/swap.md
+-->
+

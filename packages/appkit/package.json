@@ -1,6 +1,6 @@
 {
   "name": "@ton/appkit",
-  "version": "0.0.5-alpha.1",
+  "version": "1.0.0-alpha.3",
   "description": "",
   "repository": {
     "type": "git",
@@ -81,14 +81,14 @@
         "default": "./dist/cjs/onramp/appkit-onramp/index.js"
       }
     },
-    "./crypto-onramp/swaps-xyz": {
+    "./crypto-onramp/decent": {
       "import": {
-        "types": "./dist/esm/crypto-onramp/swaps-xyz/index.d.ts",
-        "default": "./dist/esm/crypto-onramp/swaps-xyz/index.js"
+        "types": "./dist/esm/crypto-onramp/decent/index.d.ts",
+        "default": "./dist/esm/crypto-onramp/decent/index.js"
       },
       "require": {
-        "types": "./dist/cjs/crypto-onramp/swaps-xyz/index.d.ts",
-        "default": "./dist/cjs/crypto-onramp/swaps-xyz/index.js"
+        "types": "./dist/cjs/crypto-onramp/decent/index.d.ts",
+        "default": "./dist/cjs/crypto-onramp/decent/index.js"
       }
     },
     "./crypto-onramp/layerswap": {
@@ -122,8 +122,8 @@
       "onramp/appkit-onramp": [
         "./dist/esm/onramp/appkit-onramp/index.d.ts"
       ],
-      "crypto-onramp/swaps-xyz": [
-        "./dist/esm/crypto-onramp/swaps-xyz/index.d.ts"
+      "crypto-onramp/decent": [
+        "./dist/esm/crypto-onramp/decent/index.d.ts"
       ],
       "crypto-onramp/layerswap": [
         "./dist/esm/crypto-onramp/layerswap/index.d.ts"
@@ -142,13 +142,14 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@ton/walletkit": "workspace:*"
+    "@ton/walletkit": "workspace:*",
+    "lru-cache": "catalog:"
   },
   "peerDependencies": {
     "@tanstack/query-core": ">=5.0.0",
     "@ton/core": "^0.62.0 || ^0.63.0",
     "@ton/crypto": "^3.3.0",
-    "@tonconnect/ui": ">=2.4.1"
+    "@tonconnect/ui": ">=2.5.0-alpha.1"
   },
   "peerDependenciesMeta": {
     "@tonconnect/ui": {
@@ -169,7 +170,7 @@
     "@tanstack/query-core": "catalog:",
     "@ton/core": "catalog:",
     "@tonconnect/ui": "catalog:",
-    "typescript": "~5.9.3",
+    "typescript": "catalog:",
     "vitest": "^4.1.4"
   }
 }

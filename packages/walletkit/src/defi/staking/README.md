@@ -1,9 +1,3 @@
-<!--
-This file is auto-generated. Do not edit manually.
-Changes will be overwritten when running the docs update script.
-Source template: template/packages/walletkit/src/defi/staking/README.md
--->
-
 # Staking
 
 `StakingManager` (exposed as `kit.staking` on `TonWalletKit`) delegates quotes, transaction building, balances, and pool info to registered staking providers.
@@ -84,3 +78,10 @@ Extend `StakingProvider` and implement `getQuote`, `buildStakeTransaction`, `get
 | `getStakingProviderInfo(network?, providerId?)` | APY and pool metadata |
 | `getSupportedUnstakeModes(providerId?)` | Modes supported by the provider |
 | `registerProvider`, `setDefaultProvider`, `getProvider`, … | Same as other DeFi managers |
+
+<!--
+This file is auto-generated. Do not edit manually.
+Changes will be overwritten when running the docs update script.
+Source template: template/packages/walletkit/src/defi/staking/README.md
+-->
+

@@ -7,10 +7,15 @@
  */
 
 // Blockchain models
+export type { AccountState } from './blockchain/AccountState';
+export type { AccountStates } from './blockchain/AccountStates';
+export type { AccountStatus } from './blockchain/AccountStatus';
 export type { MasterchainInfo } from './blockchain/MasterchainInfo';
+export type { TransactionId } from './blockchain/TransactionId';
 
 // Core models
 export type { AddressBook, AddressBookEntry } from './core/AddressBook';
+export type { ManifestFetchResult } from './core/ManifestFetchResult';
 export { AssetType } from './core/AssetType';
 export type { BaseProvider, BaseProviderEvents, BaseProviderUpdate } from './core/BaseProvider';
 export type { DAppInfo } from './core/DAppInfo';
@@ -24,6 +29,7 @@ export type { SendMode } from './core/SendMode';
 export { SendModeFlag, SendModeBase } from './core/SendMode';
 export type { SignData, SignDataText, SignDataBinary, SignDataCell } from './core/SignData';
 export type { TokenAmount } from './core/TokenAmount';
+export type { TokenAddress } from './core/TokenAddress';
 export type { TokenAnimation } from './core/TokenAnimation';
 export type { TokenImage } from './core/TokenImage';
 export type { TokenInfo } from './core/TokenInfo';
@@ -51,8 +57,45 @@ export type {
     SendTransactionRequestEvent,
     SendTransactionRequestEventPreview,
 } from './bridge/SendTransactionRequestEvent';
+export type { SignMessageApprovalResponse } from './bridge/SignMessageApprovalResponse';
+export type { SignMessageRequestEvent } from './bridge/SignMessageRequestEvent';
 export type { RequestErrorEvent } from './bridge/RequestErrorEvent';
+export type {
+    EmbeddedRequestEvent,
+    EmbeddedSendTransactionRequestEvent,
+    EmbeddedSignMessageRequestEvent,
+    EmbeddedSignDataRequestEvent,
+    EmbeddedRequest,
+    EmbeddedConnectionResult,
+    SendTransactionEmbeddedRequest,
+    SignDataEmbeddedRequest,
+    SignMessageEmbeddedRequest,
+} from './bridge/EmbeddedRequest';
 export type { TONConnectSession } from './sessions/TONConnectSession';
+
+// Emulation models
+export type { EmulationAction } from './emulation/EmulationAction';
+export type { EmulationAddressBookEntry } from './emulation/EmulationAddressBookEntry';
+export type { EmulationMessage, EmulationMessageContent } from './emulation/EmulationMessage';
+export type { EmulationResponse } from './emulation/EmulationResponse';
+export type {
+    EmulationResult,
+    EmulationResultSuccess,
+    EmulationResultError,
+    EmulationError,
+} from './emulation/EmulationResult';
+export type { EmulationTraceNode } from './emulation/EmulationTraceNode';
+export type {
+    EmulationTransaction,
+    EmulationAccountState,
+    EmulationBlockRef,
+    EmulationTransactionDescription,
+    EmulationStoragePhase,
+    EmulationCreditPhase,
+    EmulationComputePhase,
+    EmulationActionPhase,
+    EmulationActionMessageSize,
+} from './emulation/EmulationTransaction';
 
 // Jetton models
 export type { Jetton } from './jettons/Jetton';
@@ -116,12 +159,25 @@ export type {
     CryptoOnrampProviderMetadata,
     CryptoOnrampProviderMetadataOverride,
 } from './crypto-onramp/CryptoOnrampProviderMetadata';
+export type {
+    CryptoOnrampSourceCurrency,
+    CryptoOnrampDestinationCurrency,
+    CryptoOnrampSupportedCurrencies,
+} from './crypto-onramp/CryptoOnrampCurrency';
 
 // Transaction models
 export * from './transactions/Transaction';
 export type { TransactionAddressMetadata, TransactionAddressMetadataEntry } from './transactions/TransactionMetadata';
 export type { TransactionTraceMoneyFlow as TransactionMoneyFlow } from './transactions/TransactionTraceMoneyFlow';
 export type { TransactionRequest, TransactionRequestMessage } from './transactions/TransactionRequest';
+export type { SignedSendTransactionOptions } from './transactions/SignedSendTransactionOptions';
+export type {
+    StructuredItem,
+    StructuredItemType,
+    TonTransferItem,
+    JettonTransferItem,
+    NftTransferItem,
+} from './transactions/StructuredItem';
 export * from './transactions/TransactionTrace';
 export type { TransactionEmulatedPreview } from './transactions/emulation/TransactionEmulatedPreview';
 export type { TransactionEmulatedTrace } from './transactions/emulation/TransactionEmulatedTrace';

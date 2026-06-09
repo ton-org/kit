@@ -6,7 +6,7 @@
  *
  */
 
-import { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { FC, PropsWithChildren } from 'react';
 import { formatUnits } from '@ton/appkit';
 import type { Network } from '@ton/appkit';
@@ -26,7 +26,7 @@ import { useNetwork } from '../../../network';
 import { useSendTransaction } from '../../../transaction/hooks/use-send-transaction';
 import { useDebounceValue } from '../../../../hooks/use-debounce-value';
 import type { AppkitUIToken } from '../../../../types/appkit-ui-token';
-import type { TokenSectionConfig } from '../../../../components/token-select-modal';
+import type { TokenSectionConfig } from '../../../../components/shared/token-select-modal';
 import { mapSwapWidgetTokens } from '../../utils/map-swap-widget-tokens';
 import { useSwapTokenState } from './use-swap-token-state';
 import { useSwapBalances } from './use-swap-balances';
@@ -72,11 +72,11 @@ export interface SwapContextType {
     /** Slippage tolerance in basis points (100 = 1%) */
     slippage: number;
     /** Currently selected swap provider (defaults to the first registered one) */
-    swapProvider: SwapProvider | undefined;
+    provider: SwapProvider | undefined;
     /** All registered swap providers */
-    swapProviders: SwapProvider[];
+    providers: SwapProvider[];
     /** Updates the selected swap provider */
-    setSwapProviderId: (providerId: string) => void;
+    setProviderId: (providerId: string) => void;
     /** Updates the source token */
     setFromToken: (token: AppkitUIToken) => void;
     /** Updates the target token */
@@ -122,9 +122,9 @@ export const SwapContext = createContext<SwapContextType>({
     isQuoteLoading: false,
     error: null,
     slippage: 50,
-    swapProvider: undefined,
-    swapProviders: [],
-    setSwapProviderId: () => {},
+    provider: undefined,
+    providers: [],
+    setProviderId: () => {},
     setFromToken: () => {},
     setToToken: () => {},
     setFromAmount: () => {},
@@ -201,8 +201,8 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
     const [fromAmountDebounced] = useDebounceValue(fromAmount, 500);
     const [pendingSwap, setPendingSwap] = useState<TonShortfall | undefined>(undefined);
     const address = useAddress();
-    const [swapProvider, setSwapProviderId] = useSwapProvider();
-    const swapProviders = useSwapProviders();
+    const [provider, setProviderId] = useSwapProvider();
+    const providers = useSwapProviders();
 
     // Stabilized query inputs — kept next to the query that consumes them.
     const fromTokenParam = useMemo(
@@ -226,9 +226,8 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
     );
 
     const isNetworkSupported = useMemo(
-        () =>
-            !swapProvider || !network || swapProvider.getSupportedNetworks().some((n) => n.chainId === network.chainId),
-        [swapProvider, network],
+        () => !provider || !network || provider.getSupportedNetworks().some((n) => n.chainId === network.chainId),
+        [provider, network],
     );
 
     const {
@@ -241,8 +240,8 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
         amount: fromAmountDebounced,
         network,
         slippageBps: slippage,
-        providerId: swapProvider?.providerId,
-        query: { enabled: isNetworkSupported },
+        providerId: provider?.providerId,
+        query: { enabled: isNetworkSupported, networkMode: 'always', retry: false, gcTime: 0 },
     });
     // Also show "loading" while the user is still typing (debounce in-flight) so the UI doesn't flash
     // the previous quote as if it were final.
@@ -255,6 +254,29 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
     });
     const { data: tonBalance } = useBalance({ network, query: { refetchInterval: 5000 } });
 
+    // 4. Mutations (hoisted above validation: the mutation `error` is one of its inputs)
+    const {
+        mutateAsync: buildTransaction,
+        isPending: isBuildingTransaction,
+        error: buildError,
+        reset: resetBuild,
+    } = useBuildSwapTransaction({ mutation: { networkMode: 'always' } });
+    const {
+        mutateAsync: sendTransaction,
+        isPending: isSendingPending,
+        error: sendMutationError,
+        reset: resetSend,
+    } = useSendTransaction({ mutation: { networkMode: 'always' } });
+    const isSendingTransaction = isBuildingTransaction || isSendingPending;
+    const sendError = sendMutationError ?? buildError;
+
+    // Drop the previous send error when the user changes anything that would invalidate it —
+    // the next attempt is conceptually a new swap, no need to keep the old message on screen.
+    const resetSendError = useCallback(() => {
+        resetBuild();
+        resetSend();
+    }, [resetBuild, resetSend]);
+
     // 3. Derivations
     const toAmount = quote?.toAmount ?? '';
     const { error, canSubmit } = useSwapValidation({
@@ -263,7 +285,9 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
         fromToken,
         toToken,
         fromBalance,
+        quote,
         quoteError,
+        sendError,
         isNetworkSupported,
     });
     const isLowBalanceWarningOpen = pendingSwap !== undefined;
@@ -273,10 +297,19 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
         return formatUnits(pendingSwap.requiredNanos, 9);
     }, [pendingSwap]);
 
-    // 4. Mutations
-    const { mutateAsync: buildTransaction, isPending: isBuildingTransaction } = useBuildSwapTransaction();
-    const { mutateAsync: sendTransaction, isPending: isSendingPending } = useSendTransaction();
-    const isSendingTransaction = isBuildingTransaction || isSendingPending;
+    // Drop the previous send error when the user changes anything that would invalidate it —
+    // the next attempt is conceptually a new swap, no need to keep the old message on screen.
+    useEffect(() => {
+        resetSendError();
+    }, [fromToken?.address, toToken?.address, fromAmount, resetSendError]);
+
+    // Auto-clear the send error after a short delay so a stale failure doesn't linger in the
+    // submit button — the user is expected to act on it within seconds or move on.
+    useEffect(() => {
+        if (!sendError) return;
+        const id = setTimeout(resetSendError, 5000);
+        return () => clearTimeout(id);
+    }, [sendError, resetSendError]);
 
     // 5. Callbacks
     const handleMaxClick = useCallback(() => {
@@ -332,9 +365,9 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
             isQuoteLoading,
             error,
             slippage,
-            swapProvider,
-            swapProviders,
-            setSwapProviderId,
+            provider,
+            providers,
+            setProviderId,
             setFromToken,
             setToToken,
             setFromAmount,
@@ -366,9 +399,9 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
             isQuoteLoading,
             error,
             slippage,
-            swapProvider,
-            swapProviders,
-            setSwapProviderId,
+            provider,
+            providers,
+            setProviderId,
             setFromToken,
             setToToken,
             setFromAmount,

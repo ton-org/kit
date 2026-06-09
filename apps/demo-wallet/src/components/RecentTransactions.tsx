@@ -10,10 +10,10 @@ import React, { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useShallow } from 'zustand/react/shallow';
 import { useWalletStore } from '@demo/wallet-core';
-import { Base64NormalizeUrl, HexToBase64 } from '@ton/walletkit';
+import { Base64ToHex } from '@ton/walletkit';
 import type { Event, Action } from '@ton/walletkit';
 
-import { formatTonForDisplay, sameAddress } from '../utils';
+import { formatTonForDisplay, getTonviewerTxUrl, sameAddress } from '../utils';
 import { TraceRow } from './TraceRow';
 import { TransactionErrorState, TransactionLoadingState, TransactionEmptyState, ActionCard } from './transactions';
 
@@ -26,14 +26,20 @@ interface RecentTransactionsProps {
  * Displays a list of recent blockchain transactions for the current wallet
  */
 export const RecentTransactions: React.FC<RecentTransactionsProps> = memo(({ embedded = false }) => {
-    const { events, loadEvents, address, hasNextEvents, pendingTransactions } = useWalletStore(
-        useShallow((state) => ({
-            events: state.walletManagement.events,
-            loadEvents: state.loadEvents,
-            address: state.walletManagement.address,
-            hasNextEvents: state.walletManagement.hasNextEvents,
-            pendingTransactions: state.walletManagement.pendingTransactions,
-        })),
+    const { events, loadEvents, address, hasNextEvents, pendingTransactions, network } = useWalletStore(
+        useShallow((state) => {
+            const activeWallet = state.walletManagement.savedWallets.find(
+                (w) => w.id === state.walletManagement.activeWalletId,
+            );
+            return {
+                events: state.walletManagement.events,
+                loadEvents: state.loadEvents,
+                address: state.walletManagement.address,
+                hasNextEvents: state.walletManagement.hasNextEvents,
+                pendingTransactions: state.walletManagement.pendingTransactions,
+                network: activeWallet?.network || 'testnet',
+            };
+        }),
     );
     const [isInitialLoading, setIsInitialLoading] = useState(true);
     const [isPaginating, setIsPaginating] = useState(false);
@@ -106,13 +112,12 @@ export const RecentTransactions: React.FC<RecentTransactionsProps> = memo(({ emb
 
     const eventItems = useMemo(() => (events || []) as Event[], [events]);
 
-    // Build sets: trace_id and trace_external_hash are different - never compare one to the other
     const { confirmedTraceIds, confirmedExternalHashes } = useMemo(() => {
         const traceIds = new Set<string>();
         const extHashes = new Set<string>();
         for (const ev of eventItems) {
-            if (ev.eventId) traceIds.add(Base64NormalizeUrl(HexToBase64(ev.eventId)));
-            if (ev.traceExternalHash) extHashes.add(Base64NormalizeUrl(ev.traceExternalHash));
+            if (ev.eventId) traceIds.add(ev.eventId);
+            if (ev.traceExternalHash) extHashes.add(Base64ToHex(ev.traceExternalHash));
         }
         return { confirmedTraceIds: traceIds, confirmedExternalHashes: extHashes };
     }, [eventItems]);
@@ -120,17 +125,15 @@ export const RecentTransactions: React.FC<RecentTransactionsProps> = memo(({ emb
     // Merge pending + events, sort by timestamp desc. Remove pending when we have matching event (confirmed).
     const mergedItems = useMemo(() => {
         const filteredPending = pendingTransactions.filter((p) => {
-            if (p.traceIdFromFirstTx && confirmedTraceIds.has(Base64NormalizeUrl(p.traceIdFromFirstTx))) return false;
-            if (p.traceId && confirmedTraceIds.has(Base64NormalizeUrl(p.traceId))) return false;
-            if (p.externalHash && confirmedExternalHashes.has(Base64NormalizeUrl(p.externalHash))) return false;
+            if (p.traceId && confirmedTraceIds.has(p.traceId)) return false;
+            if (p.externalHash && confirmedExternalHashes.has(p.externalHash)) return false;
             return true;
         });
         // Dedupe pending by trace_id
         const seenByTraceId = new Set<string>();
         const dedupedPending = filteredPending.filter((p) => {
-            const key = Base64NormalizeUrl(p.traceId);
-            if (seenByTraceId.has(key)) return false;
-            seenByTraceId.add(key);
+            if (seenByTraceId.has(p.traceId)) return false;
+            seenByTraceId.add(p.traceId);
             return true;
         });
         const pendingAsItems = dedupedPending.map((p) => ({
@@ -141,11 +144,10 @@ export const RecentTransactions: React.FC<RecentTransactionsProps> = memo(({ emb
             data: p,
         }));
         const eventAsItems = eventItems.map((ev) => {
-            const traceIdNorm = Base64NormalizeUrl(HexToBase64(ev.eventId));
             return {
                 type: 'event' as const,
-                traceId: traceIdNorm,
-                externalHash: ev.traceExternalHash ? Base64NormalizeUrl(ev.traceExternalHash) : undefined,
+                traceId: ev.eventId,
+                externalHash: ev.traceExternalHash ? Base64ToHex(ev.traceExternalHash) : undefined,
                 timestamp: ev.timestamp,
                 data: ev,
             };
@@ -253,6 +255,7 @@ export const RecentTransactions: React.FC<RecentTransactionsProps> = memo(({ emb
                                 const isPending = p.finality !== 'confirmed' && p.finality !== 'finalized';
 
                                 const finality = p.finality ?? 'pending';
+                                const pendingExplorerHash = p.externalHash ?? p.traceId;
                                 if (p.action) {
                                     return (
                                         <motion.div key={itemKey} {...motionProps}>
@@ -263,7 +266,7 @@ export const RecentTransactions: React.FC<RecentTransactionsProps> = memo(({ emb
                                                 traceLink={
                                                     isPending
                                                         ? undefined
-                                                        : `/wallet/trace/${p.traceId}${p.externalHash ? ':' + p.externalHash : ''}`
+                                                        : getTonviewerTxUrl(network, pendingExplorerHash)
                                                 }
                                                 isPending={isPending}
                                                 finality={finality}
@@ -321,9 +324,7 @@ export const RecentTransactions: React.FC<RecentTransactionsProps> = memo(({ emb
                                             myAddress={address || ''}
                                             timestamp={preview?.timestamp ?? Math.floor(Date.now() / 1000)}
                                             traceLink={
-                                                isPending
-                                                    ? undefined
-                                                    : `/wallet/trace/${p.traceId}${p.externalHash ? ':' + p.externalHash : ''}`
+                                                isPending ? undefined : getTonviewerTxUrl(network, pendingExplorerHash)
                                             }
                                             isPending={isPending}
                                             finality={finality}
@@ -378,7 +379,7 @@ export const RecentTransactions: React.FC<RecentTransactionsProps> = memo(({ emb
                                         action={relevantAction}
                                         myAddress={address || ''}
                                         timestamp={ev.timestamp}
-                                        traceLink={`/wallet/trace/${traceId}`}
+                                        traceLink={getTonviewerTxUrl(network, externalHash)}
                                         finality="done"
                                         debugId={`event-${traceId.slice(0, 12)}`}
                                     />

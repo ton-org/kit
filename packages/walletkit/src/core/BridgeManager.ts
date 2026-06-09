@@ -50,6 +50,7 @@ export class BridgeManager {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private eventQueue: any[] = [];
     private isProcessing = false;
+    private isActive = false;
 
     // Durable events support
     private eventStore: EventStore;
@@ -98,6 +99,23 @@ export class BridgeManager {
         this.walletKitConfig = walletKitConfig;
         this.jsBridgeTransport = config?.jsBridgeTransport;
 
+        if (this.config.bridgeUrl && !this.config.disableHttpConnection) {
+            this.bridgeProvider = new BridgeProvider<WalletConsumer>(
+                this.config.bridgeUrl,
+                this.queueBridgeEvent.bind(this),
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (error: any) => {
+                    log.error('Bridge listener error', { error: error.toString() });
+                    // Send bridge-client-connect-error event for listener errors
+                    this.analytics?.emitBridgeClientConnectError({
+                        error_message: `${error?.toString() || 'Unknown error'}${error?.errorCode ? ` (Code: ${error?.errorCode})` : ''}`,
+                        trace_id: error?.traceId,
+                        client_id: error?.clientId,
+                    });
+                },
+            );
+        }
+
         if (!this.jsBridgeTransport && config?.enableJsBridge) {
             throw new WalletKitError(ERROR_CODES.INVALID_CONFIG, 'JS Bridge transport is not configured');
         }
@@ -107,8 +125,15 @@ export class BridgeManager {
      * Initialize bridge connection
      */
     async start(): Promise<void> {
-        if (this.bridgeProvider) {
-            log.warn('Bridge already initialized');
+        if (this.isActive === true) {
+            log.warn('Bridge already started');
+            return;
+        }
+
+        this.isActive = true;
+
+        if (this.isConnected === true) {
+            log.warn('Bridge already connected');
             return;
         }
 
@@ -121,6 +146,7 @@ export class BridgeManager {
                 this.reconnectAttempts = 0;
             }
         } catch (error) {
+            this.isActive = false;
             log.error('Failed to start bridge', { error });
             throw error;
         }
@@ -239,7 +265,8 @@ export class BridgeManager {
         }
 
         try {
-            await this.bridgeProvider.send(response, sessionCrypto, sessionId, {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await this.bridgeProvider.send(response, sessionCrypto as any, sessionId, {
                 traceId: event?.traceId,
             });
 
@@ -321,7 +348,6 @@ export class BridgeManager {
     async close(): Promise<void> {
         if (this.bridgeProvider) {
             await this.bridgeProvider.close();
-            this.bridgeProvider = undefined;
         }
 
         // Clear event queue and reset processing state
@@ -329,6 +355,7 @@ export class BridgeManager {
         this.isProcessing = false;
 
         // this.sessions.clear();
+        this.isActive = false;
         this.isConnected = false;
         this.reconnectAttempts = 0;
         if (this.requestProcessingTimeoutId) {
@@ -356,7 +383,8 @@ export class BridgeManager {
             session: new SessionCrypto({
                 publicKey: session.publicKey,
                 secretKey: session.privateKey.length > 64 ? session.privateKey.slice(0, 64) : session.privateKey,
-            }),
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            }) as any,
             clientId: session.sessionId,
         }));
     }
@@ -365,8 +393,11 @@ export class BridgeManager {
      * Connect to TON Connect bridge
      */
     private async connectToSSEBridge(): Promise<void> {
-        if (!this.config.bridgeUrl) {
-            return;
+        if (!this.bridgeProvider) {
+            throw new WalletKitError(
+                ERROR_CODES.BRIDGE_NOT_INITIALIZED,
+                'Bridge not initialized before connecting to SSE',
+            );
         }
 
         const connectTraceId = uuidv7();
@@ -376,7 +407,8 @@ export class BridgeManager {
             if (clients.length === 0) {
                 clients.push({
                     clientId: '0',
-                    session: new SessionCrypto(),
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    session: new SessionCrypto() as any,
                 });
             }
 
@@ -390,24 +422,8 @@ export class BridgeManager {
                 });
             }
 
-            this.bridgeProvider = await BridgeProvider.open<WalletConsumer>({
-                bridgeUrl: this.config.bridgeUrl,
-                clients,
-                listener: this.queueBridgeEvent.bind(this),
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                errorListener: (error: any) => {
-                    log.error('Bridge listener error', { error: error.toString() });
-                    // Send bridge-client-connect-error event for listener errors
-                    this.analytics?.emitBridgeClientConnectError({
-                        error_message: `${error?.toString() || 'Unknown error'}${error?.errorCode ? ` (Code: ${error?.errorCode})` : ''}`,
-                        trace_id: error?.traceId ?? connectTraceId,
-                        client_id: error?.clientId,
-                    });
-                },
-                options: {
-                    lastEventId: this.lastEventId,
-                    // heartbeatReconnectIntervalMs: this.config.reconnectInterval,
-                },
+            await this.bridgeProvider?.restoreConnection(clients, {
+                lastEventId: this.lastEventId,
             });
             this.isConnected = true;
             this.reconnectAttempts = 0;

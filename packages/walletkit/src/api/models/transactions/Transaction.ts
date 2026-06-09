@@ -6,6 +6,7 @@
  *
  */
 
+import type { AccountStatus } from '../blockchain/AccountStatus';
 import type { Hex, Base64String, LogicalTime, UserFriendlyAddress } from '../core/Primitives';
 import type { ExtraCurrencies } from '../core/ExtraCurrencies';
 import type { TokenAmount } from '../core/TokenAmount';
@@ -22,12 +23,12 @@ export interface Transaction {
     /**
      * The state of the account before the transaction was executed
      */
-    accountStateBefore?: AccountState;
+    accountStateBefore?: TransactionAccountState;
 
     /**
      * * The state of the account after the transaction has been applied
      */
-    accountStateAfter?: AccountState;
+    accountStateAfter?: TransactionAccountState;
 
     /**
      * The detailed breakdown of the transaction execution
@@ -117,18 +118,9 @@ export interface Transaction {
 }
 
 /**
- * Status of the account on the blockchain.
- */
-export type AccountStatus =
-    | { type: 'active' }
-    | { type: 'frozen' }
-    | { type: 'uninit' }
-    | { type: 'unknown'; value: string };
-
-/**
  * State of an account at a specific point in time.
  */
-export interface AccountState {
+export interface TransactionAccountState {
     /**
      * The state hash of the account
      */
@@ -527,11 +519,21 @@ export interface TransactionAction {
 export interface TransactionActionMessageSize {
     /**
      * The total number of cells used
+     * @format int
      */
-    cells?: string;
+    cells?: number;
 
     /**
      * The total number of bits used
+     * @format int
      */
-    bits?: string;
+    bits?: number;
+}
+
+export type TransactionPreviewMode = 'send' | 'sign';
+
+export interface TransactionPreviewOptions {
+    // 'send' emulates the external message as-is; 'sign' emulates the internal body
+    mode?: TransactionPreviewMode;
+    relayGas?: bigint; // gas amount to inject for gasless relaying, by default 2 TON
 }

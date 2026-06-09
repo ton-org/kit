@@ -28,6 +28,8 @@ import {
     getJettonsFromClient,
     getNftsFromClient,
     getJettonWalletAddressFromClient,
+    HexToBase64,
+    Uint8ArrayToHex,
 } from '@ton/walletkit';
 import type {
     Wallet,
@@ -36,6 +38,9 @@ import type {
     WalletAdapter,
     TransactionRequest,
     TransactionStatusResponse,
+    ProofMessage,
+    BaseProvider,
+    ProviderInput,
 } from '@ton/walletkit';
 import type { OmnistonProviderOptions } from '@ton/walletkit/swap/omniston';
 import { OmnistonSwapProvider } from '@ton/walletkit/swap/omniston';
@@ -181,6 +186,21 @@ export interface SwapQuoteResult {
 }
 
 /**
+ * Signed TonProof payload for third-party authentication
+ */
+export interface TonProofResult {
+    address: string;
+    chain: string;
+    walletStateInit: string;
+    publicKey: string;
+    timestamp: number;
+    domainLengthBytes: number;
+    domainValue: string;
+    signature: string;
+    payload: string;
+}
+
+/**
  * Network configuration with optional API key
  */
 export interface NetworkConfig {
@@ -199,6 +219,8 @@ export interface McpWalletServiceConfig {
         mainnet?: NetworkConfig;
         testnet?: NetworkConfig;
     };
+
+    providers?: Array<ProviderInput<BaseProvider>>;
 }
 
 interface McpWalletServiceInternalConfig {
@@ -209,6 +231,8 @@ interface McpWalletServiceInternalConfig {
         mainnet?: NetworkConfig;
         testnet?: NetworkConfig;
     };
+
+    providers?: Array<ProviderInput<BaseProvider>>;
 }
 
 interface DeployAgenticSubwalletParams {
@@ -408,7 +432,7 @@ export class McpWalletService {
         const network = this.wallet.getNetwork();
         return network.chainId === Network.mainnet().chainId
             ? 'mainnet'
-            : Network.tetra().chainId
+            : network.chainId === Network.tetra().chainId
               ? 'tetra'
               : 'testnet';
     }
@@ -436,6 +460,12 @@ export class McpWalletService {
                 defaultSlippageBps: 100,
             });
             this.kit.swap.registerProvider(omnistonProvider);
+
+            if (this.config.providers) {
+                for (const providerInput of this.config.providers) {
+                    this.kit.registerProvider(providerInput);
+                }
+            }
         }
         return this.kit;
     }
@@ -1086,7 +1116,8 @@ export class McpWalletService {
      */
     async resolveDns(domain: string): Promise<string | null> {
         const client = this.wallet.getClient();
-        return client.resolveDnsWallet(domain);
+        const address = await client.resolveDnsWallet(domain);
+        return address ?? null;
     }
 
     /**
@@ -1094,7 +1125,45 @@ export class McpWalletService {
      */
     async backResolveDns(address: string): Promise<string | null> {
         const client = this.wallet.getClient();
-        return client.backResolveDnsWallet(address);
+        const domain = await client.backResolveDnsWallet(address);
+        return domain ?? null;
+    }
+
+    /**
+     * Generate a signed TonProof for authenticating with third-party services.
+     * Produces a payload compatible with TonConnect proof-of-ownership verification.
+     */
+    async generateTonProof(domain: string, payload: string): Promise<TonProofResult> {
+        const address = Address.parse(this.wallet.getAddress());
+        const stateInit = await this.wallet.getStateInit();
+        const publicKey = this.wallet.getPublicKey();
+        const timestamp = Math.floor(Date.now() / 1000);
+        const domainLengthBytes = Buffer.byteLength(domain, 'utf-8');
+
+        const addressHash = Uint8ArrayToHex(address.hash);
+        const proofMessage: ProofMessage = {
+            workchain: address.workChain,
+            addressHash: addressHash,
+            domain: { lengthBytes: domainLengthBytes, value: domain },
+            payload,
+            stateInit,
+            timestamp,
+        };
+
+        const signatureHex = await this.wallet.getSignedTonProof(proofMessage);
+        const signatureBase64 = HexToBase64(signatureHex);
+
+        return {
+            address: address.toRawString(),
+            chain: this.wallet.getNetwork().chainId === Network.mainnet().chainId ? '-239' : '-3',
+            walletStateInit: stateInit,
+            publicKey,
+            timestamp,
+            domainLengthBytes,
+            domainValue: domain,
+            signature: signatureBase64,
+            payload,
+        };
     }
 
     /**

@@ -6,7 +6,7 @@
  *
  */
 
-import type { ApiClient } from '../../types/toncenter/ApiClient';
+import type { ApiClient } from './ApiClient';
 import type {
     TokenAmount,
     TONTransferRequest,
@@ -22,6 +22,7 @@ import type {
     NFT,
     NFTTransferRequest,
     NFTRawTransferRequest,
+    TransactionPreviewOptions,
 } from '../models';
 import type { WalletAdapter } from './WalletAdapter';
 
@@ -34,7 +35,10 @@ export interface WalletTonInterface {
     createTransferTonTransaction(params: TONTransferRequest): Promise<TransactionRequest>;
     createTransferMultiTonTransaction(params: [TONTransferRequest]): Promise<TransactionRequest>;
 
-    getTransactionPreview(data: TransactionRequest | Promise<TransactionRequest>): Promise<TransactionEmulatedPreview>;
+    getTransactionPreview(
+        data: TransactionRequest | Promise<TransactionRequest>,
+        options?: TransactionPreviewOptions,
+    ): Promise<TransactionEmulatedPreview>;
 
     sendTransaction(request: TransactionRequest): Promise<SendTransactionResponse>;
 
@@ -52,5 +56,5 @@ export interface WalletNftInterface {
     createTransferNftTransaction(params: NFTTransferRequest): Promise<TransactionRequest>;
     createTransferNftRawTransaction(params: NFTRawTransferRequest): Promise<TransactionRequest>;
     getNfts(params: NFTsRequest): Promise<NFTsResponse>;
-    getNft(address: UserFriendlyAddress): Promise<NFT | null>;
+    getNft(address: UserFriendlyAddress): Promise<NFT | undefined>;
 }

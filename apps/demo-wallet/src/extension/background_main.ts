@@ -11,7 +11,7 @@
 // eslint-disable-next-line no-console
 console.log('TON Wallet Demo extension background script loaded');
 
-import { Network, ExtensionStorageAdapter, TonWalletKit } from '@ton/walletkit';
+import { Network, ExtensionStorageAdapter, TonWalletKit, fetchManifest } from '@ton/walletkit';
 import type { InjectedToExtensionBridgeRequestPayload } from '@ton/walletkit';
 import browser from 'webextension-polyfill';
 import { onMessage } from '@truecarry/webext-bridge/background';
@@ -25,6 +25,8 @@ import { DISABLE_AUTO_POPUP, ENV_TON_API_KEY_MAINNET, ENV_TON_API_KEY_TESTNET, E
 
 // Initialize WalletKit and JSBridge
 let walletKit: TonWalletKit | null = null;
+
+const MANIFEST_PROXY_URL = 'https://walletbot.me/tonconnect-proxy/';
 
 async function initializeWalletKit() {
     try {
@@ -61,6 +63,10 @@ async function initializeWalletKit() {
                         key: ENV_TON_API_KEY_TETRA,
                     },
                 },
+            },
+
+            fetchManifest(manifestUrl: string) {
+                return fetchManifest(manifestUrl, MANIFEST_PROXY_URL);
             },
         });
 

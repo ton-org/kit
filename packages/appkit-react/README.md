@@ -1,9 +1,3 @@
-<!--
-This file is auto-generated. Do not edit manually.
-Changes will be overwritten when running the docs update script.
-Source template: template/packages/appkit-react/README.md
--->
-
 # @ton/appkit-react
 
 React components and hooks for AppKit.
@@ -312,3 +306,10 @@ export const AppContent: FC = () => {
 ## License
 
 MIT
+
+<!--
+This file is auto-generated. Do not edit manually.
+Changes will be overwritten when running the docs update script.
+Source template: template/packages/appkit-react/README.md
+-->
+

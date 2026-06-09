@@ -9,6 +9,7 @@
 import type {
     ApiClient,
     Hex,
+    ManifestFetchResult,
     Network,
     TonWalletKitOptions,
     WalletSigner,
@@ -24,6 +25,8 @@ import type {
     ConnectionApprovalResponse,
     SendTransactionRequestEvent,
     SignDataRequestEvent,
+    SignMessageRequestEvent,
+    SignMessageApprovalResponse,
     SwapProviderInterface,
     SwapAPI,
     TonCenterStreamingProviderConfig,
@@ -32,12 +35,12 @@ import type {
     StreamingAPI,
     StakingProviderInterface,
     StakingAPI,
+    ConnectionRequestEvent,
+    EmbeddedRequestEvent,
 } from '@ton/walletkit';
 import type { OmnistonSwapProviderConfig } from '@ton/walletkit/swap/omniston';
 import type { DeDustSwapProviderConfig } from '@ton/walletkit/swap/dedust';
 import type { TonStakersProviderConfig } from '@ton/walletkit/staking/tonstakers';
-
-import type { ConnectionRequestEvent } from '../../walletkit/dist/cjs';
 
 export interface SwiftApiClient extends ApiClient {
     getNetwork: () => Network;
@@ -48,7 +51,10 @@ export interface SwiftWalletSigner {
     publicKey: () => Hex;
 }
 
-type ReusedTonWalletKitOptions = Pick<TonWalletKitOptions, 'deviceInfo' | 'walletManifest' | 'bridge' | 'dev'>;
+type ReusedTonWalletKitOptions = Pick<
+    TonWalletKitOptions,
+    'deviceInfo' | 'walletManifest' | 'bridge' | 'dev' | 'analytics'
+>;
 
 export interface SwiftWalletKitConfiguration extends ReusedTonWalletKitOptions {
     networkConfigurations?: {
@@ -67,6 +73,8 @@ export interface SwiftWalletKitConfiguration extends ReusedTonWalletKitOptions {
 
 export type SwiftBridgeTransport = (data: { sessionID: string; messageID: string; message: unknown }) => void;
 
+export type SwiftFetchManifest = (manifestUrl: string) => Promise<ManifestFetchResult>;
+
 export interface SwiftWalletKit {
     isReady(): boolean;
 
@@ -75,6 +83,8 @@ export interface SwiftWalletKit {
     setEventsListeners(callback: (type: string, event: unknown) => Promise<void>): void;
 
     removeEventListeners(): void;
+
+    createMnemonic(): Promise<string[]>;
 
     createSignerFromMnemonic(mnemonic: string): Promise<WalletSigner>;
 
@@ -113,7 +123,10 @@ export interface SwiftWalletKit {
 
     handleTonConnectUrl(url: string): Promise<void>;
 
-    approveConnectRequest(event: ConnectionRequestEvent, response?: ConnectionApprovalResponse): Promise<void>;
+    approveConnectRequest(
+        event: ConnectionRequestEvent,
+        response?: ConnectionApprovalResponse,
+    ): Promise<EmbeddedRequestEvent | undefined>;
 
     rejectConnectRequest(event: ConnectionRequestEvent, reason?: string): Promise<void>;
 
@@ -129,6 +142,13 @@ export interface SwiftWalletKit {
     ): Promise<SignDataApprovalResponse>;
 
     rejectSignDataRequest(event: SignDataRequestEvent, reason?: string): Promise<void>;
+
+    approveSignMessageRequest(
+        event: SignMessageRequestEvent,
+        response?: SignMessageApprovalResponse,
+    ): Promise<SignMessageApprovalResponse>;
+
+    rejectSignMessageRequest(event: SignMessageRequestEvent, reason?: string): Promise<void>;
 
     disconnect(sessionId: string): Promise<void>;
 

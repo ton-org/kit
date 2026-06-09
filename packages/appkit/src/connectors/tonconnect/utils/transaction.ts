@@ -6,7 +6,7 @@
  *
  */
 
-import type { SendTransactionRequest } from '@tonconnect/sdk';
+import type { SendTransactionRequest } from '@tonconnect/ui';
 
 import type { TransactionRequest, TransactionRequestMessage } from '../../../types/transaction';
 

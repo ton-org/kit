@@ -6,27 +6,29 @@
  *
  */
 
-import { SwapError } from '@ton/appkit';
+import { SwapError, SwapErrorCode } from '@ton/appkit';
 
 import { mapDefiError } from '../../../utils/map-defi-error';
 
 /**
  * Map a thrown swap error to an i18n key. Tries swap-specific codes first, falls back to the
- * shared {@link mapDefiError} for base DeFi codes, and finally to a generic `swap.quoteError`.
+ * shared {@link mapDefiError} for base DeFi codes, and finally to the caller-provided
+ * {@link fallback} (defaults to `swap.quoteError`, but send-time callers should pass
+ * `swap.sendFailed`).
  */
-export const mapSwapError = (error: unknown): string => {
+export const mapSwapError = (error: unknown, fallback: string = 'swap.quoteError'): string => {
     if (error instanceof SwapError) {
         switch (error.code) {
-            case SwapError.INVALID_QUOTE:
+            case SwapErrorCode.InvalidQuote:
                 return 'swap.invalidQuote';
-            case SwapError.INSUFFICIENT_LIQUIDITY:
+            case SwapErrorCode.InsufficientLiquidity:
                 return 'swap.insufficientLiquidity';
-            case SwapError.QUOTE_EXPIRED:
+            case SwapErrorCode.QuoteExpired:
                 return 'swap.quoteExpired';
-            case SwapError.BUILD_TX_FAILED:
+            case SwapErrorCode.BuildTxFailed:
                 return 'swap.buildTxFailed';
         }
     }
 
-    return mapDefiError(error) ?? 'swap.quoteError';
+    return mapDefiError(error) ?? fallback;
 };

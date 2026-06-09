@@ -27,7 +27,7 @@ import type { WalletV4R2Config } from './WalletV4R2';
 import { WalletV4R2 } from './WalletV4R2';
 import { WalletV4R2CodeCell } from './WalletV4R2.source';
 import { defaultWalletIdV4R2 } from './constants';
-import type { ApiClient } from '../../types/toncenter/ApiClient';
+import type { ApiClient } from '../../api/interfaces';
 import { HexToBigInt, HexToUint8Array } from '../../utils/base64';
 import { asAddressFriendly, formatWalletAddress } from '../../utils/address';
 import { CallForSuccess } from '../../utils/retry';
@@ -45,7 +45,9 @@ import type {
     UserFriendlyAddress,
     Hex,
     Base64String,
+    SignedSendTransactionOptions,
 } from '../../api/models';
+import { FakeSignature } from '../../utils';
 
 const log = globalLogger.createChild('WalletV4R2Adapter');
 
@@ -142,7 +144,7 @@ export class WalletV4R2Adapter implements WalletAdapter {
 
     async getSignedSendTransaction(
         input: TransactionRequest,
-        _options: { fakeSignature: boolean },
+        options?: SignedSendTransactionOptions,
     ): Promise<Base64String> {
         if (input.messages.length === 0) {
             throw new Error('Ledger does not support empty messages');
@@ -165,9 +167,13 @@ export class WalletV4R2Adapter implements WalletAdapter {
         try {
             const messages: MessageRelaxed[] = input.messages.map((m) => {
                 let bounce = true;
-                const parsedAddress = Address.parseFriendly(m.address);
-                if (parsedAddress.isBounceable === false) {
-                    bounce = false;
+                try {
+                    const parsedAddress = Address.parseFriendly(m.address);
+                    if (parsedAddress.isBounceable === false) {
+                        bounce = false;
+                    }
+                } catch {
+                    // raw address — no bounceable flag, keep default true
                 }
 
                 return internal({
@@ -190,7 +196,9 @@ export class WalletV4R2Adapter implements WalletAdapter {
 
             const domainPrefix = this.domain ? signatureDomainPrefix(this.domain) : null;
             const signingData = domainPrefix ? Buffer.concat([domainPrefix, data.hash()]) : data.hash();
-            const signature = await this.sign(Uint8Array.from(signingData));
+            const signature = options?.fakeSignature
+                ? FakeSignature(signingData)
+                : await this.sign(Uint8Array.from(signingData));
             const signedCell = beginCell()
                 .storeBuffer(Buffer.from(HexToUint8Array(signature)))
                 .storeSlice(data.asSlice())
@@ -207,6 +215,10 @@ export class WalletV4R2Adapter implements WalletAdapter {
             log.warn('Failed to get signed send transaction', { error });
             throw error;
         }
+    }
+
+    async getSignedSignMessage(): Promise<Base64String> {
+        throw new Error('WalletV4R2 does not support sign message signing. Use WalletV5R1.');
     }
 
     /**
@@ -284,11 +296,11 @@ export class WalletV4R2Adapter implements WalletAdapter {
             {
                 name: 'SendTransaction',
                 maxMessages: 4,
+                extraCurrencySupported: true,
+                itemTypes: ['ton', 'jetton', 'nft'],
             },
-            {
-                name: 'SignData',
-                types: ['binary', 'cell', 'text'],
-            },
-        ];
+            { name: 'SignData', types: ['text', 'binary', 'cell'] },
+            { name: 'EmbeddedRequest' },
+        ] as Feature[];
     }
 }

@@ -25,6 +25,10 @@ interface TemplateParams {
     target: string;
 }
 
+function toPosixPath(filePath: string): string {
+    return filePath.replace(/\\/g, '/');
+}
+
 function validateDirPath(dirPath: string): void {
     if (path.isAbsolute(dirPath)) {
         throw new Error(`Absolute paths are not allowed: ${dirPath}`);
@@ -295,8 +299,8 @@ async function processTemplateFile(templatePath: string): Promise<void> {
 
     // Use target from template parameters
     const outPath = path.resolve(cwd, params.target);
-    const sourceRelative = path.relative(cwd, templatePath);
-    const generatedHeader = `<!--
+    const sourceRelative = toPosixPath(path.relative(cwd, templatePath));
+    const generatedNotice = `<!--
 This file is auto-generated. Do not edit manually.
 Changes will be overwritten when running the docs update script.
 Source template: ${sourceRelative}
@@ -304,8 +308,10 @@ Source template: ${sourceRelative}
 
 `;
     await fs.mkdir(path.dirname(outPath), { recursive: true });
-    await fs.writeFile(outPath, generatedHeader + result, 'utf8');
-    console.log(`Updated markdown: ${path.relative(cwd, outPath)} from ${path.relative(cwd, templatePath)}`);
+    await fs.writeFile(outPath, `${result.trimEnd()}\n\n${generatedNotice}`, 'utf8');
+    console.log(
+        `Updated markdown: ${toPosixPath(path.relative(cwd, outPath))} from ${toPosixPath(path.relative(cwd, templatePath))}`,
+    );
 }
 
 async function main(): Promise<void> {

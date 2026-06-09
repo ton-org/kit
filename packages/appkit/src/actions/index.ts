@@ -71,6 +71,21 @@ export {
     type GetCryptoOnrampStatusOptions,
     type GetCryptoOnrampStatusReturnType,
 } from './crypto-onramp/get-crypto-onramp-status';
+export {
+    setDefaultCryptoOnrampProvider,
+    type SetDefaultCryptoOnrampProviderParameters,
+    type SetDefaultCryptoOnrampProviderReturnType,
+} from './crypto-onramp/set-default-crypto-onramp-provider';
+export {
+    getCryptoOnrampSupportedCurrencies,
+    type GetCryptoOnrampSupportedCurrenciesOptions,
+    type GetCryptoOnrampSupportedCurrenciesReturnType,
+} from './crypto-onramp/get-crypto-onramp-supported-currencies';
+export {
+    getCryptoOnrampProviderMetadata,
+    type GetCryptoOnrampProviderMetadataOptions,
+    type GetCryptoOnrampProviderMetadataReturnType,
+} from './crypto-onramp/get-crypto-onramp-provider-metadata';
 
 // Jettons
 export { getJettonInfo, type GetJettonInfoOptions, type GetJettonInfoReturnType } from './jettons/get-jetton-info';
@@ -171,7 +186,6 @@ export type { GetOnrampProvidersReturnType } from './onramp/get-onramp-providers
 export type { GetOnrampQuotesOptions, GetOnrampQuotesReturnType } from './onramp/get-onramp-quotes';
 export type { WatchOnrampProvidersParameters, WatchOnrampProvidersReturnType } from './onramp/watch-onramp-providers';
 export type { BuildOnrampUrlOptions, BuildOnrampUrlReturnType } from './onramp/build-onramp-url';
-
 // Staking
 export { getStakingManager, type GetStakingManagerReturnType } from './staking/get-staking-manager';
 export { getStakingProviders, type GetStakingProvidersReturnType } from './staking/get-staking-providers';
@@ -180,6 +194,11 @@ export {
     type GetStakingProviderOptions,
     type GetStakingProviderReturnType,
 } from './staking/get-staking-provider';
+export {
+    setDefaultStakingProvider,
+    type SetDefaultStakingProviderParameters,
+    type SetDefaultStakingProviderReturnType,
+} from './staking/set-default-staking-provider';
 export {
     watchStakingProviders,
     type WatchStakingProvidersParameters,

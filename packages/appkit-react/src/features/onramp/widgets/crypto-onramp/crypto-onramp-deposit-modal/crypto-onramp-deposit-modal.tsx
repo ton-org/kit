@@ -11,11 +11,11 @@ import type { FC } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import type { CryptoOnrampStatus } from '@ton/appkit';
 
-import { Button } from '../../../../../components/button';
-import { CopyButton } from '../../../../../components/copy-button';
-import { Modal } from '../../../../../components/modal';
-import { Skeleton } from '../../../../../components/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../../../components/tabs';
+import { Button } from '../../../../../components/ui/button';
+import { CopyButton } from '../../../../../components/shared/copy-button';
+import { Modal } from '../../../../../components/ui/modal';
+import { Skeleton } from '../../../../../components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../../../components/ui/tabs';
 import { useI18n } from '../../../../settings/hooks/use-i18n';
 import { formatOnrampAmount } from '../utils/format-onramp-amount';
 import { truncateAddress } from '../utils/truncate-address';
@@ -41,10 +41,12 @@ export interface CryptoOnrampDepositModalProps {
     depositStatus: CryptoOnrampStatus | null;
     /** Optional memo / tag / comment */
     memo?: string;
+    /** Optional refund address the user provided on the source network */
+    refundAddress?: string;
     /** URL of the token logo to embed in the QR code center */
     tokenLogo?: string;
-    /** Optional network-specific warning message */
-    networkWarning?: string;
+    /** Optional chain-specific warning message */
+    chainWarning?: string;
     /** Symbol of the target token the user is buying */
     targetSymbol?: string;
     /** User's formatted balance of the target token */
@@ -73,8 +75,9 @@ export const CryptoOnrampDepositModal: FC<CryptoOnrampDepositModalProps> = ({
     amount,
     symbol,
     memo,
+    refundAddress,
     tokenLogo,
-    networkWarning,
+    chainWarning,
     depositStatus,
     targetSymbol,
     targetBalance,
@@ -144,7 +147,7 @@ export const CryptoOnrampDepositModal: FC<CryptoOnrampDepositModalProps> = ({
                             <span className={styles.infoValue}>
                                 {amount} {symbol}
                             </span>
-                            <CopyButton value={`${amount} ${symbol}`} aria-label="Copy amount" />
+                            <CopyButton value={amount} aria-label="Copy amount" />
                         </div>
                     </div>
 
@@ -157,6 +160,19 @@ export const CryptoOnrampDepositModal: FC<CryptoOnrampDepositModalProps> = ({
                             <CopyButton value={address} aria-label="Copy address" />
                         </div>
                     </div>
+
+                    {refundAddress && (
+                        <>
+                            <div className={styles.divider} />
+                            <div className={styles.infoRow}>
+                                <span className={styles.infoLabel}>{t('cryptoOnramp.refundAddress')}</span>
+                                <div className={styles.infoValueRow}>
+                                    <span className={styles.infoValue}>{truncateAddress(refundAddress)}</span>
+                                    <CopyButton value={refundAddress} aria-label="Copy refund address" />
+                                </div>
+                            </div>
+                        </>
+                    )}
 
                     {memo && (
                         <>
@@ -172,12 +188,12 @@ export const CryptoOnrampDepositModal: FC<CryptoOnrampDepositModalProps> = ({
                     )}
                 </div>
 
-                {networkWarning && (
+                {chainWarning && (
                     <div className={styles.warning}>
                         <span className={styles.warningIcon}>
                             <WarningIcon />
                         </span>
-                        <p className={styles.warningText}>{networkWarning}</p>
+                        <p className={styles.warningText}>{chainWarning}</p>
                     </div>
                 )}
 

@@ -15,6 +15,7 @@ import {
     createTonApiStreamingProvider,
     ApiClientToncenter,
     createTonCenterStreamingProvider,
+    fetchManifest,
 } from '@ton/walletkit';
 import type { ITonWalletKit } from '@ton/walletkit';
 import { createOmnistonProvider } from '@ton/walletkit/swap/omniston';
@@ -29,6 +30,8 @@ import { getErrorMessage } from '../../utils/error';
 import type { NetworkType } from '../../utils';
 
 const log = createComponentLogger('WalletCoreSlice');
+
+const MANIFEST_PROXY_URL = 'https://walletbot.me/tonconnect-proxy/';
 
 /**
  * Creates a WalletKit instance with the specified network configuration
@@ -97,6 +100,10 @@ function createWalletKitInstance(walletKitConfig?: WalletKitConfig): ITonWalletK
         dev: {
             disableNetworkSend: walletKitConfig?.disableNetworkSend,
             disableManifestDomainCheck: walletKitConfig?.disableManifestDomainCheck,
+        },
+
+        fetchManifest(manifestUrl: string) {
+            return fetchManifest(manifestUrl, MANIFEST_PROXY_URL);
         },
     }) as ITonWalletKit;
 

@@ -16,10 +16,20 @@
   margin-bottom: 16px;
 }
 
+.widget > .info {
+  padding-top: 12px;
+}
+
 .inputSection {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
   padding: 28px 0;
+}
+
+.actions {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
 }

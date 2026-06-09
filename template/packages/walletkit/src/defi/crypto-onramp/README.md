@@ -10,7 +10,7 @@ CryptoOnrampManager provides a unified interface for bridging crypto assets from
 
 ```typescript
 import { TonWalletKit, Network } from '@ton/walletkit';
-import { createSwapsXyzProvider } from '@ton/walletkit/crypto-onramp/swaps-xyz';
+import { createDecentProvider } from '@ton/walletkit/crypto-onramp/decent';
 
 const kit = new TonWalletKit({
     networks: {
@@ -21,9 +21,9 @@ const kit = new TonWalletKit({
 });
 
 kit.cryptoOnramp.registerProvider(
-    createSwapsXyzProvider({ apiKey: 'your-api-key' }),
+    createDecentProvider({ apiKey: 'your-api-key' }),
 );
-kit.cryptoOnramp.setDefaultProvider('swaps-xyz');
+kit.cryptoOnramp.setDefaultProvider('decent');
 ```
 
 ## Quote Parameters
@@ -141,7 +141,7 @@ export class MyCryptoOnrampProvider extends CryptoOnrampProvider<MyQuoteOptions>
 
 ## Available Providers
 
-- **[Swaps.xyz](https://github.com/ton-connect/kit/blob/main/packages/walletkit/src/defi/crypto-onramp/swaps-xyz/README.md)**: Multi-chain bridge to TON via swaps.xyz, supporting a wide range of source networks and tokens
+- **[Decent](https://github.com/ton-connect/kit/blob/main/packages/walletkit/src/defi/crypto-onramp/decent/README.md)**: Multi-chain bridge to TON via Decent (formerly Swaps.xyz), supporting a wide range of source networks and tokens
 - **[Layerswap](https://github.com/ton-connect/kit/blob/main/packages/walletkit/src/defi/crypto-onramp/layerswap/README.md)**: Multi-chain bridge to TON via Layerswap
 
 ## API Reference

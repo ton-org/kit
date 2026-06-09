@@ -42,7 +42,7 @@ import { EventEmitter } from './EventEmitter';
 import type { StorageEventProcessor } from './EventProcessor';
 import type { BridgeManager } from './BridgeManager';
 import type { BridgeEventMessageInfo, InjectedToExtensionBridgeRequestPayload } from '../types/jsBridge';
-import type { ApiClient } from '../types/toncenter/ApiClient';
+import type { ApiClient, StakingProviderInterface, StreamingProvider, SwapProviderInterface } from '../api/interfaces';
 import { StreamingManager } from '../streaming/StreamingManager';
 import type { WalletKitEvents, WalletKitEventEmitter } from '../types/emitter';
 import { AnalyticsManager } from '../analytics';
@@ -61,14 +61,19 @@ import type {
     RequestErrorEvent,
     DisconnectionEvent,
     SignDataRequestEvent,
+    SignMessageRequestEvent,
     ConnectionRequestEvent,
     SendTransactionApprovalResponse,
     SignDataApprovalResponse,
+    SignMessageApprovalResponse,
     TONConnectSession,
     ConnectionApprovalResponse,
+    EmbeddedRequestEvent,
+    BaseProvider,
 } from '../api/models';
 import { asAddressFriendly } from '../utils';
-import type { ProviderFactoryContext } from '../types/factory';
+import { parseEmbeddedRequestFromReqParam } from '../utils/embeddedRequest';
+import type { ProviderFactoryContext, ProviderInput } from '../types/factory';
 
 const log = globalLogger.createChild('TonWalletKit');
 
@@ -98,7 +103,6 @@ export class TonWalletKit implements ITonWalletKit {
     private initializer: Initializer;
     private eventProcessor!: StorageEventProcessor;
     private bridgeManager!: BridgeManager;
-
     private config: TonWalletKitOptions;
 
     // Event emitter for this kit instance
@@ -209,7 +213,6 @@ export class TonWalletKit implements ITonWalletKit {
         return {
             networkManager: this.networkManager,
             eventEmitter: this.eventEmitter,
-            ssr: false,
         };
     }
 
@@ -522,6 +525,20 @@ export class TonWalletKit implements ITonWalletKit {
         this.eventRouter.removeSignDataRequestCallback();
     }
 
+    onSignMessageRequest(cb: (event: SignMessageRequestEvent) => void): void {
+        if (this.eventRouter) {
+            this.eventRouter.onSignMessageRequest(cb);
+        } else {
+            this.ensureInitialized().then(() => {
+                this.eventRouter.onSignMessageRequest(cb);
+            });
+        }
+    }
+
+    removeSignMessageRequestCallback(): void {
+        this.eventRouter.removeSignMessageRequestCallback();
+    }
+
     removeDisconnectCallback(): void {
         this.eventRouter.removeDisconnectCallback();
     }
@@ -670,6 +687,7 @@ export class TonWalletKit implements ITonWalletKit {
         clientId: string;
         requestId: string;
         r: string;
+        e?: string;
         returnStrategy?: string;
     }): RawBridgeEventConnect | undefined {
         const rString = params.r;
@@ -678,7 +696,8 @@ export class TonWalletKit implements ITonWalletKit {
         if (!r?.manifestUrl || !params.clientId) {
             return undefined;
         }
-        return {
+
+        const bridgeEvent: RawBridgeEventConnect = {
             from: params.clientId,
             id: params.requestId,
             method: 'connect',
@@ -692,11 +711,34 @@ export class TonWalletKit implements ITonWalletKit {
             timestamp: Date.now(),
             domain: '',
         };
+
+        // Parse embedded embedded request if present
+        if (params.e) {
+            // check if we have embedded requests supported in features
+            const hasEmbeddedRequests = this.config.deviceInfo?.features.some(
+                (feature) => typeof feature === 'object' && feature.name === 'EmbeddedRequest',
+            );
+            if (hasEmbeddedRequests) {
+                bridgeEvent.embeddedRequest = parseEmbeddedRequestFromReqParam(params.e);
+            } else {
+                log.warn(
+                    'Embedded request feature is not supported in features, but we received request with embedded request payload',
+                    {
+                        features: this.config.deviceInfo?.features,
+                    },
+                );
+            }
+        }
+
+        return bridgeEvent;
     }
 
     // === Request Processing API (Delegated) ===
 
-    async approveConnectRequest(event: ConnectionRequestEvent, response?: ConnectionApprovalResponse): Promise<void> {
+    async approveConnectRequest(
+        event: ConnectionRequestEvent,
+        response?: ConnectionApprovalResponse,
+    ): Promise<EmbeddedRequestEvent | undefined> {
         await this.ensureInitialized();
         return this.requestProcessor.approveConnectRequest(event, response);
     }
@@ -737,6 +779,19 @@ export class TonWalletKit implements ITonWalletKit {
     async rejectSignDataRequest(event: SignDataRequestEvent, reason?: string): Promise<void> {
         await this.ensureInitialized();
         return this.requestProcessor.rejectSignDataRequest(event, reason);
+    }
+
+    async approveSignMessageRequest(
+        event: SignMessageRequestEvent,
+        response?: SignMessageApprovalResponse,
+    ): Promise<SignMessageApprovalResponse> {
+        await this.ensureInitialized();
+        return this.requestProcessor.approveSignMessageRequest(event, response);
+    }
+
+    async rejectSignMessageRequest(event: SignMessageRequestEvent, reason?: string): Promise<void> {
+        await this.ensureInitialized();
+        return this.requestProcessor.rejectSignMessageRequest(event, reason);
     }
 
     // === TON Client Access ===
@@ -801,6 +856,26 @@ export class TonWalletKit implements ITonWalletKit {
         }
 
         this.isInitialized = false;
+    }
+
+    /**
+     * Add a provider
+     */
+    registerProvider(input: ProviderInput<BaseProvider>): void {
+        const provider = typeof input === 'function' ? input(this.createFactoryContext()) : input;
+        switch (provider.type) {
+            case 'swap':
+                this.swapManager.registerProvider(provider as SwapProviderInterface);
+                break;
+            case 'staking':
+                this.stakingManager.registerProvider(provider as StakingProviderInterface);
+                break;
+            case 'streaming':
+                this.streamingManager.registerProvider(provider as StreamingProvider);
+                break;
+            default:
+                throw new Error('Unknown provider type');
+        }
     }
 
     // === Jettons API ===

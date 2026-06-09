@@ -1,9 +1,3 @@
-<!--
-This file is auto-generated. Do not edit manually.
-Changes will be overwritten when running the docs update script.
-Source template: template/packages/appkit/docs/actions.md
--->
-
 # Actions
 
 AppKit provides a set of actions to interact with the blockchain and wallets.
@@ -202,7 +196,6 @@ if (!selectedWallet) {
 const balance = await getJettonBalance(appKit, {
     jettonAddress: 'EQDBE420tTQIkoWcZ9pEOTKY63WVmwyIl3hH6yWl0r_h51Tl',
     ownerAddress: selectedWallet.getAddress(),
-    jettonDecimals: 6,
 });
 console.log('Jetton Balance:', balance.toString());
 ```
@@ -246,7 +239,6 @@ const tx = await createTransferJettonTransaction(appKit, {
     recipientAddress: 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c',
     amount: '100', // 100 USDT
     comment: 'Hello Jetton',
-    jettonDecimals: 6,
 });
 console.log('Transfer Transaction:', tx);
 ```
@@ -260,7 +252,6 @@ const result = await transferJetton(appKit, {
     jettonAddress: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs',
     recipientAddress: 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c',
     amount: '100',
-    jettonDecimals: 6,
 });
 console.log('Transfer Result:', result);
 ```
@@ -512,6 +503,17 @@ console.log(
     'Registered crypto onramp providers:',
     providers.map((p) => p.providerId),
 );
+```
+
+### `getCryptoOnrampProviderMetadata`
+
+Get static metadata for a crypto-onramp provider (display name, logo, url).
+
+```ts
+const metadata = await getCryptoOnrampProviderMetadata(appKit, {
+    providerId: 'layerswap',
+});
+console.log('Crypto onramp provider metadata:', metadata);
 ```
 
 ### `watchCryptoOnrampProviders`
@@ -834,3 +836,10 @@ const unsubscribe = watchSelectedWallet(appKit, {
 
 // Later: unsubscribe();
 ```
+
+<!--
+This file is auto-generated. Do not edit manually.
+Changes will be overwritten when running the docs update script.
+Source template: template/packages/appkit/docs/actions.md
+-->
+

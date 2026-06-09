@@ -11,7 +11,7 @@
  */
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import type { WalletAdapter } from '@ton/walletkit';
+import type { BaseProvider, ProviderInput, WalletAdapter } from '@ton/walletkit';
 import { z } from 'zod';
 
 import type { IContactResolver } from './types/contacts.js';
@@ -34,6 +34,7 @@ import {
     createMcpTransactionTools,
     createMcpTransferTools,
     createMcpWalletManagementTools,
+    createMcpTonProofTools,
 } from './tools/index.js';
 import { createMcpDnsTools } from './tools/dns-tools.js';
 
@@ -70,6 +71,11 @@ export interface TonMcpFactoryConfig {
      * Optional shared session manager for agentic onboarding callback handling.
      */
     agenticSessionManager?: AgenticSetupSessionManager;
+
+    /**
+     * Optional additional providers to register on the wallet kit instance (e.g. custom swap or staking providers).
+     */
+    providers?: Array<ProviderInput<BaseProvider>>;
 }
 
 function extendWithWalletSelector<TSchema extends z.ZodTypeAny>(schema: TSchema) {
@@ -90,7 +96,7 @@ export async function createTonWalletMCP(config: TonMcpFactoryConfig): Promise<M
         version: SERVER_VERSION,
     });
 
-    const registry = new WalletRegistryService(config.contacts, config.networks);
+    const registry = new WalletRegistryService(config, config.contacts, config.networks);
     const knownJettonsTools = createMcpKnownJettonsTools();
 
     // Helper to register tools with type assertion (Zod version mismatch workaround)
@@ -106,6 +112,7 @@ export async function createTonWalletMCP(config: TonMcpFactoryConfig): Promise<M
             wallet: config.wallet,
             contacts: config.contacts,
             networks: config.networks,
+            providers: config.providers,
         });
 
         const balanceTools = createMcpBalanceTools(walletService);
@@ -116,6 +123,7 @@ export async function createTonWalletMCP(config: TonMcpFactoryConfig): Promise<M
         const transactionTools = createMcpTransactionTools(walletService);
         const agenticTools = createMcpAgenticTools(walletService);
         const addressTools = createMcpAddressTools(walletService);
+        const tonProofTools = createMcpTonProofTools(walletService);
 
         registerTool('get_wallet', balanceTools.get_wallet);
         registerTool('get_balance', balanceTools.get_balance);
@@ -138,6 +146,7 @@ export async function createTonWalletMCP(config: TonMcpFactoryConfig): Promise<M
         registerTool('send_nft', nftTools.send_nft);
         registerTool('resolve_dns', dnsTools.resolve_dns);
         registerTool('back_resolve_dns', dnsTools.back_resolve_dns);
+        registerTool('generate_ton_proof', tonProofTools.generate_ton_proof);
 
         if (config.walletVersion === 'agentic') {
             registerTool('agentic_deploy_subwallet', agenticTools.deploy_agentic_subwallet);
@@ -155,6 +164,7 @@ export async function createTonWalletMCP(config: TonMcpFactoryConfig): Promise<M
     const transactionToolDefs = createMcpTransactionTools(staticService);
     const agenticToolDefs = createMcpAgenticTools(staticService);
     const addressToolDefs = createMcpAddressTools(staticService);
+    const tonProofToolDefs = createMcpTonProofTools(staticService);
     const walletManagementTools = createMcpWalletManagementTools(registry);
     const ownsAgenticSessionManager = !config.agenticSessionManager;
     const agenticSessionManager =
@@ -304,6 +314,12 @@ export async function createTonWalletMCP(config: TonMcpFactoryConfig): Promise<M
         'back_resolve_dns',
         dnsToolDefs.back_resolve_dns,
         (service) => createMcpDnsTools(service).back_resolve_dns,
+    );
+    registerRegistryWalletTool(
+        'generate_ton_proof',
+        tonProofToolDefs.generate_ton_proof,
+        (service) => createMcpTonProofTools(service).generate_ton_proof,
+        { requiresSigning: true },
     );
     // registerRegistryWalletTool(
     //     'agentic_deploy_subwallet',

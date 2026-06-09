@@ -50,22 +50,16 @@ const CryptoOnrampWidgetContent: FC<{ children?: (props: CryptoOnrampWidgetRende
  */
 export const CryptoOnrampWidget: FC<CryptoOnrampWidgetProps> = ({
     children,
-    tokens,
-    tokenSections,
-    paymentMethods,
-    methodSections,
-    defaultTokenId,
-    defaultMethodId,
+    chains,
+    defaultDestination,
+    defaultSource,
     ...rest
 }) => {
     return (
         <CryptoOnrampWidgetProvider
-            tokens={tokens}
-            tokenSections={tokenSections}
-            paymentMethods={paymentMethods}
-            methodSections={methodSections}
-            defaultTokenId={defaultTokenId}
-            defaultMethodId={defaultMethodId}
+            chains={chains}
+            defaultDestination={defaultDestination}
+            defaultSource={defaultSource}
         >
             <CryptoOnrampWidgetContent {...rest}>{children}</CryptoOnrampWidgetContent>
         </CryptoOnrampWidgetProvider>

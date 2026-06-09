@@ -1,9 +1,3 @@
-<!--
-This file is auto-generated. Do not edit manually.
-Changes will be overwritten when running the docs update script.
-Source template: template/packages/walletkit/src/defi/swap/omniston/README.md
--->
-
 # Omniston Swap Provider
 
 Omniston is STON.fi's swap aggregator that finds the best rates across multiple DEXs on TON blockchain.
@@ -121,3 +115,10 @@ const quote2 = await getSwapQuote(appKit, {
 - [Referral Fees](https://docs.ston.fi/developer-section/omniston/referral-fees) - How to earn fees
 - [SDK Repository](https://github.com/ston-fi/omniston-sdk) - Source code and examples
 - [Demo Implementation](https://github.com/ton-connect/kit/blob/main/apps/demo-wallet/src/pages/Swap.tsx) - Working example
+
+<!--
+This file is auto-generated. Do not edit manually.
+Changes will be overwritten when running the docs update script.
+Source template: template/packages/walletkit/src/defi/swap/omniston/README.md
+-->
+

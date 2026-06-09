@@ -14,8 +14,9 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     gap: 4px;
-    padding: 28px 0;
+    height: 152px;
     margin-bottom: 24px;
 }
 
@@ -25,4 +26,10 @@
 
 .presets {
     margin-bottom: 16px;
+}
+
+.actions {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
 }

@@ -6,10 +6,12 @@
  *
  */
 
+import type { CryptoOnrampDestinationCurrency, CryptoOnrampSourceCurrency } from './CryptoOnrampCurrency';
+
 /**
  * Parameters for requesting a crypto-to-crypto onramp quote.
  *
- * The target network is always TON, so only the source side is parameterised.
+ * The target network is always TON, so only the source side carries chain info.
  */
 export interface CryptoOnrampQuoteParams<TProviderOptions = unknown> {
     /**
@@ -18,19 +20,15 @@ export interface CryptoOnrampQuoteParams<TProviderOptions = unknown> {
     amount: string;
 
     /**
-     * Source crypto currency address (contract address or 0x0... for native)
+     * Source currency the user is spending. Carries chain (CAIP-2), address, symbol,
+     * decimals — everything the provider needs to build its API request.
      */
-    sourceCurrencyAddress: string;
+    sourceCurrency: CryptoOnrampSourceCurrency;
 
     /**
-     * Source network identifier (e.g. 'solana', 'ethereum', 'bitcoin')
+     * Target currency the user receives on TON.
      */
-    sourceNetwork: string;
-
-    /**
-     * Target crypto currency address on TON (contract address or 0x0... for native)
-     */
-    targetCurrencyAddress: string;
+    targetCurrency: CryptoOnrampDestinationCurrency;
 
     /**
      * TON address that will receive the target crypto

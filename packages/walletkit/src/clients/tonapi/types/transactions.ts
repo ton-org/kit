@@ -15,10 +15,17 @@ export interface TonApiExtraCurrency {
     amount: string | number;
 }
 
+export interface TonApiAccountRef {
+    address: string;
+    name?: string;
+    is_scam?: boolean;
+    is_wallet?: boolean;
+}
+
 export interface TonApiMessage {
     hash: string;
-    source?: { address: string };
-    destination?: { address: string };
+    source?: TonApiAccountRef;
+    destination?: TonApiAccountRef;
     value?: string | number | null;
     value_extra?: TonApiExtraCurrency[];
     fwd_fee?: string | number | null;
@@ -31,6 +38,12 @@ export interface TonApiMessage {
     bounced?: boolean | null;
     import_fee?: string | number | null;
     decoded_body?: unknown;
+
+    // hex boc of inMessage
+    raw: string;
+
+    // hex boc of inMessage.body
+    raw_body: string;
 }
 
 export interface TonApiPhaseStorage {
@@ -48,6 +61,7 @@ export interface TonApiPhaseCompute {
     gas_fees?: string | number;
     gas_used?: string | number;
     exit_code?: number;
+    exit_code_description?: string;
     vm_steps?: number;
 }
 
@@ -63,7 +77,7 @@ export interface TonApiPhaseAction {
 export interface TonApiTransaction {
     hash: string;
     lt: string | number;
-    account: { address: string };
+    account: TonApiAccountRef;
     end_balance?: string | number;
     success?: boolean;
     utime?: number;

@@ -12,7 +12,7 @@ import { UnstakeMode, Network } from '@ton/appkit';
 import { StakingInfo } from './staking-info';
 
 const meta: Meta<typeof StakingInfo> = {
-    title: 'Public/Features/Staking/Internal/StakingInfo',
+    title: 'Features/Staking/Internal/StakingInfo',
     component: StakingInfo,
 };
 
@@ -34,7 +34,7 @@ const mockMetadata = {
         symbol: 'tsTON',
         ticker: 'tsTON',
         decimals: 9,
-        address: 'UQC98_qAmNEptUtPc7W6xdHh_ZHrBUFpw5Ft_IzNU20QAMtq',
+        address: 'EQC98_qAmNEptUtPc7W6xdHh_ZHrBUFpw5Ft_IzNU20QAJav',
     },
     supportedUnstakeModes: [UnstakeMode.INSTANT, UnstakeMode.ROUND_END],
     supportsReversedQuote: false,
@@ -42,7 +42,7 @@ const mockMetadata = {
 
 const mockProviderInfo = {
     apy: 4.5,
-    exchangeRate: '1.05',
+    exchangeRate: '0.909090909',
     instantUnstakeAvailable: '10000000000',
 };
 

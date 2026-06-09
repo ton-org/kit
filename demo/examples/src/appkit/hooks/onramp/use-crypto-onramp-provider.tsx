@@ -6,11 +6,11 @@
  *
  */
 
-import { useCryptoOnrampProvider } from '@ton/appkit-react';
+import { useCryptoOnrampProviderById } from '@ton/appkit-react';
 
 export const UseCryptoOnrampProviderExample = () => {
     // SAMPLE_START: USE_CRYPTO_ONRAMP_PROVIDER
-    const provider = useCryptoOnrampProvider({ id: 'layerswap' });
+    const provider = useCryptoOnrampProviderById({ id: 'layerswap' });
 
     return <div>Provider: {provider?.providerId}</div>;
     // SAMPLE_END: USE_CRYPTO_ONRAMP_PROVIDER

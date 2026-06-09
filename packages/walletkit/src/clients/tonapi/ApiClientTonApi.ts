@@ -19,9 +19,11 @@ import type {
     GetTraceRequest,
     GetTransactionByHashRequest,
     TransactionsByAddressRequest,
-} from '../../types/toncenter/ApiClient';
+} from '../../api/interfaces';
 import { Network } from '../../api/models';
 import type {
+    AccountState,
+    AccountStates,
     Base64String,
     GetMethodResult,
     JettonsResponse,
@@ -34,14 +36,15 @@ import type {
     UserFriendlyAddress,
     UserNFTsRequest,
 } from '../../api/models';
-import type { ToncenterEmulationResult } from '../../utils/toncenterEmulation';
-import type { FullAccountState } from '../../types/toncenter/api';
-import type { ToncenterResponseJettonMasters, ToncenterTracesResponse } from '../../types/toncenter/emulation';
+import type { EmulationResult } from '../../api/models';
+import type { ToncenterTracesResponse } from '../../types/toncenter/emulation';
+import type { ToncenterResponseJettonMasters } from '../toncenter/types/jettons';
 import { BaseApiClient } from '../BaseApiClient';
 import type { BaseApiClientConfig } from '../BaseApiClient';
 import { TonClientError } from '../TonClientError';
+import { globalLogger } from '../../core/Logger';
 import type { TonApiBlockchainAccount } from './types/accounts';
-import { asAddressFriendly } from '../../utils/address';
+import { asAddressFriendly, compareAddress } from '../../utils/address';
 import { mapAccountState } from './mappers/map-account-state';
 import { mapJettonMasters } from './mappers/map-jetton-masters';
 import { mapUserJettons } from './mappers/map-user-jettons';
@@ -52,14 +55,20 @@ import type { TonApiDnsResolveResponse, TonApiDnsBackresolveResponse } from './t
 import type { TonApiMethodExecutionResult } from './types/methods';
 import type { TonApiMasterchainHeadResponse } from './types/masterchain';
 import { mapTonApiGetMethodArgs, mapTonApiTvmStackRecord } from './mappers/map-methods';
+import { mapTonApiEmulationResponse } from './mappers/map-emulation';
 import { Base64Normalize, Base64ToBigInt, Base64ToHex, getNormalizedExtMessageHash, isHex } from '../../utils';
 import type { TonApiTransactionsResponse, TonApiTransaction } from './types/transactions';
 import type { TonApiTrace } from './types/traces';
+import type { TonApiMessageConsequences } from './types/emulation';
 import type { TonApiAccountEventsResponse } from './types/events';
 import { mapTonApiTransaction } from './mappers/map-transactions';
 import { mapTonApiTrace, mapTonApiTraceTransaction } from './mappers/map-traces';
 import { mapTonApiEvent } from './mappers/map-events';
 import { mapMasterchainInfo } from './mappers/map-masterchain-info';
+
+const log = globalLogger.createChild('ApiClientTonApi');
+
+const MAX_ACCOUNT_STATES_BATCH = 100;
 
 /**
  * @experimental
@@ -85,32 +94,71 @@ export class ApiClientTonApi extends BaseApiClient implements ApiClient {
         super(config, defaultEndpoint);
     }
 
-    async getAccountState(address: UserFriendlyAddress, _seqno?: number): Promise<FullAccountState> {
-        // Note: seqno parameter is not supported by TonApi /v2/accounts endpoint for historical state queries
+    getNetwork(): Network {
+        return this.network;
+    }
+
+    async getAccountState(address: UserFriendlyAddress, seqno?: number): Promise<AccountState> {
+        if (typeof seqno === 'number') {
+            log.warn(
+                `getAccountState: seqno=${seqno} is ignored — TonApi /v2/accounts endpoint does not support historical state queries.`,
+            );
+        }
         try {
             const raw = await this.getJson<TonApiBlockchainAccount>(`/v2/blockchain/accounts/${address}`);
 
-            return mapAccountState(raw);
+            return mapAccountState(raw, address);
         } catch (e) {
             // TonApi returns 404 for non-existent accounts
             if (e instanceof TonClientError && e.status === 404) {
                 return {
+                    address: asAddressFriendly(address),
                     status: 'non-existing',
+                    rawBalance: '0',
                     balance: '0',
                     extraCurrencies: {},
-                    code: null,
-                    data: null,
-                    lastTransaction: null,
                 };
             }
             throw e;
         }
     }
 
+    async getAccountStates(addresses: UserFriendlyAddress[]): Promise<AccountStates> {
+        if (addresses.length > MAX_ACCOUNT_STATES_BATCH) {
+            throw new Error(
+                `ApiClientTonApi.getAccountStates: requested ${addresses.length} addresses, ` +
+                    `maximum is ${MAX_ACCOUNT_STATES_BATCH} per call.`,
+            );
+        }
+
+        const unique = new Set<UserFriendlyAddress>();
+        for (const addr of addresses) {
+            unique.add(asAddressFriendly(addr));
+        }
+        const uniqueAddrs = [...unique];
+
+        if (uniqueAddrs.length === 0) {
+            return {};
+        }
+
+        const raw = await this.postJson<{ accounts: TonApiBlockchainAccount[] }>('/v2/blockchain/accounts/_bulk', {
+            account_ids: uniqueAddrs,
+        });
+
+        const result: AccountStates = {};
+        for (const inputAddr of uniqueAddrs) {
+            const account = raw.accounts.find((a) => compareAddress(a.address, inputAddr));
+            if (account) {
+                result[inputAddr] = mapAccountState(account, inputAddr);
+            }
+        }
+        return result;
+    }
+
     async getBalance(address: UserFriendlyAddress, seqno?: number): Promise<TokenAmount> {
         const state = await this.getAccountState(address, seqno);
 
-        return state.balance;
+        return state.rawBalance;
     }
 
     async jettonsByAddress(request: GetJettonsByAddressRequest): Promise<ToncenterResponseJettonMasters> {
@@ -166,8 +214,17 @@ export class ApiClientTonApi extends BaseApiClient implements ApiClient {
         return Base64ToBigInt(hash).toString(16);
     }
 
-    async fetchEmulation(_messageBoc: Base64String, _ignoreSignature?: boolean): Promise<ToncenterEmulationResult> {
-        throw new Error('Method not implemented.');
+    async fetchEmulation(messageBoc: Base64String, ignoreSignature?: boolean): Promise<EmulationResult> {
+        const result = await this.postJson<TonApiMessageConsequences>(
+            `/v2/traces/emulate?ignore_signature_check=${ignoreSignature === true ? 'true' : 'false'}`,
+            {
+                boc: messageBoc,
+            },
+        );
+        return {
+            result: 'success',
+            emulationResult: mapTonApiEmulationResponse(result),
+        };
     }
 
     async runGetMethod(
@@ -300,23 +357,23 @@ export class ApiClientTonApi extends BaseApiClient implements ApiClient {
         throw new Error('Failed to fetch pending trace');
     }
 
-    async resolveDnsWallet(domain: string): Promise<string | null> {
+    async resolveDnsWallet(domain: string): Promise<string | undefined> {
         try {
             const raw = await this.getJson<TonApiDnsResolveResponse>(`/v2/dns/${domain}/resolve`);
             const address = raw?.wallet?.address;
 
-            return address ? asAddressFriendly(address) : null;
+            return address ? asAddressFriendly(address) : undefined;
         } catch (_e) {
-            return null;
+            return undefined;
         }
     }
 
-    async backResolveDnsWallet(address: UserFriendlyAddress): Promise<string | null> {
+    async backResolveDnsWallet(address: UserFriendlyAddress): Promise<string | undefined> {
         try {
             const raw = await this.getJson<TonApiDnsBackresolveResponse>(`/v2/accounts/${address}/dns/backresolve`);
-            return raw.domains && raw.domains.length > 0 ? raw.domains[0] : null;
+            return raw.domains && raw.domains.length > 0 ? raw.domains[0] : undefined;
         } catch (_e) {
-            return null;
+            return undefined;
         }
     }
 

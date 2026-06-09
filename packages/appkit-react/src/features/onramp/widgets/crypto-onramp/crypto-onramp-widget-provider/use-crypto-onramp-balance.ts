@@ -6,13 +6,14 @@
  *
  */
 
+import type { CryptoOnrampDestinationCurrency } from '@ton/appkit';
+
 import { useBalance } from '../../../../balances/hooks/use-balance';
 import { useJettonBalanceByAddress } from '../../../../jettons/hooks/use-jetton-balance-by-address';
 import { NATIVE_TON_ADDRESS } from '../../../constants';
-import type { CryptoOnrampToken } from '../../../types';
 
 interface UseCryptoOnrampBalanceOptions {
-    selectedToken: CryptoOnrampToken | null;
+    selectedToken: CryptoOnrampDestinationCurrency | null;
     userAddress: string | undefined;
 }
 
