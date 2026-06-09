@@ -6,11 +6,12 @@
  *
  */
 
-import { SwapManager, StreamingManager, CryptoOnrampManager } from '@ton/walletkit';
+import { SwapManager, StreamingManager, OnrampManager, CryptoOnrampManager } from '@ton/walletkit';
 import type {
     ProviderInput,
     SwapProviderInterface,
     StakingProviderInterface,
+    OnrampProviderInterface,
     CryptoOnrampProviderInterface,
     StreamingProvider,
 } from '@ton/walletkit';
@@ -39,6 +40,7 @@ export class AppKit {
     readonly walletsManager: WalletsManager;
     readonly swapManager: SwapManager;
     readonly stakingManager: StakingManager;
+    readonly onrampManager: OnrampManager;
     readonly cryptoOnrampManager: CryptoOnrampManager;
 
     readonly networkManager: AppKitNetworkManager;
@@ -63,6 +65,7 @@ export class AppKit {
 
         this.swapManager = new SwapManager(() => this.createFactoryContext());
         this.stakingManager = new StakingManager(() => this.createFactoryContext());
+        this.onrampManager = new OnrampManager(() => this.createFactoryContext());
         this.cryptoOnrampManager = new CryptoOnrampManager(() => this.createFactoryContext());
         this.streamingManager = new StreamingManager(() => this.createFactoryContext());
 
@@ -130,6 +133,9 @@ export class AppKit {
                 break;
             case 'staking':
                 this.stakingManager.registerProvider(provider as StakingProviderInterface);
+                break;
+            case 'onramp':
+                this.onrampManager.registerProvider(provider as OnrampProviderInterface);
                 break;
             case 'crypto-onramp':
                 this.cryptoOnrampManager.registerProvider(provider as CryptoOnrampProviderInterface);

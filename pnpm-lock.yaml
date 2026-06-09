@@ -469,9 +469,6 @@ importers:
       '@ton/walletkit':
         specifier: workspace:*
         version: link:../walletkit
-      '@tonconnect/sdk':
-        specifier: '>=3.5.0-alpha.1'
-        version: 3.5.0-alpha.1
       lru-cache:
         specifier: 'catalog:'
         version: 11.5.0

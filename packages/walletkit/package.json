@@ -61,6 +61,16 @@
         "default": "./dist/cjs/defi/staking/tonstakers/index.js"
       }
     },
+    "./onramp/appkit-onramp": {
+      "import": {
+        "types": "./dist/esm/defi/onramp/appkit-onramp/index.d.ts",
+        "default": "./dist/esm/defi/onramp/appkit-onramp/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/defi/onramp/appkit-onramp/index.d.ts",
+        "default": "./dist/cjs/defi/onramp/appkit-onramp/index.js"
+      }
+    },
     "./crypto-onramp/decent": {
       "import": {
         "types": "./dist/esm/defi/crypto-onramp/decent/index.d.ts",
@@ -95,6 +105,9 @@
       ],
       "staking/tonstakers": [
         "./dist/cjs/defi/staking/tonstakers/index.d.ts"
+      ],
+      "onramp/appkit-onramp": [
+        "./dist/cjs/defi/onramp/appkit-onramp/index.d.ts"
       ],
       "crypto-onramp/decent": [
         "./dist/cjs/defi/crypto-onramp/decent/index.d.ts"

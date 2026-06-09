@@ -7,8 +7,7 @@
  */
 
 import { Address } from '@ton/core';
-import type { Wallet as TonConnectWallet } from '@tonconnect/sdk';
-import type { SignDataPayload as TonConnectSignDataPayload } from '@tonconnect/sdk';
+import type { Wallet as TonConnectWallet, SignDataPayload as TonConnectSignDataPayload } from '@tonconnect/ui';
 import type { SendTransactionResponse, UserFriendlyAddress, Hex } from '@ton/walletkit';
 import { asHex, createWalletId, getNormalizedExtMessageHash } from '@ton/walletkit';
 import type { TonConnectUI } from '@tonconnect/ui';

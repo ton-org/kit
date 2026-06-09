@@ -211,6 +211,23 @@ export {
     type BuildSwapTransactionVariables,
 } from './swap/build-swap-transaction';
 
+// Onramp
+export {
+    getOnrampQuotesQueryOptions,
+    type GetOnrampQuotesQueryConfig,
+    type GetOnrampQuotesQueryOptions,
+    type GetOnrampQuotesData,
+    type GetOnrampQuotesErrorType,
+    type GetOnrampQuotesQueryFnData,
+    type GetOnrampQuotesQueryKey,
+} from './onramp/get-onramp-quotes';
+export {
+    buildOnrampUrlMutationOptions,
+    type BuildOnrampUrlMutationOptions,
+    type BuildOnrampUrlData,
+    type BuildOnrampUrlErrorType,
+    type BuildOnrampUrlVariables,
+} from './onramp/build-onramp-url';
 // Staking
 export {
     getStakingQuoteQueryOptions,
