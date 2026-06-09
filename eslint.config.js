@@ -1,3 +1,11 @@
+/**
+ * Copyright (c) TonTech.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
 const toolchainConfig = require('@ton/toolchain');
 const globals = require('globals');
 const licenseHeader = require('eslint-plugin-license-header');
@@ -36,11 +44,11 @@ module.exports = [
             '**/androidkit/**',
             '**/next-env.d.ts',
             '**/analytics/swagger/generated.ts',
-            'packages/create-appkit/**',
         ],
     },
     {
         files: ['**/**/*.ts', '**/**/*.tsx'],
+        ignores: ['packages/create-appkit/template-*/**'],
         plugins: {
             'license-header': licenseHeader,
         },
@@ -55,7 +63,7 @@ module.exports = [
         },
     },
     {
-        files: ['demo/examples/**/*.ts', 'scripts/**/*.ts', 'packages/create-appkit/src/**/*.ts'],
+        files: ['demo/examples/**/*.ts', 'scripts/**/*.ts'],
         rules: {
             'no-console': 'off',
         },

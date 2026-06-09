@@ -55,9 +55,7 @@ export function JettonsCard() {
                                     referrerPolicy="no-referrer"
                                 />
                             ) : (
-                                <span className="jetton-logo jetton-logo-fallback">
-                                    {(j.info.symbol ?? '?')[0]}
-                                </span>
+                                <span className="jetton-logo jetton-logo-fallback">{(j.info.symbol ?? '?')[0]}</span>
                             )}
                             <span className="jetton-symbol">{j.info.symbol ?? 'Jetton'}</span>
                             <span className="jetton-balance">{formatAmount(j.balance)}</span>
@@ -66,11 +64,7 @@ export function JettonsCard() {
                 })}
             </ul>
             {hasMore && (
-                <button
-                    type="button"
-                    className="show-more-btn"
-                    onClick={() => setExpanded(!expanded)}
-                >
+                <button type="button" className="show-more-btn" onClick={() => setExpanded(!expanded)}>
                     {expanded ? 'Show less' : `Show all ${jettons.length} jettons`}
                 </button>
             )}

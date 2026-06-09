@@ -48,8 +48,7 @@ function SwapBody({ ctx }: { ctx: SwapWidgetRenderProps }) {
                         className="swap-error-dismiss"
                         onClick={() => setSubmitError(null)}
                         aria-label="Dismiss error"
-                    >
-                    </button>
+                    ></button>
                 </div>
             )}
         </>

@@ -1,11 +1,21 @@
 #!/usr/bin/env node
 
+/**
+ * Copyright (c) TonTech.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { styleText } from 'node:util';
 
 import * as prompts from '@clack/prompts';
 import mri from 'mri';
+
+const logger = console;
 
 const RENAME_FILES: Record<string, string> = {
     _gitignore: '.gitignore',
@@ -69,7 +79,7 @@ async function run(): Promise<void> {
     const useDefaults = argv.yes;
 
     if (argv.help) {
-        console.log(`
+        logger.log(`
   ${styleText('bold', 'create-appkit')} — scaffold a TON AppKit project
 
   ${styleText('bold', 'Usage:')}
@@ -224,6 +234,6 @@ async function run(): Promise<void> {
 }
 
 run().catch((err: unknown) => {
-    console.error(err);
+    logger.error(err);
     process.exit(1);
 });
