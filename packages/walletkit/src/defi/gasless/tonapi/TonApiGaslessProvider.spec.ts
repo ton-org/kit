@@ -515,6 +515,9 @@ describe('TonApiGaslessProvider.sendTransaction', () => {
             name: 'GaslessError',
             code: GaslessErrorCode.SendFailed,
         });
+        // A 2xx-but-unparseable response is a domain failure, not transient — it must
+        // NOT be re-sent (the BoC may have been accepted). One POST, then fail fast.
+        expect(fetchApi).toHaveBeenCalledTimes(1);
     });
 
     it('throws GaslessError(SEND_FAILED) when the relayer omits the external field', async () => {
@@ -526,6 +529,8 @@ describe('TonApiGaslessProvider.sendTransaction', () => {
             name: 'GaslessError',
             code: GaslessErrorCode.SendFailed,
         });
+        // Missing `external` on a 2xx is a domain failure — fail fast, do not re-send.
+        expect(fetchApi).toHaveBeenCalledTimes(1);
     });
 
     it('routes to the chain-specific endpoint based on params.network', async () => {

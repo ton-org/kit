@@ -191,21 +191,19 @@ export class TonApiGaslessProvider extends GaslessProvider {
 
         try {
             const http = this.getClient(params.network);
-            // Retry transient failures (5xx / network) with a fixed delay. The
-            // quote is read-only and idempotent, so a stale/flaky relayer response
-            // is safe to re-request; 4xx are surfaced immediately via `isTransientError`.
-            return await CallForSuccess(
-                async () => {
-                    const raw = await http.postJson<TonApiGaslessEstimateResponse>(
-                        `/v2/gasless/estimate/${masterId}`,
-                        body,
-                    );
-                    return mapGaslessQuote(raw, params.network);
-                },
+            // Retry only the network request (5xx / network failures) with a fixed
+            // delay — the quote is read-only and idempotent, so a flaky relayer
+            // response is safe to re-request; 4xx are surfaced immediately via
+            // `isTransientError`. Mapping runs once, outside the retry: it's
+            // deterministic, so retrying it is pointless and would misclassify a
+            // domain `GaslessError` as transient.
+            const raw = await CallForSuccess(
+                () => http.postJson<TonApiGaslessEstimateResponse>(`/v2/gasless/estimate/${masterId}`, body),
                 this.quoteRetries + 1,
                 this.quoteRetryDelayMs,
                 isTransientError,
             );
+            return mapGaslessQuote(raw, params.network);
         } catch (error) {
             log.error('Failed to quote gasless transaction', { error, params });
             throw mapTonApiGaslessError(error, GaslessErrorCode.QuoteFailed, 'Failed to quote gasless transaction');
@@ -216,20 +214,20 @@ export class TonApiGaslessProvider extends GaslessProvider {
         const body = buildGaslessSendRequest(params);
         const http = this.getClient(params.network);
 
-        // Retry transient failures (5xx / network) with a fixed delay. The wallet's
-        // seqno guard protects against on-chain double-spend if a retry duplicates a
-        // BoC that was actually accepted; 4xx are surfaced immediately (`isTransientError`)
-        // to keep relayer gas burn down and fail fast on requests that won't improve.
+        // Retry only the network request (5xx / network failures) with a fixed delay.
+        // The wallet's seqno guard protects against on-chain double-spend if a retry
+        // duplicates a BoC that was actually accepted; 4xx are surfaced immediately
+        // (`isTransientError`) to keep relayer gas burn down. Mapping runs once,
+        // outside the retry — a 2xx-but-unparseable response is a domain
+        // `GaslessError(SEND_FAILED)` that must fail fast, not be re-sent.
         try {
-            return await CallForSuccess(
-                async () => {
-                    const raw = await http.postJson<TonApiGaslessSendResponse>('/v2/gasless/send', body);
-                    return { ...mapGaslessSend(raw), internalBoc: params.internalBoc };
-                },
+            const raw = await CallForSuccess(
+                () => http.postJson<TonApiGaslessSendResponse>('/v2/gasless/send', body),
                 this.sendRetries + 1,
                 this.sendRetryDelayMs,
                 isTransientError,
             );
+            return { ...mapGaslessSend(raw), internalBoc: params.internalBoc };
         } catch (error) {
             log.error('Failed to send gasless transaction', { error, chainId: params.network.chainId });
             throw mapTonApiGaslessError(error, GaslessErrorCode.SendFailed, 'Failed to send gasless transaction');
