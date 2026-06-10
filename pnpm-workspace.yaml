@@ -2,7 +2,7 @@ packages:
   - packages/*
   - apps/*
   - demo/*
-  - packages/create-appkit/template-*
+  - packages/create-ton-appkit/template-*
 
 allowBuilds:
   esbuild: false

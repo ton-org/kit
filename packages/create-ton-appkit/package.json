@@ -1,5 +1,5 @@
 {
-    "name": "create-appkit",
+    "name": "create-ton-appkit",
     "version": "0.0.1",
     "type": "module",
     "license": "MIT",
@@ -7,7 +7,7 @@
     "repository": {
         "type": "git",
         "url": "https://github.com/ton-org/kit",
-        "directory": "packages/create-appkit"
+        "directory": "packages/create-ton-appkit"
     },
     "keywords": [
         "ton",
@@ -21,7 +21,7 @@
         "node": ">=22.12.0"
     },
     "bin": {
-        "create-appkit": "dist/index.js"
+        "create-ton-appkit": "dist/index.js"
     },
     "files": [
         "dist",

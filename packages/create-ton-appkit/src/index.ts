@@ -93,10 +93,10 @@ async function run(): Promise<void> {
 
     if (argv.help) {
         logger.log(`
-  ${styleText('bold', 'create-appkit')} — scaffold a TON AppKit project
+  ${styleText('bold', 'create-ton-appkit')} — scaffold a TON AppKit project
 
   ${styleText('bold', 'Usage:')}
-    create-appkit [project-name] [options]
+    create-ton-appkit [project-name] [options]
 
   ${styleText('bold', 'Options:')}
     -t, --template <name>   Template to use (default: react)

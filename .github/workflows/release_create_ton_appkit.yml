@@ -1,4 +1,4 @@
-name: Release create-appkit
+name: Release create-ton-appkit
 
 on:
   workflow_dispatch:
@@ -52,27 +52,27 @@ jobs:
             fi
           }
 
-          LOCAL_VERSION=$(node -p "require('./packages/create-appkit/package.json').version")
+          LOCAL_VERSION=$(node -p "require('./packages/create-ton-appkit/package.json').version")
           NPM_TAG=$(get_npm_tag "$LOCAL_VERSION")
-          echo "create-appkit local version: $LOCAL_VERSION (tag: $NPM_TAG)"
+          echo "create-ton-appkit local version: $LOCAL_VERSION (tag: $NPM_TAG)"
 
-          echo "create_appkit_version=${LOCAL_VERSION}" >> $GITHUB_OUTPUT
-          echo "create_appkit_tag=${NPM_TAG}" >> $GITHUB_OUTPUT
+          echo "create_ton_appkit_version=${LOCAL_VERSION}" >> $GITHUB_OUTPUT
+          echo "create_ton_appkit_tag=${NPM_TAG}" >> $GITHUB_OUTPUT
 
-          if npm view "create-appkit@${LOCAL_VERSION}" version 2>/dev/null; then
-            echo "create-appkit@${LOCAL_VERSION} already exists on npm"
-            echo "create_appkit_exists=true" >> $GITHUB_OUTPUT
+          if npm view "create-ton-appkit@${LOCAL_VERSION}" version 2>/dev/null; then
+            echo "create-ton-appkit@${LOCAL_VERSION} already exists on npm"
+            echo "create_ton_appkit_exists=true" >> $GITHUB_OUTPUT
           else
-            echo "create-appkit@${LOCAL_VERSION} does not exist on npm"
-            echo "create_appkit_exists=false" >> $GITHUB_OUTPUT
+            echo "create-ton-appkit@${LOCAL_VERSION} does not exist on npm"
+            echo "create_ton_appkit_exists=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Publish create-appkit
-        if: steps.check_versions.outputs.create_appkit_exists == 'false'
+      - name: Publish create-ton-appkit
+        if: steps.check_versions.outputs.create_ton_appkit_exists == 'false'
         run: |
           pnpm publish \
-            --filter="create-appkit" \
+            --filter="create-ton-appkit" \
             --access=public \
             --publish-branch=release \
-            --tag=${{ steps.check_versions.outputs.create_appkit_tag }} \
+            --tag=${{ steps.check_versions.outputs.create_ton_appkit_tag }} \
             --verbose

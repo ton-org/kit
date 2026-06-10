@@ -1,4 +1,4 @@
-# create-appkit
+# create-ton-appkit
 
 Scaffold a TON AppKit project in seconds.
 
@@ -12,9 +12,9 @@ Or with any other package manager:
 
 ```bash
 npm create appkit
-npx create-appkit
+npx create-ton-appkit
 yarn create appkit
-bunx create-appkit
+bunx create-ton-appkit
 ```
 
 ### Non-interactive mode

@@ -1,10 +1,10 @@
-name: create-appkit test
+name: create-ton-appkit test
 
 on:
   push:
     paths:
-      - 'packages/create-appkit/**'
-      - '.github/workflows/create-appkit-test.yml'
+      - 'packages/create-ton-appkit/**'
+      - '.github/workflows/create-ton-appkit-test.yml'
   workflow_dispatch: {}
 
 jobs:
@@ -48,23 +48,23 @@ jobs:
       - name: Install workspace dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build and pack create-appkit
+      - name: Build and pack create-ton-appkit
         shell: bash
         run: |
-          pnpm --filter create-appkit run build
-          cd packages/create-appkit
+          pnpm --filter create-ton-appkit run build
+          cd packages/create-ton-appkit
           npm pack
-          TARBALL="$(ls create-appkit-*.tgz)"
+          TARBALL="$(ls create-ton-appkit-*.tgz)"
           echo "TARBALL=$(pwd)/$TARBALL" >> "$GITHUB_ENV"
 
-      - name: Install create-appkit globally
+      - name: Install create-ton-appkit globally
         shell: bash
         run: npm install -g "$TARBALL"
 
       - name: Scaffold a project
         shell: bash
         working-directory: ${{ runner.temp }}
-        run: create-appkit my-app -y --template react --app-url https://example.com
+        run: create-ton-appkit my-app -y --template react --app-url https://example.com
 
       - name: Install dependencies (${{ matrix.pm }})
         shell: bash

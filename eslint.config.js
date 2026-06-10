@@ -48,7 +48,7 @@ module.exports = [
     },
     {
         files: ['**/**/*.ts', '**/**/*.tsx'],
-        ignores: ['packages/create-appkit/template-*/**'],
+        ignores: ['packages/create-ton-appkit/template-*/**'],
         plugins: {
             'license-header': licenseHeader,
         },
