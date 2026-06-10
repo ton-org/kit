@@ -40,6 +40,38 @@ jobs:
       env:
         WALLET_MNEMONIC: ${{ secrets.WALLET_MNEMONIC }}
 
+  mcp-integration:
+    name: mcp-integration
+    needs: unit
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+
+    - name: Check out code
+      uses: actions/checkout@v5
+
+    - name: Read .nvmrc
+      run: echo "NVMRC=$(cat .nvmrc)" >> $GITHUB_ENV
+
+    - uses: pnpm/action-setup@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '${{ env.NVMRC }}'
+        cache: 'pnpm'
+
+    - name: Set up dependencies
+      run: pnpm i --frozen-lockfile
+
+    # The suite skips itself when TON_MCP_INTEGRATION_MNEMONIC is not set (e.g. on forks).
+    - name: MCP integration tests (testnet, emulated sends)
+      run: pnpm --filter @ton/mcp test:integration
+      env:
+        TON_MCP_INTEGRATION_MNEMONIC: ${{ secrets.TON_MCP_INTEGRATION_MNEMONIC }}
+        TONCENTER_API_KEY: ${{ secrets.TONCENTER_API_KEY }}
+
   e2e-web:
     needs: unit
     uses: ./.github/workflows/e2e_web.yml

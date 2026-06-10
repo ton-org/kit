@@ -121,8 +121,9 @@ export class AgenticSetupSessionManager {
             return;
         }
 
+        const stored = await this.store.listSessions();
         this.sessions.clear();
-        for (const session of await this.store.listSessions()) {
+        for (const session of stored) {
             this.sessions.set(session.setup_id, this.fromStoredSession(session));
         }
     }
@@ -244,7 +245,7 @@ export class AgenticSetupSessionManager {
             return true;
         }
 
-        this.syncFromStore();
+        await this.syncFromStore();
         const session = this.sessions.get(match[1]!);
         if (!session) {
             this.writeCorsHeaders(res);
