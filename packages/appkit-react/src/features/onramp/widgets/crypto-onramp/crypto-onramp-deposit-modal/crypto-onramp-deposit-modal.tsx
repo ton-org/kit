@@ -45,8 +45,8 @@ export interface CryptoOnrampDepositModalProps {
     refundAddress?: string;
     /** URL of the token logo to embed in the QR code center */
     tokenLogo?: string;
-    /** Optional chain-specific warning message */
-    chainWarning?: string;
+    /** Display name of the source network. When provided (with `symbol`), the standard chain warning is shown. */
+    networkName?: string;
     /** Symbol of the target token the user is buying */
     targetSymbol?: string;
     /** User's formatted balance of the target token */
@@ -77,7 +77,7 @@ export const CryptoOnrampDepositModal: FC<CryptoOnrampDepositModalProps> = ({
     memo,
     refundAddress,
     tokenLogo,
-    chainWarning,
+    networkName,
     depositStatus,
     targetSymbol,
     targetBalance,
@@ -191,12 +191,14 @@ export const CryptoOnrampDepositModal: FC<CryptoOnrampDepositModalProps> = ({
                     )}
                 </div>
 
-                {chainWarning && (
+                {networkName && symbol && (
                     <div className={styles.warning}>
                         <span className={styles.warningIcon}>
                             <WarningIcon />
                         </span>
-                        <p className={styles.warningText}>{chainWarning}</p>
+                        <p className={styles.warningText}>
+                            {t('cryptoOnramp.chainWarning', { symbol, network: networkName })}
+                        </p>
                     </div>
                 )}
 

@@ -50,10 +50,11 @@ export const WithRefundAddress: Story = {
     },
 };
 
+/** The chain warning is composed from `symbol` + `networkName` via i18n — providers can't inject free text. */
 export const WithChainWarning: Story = {
     args: {
         ...Default.args,
-        chainWarning: 'This address only accepts USDC on the Base network. Sending other assets will result in loss.',
+        networkName: 'Base',
     },
 };
 

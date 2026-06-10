@@ -122,6 +122,8 @@ export default {
         copyAddress: 'Copy address',
         copyRefundAddress: 'Copy refund address',
         copyMemo: 'Copy memo',
+        chainWarning:
+            'This address only accepts {{ symbol }} on the {{ network }} network. Sending other assets will result in loss.',
         transactionDetails: 'Transaction details',
         deposit: 'Deposit',
         continue: 'Continue',

@@ -46,11 +46,6 @@ export interface CryptoOnrampDeposit {
     expiresAt?: number;
 
     /**
-     * Chain-specific warning to show the user (e.g. "send only on Solana")
-     */
-    chainWarning?: string;
-
-    /**
      * Identifier of the provider that issued this deposit
      */
     providerId: string;
