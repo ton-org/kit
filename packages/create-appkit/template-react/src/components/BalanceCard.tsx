@@ -3,17 +3,7 @@
 // Send Toncoin — https://docs.ton.org/applications/appkit/howto/send-toncoin
 import { useBalance, useWatchBalance, SendTonButton, useAddress } from '@ton/appkit-react';
 
-const amountFormatter = new Intl.NumberFormat('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 4,
-    useGrouping: false,
-});
-
-function formatAmount(value: string): string {
-    const n = Number(value);
-    if (!Number.isFinite(n)) return value;
-    return amountFormatter.format(n);
-}
+import { formatAmount } from '../utils/format';
 
 export function BalanceCard() {
     const address = useAddress();

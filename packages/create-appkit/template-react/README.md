@@ -58,10 +58,12 @@ src/
   appKit.ts                   # AppKit config: networks, connectors, providers
   components/
     Header.tsx                # app header with TonConnectButton
-    BalanceCard.tsx            # TON balance display + send button
-    JettonsCard.tsx            # jetton list
-    NftsCard.tsx               # NFT grid
-    SwapCard.tsx               # swap widget with error handling
-    StakingCard.tsx            # staking widget
+    BalanceCard.tsx           # TON balance display + send button
+    JettonsCard.tsx           # jetton list
+    NftsCard.tsx              # NFT grid
+    SwapCard.tsx              # swap widget with error handling
+    StakingCard.tsx           # staking widget
+  utils/
+    format.ts                 # shared token amount formatting
   polyfills.ts                # Buffer polyfill for @ton/core
 ```

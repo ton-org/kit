@@ -3,22 +3,9 @@
 import { useState } from 'react';
 import { useJettons } from '@ton/appkit-react';
 
+import { formatAmount } from '../utils/format';
+
 const INITIAL_VISIBLE = 5;
-
-function formatAmount(value: string): string {
-    const n = Number(value);
-    if (!Number.isFinite(n)) return value;
-    if (n === 0) return '0';
-
-    const abs = Math.abs(n);
-    if (abs >= 1) {
-        return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
-    }
-
-    // For small numbers, show up to the first significant digit + 1
-    const digits = Math.max(2, -Math.floor(Math.log10(abs)) + 1);
-    return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: digits });
-}
 
 export function JettonsCard() {
     const { data: jettonsData, isLoading } = useJettons();
@@ -52,6 +39,7 @@ export function JettonsCard() {
                                     className="jetton-logo"
                                     src={logoUrl}
                                     alt={j.info.symbol ?? ''}
+                                    loading="lazy"
                                     referrerPolicy="no-referrer"
                                 />
                             ) : (
