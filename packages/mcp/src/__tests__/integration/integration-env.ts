@@ -23,7 +23,8 @@ export const TESTNET_FIXTURES = {
     agenticCollectionAddress: 'kQByQ19qvWxW7VibSbGEgZiYMqilHY5y1a_eeSL2VaXhf5ax',
     jettonMasterAddress: 'kQD0GKBM8ZbryVk2aESmzfU6b9b_8era_IkvBSELujFZPsyy',
     nftItemAddress: 'kQCuzP_CmmiIpll5PVx6m8_1DiwWvqgCfaQLFzVrEz7r4Hcm',
-    completedTransactionHash: '6a6276f04b1575092b373cc35f3b29000f3e133da3931f5d3c502299aaeeb1ab',
+    // Normalized external-in message hash, 0x-prefixed as send tools return it.
+    completedTransactionHash: '0x6a6276f04b1575092b373cc35f3b29000f3e133da3931f5d3c502299aaeeb1ab',
 } as const;
 
 function loadLocalEnvFile(): void {
