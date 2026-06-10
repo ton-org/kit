@@ -1,0 +1,97 @@
+name: e2e appkit-minter
+
+# Per-commit gate for the gasless / appkit-minter e2e suite. Scoped to the minter
+# and gated on PRs that touch it — a failure here blocks merging the PR but does
+# not run on unrelated pushes or affect the other monorepo suites (demo-wallet,
+# extension).
+#
+# This job MUST NOT spend funds or depend on a live relayer: the gasless relayer
+# (`/v2/gasless/{config,estimate,send}`) is mocked in every wallet-based spec, so
+# the demo wallet signs locally but nothing is broadcast. The `@real-send` tests
+# (which would broadcast on mainnet) are excluded here via --grep-invert and are
+# not run in CI — they exist for manual/local real-send verification only.
+on:
+  pull_request:
+    paths:
+      - 'apps/appkit-minter/**'
+      - 'packages/appkit/**'
+      - 'packages/appkit-react/**'
+      - 'packages/walletkit/**'
+      - '.github/workflows/e2e_appkit_minter.yml'
+  workflow_dispatch: {}
+
+jobs:
+  e2e:
+    name: e2e appkit-minter (mocked relayer, no broadcast)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - name: Read .nvmrc
+        run: echo "NVMRC=$(cat .nvmrc)" >> $GITHUB_ENV
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '${{ env.NVMRC }}'
+          cache: 'pnpm'
+
+      - name: Get Playwright version
+        id: playwright-version
+        run: echo "version=$(pnpm list @playwright/test --json | jq -r '.[0].devDependencies["@playwright/test"].version')" >> $GITHUB_OUTPUT
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}
+          restore-keys: ${{ runner.os }}-playwright-
+
+      - name: Setup dependencies
+        run: |
+          if [ "$(id -u)" -ne 0 ]; then
+            sudo apt-get update && sudo apt-get install --no-install-recommends -y xvfb xauth
+          else
+            apt-get update && apt-get install --no-install-recommends -y xvfb xauth
+          fi
+          pnpm install --frozen-lockfile
+          pnpm --filter appkit-minter e2e:deps
+
+      # Two-tab specs serve the demo wallet too, so build its chain as well.
+      - name: Build appkit-minter and demo-wallet (+ workspace deps)
+        run: pnpm --filter "appkit-minter..." --filter "demo-wallet..." build
+
+      - name: Run appkit-minter e2e (exclude real-send)
+        run: |
+          cd apps/appkit-minter
+          xvfb-run pnpm e2e -- --grep-invert "@real-send"
+        env:
+          # SignMessage-capable demo wallet imported by the two-tab fixture. Used
+          # only to sign locally — the relayer is mocked, so no funds are spent.
+          WALLET_MNEMONIC: ${{ secrets.WALLET_MNEMONIC }}
+          # Demo wallet (SignMessage) served locally for the wallet tab.
+          E2E_WALLET_SOURCE: 'http://localhost:5173/'
+          ENABLE_HEADLESS: 'true'
+
+      - name: Upload results to Allure TestOps
+        if: always()
+        continue-on-error: true
+        run: |
+          curl -fsSL https://github.com/allure-framework/allurectl/releases/latest/download/allurectl_linux_amd64 -o allurectl
+          chmod +x allurectl
+          ./allurectl upload \
+            --endpoint "$ALLURE_BASE_URL" --token "$ALLURE_API_TOKEN" --project-id "$ALLURE_PROJECT_ID" \
+            --launch-name "appkit-minter gasless e2e — CI #${{ github.run_number }} (${{ github.event.pull_request.head.sha || github.sha }})" \
+            apps/appkit-minter/allure-results
+        env:
+          ALLURE_BASE_URL: ${{ secrets.ALLURE_DEMO_ENDPOINT }}
+          ALLURE_API_TOKEN: ${{ secrets.ALLURE_DEMO_API_TOKEN }}
+          # appkit-minter TestOps project (368).
+          ALLURE_PROJECT_ID: ${{ secrets.ALLURE_MINTER_PROJECT_ID }}
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-appkit-minter
+          path: apps/appkit-minter/test-results/
+          retention-days: 3

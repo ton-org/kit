@@ -183,6 +183,9 @@ importers:
         specifier: ^5.0.13
         version: 5.0.13(@types/react@19.2.3)(immer@10.2.0)(react@19.2.3)(use-sync-external-store@1.6.0(react@19.2.3))
     devDependencies:
+      '@playwright/test':
+        specifier: ^1.59.1
+        version: 1.60.0
       '@types/react':
         specifier: 'catalog:'
         version: 19.2.3
@@ -192,6 +195,15 @@ importers:
       '@vitejs/plugin-react':
         specifier: ^6.0.1
         version: 6.0.2(vite@8.0.14(@types/node@25.9.1)(esbuild@0.28.0)(jiti@2.7.0)(tsx@4.22.3)(yaml@2.9.0))
+      allure-js-commons:
+        specifier: ^3.7.1
+        version: 3.9.0(allure-playwright@3.9.0(@playwright/test@1.60.0))
+      allure-playwright:
+        specifier: ^3.7.1
+        version: 3.9.0(@playwright/test@1.60.0)
+      dotenv:
+        specifier: ^17.4.2
+        version: 17.4.2
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
