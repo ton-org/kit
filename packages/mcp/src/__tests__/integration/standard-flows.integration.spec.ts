@@ -37,7 +37,6 @@ describe.skipIf(!getIntegrationMnemonic())('MCP standard wallet flows (testnet r
 
     it('get_wallet returns the mnemonic-derived testnet wallet', async () => {
         const payload = await callOk(getHarness(), 'get_wallet');
-        console.log(payload.address);
         expect(isSameAddress(payload.address, FIXTURES.walletAddress)).toBe(true);
         expect(payload.network).toBe('testnet');
     });
