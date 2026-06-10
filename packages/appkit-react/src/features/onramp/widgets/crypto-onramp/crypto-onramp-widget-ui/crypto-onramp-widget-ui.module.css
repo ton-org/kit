@@ -1,0 +1,42 @@
+.widget {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 370px;
+    display: flex;
+    flex-direction: column;
+}
+
+.selectors {
+    margin-bottom: 24px;
+}
+
+.inputSection {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    height: 152px;
+    margin-bottom: 24px;
+}
+
+.caption {
+    composes: bodySemibold from '../../../../../styles/typography.module.css';
+    margin: 0;
+    color: var(--ta-color-text-secondary);
+    text-align: center;
+}
+
+.info {
+    margin-top: 16px;
+}
+
+.presets {
+    margin-bottom: 16px;
+}
+
+.actions {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+}

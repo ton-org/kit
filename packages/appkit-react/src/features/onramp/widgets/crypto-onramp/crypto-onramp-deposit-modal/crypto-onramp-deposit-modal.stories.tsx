@@ -1,0 +1,88 @@
+/**
+ * Copyright (c) TonTech.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
+import type { Meta, StoryObj } from '@storybook/react-vite';
+
+import { CryptoOnrampDepositModal } from './crypto-onramp-deposit-modal';
+
+const ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
+const TOKEN_LOGO = 'https://assets.coingecko.com/coins/images/6319/standard/USDC.png?1769615602';
+
+const meta: Meta<typeof CryptoOnrampDepositModal> = {
+    title: 'Features/Onramp/Internal/CryptoOnrampDepositModal',
+    component: CryptoOnrampDepositModal,
+};
+
+export default meta;
+type Story = StoryObj<typeof CryptoOnrampDepositModal>;
+
+export const Default: Story = {
+    args: {
+        open: true,
+        address: ADDRESS,
+        amount: '100',
+        symbol: 'USDC',
+        tokenLogo: TOKEN_LOGO,
+        depositStatus: null,
+        targetSymbol: 'USDT',
+        targetBalance: '12.34',
+        targetDecimals: 6,
+        onClose: () => {},
+    },
+};
+
+export const WithMemo: Story = {
+    args: {
+        ...Default.args,
+        memo: '12345678',
+    },
+};
+
+export const WithRefundAddress: Story = {
+    args: {
+        ...Default.args,
+        refundAddress: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
+    },
+};
+
+/** The chain warning is composed from `symbol` + `networkName` via i18n — providers can't inject free text. */
+export const WithChainWarning: Story = {
+    args: {
+        ...Default.args,
+        networkName: 'Base',
+    },
+};
+
+export const Pending: Story = {
+    args: {
+        ...Default.args,
+        depositStatus: 'pending',
+    },
+};
+
+export const Success: Story = {
+    args: {
+        ...Default.args,
+        depositStatus: 'success',
+    },
+};
+
+export const Failed: Story = {
+    args: {
+        ...Default.args,
+        depositStatus: 'failed',
+    },
+};
+
+export const LoadingTargetBalance: Story = {
+    args: {
+        ...Default.args,
+        targetBalance: undefined,
+        isLoadingTargetBalance: true,
+    },
+};

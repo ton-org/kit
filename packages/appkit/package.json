@@ -61,6 +61,26 @@
         "default": "./dist/cjs/staking/tonstakers/index.js"
       }
     },
+    "./crypto-onramp/decent": {
+      "import": {
+        "types": "./dist/esm/crypto-onramp/decent/index.d.ts",
+        "default": "./dist/esm/crypto-onramp/decent/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/crypto-onramp/decent/index.d.ts",
+        "default": "./dist/cjs/crypto-onramp/decent/index.js"
+      }
+    },
+    "./crypto-onramp/layerswap": {
+      "import": {
+        "types": "./dist/esm/crypto-onramp/layerswap/index.d.ts",
+        "default": "./dist/esm/crypto-onramp/layerswap/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/crypto-onramp/layerswap/index.d.ts",
+        "default": "./dist/cjs/crypto-onramp/layerswap/index.js"
+      }
+    },
     "./gasless/tonapi": {
       "import": {
         "types": "./dist/esm/gasless/tonapi/index.d.ts",
@@ -85,6 +105,12 @@
       ],
       "staking/tonstakers": [
         "./dist/esm/staking/tonstakers/index.d.ts"
+      ],
+      "crypto-onramp/decent": [
+        "./dist/esm/crypto-onramp/decent/index.d.ts"
+      ],
+      "crypto-onramp/layerswap": [
+        "./dist/esm/crypto-onramp/layerswap/index.d.ts"
       ],
       "gasless/tonapi": [
         "./dist/esm/gasless/tonapi/index.d.ts"

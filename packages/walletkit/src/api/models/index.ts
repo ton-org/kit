@@ -139,6 +139,23 @@ export type { StakingQuoteParams } from './staking/StakingQuoteParams';
 export type { UnstakeModes } from './staking/UnstakeMode';
 export { UnstakeMode } from './staking/UnstakeMode';
 
+// Crypto onramp models
+export type { CryptoOnrampQuote } from './crypto-onramp/CryptoOnrampQuote';
+export type { CryptoOnrampQuoteParams } from './crypto-onramp/CryptoOnrampQuoteParams';
+export type { CryptoOnrampDepositParams } from './crypto-onramp/CryptoOnrampDepositParams';
+export type { CryptoOnrampDeposit } from './crypto-onramp/CryptoOnrampDeposit';
+export type { CryptoOnrampStatusParams } from './crypto-onramp/CryptoOnrampStatusParams';
+export type { CryptoOnrampStatus } from './crypto-onramp/CryptoOnrampStatus';
+export type {
+    CryptoOnrampProviderMetadata,
+    CryptoOnrampProviderMetadataOverride,
+} from './crypto-onramp/CryptoOnrampProviderMetadata';
+export type {
+    CryptoOnrampSourceCurrency,
+    CryptoOnrampDestinationCurrency,
+    CryptoOnrampSupportedCurrencies,
+} from './crypto-onramp/CryptoOnrampCurrency';
+
 // Gasless models
 export type { GaslessSupportedAsset } from './gasless/GaslessSupportedAsset';
 export type { GaslessConfig } from './gasless/GaslessConfig';

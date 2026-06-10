@@ -22,12 +22,14 @@ export interface AmountPresetsProps extends ComponentProps<'div'> {
     presets: AmountPreset[];
     currencySymbol?: string;
     onPresetSelect: (value: string) => void;
+    disabled?: boolean;
 }
 
 export const AmountPresets: FC<AmountPresetsProps> = ({
     presets,
     currencySymbol,
     onPresetSelect,
+    disabled,
     className,
     ...props
 }) => {
@@ -38,6 +40,7 @@ export const AmountPresets: FC<AmountPresetsProps> = ({
                     key={preset.label}
                     size="s"
                     variant="secondary"
+                    disabled={disabled}
                     className={styles.preset}
                     onClick={() => (preset.onSelect ? preset.onSelect() : onPresetSelect(preset.amount))}
                 >

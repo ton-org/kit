@@ -47,6 +47,7 @@ export const Default: Story = {
     },
 };
 
+/** Nothing came from the API — renders the "unavailable" empty state. */
 export const Empty: Story = {
     render: () => {
         const [open, setOpen] = useState(false);
@@ -58,6 +59,28 @@ export const Empty: Story = {
                     open={open}
                     onClose={() => setOpen(false)}
                     tokens={[]}
+                    onSelect={() => {}}
+                    title="Select Token"
+                    searchPlaceholder="Search by name or symbol"
+                />
+            </>
+        );
+    },
+};
+
+/** Tokens are still loading — the empty list renders the loading state instead of "unavailable". */
+export const Loading: Story = {
+    render: () => {
+        const [open, setOpen] = useState(false);
+
+        return (
+            <>
+                <Button onClick={() => setOpen(true)}>Open Loading List</Button>
+                <TokenSelectModal
+                    open={open}
+                    onClose={() => setOpen(false)}
+                    tokens={[]}
+                    isLoading
                     onSelect={() => {}}
                     title="Select Token"
                     searchPlaceholder="Search by name or symbol"

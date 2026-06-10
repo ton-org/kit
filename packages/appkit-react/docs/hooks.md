@@ -717,6 +717,45 @@ return (
 );
 ```
 
+## Crypto Onramp
+
+### `useCryptoOnrampProvider`
+
+Hook to get a registered crypto-onramp provider by id, or the default one when no id is given.
+
+```tsx
+const provider = useCryptoOnrampProviderById({ id: 'layerswap' });
+
+return <div>Provider: {provider?.providerId}</div>;
+```
+
+### `useCryptoOnrampProviders`
+
+Hook to get all registered crypto-onramp providers.
+
+```tsx
+const providers = useCryptoOnrampProviders();
+
+return (
+    <ul>
+        {providers.map((p) => (
+            <li key={p.providerId}>{p.providerId}</li>
+        ))}
+    </ul>
+);
+```
+
+### `useCryptoOnrampProviderMetadata`
+
+Hook to get static metadata for a crypto-onramp provider (display name, logo, url).
+
+```tsx
+const { data: metadata } = useCryptoOnrampProviderMetadata({
+    providerId: 'layerswap',
+});
+return <div>Provider name: {metadata?.name}</div>;
+```
+
 ## Staking
 
 ### `useStakingProviders`

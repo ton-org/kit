@@ -39,3 +39,4 @@ release-artifacts
 *.tgz
 apps/appkit-minter/Caddyfile
 Caddyfile
+.superset

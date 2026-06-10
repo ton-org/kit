@@ -35,9 +35,9 @@ export const StakingWidgetUI: FC<StakingWidgetRenderProps> = ({
     error,
     providerInfo,
     providerMetadata,
-    stakingProvider,
-    stakingProviders,
-    setStakingProviderId,
+    provider,
+    providers,
+    setProviderId,
     network,
     isProviderInfoLoading,
     setAmount,
@@ -202,9 +202,9 @@ export const StakingWidgetUI: FC<StakingWidgetRenderProps> = ({
             <StakingSettingsModal
                 open={isSettingsOpen}
                 onClose={() => setIsSettingsOpen(false)}
-                provider={stakingProvider}
-                providers={stakingProviders}
-                onProviderChange={setStakingProviderId}
+                provider={provider}
+                providers={providers}
+                onProviderChange={setProviderId}
                 network={network}
             />
 

@@ -7,6 +7,6 @@
  */
 
 /**
- * Discriminator for DeFi-style providers (swap quotes, staking, gasless relayers).
+ * Discriminator for DeFi-style providers (swap quotes, staking, gasless relayers, crypto onramp).
  */
-export type DefiProviderType = 'swap' | 'staking' | 'gasless';
+export type DefiProviderType = 'swap' | 'staking' | 'gasless' | 'crypto-onramp';

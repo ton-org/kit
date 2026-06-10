@@ -49,6 +49,6 @@ export type ConnectorFactory = (ctx: ConnectorFactoryContext) => Connector;
 export type ConnectorInput = Connector | ConnectorFactory;
 
 /** Helper for creating typed connector factories */
-export function createConnector(factory: ConnectorFactory): ConnectorFactory {
+export const createConnector = (factory: ConnectorFactory): ConnectorFactory => {
     return factory;
-}
+};

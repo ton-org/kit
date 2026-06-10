@@ -41,6 +41,52 @@ export {
     type WatchConnectorByIdReturnType,
 } from './connectors/watch-connector-by-id';
 
+// Crypto onramp
+export {
+    getCryptoOnrampProvider,
+    type GetCryptoOnrampProviderOptions,
+    type GetCryptoOnrampProviderReturnType,
+} from './crypto-onramp/get-crypto-onramp-provider';
+export {
+    getCryptoOnrampProviders,
+    type GetCryptoOnrampProvidersReturnType,
+} from './crypto-onramp/get-crypto-onramp-providers';
+export {
+    watchCryptoOnrampProviders,
+    type WatchCryptoOnrampProvidersParameters,
+    type WatchCryptoOnrampProvidersReturnType,
+} from './crypto-onramp/watch-crypto-onramp-providers';
+export {
+    getCryptoOnrampQuote,
+    type GetCryptoOnrampQuoteOptions,
+    type GetCryptoOnrampQuoteReturnType,
+} from './crypto-onramp/get-crypto-onramp-quote';
+export {
+    createCryptoOnrampDeposit,
+    type CreateCryptoOnrampDepositOptions,
+    type CreateCryptoOnrampDepositReturnType,
+} from './crypto-onramp/create-crypto-onramp-deposit';
+export {
+    getCryptoOnrampStatus,
+    type GetCryptoOnrampStatusOptions,
+    type GetCryptoOnrampStatusReturnType,
+} from './crypto-onramp/get-crypto-onramp-status';
+export {
+    setDefaultCryptoOnrampProvider,
+    type SetDefaultCryptoOnrampProviderParameters,
+    type SetDefaultCryptoOnrampProviderReturnType,
+} from './crypto-onramp/set-default-crypto-onramp-provider';
+export {
+    getCryptoOnrampSupportedCurrencies,
+    type GetCryptoOnrampSupportedCurrenciesOptions,
+    type GetCryptoOnrampSupportedCurrenciesReturnType,
+} from './crypto-onramp/get-crypto-onramp-supported-currencies';
+export {
+    getCryptoOnrampProviderMetadata,
+    type GetCryptoOnrampProviderMetadataOptions,
+    type GetCryptoOnrampProviderMetadataReturnType,
+} from './crypto-onramp/get-crypto-onramp-provider-metadata';
+
 // Jettons
 export { getJettonInfo, type GetJettonInfoOptions, type GetJettonInfoReturnType } from './jettons/get-jetton-info';
 export {

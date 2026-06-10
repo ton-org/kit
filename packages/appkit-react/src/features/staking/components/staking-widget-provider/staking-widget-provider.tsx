@@ -63,11 +63,11 @@ export interface StakingContextType {
     /** Staking provider static metadata */
     providerMetadata: StakingProviderMetadata | undefined;
     /** Currently selected staking provider (defaults to the first registered one) */
-    stakingProvider: StakingProvider | undefined;
+    provider: StakingProvider | undefined;
     /** All registered staking providers */
-    stakingProviders: StakingProvider[];
+    providers: StakingProvider[];
     /** Updates the selected staking provider */
-    setStakingProviderId: (providerId: string) => void;
+    setProviderId: (providerId: string) => void;
     /** Network the widget is operating on (resolved from prop or wallet) */
     network: Network | undefined;
     /** Current operation direction: 'stake' or 'unstake' */
@@ -122,9 +122,9 @@ export const StakingContext = createContext<StakingContextType>({
     error: null,
     providerInfo: undefined,
     providerMetadata: undefined,
-    stakingProvider: undefined,
-    stakingProviders: [],
-    setStakingProviderId: () => {},
+    provider: undefined,
+    providers: [],
+    setProviderId: () => {},
     network: undefined,
     direction: 'stake',
     isProviderInfoLoading: false,
@@ -180,9 +180,9 @@ export const StakingWidgetProvider: FC<StakingProviderProps> = ({ children, netw
 
     const address = useAddress();
     const appKit = useAppKit();
-    const stakingProvider = useStakingProvider();
-    const stakingProviders = useStakingProviders();
-    const setStakingProviderId = useCallback(
+    const provider = useStakingProvider();
+    const providers = useStakingProviders();
+    const setProviderId = useCallback(
         (providerId: string) => {
             setDefaultStakingProvider(appKit, { providerId });
         },
@@ -190,11 +190,8 @@ export const StakingWidgetProvider: FC<StakingProviderProps> = ({ children, netw
     );
 
     const isNetworkSupported = useMemo(
-        () =>
-            !stakingProvider ||
-            !network ||
-            stakingProvider.getSupportedNetworks().some((n) => n.chainId === network.chainId),
-        [stakingProvider, network],
+        () => !provider || !network || provider.getSupportedNetworks().some((n) => n.chainId === network.chainId),
+        [provider, network],
     );
 
     const { data: providerInfo, isLoading: isProviderInfoLoading } = useStakingProviderInfo({ network });
@@ -206,7 +203,7 @@ export const StakingWidgetProvider: FC<StakingProviderProps> = ({ children, netw
     // enough TON to cover network fees before sending.
     const { data: nativeBalanceData, isLoading: isNativeBalanceLoading } = useBalance({
         network,
-        query: { refetchInterval: 5000 },
+        query: { enabled: isNativeTon, refetchInterval: 5000 },
     });
 
     const { data: jettonBalanceData, isLoading: isJettonBalanceLoading } = useJettonBalanceByAddress({
@@ -392,9 +389,9 @@ export const StakingWidgetProvider: FC<StakingProviderProps> = ({ children, netw
             error,
             providerInfo,
             providerMetadata,
-            stakingProvider,
-            stakingProviders,
-            setStakingProviderId,
+            provider,
+            providers,
+            setProviderId,
             network,
             isProviderInfoLoading,
             balance,
@@ -427,9 +424,9 @@ export const StakingWidgetProvider: FC<StakingProviderProps> = ({ children, netw
             error,
             providerInfo,
             providerMetadata,
-            stakingProvider,
-            stakingProviders,
-            setStakingProviderId,
+            provider,
+            providers,
+            setProviderId,
             network,
             isProviderInfoLoading,
             balance,

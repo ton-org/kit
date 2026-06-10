@@ -22,6 +22,13 @@ export { JettonsManager } from './core/JettonsManager';
 export { DefiError, DefiErrorCode } from './defi/errors';
 export { SwapManager, SwapProvider, SwapError, SwapErrorCode } from './defi/swap';
 export { StakingManager, StakingProvider, StakingError, StakingErrorCode } from './defi/staking';
+export {
+    CryptoOnrampManager,
+    CryptoOnrampProvider,
+    CryptoOnrampError,
+    CryptoOnrampErrorCode,
+    Caip2ByNetwork,
+} from './defi/crypto-onramp';
 export { GaslessManager, GaslessProvider, GaslessError, GaslessErrorCode } from './defi/gasless';
 export { EventEmitter } from './core/EventEmitter';
 export type { EventListener, EventPayload, KitEvent } from './core/EventEmitter';

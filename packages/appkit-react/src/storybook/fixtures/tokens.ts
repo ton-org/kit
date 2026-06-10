@@ -12,6 +12,7 @@ import type { AppkitUIToken } from '../../types/appkit-ui-token';
 
 export const STORY_TOKENS: AppkitUIToken[] = [
     {
+        id: 'ton',
         symbol: 'TON',
         name: 'Toncoin',
         decimals: 9,
@@ -20,7 +21,8 @@ export const STORY_TOKENS: AppkitUIToken[] = [
         logo: './tokens/ton.png',
     },
     {
-        symbol: 'USD₮',
+        id: 'usdt',
+        symbol: 'USDT',
         name: 'Tether USD',
         decimals: 6,
         address: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs',
@@ -29,6 +31,7 @@ export const STORY_TOKENS: AppkitUIToken[] = [
         logo: `./tokens/usdt.png`,
     },
     {
+        id: 'ston',
         symbol: 'STON',
         name: 'STON',
         decimals: 9,
@@ -37,6 +40,7 @@ export const STORY_TOKENS: AppkitUIToken[] = [
         logo: './tokens/ston.png',
     },
     {
+        id: 'xaut',
         symbol: 'XAUt0',
         name: 'Tether Gold',
         decimals: 6,
@@ -45,6 +49,7 @@ export const STORY_TOKENS: AppkitUIToken[] = [
         logo: './tokens/xaut0.png',
     },
     {
+        id: 'usde',
         symbol: 'USDe',
         name: 'Ethena USDe',
         decimals: 6,
@@ -54,6 +59,7 @@ export const STORY_TOKENS: AppkitUIToken[] = [
         logo: './tokens/usde.png',
     },
     {
+        id: 'tston',
         symbol: 'tsTON',
         name: 'Tonstakers TON',
         decimals: 9,
@@ -62,6 +68,7 @@ export const STORY_TOKENS: AppkitUIToken[] = [
         logo: './tokens/tston.svg',
     },
     {
+        id: 'gemston',
         symbol: 'GEMSTON',
         name: 'GEMSTON',
         decimals: 9,
@@ -70,6 +77,7 @@ export const STORY_TOKENS: AppkitUIToken[] = [
         logo: './tokens/gemston.png',
     },
     {
+        id: 'utya',
         symbol: 'UTYA',
         name: 'Utya',
         decimals: 9,
@@ -78,6 +86,7 @@ export const STORY_TOKENS: AppkitUIToken[] = [
         logo: './tokens/utya.png',
     },
     {
+        id: 'weth',
         symbol: 'WETH',
         name: 'Wrapped Ether',
         decimals: 18,

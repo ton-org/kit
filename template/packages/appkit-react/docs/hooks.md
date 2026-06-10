@@ -194,6 +194,26 @@ Hook to get all registered swap providers. The returned array keeps a stable ref
 
 %%demo/examples/src/appkit/hooks/swap#USE_SWAP_PROVIDERS%%
 
+## Crypto Onramp
+
+### `useCryptoOnrampProvider`
+
+Hook to get a registered crypto-onramp provider by id, or the default one when no id is given.
+
+%%demo/examples/src/appkit/hooks/onramp#USE_CRYPTO_ONRAMP_PROVIDER%%
+
+### `useCryptoOnrampProviders`
+
+Hook to get all registered crypto-onramp providers.
+
+%%demo/examples/src/appkit/hooks/onramp#USE_CRYPTO_ONRAMP_PROVIDERS%%
+
+### `useCryptoOnrampProviderMetadata`
+
+Hook to get static metadata for a crypto-onramp provider (display name, logo, url).
+
+%%demo/examples/src/appkit/hooks/onramp#USE_CRYPTO_ONRAMP_PROVIDER_METADATA%%
+
 ## Staking
 
 ### `useStakingProviders`
