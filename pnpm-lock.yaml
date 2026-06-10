@@ -22,17 +22,17 @@ catalogs:
       specifier: ^0.2.8
       version: 0.2.8
     '@tonconnect/protocol':
-      specifier: ^2.5.0-alpha.0
-      version: 2.5.0-alpha.1
+      specifier: ^3.0.0
+      version: 3.0.0
     '@tonconnect/sdk':
-      specifier: ^3.5.0-alpha.0
-      version: 3.5.0-alpha.1
+      specifier: ^4.0.0
+      version: 4.0.0
     '@tonconnect/ui':
-      specifier: ^2.5.0-alpha.0
-      version: 2.5.0-alpha.0
+      specifier: ^3.0.0
+      version: 3.0.0
     '@tonconnect/ui-react':
-      specifier: ^2.5.0-alpha.0
-      version: 2.5.0-alpha.0
+      specifier: ^3.0.0
+      version: 3.0.0
     '@types/react':
       specifier: 19.2.3
       version: 19.2.3
@@ -139,10 +139,10 @@ importers:
         version: 3.3.0
       '@tonconnect/sdk':
         specifier: 'catalog:'
-        version: 3.5.0-alpha.1
+        version: 4.0.0
       '@tonconnect/ui-react':
         specifier: 'catalog:'
-        version: 2.5.0-alpha.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+        version: 3.0.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       buffer:
         specifier: 'catalog:'
         version: 6.0.3
@@ -351,13 +351,13 @@ importers:
         version: link:../../packages/walletkit
       '@tonconnect/sdk':
         specifier: 'catalog:'
-        version: 3.5.0-alpha.1
+        version: 4.0.0
       '@tonconnect/ui':
         specifier: 'catalog:'
-        version: 2.5.0-alpha.0
+        version: 3.0.0
       '@tonconnect/ui-react':
         specifier: 'catalog:'
-        version: 2.5.0-alpha.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+        version: 3.0.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@types/react':
         specifier: 'catalog:'
         version: 19.2.3
@@ -409,7 +409,7 @@ importers:
         version: link:../../packages/walletkit
       '@tonconnect/protocol':
         specifier: 'catalog:'
-        version: 2.5.0-alpha.1
+        version: 3.0.0
     devDependencies:
       '@ledgerhq/hw-transport-node-hid':
         specifier: 6.30.0
@@ -473,8 +473,8 @@ importers:
         specifier: workspace:*
         version: link:../walletkit
       '@tonconnect/sdk':
-        specifier: '>=3.5.0-alpha.1'
-        version: 3.5.0-alpha.1
+        specifier: '>=4.0.0'
+        version: 4.0.0
       lru-cache:
         specifier: 'catalog:'
         version: 11.5.0
@@ -487,7 +487,7 @@ importers:
         version: 0.63.1(@ton/crypto@3.3.0)
       '@tonconnect/ui':
         specifier: 'catalog:'
-        version: 2.5.0-alpha.0
+        version: 3.0.0
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
@@ -501,8 +501,8 @@ importers:
         specifier: workspace:*
         version: link:../appkit
       '@tonconnect/ui':
-        specifier: '>=2.4.1'
-        version: 2.4.4
+        specifier: '>=3.0.0'
+        version: 3.0.0
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -530,7 +530,7 @@ importers:
         version: 5.100.14(react@19.2.3)
       '@tonconnect/ui-react':
         specifier: 'catalog:'
-        version: 2.5.0-alpha.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+        version: 3.0.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@types/react':
         specifier: 'catalog:'
         version: 19.2.3
@@ -624,10 +624,10 @@ importers:
         version: 0.2.8
       '@tonconnect/protocol':
         specifier: 'catalog:'
-        version: 2.5.0-alpha.1
+        version: 3.0.0
       '@tonconnect/sdk':
         specifier: 'catalog:'
-        version: 3.5.0-alpha.1
+        version: 4.0.0
       lru-cache:
         specifier: 'catalog:'
         version: 11.5.0
@@ -719,7 +719,7 @@ importers:
         version: 0.2.8
       '@tonconnect/protocol':
         specifier: 'catalog:'
-        version: 2.5.0-alpha.1
+        version: 3.0.0
       buffer:
         specifier: 'catalog:'
         version: 6.0.3
@@ -3453,32 +3453,20 @@ packages:
   '@tonconnect/protocol@2.4.0':
     resolution: {integrity: sha512-3xg6sMWIrSgW7/f7iPgOb2BI3LaMScjDMqfu20fcEMbOVvNFk3TGAUKK5cJ3pfvUINsyLgPoylcIbPap37jXiA==}
 
-  '@tonconnect/protocol@2.5.0-alpha.0':
-    resolution: {integrity: sha512-9cUWsCkM53bYlqxEvohj0Ks1Zb6huZvJnCFQIPswzwQVlW1tySIuElU4Ei2WC471V8TngkvT4WDOnuEPsyjbvA==}
+  '@tonconnect/protocol@3.0.0':
+    resolution: {integrity: sha512-YqwllY12+rXsAZgKD5mlRBb6wXEbe9jKXMCFOV387yCKQDMnwXK1fbgKWrroPp9fPDtQHXhilZQNnuAKS/iR/w==}
 
-  '@tonconnect/protocol@2.5.0-alpha.1':
-    resolution: {integrity: sha512-9rMmSMvhLpvFovVUIjEK2Vmf8EH7Lob4S/B7nheM0QEooM/fd0FHTFk6ovBtYANu0IQ0QNMTsrGQ5s5KpKCwHQ==}
+  '@tonconnect/sdk@4.0.0':
+    resolution: {integrity: sha512-2/vgrBFhIfBV2f8s11bo+VV+VwjElTi2dM2ZDP41VTXyjOmNgWxDw3vSqrS/puniPbm+4tqK6EXLfwvpBxlq5w==}
 
-  '@tonconnect/sdk@3.4.1':
-    resolution: {integrity: sha512-eVH8erAFout89gXYHXua/es+mmLPiW1r7ng9hgHKYQv85HLq8/zzQEkbJpbTlnIuQ6CJ/QKchjMsIgYz3BYCUQ==}
-
-  '@tonconnect/sdk@3.5.0-alpha.0':
-    resolution: {integrity: sha512-N6nvinZeIapIKO7P1fY0thfHVY8oLV5wcaqiM3XvskYJ9+29KqH/li5v8wliHisecHF209OTghFiLjEVgHTBOA==}
-
-  '@tonconnect/sdk@3.5.0-alpha.1':
-    resolution: {integrity: sha512-VE7c1ot4+wteTOV385G1GmEztZzvV9IEPD17jc84QGmHlGqvyTfmpD6ggRmzjO66zL+3v7yer+g9IIURcKrdMw==}
-
-  '@tonconnect/ui-react@2.5.0-alpha.0':
-    resolution: {integrity: sha512-N1c67Yoq7POrYmrOuyMC42/w00GmQJnioNZgBwt6xnhHIVaRqZ88IpdIxX7MImDstPb+K8sKUaQob5T/vl4jaQ==}
+  '@tonconnect/ui-react@3.0.0':
+    resolution: {integrity: sha512-WnLleGTmGlcUM/P8Tcj/qZwWkBPwKKZHU+1guvUGHzADhnapuZxOH1IgR9eZeFtwHYTZjK6ogky8PqrS5U6OVw==}
     peerDependencies:
       react: '>=17.0.0'
       react-dom: '>=17.0.0'
 
-  '@tonconnect/ui@2.4.4':
-    resolution: {integrity: sha512-XgIHAkdimDk+YeRDPsQp7eOz2lM4aScYL3hiTP1Z9YgWRVROjEqTbw5ZP9pt6rgmYTzL26QpqhI6uNTFdYNFIA==}
-
-  '@tonconnect/ui@2.5.0-alpha.0':
-    resolution: {integrity: sha512-kQi8H2+RzD2VWv0UvdygJUNG2E6TYUNwAJOg47744/cGkvZLAYossye+6cp1ljBL24iN+ZhErrtk4Moqc0wRNA==}
+  '@tonconnect/ui@3.0.0':
+    resolution: {integrity: sha512-vt/HAyEr7bMJgff38lDw9xV7ptS8bzdjkdnwJaFjSZth2vT/qbp3J/RDxxNMaX4q0VFuHafGh8SZe1JHhHFOgQ==}
 
   '@truecarry/vite-plugin-web-extension@4.5.1':
     resolution: {integrity: sha512-WSramCYE+wVFH/zQdBhaBP5gSd9pldyjOu+jvkaTEFXwzCDbNQJ+34ke4/XDsaohpcQTe+lbVXbUT+Jt4Ni9Jw==}
@@ -10684,61 +10672,30 @@ snapshots:
       tweetnacl: 1.0.3
       tweetnacl-util: 0.15.1
 
-  '@tonconnect/protocol@2.5.0-alpha.0':
+  '@tonconnect/protocol@3.0.0':
     dependencies:
       tweetnacl: 1.0.3
       tweetnacl-util: 0.15.1
 
-  '@tonconnect/protocol@2.5.0-alpha.1':
-    dependencies:
-      tweetnacl: 1.0.3
-      tweetnacl-util: 0.15.1
-
-  '@tonconnect/sdk@3.4.1':
+  '@tonconnect/sdk@4.0.0':
     dependencies:
       '@tonconnect/isomorphic-eventsource': 0.0.2
       '@tonconnect/isomorphic-fetch': 0.0.3
-      '@tonconnect/protocol': 2.4.0
+      '@tonconnect/protocol': 3.0.0
     transitivePeerDependencies:
       - encoding
 
-  '@tonconnect/sdk@3.5.0-alpha.0':
+  '@tonconnect/ui-react@3.0.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)':
     dependencies:
-      '@tonconnect/isomorphic-eventsource': 0.0.2
-      '@tonconnect/isomorphic-fetch': 0.0.3
-      '@tonconnect/protocol': 2.5.0-alpha.0
-    transitivePeerDependencies:
-      - encoding
-
-  '@tonconnect/sdk@3.5.0-alpha.1':
-    dependencies:
-      '@tonconnect/isomorphic-eventsource': 0.0.2
-      '@tonconnect/isomorphic-fetch': 0.0.3
-      '@tonconnect/protocol': 2.5.0-alpha.1
-    transitivePeerDependencies:
-      - encoding
-
-  '@tonconnect/ui-react@2.5.0-alpha.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)':
-    dependencies:
-      '@tonconnect/ui': 2.5.0-alpha.0
+      '@tonconnect/ui': 3.0.0
       react: 19.2.3
       react-dom: 19.2.3(react@19.2.3)
     transitivePeerDependencies:
       - encoding
 
-  '@tonconnect/ui@2.4.4':
+  '@tonconnect/ui@3.0.0':
     dependencies:
-      '@tonconnect/sdk': 3.4.1
-      classnames: 2.5.1
-      csstype: 3.2.3
-      deepmerge: 4.3.1
-      ua-parser-js: 1.0.41
-    transitivePeerDependencies:
-      - encoding
-
-  '@tonconnect/ui@2.5.0-alpha.0':
-    dependencies:
-      '@tonconnect/sdk': 3.5.0-alpha.0
+      '@tonconnect/sdk': 4.0.0
       classnames: 2.5.1
       csstype: 3.2.3
       deepmerge: 4.3.1
