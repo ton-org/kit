@@ -58,7 +58,7 @@ export const Default: Story = {
                             onSearchChange={setSearch}
                             placeholder="Search..."
                         />
-                        <CurrencySelect.ListContainer isEmpty={filtered.length === 0}>
+                        <CurrencySelect.ListContainer emptyState={filtered.length === 0 ? 'no-match' : null}>
                             <CurrencySelect.Section>
                                 <CurrencySelect.SectionHeader>Popular</CurrencySelect.SectionHeader>
                                 {filtered.map((t) => (
@@ -124,7 +124,7 @@ export const WithFilters: Story = {
                             onChange={setFilter}
                             allLabel="All networks"
                         />
-                        <CurrencySelect.ListContainer isEmpty={false}>
+                        <CurrencySelect.ListContainer emptyState={null}>
                             <CurrencySelect.Section>
                                 {TOKENS.map((t) => (
                                     <CurrencyItem
@@ -138,6 +138,36 @@ export const WithFilters: Story = {
                                 ))}
                             </CurrencySelect.Section>
                         </CurrencySelect.ListContainer>
+                    </CurrencySelect.Modal>
+                </>
+            );
+        };
+        return <Wrapper />;
+    },
+};
+
+/**
+ * The three empty states share uniform texts across every currency modal (swap,
+ * onramp tokens, onramp methods): `loading`, `unavailable` (nothing came from the
+ * API) and `no-match` (search/filter found nothing).
+ */
+export const EmptyStates: Story = {
+    render: () => {
+        const Wrapper = () => {
+            const [emptyState, setEmptyState] = useState<'loading' | 'unavailable' | 'no-match'>('loading');
+
+            return (
+                <>
+                    <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                        {(['loading', 'unavailable', 'no-match'] as const).map((state) => (
+                            <Button key={state} onClick={() => setEmptyState(state)}>
+                                {state}
+                            </Button>
+                        ))}
+                    </div>
+                    <CurrencySelect.Modal open onOpenChange={() => {}} title="Select token">
+                        <CurrencySelect.Search searchValue="" onSearchChange={() => {}} placeholder="Search..." />
+                        <CurrencySelect.ListContainer emptyState={emptyState} />
                     </CurrencySelect.Modal>
                 </>
             );

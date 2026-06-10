@@ -14,6 +14,7 @@ import { Input } from '../../ui/input';
 import type { ModalProps } from '../../ui/modal';
 import { Modal } from '../../ui/modal';
 import { SearchIcon } from '../../ui/icons';
+import { useI18n } from '../../../features/settings/hooks/use-i18n';
 import styles from './currency-select-modal.module.css';
 
 export interface CurrencySelectSearchProps extends Omit<InputContainerProps, 'children'> {
@@ -47,22 +48,42 @@ export const CurrencySelectSearch: FC<CurrencySelectSearchProps> = ({
     );
 };
 
+/**
+ * Why the list has nothing to render. Texts are uniform across all currency modals
+ * (swap, onramp tokens, onramp methods) by design — callers pass the state, not copy.
+ */
+export type CurrencySelectEmptyState = 'loading' | 'unavailable' | 'no-match';
+
 export interface CurrencySelectListContainerProps extends ComponentProps<'div'> {
-    isEmpty: boolean;
+    /** When set, an empty-state message replaces `children`. */
+    emptyState?: CurrencySelectEmptyState | null;
 }
 
 export const CurrencySelectListContainer: FC<CurrencySelectListContainerProps> = ({
-    isEmpty,
+    emptyState,
     children,
     className,
     ...props
 }) => {
+    const { t } = useI18n();
+
     return (
         <div className={clsx(styles.list, className)} {...props}>
-            {isEmpty ? (
+            {emptyState ? (
                 <div className={styles.empty}>
-                    <p className={styles.emptyText}>We didn&#x27;t find any tokens.</p>
-                    <p className={styles.emptyText}>Try searching by address.</p>
+                    {emptyState === 'loading' && <p className={styles.emptyText}>{t('tokenSelect.loading')}</p>}
+                    {emptyState === 'unavailable' && (
+                        <>
+                            <p className={styles.emptyText}>{t('tokenSelect.emptyUnavailable')}</p>
+                            <p className={styles.emptyText}>{t('tokenSelect.emptyTryLater')}</p>
+                        </>
+                    )}
+                    {emptyState === 'no-match' && (
+                        <>
+                            <p className={styles.emptyText}>{t('tokenSelect.emptyNoMatch')}</p>
+                            <p className={styles.emptyText}>{t('tokenSelect.emptyTryAddress')}</p>
+                        </>
+                    )}
                 </div>
             ) : (
                 children

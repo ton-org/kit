@@ -20,6 +20,13 @@
     margin-bottom: 24px;
 }
 
+.caption {
+    composes: bodySemibold from '../../../../../styles/typography.module.css';
+    margin: 0;
+    color: var(--ta-color-text-secondary);
+    text-align: center;
+}
+
 .info {
     margin-top: 16px;
 }

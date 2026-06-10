@@ -8,7 +8,7 @@
 
 import { useEffect, useMemo } from 'react';
 import type { FC, PropsWithChildren } from 'react';
-import type { CryptoOnrampDestinationCurrency, CryptoOnrampSourceCurrency } from '@ton/appkit';
+import { compareAddress } from '@ton/appkit';
 
 import { useAddress } from '../../../../wallets';
 import { useCryptoOnrampProvider } from '../../../hooks/use-crypto-onramp-provider';
@@ -24,6 +24,25 @@ import { useCryptoOnrampQuoteAndDeposit } from './use-crypto-onramp-quote-and-de
 import { useCryptoOnrampTokenState } from './use-crypto-onramp-token-state';
 import { useCryptoOnrampValidation } from './use-crypto-onramp-validation';
 
+/**
+ * Reference to a destination (TON-side) currency by its jetton-master address.
+ * Compared via `compareAddress`, so EQ/UQ address forms are equivalent.
+ */
+export interface CryptoOnrampDestinationRef {
+    address: string;
+}
+
+/**
+ * Reference to a source currency. Each provided field acts as a filter and the first
+ * matching list entry wins. `address` is compared lowercase (source chains are non-TON);
+ * an empty string matches the chain's native coin.
+ */
+export interface CryptoOnrampSourceRef {
+    address: string;
+    /** Optional CAIP-2 chain id (e.g. `'eip155:42161'`) — narrows the match when the same address exists on several chains. */
+    chain?: string;
+}
+
 export interface CryptoOnrampProviderProps extends PropsWithChildren {
     /**
      * Custom CAIP-2 → chain display info overrides. Merged on top of the
@@ -32,17 +51,17 @@ export interface CryptoOnrampProviderProps extends PropsWithChildren {
      */
     chains?: Record<string, ChainInfo>;
     /**
-     * Optional initial destination (TON-side) currency. When provided, the widget seeds the
-     * selector immediately; when omitted, the UI shows a skeleton while currencies are
-     * loading and a "Token to buy" placeholder pill after. Must be a complete object
-     * (`address`, `symbol`, `decimals`, `logo`).
+     * Optional default destination (TON-side) currency reference. Resolved against the
+     * loaded supported-currency list — the selected object always comes from the list
+     * (canonical decimals/logo/symbol), never from the consumer. When the reference
+     * doesn't match anything (or is omitted), the first list entry is selected.
      */
-    defaultDestination?: CryptoOnrampDestinationCurrency;
+    defaultDestination?: CryptoOnrampDestinationRef;
     /**
-     * Optional initial source currency. Same behaviour as {@link defaultDestination} — when
-     * omitted, the UI falls back to skeleton/"Method" placeholder.
+     * Optional default source currency reference. Same resolution behaviour as
+     * {@link defaultDestination}.
      */
-    defaultSource?: CryptoOnrampSourceCurrency;
+    defaultSource?: CryptoOnrampSourceRef;
 }
 
 export const CryptoOnrampWidgetProvider: FC<CryptoOnrampProviderProps> = ({
@@ -61,7 +80,7 @@ export const CryptoOnrampWidgetProvider: FC<CryptoOnrampProviderProps> = ({
         setAmount,
         amountInputMode,
         setAmountInputMode,
-    } = useCryptoOnrampTokenState({ defaultDestination, defaultSource });
+    } = useCryptoOnrampTokenState();
 
     // 2. Queries and external readers
     const userAddress = useAddress();
@@ -133,19 +152,31 @@ export const CryptoOnrampWidgetProvider: FC<CryptoOnrampProviderProps> = ({
         }
     }, [isReversedAmountSupported, amountInputMode, setAmountInputMode]);
 
-    // Auto-pick the first available token/method once `supportedCurrencies` resolves,
-    // but only when the consumer hasn't seeded the selection via defaults. Fires once
-    // per side — after the user picks (or the consumer-supplied default seeded state),
-    // `selectedX` is non-null and the effect short-circuits.
+    // Resolve the selection once `supportedCurrencies` loads: consumer defaults are
+    // references looked up in the live list, falling back to the first entry, so the
+    // selected object always carries canonical decimals/logo/symbol. Fires once per
+    // side — after the user picks, `selectedX` is non-null and the effect short-circuits.
     useEffect(() => {
         const first = tokens[0];
-        if (!selectedToken && first) setSelectedToken(first);
-    }, [tokens, selectedToken, setSelectedToken]);
+        if (selectedToken || !first) return;
+        const match = defaultDestination
+            ? tokens.find((token) => compareAddress(token.address, defaultDestination.address))
+            : undefined;
+        setSelectedToken(match ?? first);
+    }, [tokens, selectedToken, defaultDestination, setSelectedToken]);
 
     useEffect(() => {
         const first = paymentMethods[0];
-        if (!selectedMethod && first) setSelectedMethod(first);
-    }, [paymentMethods, selectedMethod, setSelectedMethod]);
+        if (selectedMethod || !first) return;
+        const match = defaultSource
+            ? paymentMethods.find(
+                  (method) =>
+                      method.address.toLowerCase() === defaultSource.address.toLowerCase() &&
+                      (defaultSource.chain === undefined || method.chain === defaultSource.chain),
+              )
+            : undefined;
+        setSelectedMethod(match ?? first);
+    }, [paymentMethods, selectedMethod, defaultSource, setSelectedMethod]);
 
     const value = useMemo(
         () => ({

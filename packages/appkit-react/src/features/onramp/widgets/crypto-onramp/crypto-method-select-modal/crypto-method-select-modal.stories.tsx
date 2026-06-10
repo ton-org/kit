@@ -72,10 +72,25 @@ export const Default: Story = {
     },
 };
 
+/** Nothing came from the API — renders the "unavailable" empty state. */
 export const Empty: Story = {
     args: {
         open: true,
         methods: [],
+        onClose: () => {},
+        onSelect: () => {},
+    },
+};
+
+/**
+ * Currencies are still loading. The widget disables opening the modal in this state,
+ * so this is a fallback for custom renders that open it anyway.
+ */
+export const Loading: Story = {
+    args: {
+        open: true,
+        methods: [],
+        isLoading: true,
         onClose: () => {},
         onSelect: () => {},
     },

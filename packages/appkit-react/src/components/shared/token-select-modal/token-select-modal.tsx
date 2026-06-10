@@ -41,6 +41,8 @@ export interface TokenSelectModalProps<T extends TokenBase = AppkitUIToken> {
     onSelect: (token: T) => void;
     title: string;
     searchPlaceholder?: string;
+    /** While true an empty `tokens` list renders the loading state instead of "unavailable". */
+    isLoading?: boolean;
 }
 
 export const TokenSelectModal = <T extends TokenBase = AppkitUIToken>({
@@ -51,6 +53,7 @@ export const TokenSelectModal = <T extends TokenBase = AppkitUIToken>({
     onSelect,
     title,
     searchPlaceholder,
+    isLoading,
 }: TokenSelectModalProps<T>): JSX.Element => {
     const { t } = useI18n();
     const [search, setSearch] = useState('');
@@ -66,6 +69,7 @@ export const TokenSelectModal = <T extends TokenBase = AppkitUIToken>({
     }, [tokens, tokenSections, search, t]);
 
     const isEmpty = displaySections.every((s) => s.tokens.length === 0);
+    const emptyState = isLoading ? 'loading' : tokens.length === 0 ? 'unavailable' : isEmpty ? 'no-match' : null;
 
     const handleSelect = (token: T) => () => {
         onSelect(token);
@@ -83,7 +87,7 @@ export const TokenSelectModal = <T extends TokenBase = AppkitUIToken>({
     return (
         <CurrencySelect.Modal open={open} onOpenChange={handleOpenChange} title={title}>
             <CurrencySelect.Search searchValue={search} onSearchChange={setSearch} placeholder={searchPlaceholder} />
-            <CurrencySelect.ListContainer isEmpty={isEmpty}>
+            <CurrencySelect.ListContainer emptyState={emptyState}>
                 {displaySections.map((section) => (
                     <CurrencySelect.Section key={section.title}>
                         {section.title && <CurrencySelect.SectionHeader>{section.title}</CurrencySelect.SectionHeader>}

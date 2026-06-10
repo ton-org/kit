@@ -64,6 +64,13 @@ export const LAYERSWAP_DESTINATION_TOKENS: CryptoOnrampDestinationCurrency[] = [
         decimals: 6,
         logo: 'https://cdn.layerswap.io/layerswap/currencies/usdt.png',
     },
+    {
+        address: '0x0000000000000000000000000000000000000000',
+        symbol: 'TON',
+        name: 'Toncoin',
+        decimals: 9,
+        logo: 'https://cdn.layerswap.io/layerswap/networks/ton_mainnet.png',
+    },
 ];
 
 export const isErrorResponse = (body: unknown): body is LayerswapErrorResponse => {

@@ -9,6 +9,7 @@
 export { CurrencySelect } from './currency-select-modal';
 export type {
     CurrencySelectSearchProps,
+    CurrencySelectEmptyState,
     CurrencySelectListContainerProps,
     CurrencySelectFiltersProps,
     CurrencySelectFilterOption,

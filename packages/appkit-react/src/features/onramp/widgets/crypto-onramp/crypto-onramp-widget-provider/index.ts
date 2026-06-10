@@ -7,7 +7,11 @@
  */
 
 export { CryptoOnrampWidgetProvider } from './crypto-onramp-widget-provider';
-export type { CryptoOnrampProviderProps } from './crypto-onramp-widget-provider';
+export type {
+    CryptoOnrampProviderProps,
+    CryptoOnrampDestinationRef,
+    CryptoOnrampSourceRef,
+} from './crypto-onramp-widget-provider';
 export { CryptoOnrampContext, useCryptoOnrampContext } from './crypto-onramp-context';
 export type { CryptoOnrampContextType, CryptoAmountInputMode } from './crypto-onramp-context';
 export type { ChainInfo } from '../utils/chains';

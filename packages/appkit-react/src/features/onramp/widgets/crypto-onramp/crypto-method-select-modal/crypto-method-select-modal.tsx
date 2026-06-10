@@ -25,6 +25,8 @@ export interface CryptoMethodSelectModalProps {
     /** CAIP-2 → display info map. Defaults to `{}` (helper falls back to the chain reference). */
     chains?: Record<string, ChainInfo>;
     onSelect: (method: CryptoOnrampSourceCurrency) => void;
+    /** While true an empty `methods` list renders the loading state instead of "unavailable". */
+    isLoading?: boolean;
 }
 
 const filterMethods = (
@@ -37,7 +39,8 @@ const filterMethods = (
         (m) =>
             m.symbol.toLowerCase().includes(q) ||
             (m.name?.toLowerCase().includes(q) ?? false) ||
-            getChainInfo(m.chain, chains).name.toLowerCase().includes(q),
+            getChainInfo(m.chain, chains).name.toLowerCase().includes(q) ||
+            m.address.toLowerCase() === q,
     );
 };
 
@@ -49,6 +52,7 @@ export const CryptoMethodSelectModal: FC<CryptoMethodSelectModalProps> = ({
     methods,
     chains = {},
     onSelect,
+    isLoading,
 }) => {
     const { t } = useI18n();
     const [search, setSearch] = useState('');
@@ -71,7 +75,13 @@ export const CryptoMethodSelectModal: FC<CryptoMethodSelectModalProps> = ({
         return search ? filterMethods(byChain, search, chains) : byChain;
     }, [methods, chains, search, chainFilter]);
 
-    const isEmpty = displayMethods.length === 0;
+    const emptyState = isLoading
+        ? 'loading'
+        : methods.length === 0
+          ? 'unavailable'
+          : displayMethods.length === 0
+            ? 'no-match'
+            : null;
 
     const handleSelect = (method: CryptoOnrampSourceCurrency) => () => {
         onSelect(method);
@@ -105,7 +115,7 @@ export const CryptoMethodSelectModal: FC<CryptoMethodSelectModalProps> = ({
                 />
             )}
 
-            <CurrencySelect.ListContainer isEmpty={isEmpty}>
+            <CurrencySelect.ListContainer emptyState={emptyState}>
                 <CurrencySelect.Section>
                     {displayMethods.map((method) => {
                         const chainInfo = getChainInfo(method.chain, chains);

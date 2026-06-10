@@ -38,10 +38,19 @@ export default {
         onSale: 'On Sale',
     },
 
+    // Shared UI primitives
+    ui: {
+        close: 'Close',
+        settings: 'Settings',
+    },
+
     // Token select modal (shared between swap, etc.)
     tokenSelect: {
+        loading: 'Loading...',
         emptyNoMatch: "We didn't find any tokens.",
         emptyTryAddress: 'Try searching by address.',
+        emptyUnavailable: 'No tokens available right now.',
+        emptyTryLater: 'Try again later.',
         emptyForNetwork: 'No tokens available for the selected network.',
         otherTokens: 'Other Tokens',
         otherCurrencies: 'Other Currencies',
@@ -109,12 +118,20 @@ export default {
         toThisAddress: 'To this address',
         refundAddress: 'Refund address',
         memoTag: 'Memo / Tag',
+        copyAmount: 'Copy amount',
+        copyAddress: 'Copy address',
+        copyRefundAddress: 'Copy refund address',
+        copyMemo: 'Copy memo',
         transactionDetails: 'Transaction details',
         deposit: 'Deposit',
         continue: 'Continue',
         methodOfPurchase: 'Method of purchase',
         tokenToBuy: 'Token to buy',
         method: 'Method',
+        buyToken: 'Buy token',
+        forToken: 'for token',
+        selectToken: 'Select token',
+        loading: 'Loading...',
         allNetworks: 'All networks',
         selectMethod: 'Select payment method',
         searchMethod: 'Search',

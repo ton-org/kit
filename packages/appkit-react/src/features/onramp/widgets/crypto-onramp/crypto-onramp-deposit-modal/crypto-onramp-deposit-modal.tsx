@@ -147,7 +147,7 @@ export const CryptoOnrampDepositModal: FC<CryptoOnrampDepositModalProps> = ({
                             <span className={styles.infoValue}>
                                 {amount} {symbol}
                             </span>
-                            <CopyButton value={amount} aria-label="Copy amount" />
+                            <CopyButton value={amount} aria-label={t('cryptoOnramp.copyAmount')} />
                         </div>
                     </div>
 
@@ -157,7 +157,7 @@ export const CryptoOnrampDepositModal: FC<CryptoOnrampDepositModalProps> = ({
                         <span className={styles.infoLabel}>{t('cryptoOnramp.toThisAddress')}</span>
                         <div className={styles.infoValueRow}>
                             <span className={styles.infoValue}>{truncateAddress(address)}</span>
-                            <CopyButton value={address} aria-label="Copy address" />
+                            <CopyButton value={address} aria-label={t('cryptoOnramp.copyAddress')} />
                         </div>
                     </div>
 
@@ -168,7 +168,10 @@ export const CryptoOnrampDepositModal: FC<CryptoOnrampDepositModalProps> = ({
                                 <span className={styles.infoLabel}>{t('cryptoOnramp.refundAddress')}</span>
                                 <div className={styles.infoValueRow}>
                                     <span className={styles.infoValue}>{truncateAddress(refundAddress)}</span>
-                                    <CopyButton value={refundAddress} aria-label="Copy refund address" />
+                                    <CopyButton
+                                        value={refundAddress}
+                                        aria-label={t('cryptoOnramp.copyRefundAddress')}
+                                    />
                                 </div>
                             </div>
                         </>
@@ -181,7 +184,7 @@ export const CryptoOnrampDepositModal: FC<CryptoOnrampDepositModalProps> = ({
                                 <span className={styles.infoLabel}>{t('cryptoOnramp.memoTag')}</span>
                                 <div className={styles.infoValueRow}>
                                     <span className={styles.infoValue}>{memo}</span>
-                                    <CopyButton value={memo} aria-label="Copy memo" />
+                                    <CopyButton value={memo} aria-label={t('cryptoOnramp.copyMemo')} />
                                 </div>
                             </div>
                         </>
