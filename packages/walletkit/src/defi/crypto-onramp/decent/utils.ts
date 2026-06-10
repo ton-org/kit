@@ -243,6 +243,8 @@ export const mapDecentErrorCode = (
     fallback: CryptoOnrampErrorCode,
 ): CryptoOnrampErrorCode => {
     switch (apiCode) {
+        case 'NO_AVAILABLE_ROUTE':
+            return CryptoOnrampErrorCode.RouteNotFound;
         case 'AMOUNT_TOO_HIGH':
             return CryptoOnrampErrorCode.AmountTooLarge;
         case 'AMOUNT_TOO_LOW':
