@@ -51,7 +51,7 @@ export class WalletJettonClass implements WalletJettonInterface {
         const jettonPayload = createJettonTransferPayload({
             amount: BigInt(params.transferAmount),
             destination: params.recipientAddress,
-            responseDestination: this.getAddress(),
+            responseDestination: params.responseDestination || this.getAddress(),
             comment: params.comment,
         });
 

@@ -6,7 +6,7 @@
  *
  */
 
-import type { Feature, SendTransactionFeature, SignDataFeature } from '@tonconnect/protocol';
+import type { SendTransactionFeature, SignDataFeature } from '@tonconnect/protocol';
 
 import type { DeviceInfo, WalletInfo } from '../types/jsBridge';
 import type { WalletAdapter } from '../api/interfaces';
@@ -127,23 +127,6 @@ export function getDeviceInfoForWallet(
 
     // Otherwise, use features from deviceInfo
     return baseDeviceInfo;
-}
-
-/**
- * Extract maximum number of outgoing messages from wallet features
- * @param features - Array of wallet features from getSupportedFeatures()
- * @returns Maximum number of outgoing messages the wallet can handle (default: 1)
- */
-export function getMaxOutgoingMessages(features: Feature[]) {
-    const sendTransactionFeature = features.find(
-        (feature) => feature !== 'SendTransaction' && feature.name === 'SendTransaction',
-    );
-
-    if (sendTransactionFeature) {
-        return sendTransactionFeature.maxMessages;
-    }
-
-    return 1;
 }
 
 function addLegacySendTransactionFeature(options: DeviceInfo): DeviceInfo {

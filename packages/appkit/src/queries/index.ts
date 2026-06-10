@@ -165,6 +165,54 @@ export {
     type BuildSwapTransactionVariables,
 } from './swap/build-swap-transaction';
 
+// Gasless
+export {
+    getGaslessConfigQueryOptions,
+    getGaslessConfigQueryKey,
+    type GetGaslessConfigQueryConfig,
+    type GetGaslessConfigData,
+    type GetGaslessConfigErrorType,
+    type GetGaslessConfigQueryKey,
+    type GetGaslessConfigQueryOptions,
+} from './gasless/get-gasless-config';
+export {
+    getGaslessProviderMetadataQueryOptions,
+    getGaslessProviderMetadataQueryKey,
+    type GetGaslessProviderMetadataQueryConfig,
+    type GetGaslessProviderMetadataData,
+    type GetGaslessProviderMetadataErrorType,
+    type GetGaslessProviderMetadataQueryKey,
+    type GetGaslessProviderMetadataQueryOptions,
+} from './gasless/get-gasless-provider-metadata';
+export {
+    getGaslessQuoteQueryOptions,
+    getGaslessQuoteQueryKey,
+    GASLESS_QUOTE_STALE_TIME_MS,
+    type GetGaslessQuoteQueryConfig,
+    type GetGaslessQuoteData,
+    type GetGaslessQuoteErrorType,
+    type GetGaslessQuoteQueryKey,
+    type GetGaslessQuoteQueryOptions,
+} from './gasless/get-gasless-quote';
+export {
+    getGaslessJettonTransferQuoteQueryOptions,
+    getGaslessJettonTransferQuoteQueryKey,
+    type GetGaslessJettonTransferQuoteQueryConfig,
+    type GetGaslessJettonTransferQuoteData,
+    type GetGaslessJettonTransferQuoteErrorType,
+    type GetGaslessJettonTransferQuoteQueryKey,
+    type GetGaslessJettonTransferQuoteQueryOptions,
+} from './gasless/get-gasless-jetton-transfer-quote';
+export {
+    sendGaslessTransactionMutationOptions,
+    type SendGaslessTransactionMutationConfig,
+    type SendGaslessTransactionData,
+    type SendGaslessTransactionErrorType,
+    type SendGaslessTransactionMutate,
+    type SendGaslessTransactionMutateAsync,
+    type SendGaslessTransactionVariables,
+} from './gasless/send-gasless-transaction';
+
 // Staking
 export {
     getStakingQuoteQueryOptions,
@@ -220,6 +268,18 @@ export {
     type SendTransactionParameters,
     type SendTransactionReturnType,
 } from './transaction/send-transaction';
+export {
+    signMessageMutationOptions,
+    type SignMessageData,
+    type SignMessageErrorType,
+    type SignMessageMutate,
+    type SignMessageMutateAsync,
+    type SignMessageMutationOptions,
+    type SignMessageOptions,
+    type SignMessageVariables,
+    type SignMessageParameters,
+    type SignMessageReturnType,
+} from './transaction/sign-message';
 export {
     getTransactionStatusQueryOptions,
     type GetTransactionStatusData,

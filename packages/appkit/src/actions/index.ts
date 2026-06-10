@@ -108,6 +108,55 @@ export { transferNft, type TransferNftParameters, type TransferNftReturnType } f
 // Providers
 export { registerProvider, type RegisterProviderOptions } from './providers/register-provider';
 
+// Gasless
+export { getGaslessManager, type GetGaslessManagerReturnType } from './gasless/get-gasless-manager';
+export {
+    getGaslessProvider,
+    type GetGaslessProviderOptions,
+    type GetGaslessProviderReturnType,
+} from './gasless/get-gasless-provider';
+export { getGaslessProviders, type GetGaslessProvidersReturnType } from './gasless/get-gasless-providers';
+export {
+    setDefaultGaslessProvider,
+    type SetDefaultGaslessProviderParameters,
+    type SetDefaultGaslessProviderReturnType,
+} from './gasless/set-default-gasless-provider';
+export {
+    watchGaslessProviders,
+    type WatchGaslessProvidersParameters,
+    type WatchGaslessProvidersReturnType,
+} from './gasless/watch-gasless-providers';
+export {
+    getGaslessConfig,
+    type GetGaslessConfigOptions,
+    type GetGaslessConfigReturnType,
+    type GetGaslessConfigErrorType,
+} from './gasless/get-gasless-config';
+export {
+    getGaslessProviderMetadata,
+    type GetGaslessProviderMetadataOptions,
+    type GetGaslessProviderMetadataReturnType,
+    type GetGaslessProviderMetadataErrorType,
+} from './gasless/get-gasless-provider-metadata';
+export {
+    getGaslessQuote,
+    type GetGaslessQuoteOptions,
+    type GetGaslessQuoteReturnType,
+    type GetGaslessQuoteErrorType,
+} from './gasless/get-gasless-quote';
+export {
+    getGaslessJettonTransferQuote,
+    type GetGaslessJettonTransferQuoteOptions,
+    type GetGaslessJettonTransferQuoteReturnType,
+    type GetGaslessJettonTransferQuoteErrorType,
+} from './gasless/get-gasless-jetton-transfer-quote';
+export {
+    sendGaslessTransaction,
+    type SendGaslessTransactionParameters,
+    type SendGaslessTransactionReturnType,
+    type SendGaslessTransactionErrorType,
+} from './gasless/send-gasless-transaction';
+
 // Signing
 export { signText, type SignTextParameters, type SignTextReturnType } from './signing/sign-text';
 export { signBinary, type SignBinaryParameters, type SignBinaryReturnType } from './signing/sign-binary';
@@ -184,6 +233,12 @@ export {
     type SendTransactionParameters,
     type SendTransactionReturnType,
 } from './transaction/send-transaction';
+export {
+    signMessage,
+    type SignMessageParameters,
+    type SignMessageReturnType,
+    type SignMessageErrorType,
+} from './transaction/sign-message';
 export { transferTon, type TransferTonParameters, type TransferTonReturnType } from './transaction/transfer-ton';
 export {
     getTransactionStatus,
@@ -225,6 +280,12 @@ export {
     type WatchSelectedWalletParameters,
     type WatchSelectedWalletReturnType,
 } from './wallets/watch-selected-wallet';
+export { getSignMessageSupport, type GetSignMessageSupportReturnType } from './wallets/get-sign-message-support';
+export {
+    watchSignMessageSupport,
+    type WatchSignMessageSupportParameters,
+    type WatchSignMessageSupportReturnType,
+} from './wallets/watch-sign-message-support';
 export {
     watchConnectedWallets,
     type WatchConnectedWalletsParameters,

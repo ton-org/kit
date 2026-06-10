@@ -23,7 +23,7 @@ const mockMetadata = {
     providerId: 'tonstakers',
     name: 'Tonstakers',
     description: 'Staking provider',
-    image: 'https://asset.ston.fi/img/EQC98_qAmNEptUtPc7W6xdHh_ZHrBUFpw5Ft_IzNU20QAJav/38f530facb209e4696b8aef17af51df94d16bd879926c517b07d25841da287b7',
+    logo: './tokens/tston.svg',
     stakeToken: {
         symbol: 'TON',
         ticker: 'TON',

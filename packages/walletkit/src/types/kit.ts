@@ -32,7 +32,7 @@ import type {
     EmbeddedRequestEvent,
     BaseProvider,
 } from '../api/models';
-import type { SwapAPI, StakingAPI } from '../api/interfaces';
+import type { SwapAPI, StakingAPI, GaslessAPI } from '../api/interfaces';
 import type { NetworkManager } from '../core/NetworkManager';
 import type { ProviderFactoryContext, ProviderInput } from './factory';
 
@@ -190,4 +190,7 @@ export interface ITonWalletKit {
 
     /** Staking API access */
     staking: StakingAPI;
+
+    /** Gasless API access */
+    gasless: GaslessAPI;
 }

@@ -1,6 +1,6 @@
 {
   "name": "@ton/appkit",
-  "version": "1.0.0-alpha.3",
+  "version": "1.0.0-alpha.4",
   "description": "",
   "repository": {
     "type": "git",
@@ -60,6 +60,16 @@
         "types": "./dist/cjs/staking/tonstakers/index.d.ts",
         "default": "./dist/cjs/staking/tonstakers/index.js"
       }
+    },
+    "./gasless/tonapi": {
+      "import": {
+        "types": "./dist/esm/gasless/tonapi/index.d.ts",
+        "default": "./dist/esm/gasless/tonapi/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/gasless/tonapi/index.d.ts",
+        "default": "./dist/cjs/gasless/tonapi/index.js"
+      }
     }
   },
   "typesVersions": {
@@ -75,6 +85,9 @@
       ],
       "staking/tonstakers": [
         "./dist/esm/staking/tonstakers/index.d.ts"
+      ],
+      "gasless/tonapi": [
+        "./dist/esm/gasless/tonapi/index.d.ts"
       ]
     }
   },
@@ -97,8 +110,8 @@
     "@tanstack/query-core": ">=5.0.0",
     "@ton/core": "^0.62.0 || ^0.63.0",
     "@ton/crypto": "^3.3.0",
-    "@tonconnect/ui": ">=2.5.0-alpha.1",
-    "@tonconnect/sdk": ">=3.5.0-alpha.1"
+    "@tonconnect/ui": ">=3.0.0",
+    "@tonconnect/sdk": ">=4.0.0"
   },
   "peerDependenciesMeta": {
     "@tonconnect/ui": {

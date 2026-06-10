@@ -10,6 +10,7 @@ export * from './components/connect-button';
 
 export * from './hooks/use-connected-wallets';
 export * from './hooks/use-selected-wallet';
+export * from './hooks/use-sign-message-support';
 export * from './hooks/use-address';
 
 export * from './hooks/use-connect';

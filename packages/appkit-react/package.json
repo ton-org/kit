@@ -1,6 +1,6 @@
 {
   "name": "@ton/appkit-react",
-  "version": "1.0.0-alpha.3",
+  "version": "1.0.0-alpha.4",
   "type": "module",
   "scripts": {
     "build": "pnpm run build:esm && pnpm run copy:css",
@@ -67,8 +67,8 @@
   },
   "peerDependencies": {
     "@tanstack/react-query": ">=5.0.0",
-    "@tonconnect/ui": ">=2.4.1",
-    "@tonconnect/ui-react": ">=2.4.1",
+    "@tonconnect/ui": ">=3.0.0",
+    "@tonconnect/ui-react": ">=3.0.0",
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0"
   },

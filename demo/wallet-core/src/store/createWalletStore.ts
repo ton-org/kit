@@ -18,6 +18,7 @@ import { createJettonsSlice } from './slices/jettonsSlice';
 import { createNftsSlice } from './slices/nftsSlice';
 import { createSwapSlice } from './slices/swapSlice';
 import { createStakingSlice } from './slices/stakingSlice';
+import { createGaslessSlice } from './slices/gaslessSlice';
 import type { AppState } from '../types/store';
 import type { StorageAdapter } from '../adapters/storage/types';
 import type { WalletKitConfig } from '../types/wallet';
@@ -145,6 +146,9 @@ export function createWalletStore(options: CreateWalletStoreOptions = {}) {
                         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                         // @ts-ignore
                         ...createStakingSlice(...a),
+                        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                        // @ts-ignore
+                        ...createGaslessSlice(...a),
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     })) as unknown as any,
                     {

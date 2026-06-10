@@ -15,6 +15,7 @@ import { WALLETS_EVENTS } from '@ton/appkit';
 
 import { createWrapper } from '../../../__tests__/test-utils';
 import { UseSelectedWalletExample } from './use-selected-wallet';
+import { UseSignMessageSupportExample } from './use-sign-message-support';
 import { UseConnectedWalletsExample } from './use-connected-wallets';
 import { UseConnectorsExample } from './use-connectors';
 import { UseConnectorByIdExample } from './use-connector-by-id';
@@ -140,6 +141,31 @@ describe('Wallet Hooks Examples', () => {
             await waitFor(() => {
                 expect(screen.getByText('Current Wallet: EQaddress1')).toBeDefined();
             });
+        });
+    });
+
+    describe('UseSignMessageSupportExample', () => {
+        it('shows unsupported when no wallet is selected', () => {
+            render(<UseSignMessageSupportExample />, { wrapper: createWrapper(mockAppKit) });
+            expect(screen.getByText('SignMessage not supported')).toBeDefined();
+        });
+
+        it('shows supported when the selected wallet advertises SignMessage', () => {
+            mockAppKit.walletsManager.selectedWallet = {
+                ...mockWallet,
+                getSupportedFeatures: () => [{ name: 'SignMessage', maxMessages: 4 }],
+            };
+            render(<UseSignMessageSupportExample />, { wrapper: createWrapper(mockAppKit) });
+            expect(screen.getByText('Wallet supports SignMessage')).toBeDefined();
+        });
+
+        it('shows unsupported when the selected wallet lacks SignMessage', () => {
+            mockAppKit.walletsManager.selectedWallet = {
+                ...mockWallet,
+                getSupportedFeatures: () => [{ name: 'SendTransaction', maxMessages: 4 }],
+            };
+            render(<UseSignMessageSupportExample />, { wrapper: createWrapper(mockAppKit) });
+            expect(screen.getByText('SignMessage not supported')).toBeDefined();
         });
     });
 

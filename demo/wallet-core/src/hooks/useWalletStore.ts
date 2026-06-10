@@ -250,6 +250,31 @@ export const useSwap = () => {
     );
 };
 /**
+ * Hook for Gasless transfers
+ */
+export const useGasless = () => {
+    return useWalletStore(
+        useShallow((state) => ({
+            enabled: state.gasless.enabled,
+            feeAsset: state.gasless.feeAsset,
+            supportedAssets: state.gasless.supportedAssets,
+            relayAddress: state.gasless.relayAddress,
+            currentQuote: state.gasless.currentQuote,
+            isLoadingConfig: state.gasless.isLoadingConfig,
+            isLoadingQuote: state.gasless.isLoadingQuote,
+            isSending: state.gasless.isSending,
+            error: state.gasless.error,
+            setGaslessEnabled: state.setGaslessEnabled,
+            setGaslessFeeAsset: state.setGaslessFeeAsset,
+            clearGaslessQuote: state.clearGaslessQuote,
+            loadGaslessConfig: state.loadGaslessConfig,
+            getGaslessQuote: state.getGaslessQuote,
+            sendGasless: state.sendGasless,
+            clearGasless: state.clearGasless,
+        })),
+    );
+};
+/**
  * Hook for Staking
  */
 export const useStaking = () => {

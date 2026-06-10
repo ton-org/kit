@@ -16,6 +16,8 @@ import { getSelectedWalletExample } from './get-selected-wallet';
 import { setSelectedWalletIdExample } from './set-selected-wallet-id';
 import { watchConnectedWalletsExample } from './watch-connected-wallets';
 import { watchSelectedWalletExample } from './watch-selected-wallet';
+import { getSignMessageSupportExample } from './get-sign-message-support';
+import { watchSignMessageSupportExample } from './watch-sign-message-support';
 
 describe('Wallet Actions Examples (Integration)', () => {
     let appKit: AppKit;
@@ -31,6 +33,13 @@ describe('Wallet Actions Examples (Integration)', () => {
         getWalletId: () => 'wallet-2',
         getAddress: () => 'EQBvW8Z9l8-z_oP_x2J4Cj9v9-y_X--8_e_v_y_f_v_8_e_'.slice(0, 48),
         getNetwork: () => 'testnet',
+    } as unknown as WalletInterface;
+
+    const MOCK_WALLET_SIGN = {
+        getWalletId: () => 'wallet-sign',
+        getAddress: () => 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c',
+        getNetwork: () => 'mainnet',
+        getSupportedFeatures: () => [{ name: 'SignMessage', maxMessages: 4 }],
     } as unknown as WalletInterface;
 
     beforeEach(() => {
@@ -121,6 +130,40 @@ describe('Wallet Actions Examples (Integration)', () => {
             // @ts-expect-error - testing internal event emission
             appKit.emitter.emit('wallets:selection-changed', {}, 'test');
             expect(consoleSpy).toHaveBeenCalledWith('Wallet deselected');
+
+            unsubscribe();
+        });
+    });
+
+    describe('getSignMessageSupportExample', () => {
+        it('should log supported when the selected wallet advertises SignMessage', () => {
+            appKit.walletsManager.setWallets([MOCK_WALLET_SIGN]);
+            appKit.walletsManager.setSelectedWalletId('wallet-sign');
+
+            getSignMessageSupportExample(appKit);
+
+            expect(consoleSpy).toHaveBeenCalledWith('Wallet supports SignMessage (gasless available)');
+        });
+
+        it('should log not supported when no wallet is selected', () => {
+            appKit.walletsManager.setSelectedWalletId(null);
+
+            getSignMessageSupportExample(appKit);
+
+            expect(consoleSpy).toHaveBeenCalledWith('SignMessage not supported');
+        });
+    });
+
+    describe('watchSignMessageSupportExample', () => {
+        it('should call onChange when the selected wallet changes', () => {
+            const unsubscribe = watchSignMessageSupportExample(appKit);
+
+            appKit.walletsManager.setWallets([MOCK_WALLET_SIGN]);
+            appKit.walletsManager.setSelectedWalletId('wallet-sign');
+            // @ts-expect-error - testing internal event emission
+            appKit.emitter.emit('wallets:selection-changed', {}, 'test');
+
+            expect(consoleSpy).toHaveBeenCalledWith('SignMessage support changed:', true);
 
             unsubscribe();
         });

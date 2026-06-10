@@ -91,7 +91,10 @@ export default {
             'This operation requires ~{{ amount }} TON which exceeds your TON balance. Reduce the amount to continue.',
         messageTopup:
             'This operation needs ~{{ amount }} TON to cover network fees. Top up your TON balance to continue.',
+        messageGasless:
+            'This operation needs ~{{ amount }} TON which exceeds your TON balance. Switch to gasless to pay the fee in a jetton instead.',
         change: 'Change amount',
+        switchToGasless: 'Switch to gasless',
         cancel: 'Cancel',
         close: 'Close',
     },

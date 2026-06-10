@@ -6,7 +6,17 @@
  *
  */
 
-export { formatUnits, parseUnits, compareAddress } from '@ton/walletkit';
+export {
+    formatUnits,
+    parseUnits,
+    compareAddress,
+    createJettonTransferPayload,
+    asAddressFriendly,
+    asBase64,
+    asHex,
+    hasSignMessageSupport,
+    getMaxOutgoingMessages,
+} from '@ton/walletkit';
 
 export * from './address/is-valid-address';
 export * from './address/to-bounceble-address';
@@ -16,7 +26,8 @@ export * from './amount/format-large-value';
 export * from './amount/truncate-decimals';
 export * from './amount/validate-numeric-string';
 export * from './balance/calc-max-spendable';
-export * from './balance/get-ton-shortfall';
+export * from './balance/check-ton-balance';
+export * from './balance/check-transfer-balance';
 export * from './arrays/key-by';
 export * from './arrays/random-from-array';
 export * from './errors/get-error-message';

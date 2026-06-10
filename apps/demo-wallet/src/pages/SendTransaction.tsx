@@ -18,6 +18,8 @@ import { createComponentLogger } from '../utils/logger';
 
 import { getFormattedJettonInfo } from '@/utils/jetton';
 import { useFormattedJetton } from '@/hooks/useFormattedJetton';
+import { useJettonInfo } from '@/hooks/useJettonInfo';
+import { useSendToken } from '@/hooks/useSendToken';
 
 // Create logger for send transaction
 const log = createComponentLogger('SendTransaction');
@@ -26,6 +28,13 @@ interface SelectedToken {
     type: 'TON' | 'JETTON';
     data?: Jetton;
 }
+
+/** One fee-asset option — resolves the jetton ticker (falls back to a short address). */
+const FeeAssetOption: React.FC<{ address: string }> = ({ address }) => {
+    const info = useJettonInfo(address);
+    const label = info?.symbol || `${address.slice(0, 4)}…${address.slice(-4)}`;
+    return <option value={address}>{label}</option>;
+};
 
 export const SendTransaction: React.FC = () => {
     const walletKit = useWalletKit();
@@ -46,6 +55,21 @@ export const SendTransaction: React.FC = () => {
 
     const selectedJettonInfo = useFormattedJetton(selectedToken?.data);
     const getJettonInfo = (jetton: Jetton) => getFormattedJettonInfo(formatJettonAmount)(jetton);
+
+    // Single send entry point — dispatches gasless vs regular (TON/jetton).
+    // Gasless is offered only for jettons on a SignMessage-capable wallet.
+    const sender = useSendToken({
+        wallet: currentWallet,
+        walletKit,
+        tokenType: selectedToken.type,
+        jetton: selectedToken.data,
+        recipient,
+        amount,
+    });
+    const gasless = sender.gasless;
+    const canUseGasless = gasless.canUse;
+    const effectiveGasless = gasless.effective;
+    const gaslessFeeFormatted = gasless.feeFormatted;
 
     useEffect(() => {
         loadUserJettons();
@@ -78,6 +102,24 @@ export const SendTransaction: React.FC = () => {
         return selectedJettonInfo?.symbol || '';
     };
 
+    // Success toast with explorer links — for flows that return a broadcast hash
+    // immediately (gasless send, fast send).
+    const notifySent = (normalizedHash: string) => {
+        const { tonScan, tonViewer } = getTransactionExplorerUrls(normalizedHash, network);
+        toast.success('Transaction is sent to the network', {
+            description: (
+                <span className="flex gap-3 mt-1">
+                    <a href={tonScan} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                        TonScan
+                    </a>
+                    <a href={tonViewer} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                        TonViewer
+                    </a>
+                </span>
+            ),
+        });
+    };
+
     const handleSend = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
@@ -98,38 +140,19 @@ export const SendTransaction: React.FC = () => {
                 throw new Error('Insufficient balance');
             }
 
-            if (!currentWallet) {
-                throw new Error('No wallet available');
-            }
+            // Build + submit, dispatching gasless vs regular inside the hook.
+            const result = await sender.send();
 
-            if (selectedToken.type === 'TON') {
-                const nanoTonAmount = Math.floor(inputAmount * 1000000000).toString();
-                const tonTransferParams: TONTransferRequest = {
-                    recipientAddress: recipient,
-                    transferAmount: nanoTonAmount,
-                };
-                const result = await currentWallet.createTransferTonTransaction(tonTransferParams);
-                if (walletKit) {
-                    await walletKit.handleNewTransaction(currentWallet, result);
-                }
-            } else if (selectedToken.data) {
-                const decimals = selectedToken.data.decimalsNumber;
-                if (!decimals) throw new Error('Jetton decimals not found');
-
-                const jettonAmount = Math.floor(inputAmount * Math.pow(10, decimals)).toString();
-                const jettonTransaction = await currentWallet.createTransferJettonTransaction({
-                    recipientAddress: recipient,
-                    jettonAddress: selectedToken.data.address,
-                    transferAmount: jettonAmount,
+            // Gasless relays immediately and returns a hash → toast with explorer
+            // links; the regular flow goes through the preview queue.
+            if (result?.normalizedHash) {
+                notifySent(result.normalizedHash);
+                navigate('/wallet');
+            } else {
+                navigate('/wallet', {
+                    state: { message: `${getCurrentTokenSymbol()} sent successfully!` },
                 });
-                if (walletKit) {
-                    await walletKit.handleNewTransaction(currentWallet, jettonTransaction);
-                }
             }
-
-            navigate('/wallet', {
-                state: { message: `${getCurrentTokenSymbol()} sent successfully!` },
-            });
         } catch (err) {
             log.error('Send transaction error:', err);
             setError(err instanceof Error ? err.message : 'Failed to send transaction');
@@ -180,29 +203,7 @@ export const SendTransaction: React.FC = () => {
                 result = await currentWallet.sendTransaction(jettonTransaction);
             }
             if (result?.normalizedHash) {
-                const { tonScan, tonViewer } = getTransactionExplorerUrls(result.normalizedHash, network);
-                toast.success('Transaction is sent to the network', {
-                    description: (
-                        <span className="flex gap-3 mt-1">
-                            <a
-                                href={tonScan}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-blue-600 underline"
-                            >
-                                TonScan
-                            </a>
-                            <a
-                                href={tonViewer}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-blue-600 underline"
-                            >
-                                TonViewer
-                            </a>
-                        </span>
-                    ),
-                });
+                notifySent(result.normalizedHash);
             }
         } catch (err) {
             log.error('Fast send error:', err);
@@ -237,7 +238,7 @@ export const SendTransaction: React.FC = () => {
     };
 
     const balanceForAnimated = selectedToken.type === 'TON' ? balance : undefined;
-    const isSendDisabled = !currentWallet || !recipient || !amount || parseFloat(amount) <= 0;
+    const isSendDisabled = sender.isDisabled;
     const isSendFastDisabled = !currentWallet || !address;
 
     return (
@@ -508,10 +509,69 @@ export const SendTransaction: React.FC = () => {
                                                     {amount} {getCurrentTokenSymbol()}
                                                 </span>
                                             </div>
-                                            {selectedToken.type === 'JETTON' && (
+                                            {selectedToken.type === 'JETTON' && !effectiveGasless && (
                                                 <p className="text-xs text-blue-700 pt-1">
                                                     TON fees will be deducted separately.
                                                 </p>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Gasless: pay the fee in a jetton (jettons only, SignMessage wallets) */}
+                                    {canUseGasless && (
+                                        <div className="space-y-2 rounded-md border border-gray-200 p-3">
+                                            <label className="flex items-center gap-2 text-sm text-gray-700">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={gasless.enabled}
+                                                    onChange={(e) => gasless.setEnabled(e.target.checked)}
+                                                    data-testid="gasless-toggle"
+                                                />
+                                                <span>Gasless — pay the fee in a jetton</span>
+                                            </label>
+
+                                            {effectiveGasless && (
+                                                <>
+                                                    <div>
+                                                        <label className="block text-xs text-gray-500 mb-1">
+                                                            Fee asset
+                                                        </label>
+                                                        <select
+                                                            value={gasless.feeAsset ?? ''}
+                                                            onChange={(e) => gasless.setFeeAsset(e.target.value)}
+                                                            disabled={gasless.supportedAssets.length === 0}
+                                                            className="w-full border border-gray-200 rounded-md px-2 py-1.5 text-sm"
+                                                            data-testid="gasless-fee-asset"
+                                                        >
+                                                            {!gasless.feeAsset && (
+                                                                <option value="" disabled>
+                                                                    Select
+                                                                </option>
+                                                            )}
+                                                            {gasless.supportedAssets.map((asset) => (
+                                                                <FeeAssetOption
+                                                                    key={asset.address}
+                                                                    address={asset.address}
+                                                                />
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                    <div className="flex justify-between text-sm">
+                                                        <span className="text-gray-500">Gas fee:</span>
+                                                        <span>
+                                                            {gasless.error
+                                                                ? '—'
+                                                                : gasless.isQuoting
+                                                                  ? 'Calculating…'
+                                                                  : (gaslessFeeFormatted ?? '—')}
+                                                        </span>
+                                                    </div>
+                                                    {gasless.error && (
+                                                        <p className="text-xs text-red-600" data-testid="gasless-error">
+                                                            {gasless.error}
+                                                        </p>
+                                                    )}
+                                                </>
                                             )}
                                         </div>
                                     )}
@@ -520,7 +580,7 @@ export const SendTransaction: React.FC = () => {
 
                                     {/* Send buttons */}
                                     <div className="flex gap-2">
-                                        {showFastSend && (
+                                        {showFastSend && !effectiveGasless && (
                                             <Button
                                                 type="button"
                                                 variant="secondary"
@@ -535,12 +595,20 @@ export const SendTransaction: React.FC = () => {
                                         )}
                                         <Button
                                             type="submit"
-                                            isLoading={isLoading}
+                                            isLoading={isLoading || gasless.isSending}
                                             disabled={isSendDisabled}
                                             className="flex-1"
                                             data-testid="send-submit"
                                         >
-                                            {isLoading ? `Sending...` : `Send ${getCurrentTokenSymbol()}`}
+                                            {effectiveGasless
+                                                ? gasless.isSending
+                                                    ? 'Sending…'
+                                                    : gasless.isQuoting
+                                                      ? 'Quoting…'
+                                                      : 'Send Gasless'
+                                                : isLoading
+                                                  ? `Sending...`
+                                                  : `Send ${getCurrentTokenSymbol()}`}
                                         </Button>
                                     </div>
                                 </form>

@@ -29,6 +29,9 @@ import type {
     StakingProviderInfo,
     StakeParams,
     UnstakeModes,
+    GaslessQuote,
+    GaslessSupportedAsset,
+    SendTransactionResponse,
 } from '@ton/walletkit';
 
 import type { PendingTransaction } from './streaming';
@@ -285,6 +288,38 @@ export interface StakingSlice {
     validateStakingInputs: () => string | null;
 }
 
+export interface GaslessState {
+    enabled: boolean;
+    feeAsset: string | null;
+    supportedAssets: GaslessSupportedAsset[];
+    relayAddress: string | null;
+    currentQuote: GaslessQuote | null;
+    isLoadingConfig: boolean;
+    isLoadingQuote: boolean;
+    isSending: boolean;
+    error: string | null;
+}
+
+export interface GaslessQuoteRequest {
+    recipientAddress: string;
+    jettonAddress: string;
+    /** Amount to transfer in the jetton's smallest unit. */
+    transferAmount: string;
+    comment?: string;
+}
+
+export interface GaslessSlice {
+    gasless: GaslessState;
+
+    setGaslessEnabled: (enabled: boolean) => void;
+    setGaslessFeeAsset: (address: string) => void;
+    clearGaslessQuote: () => void;
+    loadGaslessConfig: () => Promise<void>;
+    getGaslessQuote: (params: GaslessQuoteRequest) => Promise<void>;
+    sendGasless: () => Promise<SendTransactionResponse>;
+    clearGasless: () => void;
+}
+
 export interface SwapSlice {
     swap: SwapState;
 
@@ -311,7 +346,8 @@ export interface AppState
         JettonsSlice,
         NftsSlice,
         SwapSlice,
-        StakingSlice {
+        StakingSlice,
+        GaslessSlice {
     isHydrated: boolean;
 }
 
@@ -336,6 +372,8 @@ export type NftsSliceCreator = StateCreator<AppState, [], [], NftsSlice>;
 export type SwapSliceCreator = StateCreator<AppState, [['zustand/immer', never]], [], SwapSlice>;
 
 export type StakingSliceCreator = StateCreator<AppState, [['zustand/immer', never]], [], StakingSlice>;
+
+export type GaslessSliceCreator = StateCreator<AppState, [['zustand/immer', never]], [], GaslessSlice>;
 
 // Migration types
 export interface MigrationState {

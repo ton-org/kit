@@ -6,16 +6,19 @@
  *
  */
 
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type React from 'react';
 import { AlertCircle, Coins, Sparkles } from 'lucide-react';
-import { Button, Send, useSelectedWallet } from '@ton/appkit-react';
+import { Button, ButtonWithConnect, LowBalanceModal, SettingsButton, useSelectedWallet } from '@ton/appkit-react';
 import { getErrorMessage } from '@ton/appkit';
-import { toast } from 'sonner';
 
 import { CardPreview } from './card-preview';
+import { MintConfirmModal } from './mint-confirm-modal';
+import { MintSettingsModal } from './mint-settings-modal';
 import { useCardGenerator } from '../hooks/use-card-generator';
-import { useNftMintTransaction } from '../hooks/use-nft-mint-transaction';
+import { useMintNft } from '../hooks/use-mint-nft';
+import type { MintShortfall } from '../hooks/use-mint-nft';
+import { enableGasless } from '../store/actions/enable-gasless';
 import { mintCard } from '../store/actions/mint-card';
 import { setMintError } from '../store/actions/set-mint-error';
 
@@ -34,10 +37,52 @@ interface CardGeneratorProps {
 
 export const CardGenerator: React.FC<CardGeneratorProps> = ({ className }) => {
     const { currentCard, isGenerating, generate } = useCardGenerator();
-    const { createMintTransaction, canMint } = useNftMintTransaction();
     const [wallet] = useSelectedWallet();
+    const mint = useMintNft();
+
     const [mintErrorLocal, setMintErrorLocal] = useState<string | null>(null);
-    const isConnected = !!wallet;
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+    const [pendingShortfall, setPendingShortfall] = useState<MintShortfall | undefined>(undefined);
+
+    // Wallet disconnect closes any open mint-flow modals so the user can't
+    // confirm a quote whose `from` no longer matches the active wallet.
+    useEffect(() => {
+        if (!wallet) {
+            setIsSettingsOpen(false);
+            setIsConfirmOpen(false);
+            setPendingShortfall(undefined);
+        }
+    }, [wallet]);
+
+    const handleConfirm = useCallback(async () => {
+        const shortfall = mint.checkShortfall();
+        if (shortfall) {
+            setIsConfirmOpen(false);
+            setPendingShortfall(shortfall);
+            return;
+        }
+
+        setIsConfirmOpen(false);
+        try {
+            await mint.send();
+            mintCard();
+            setMintErrorLocal(null);
+            setMintError(null);
+        } catch (error) {
+            const msg = getErrorMessage(error);
+            setMintErrorLocal(msg);
+            setMintError(msg);
+        }
+    }, [mint]);
+
+    const handleSwitchToGasless = useCallback(() => {
+        enableGasless();
+        setPendingShortfall(undefined);
+        setIsConfirmOpen(true);
+    }, []);
+
+    const dismissShortfall = useCallback(() => setPendingShortfall(undefined), []);
 
     return (
         <div className={cn('mx-auto flex w-full max-w-[434px] flex-col gap-4', className)}>
@@ -84,37 +129,36 @@ export const CardGenerator: React.FC<CardGeneratorProps> = ({ className }) => {
                     {currentCard ? 'Generate new card' : 'Generate card'}
                 </Button>
 
-                {isConnected && canMint && (
-                    <Send
-                        request={createMintTransaction}
-                        onSuccess={() => {
-                            mintCard();
-                            setMintErrorLocal(null);
-                            setMintError(null);
-                            toast.success('NFT minted successfully!');
-                        }}
-                        onError={(error: Error) => {
-                            const msg = getErrorMessage(error);
-                            setMintErrorLocal(msg);
-                            setMintError(msg);
-                        }}
-                        disabled={!canMint}
-                    >
-                        {({ isLoading, onSubmit, disabled }) => (
-                            <Button
-                                size="l"
-                                onClick={onSubmit}
-                                disabled={disabled}
-                                loading={isLoading}
-                                fullWidth
-                                icon={<Coins className="h-4 w-4" />}
-                            >
-                                Mint NFT
-                            </Button>
-                        )}
-                    </Send>
+                {currentCard && (
+                    <div className="flex gap-2">
+                        <ButtonWithConnect
+                            size="l"
+                            variant="fill"
+                            fullWidth
+                            disabled={mint.isSending}
+                            loading={mint.isSending}
+                            onClick={() => setIsConfirmOpen(true)}
+                            icon={<Coins className="h-4 w-4" />}
+                        >
+                            Mint NFT
+                        </ButtonWithConnect>
+                        <SettingsButton onClick={() => setIsSettingsOpen(true)} />
+                    </div>
                 )}
             </div>
+
+            <MintSettingsModal open={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+            <MintConfirmModal open={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} onConfirm={handleConfirm} />
+
+            {pendingShortfall && (
+                <LowBalanceModal
+                    open
+                    mode={pendingShortfall.mode}
+                    requiredTon={pendingShortfall.requiredTon}
+                    onCancel={dismissShortfall}
+                    onSwitchToGasless={handleSwitchToGasless}
+                />
+            )}
         </div>
     );
 };

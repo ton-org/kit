@@ -18,6 +18,7 @@ export * from './components/ui/logo';
 export * from './components/ui/modal';
 export * from './components/ui/skeleton';
 export * from './components/ui/input';
+export * from './components/ui/switch';
 export * from './components/shared/token-select-modal';
 export * from './components/ui/tabs';
 export * from './components/ui/centered-amount-input';
@@ -27,6 +28,7 @@ export * from './components/ui/select';
 export * from './components/shared/low-balance-modal';
 export * from './components/shared/settings-button';
 export * from './components/shared/option-switcher';
+export * from './components/shared/button-with-connect';
 export * from './components/ui/icons';
 
 export * from './features/balances';
@@ -39,5 +41,6 @@ export * from './features/settings';
 export * from './features/swap';
 export * from './features/signing';
 export * from './features/staking';
+export * from './features/gasless';
 
 export * from './types/appkit-ui-token';
