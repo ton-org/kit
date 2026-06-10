@@ -23,6 +23,7 @@ describe.skipIf(!getIntegrationMnemonic())('MCP agentic wallet flows (testnet re
 
     it('get_wallet returns the deployed agentic wallet', async () => {
         const payload = await callOk(getHarness(), 'get_wallet');
+        console.log(payload.address);
         expect(isSameAddress(payload.address, FIXTURES.agenticWalletAddress)).toBe(true);
         expect(payload.network).toBe('testnet');
     });
