@@ -28,7 +28,7 @@ interface AnimatedBalanceProps {
     className?: string;
 }
 
-export const AnimatedBalance: React.FC<AnimatedBalanceProps> = ({ balance, suffix = ' TON', className }) => {
+export const AnimatedBalance: React.FC<AnimatedBalanceProps> = ({ balance, suffix = ' GRAM', className }) => {
     const targetValue = parseFloat(formatUnits(balance || '0', 9));
     const [displayValue, setDisplayValue] = useState(() => balanceFormatter.format(targetValue));
     const displayRef = useRef(targetValue);

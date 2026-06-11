@@ -10,7 +10,7 @@ import { memo } from 'react';
 import type { Address } from '@ton/core';
 import type { TransactionTraceMoneyFlowItem } from '@ton/walletkit';
 
-import { resolveTokenAddress, TON_INFO, useJettonInfo } from '../../hooks/use-jetton-info';
+import { resolveTokenAddress, GRAM_INFO, useJettonInfo } from '../../hooks/use-jetton-info';
 
 import { formatUnits } from '@/core/utils/units';
 
@@ -48,7 +48,7 @@ export const JettonImage = memo(function JettonImage({
 }) {
     const jettonInfo = useJettonInfo(resolveTokenAddress(jettonAddress));
     if (!jettonInfo?.images?.[0]) {
-        return <img src={TON_INFO.images?.[0]} alt={TON_INFO.name} className="w-8 h-8 rounded-full" />;
+        return <img src={GRAM_INFO.images?.[0]} alt={GRAM_INFO.name} className="w-8 h-8 rounded-full" />;
     }
     return <img src={jettonInfo.images[0]} alt={jettonInfo.name} className="w-8 h-8 rounded-full" />;
 });

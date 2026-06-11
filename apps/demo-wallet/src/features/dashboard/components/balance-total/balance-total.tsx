@@ -22,7 +22,7 @@ const formatUsdParts = (value: number): { intPart: string; fracPart: string } =>
     return { intPart, fracPart };
 };
 
-const TON_DECIMALS = 9;
+const GRAM_DECIMALS = 9;
 
 export const BalanceTotal: React.FC = () => {
     const { address, balance } = useWallet();
@@ -38,7 +38,7 @@ export const BalanceTotal: React.FC = () => {
         let total = 0;
         const tonRate = rates['TON']?.rate;
         if (tonRate) {
-            total += toDecimal(balance, TON_DECIMALS) * tonRate;
+            total += toDecimal(balance, GRAM_DECIMALS) * tonRate;
         }
         for (const jetton of userJettons) {
             const rate = findRate(rates, jetton.address)?.rate;

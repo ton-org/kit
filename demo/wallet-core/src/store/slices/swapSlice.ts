@@ -17,7 +17,7 @@ const log = createComponentLogger('SwapSlice');
 
 export const createSwapSlice: SwapSliceCreator = (set: SetState, get) => ({
     swap: {
-        fromToken: { address: 'ton', decimals: 9, symbol: 'TON' },
+        fromToken: { address: 'ton', decimals: 9, symbol: 'GRAM' },
         toToken: { address: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs', decimals: 6, symbol: 'USDT' },
         amount: '',
         destinationAddress: '',
@@ -351,7 +351,7 @@ export const createSwapSlice: SwapSliceCreator = (set: SetState, get) => ({
 
     clearSwap: () => {
         set((state) => {
-            state.swap.fromToken = { address: 'ton', decimals: 9, symbol: 'TON' };
+            state.swap.fromToken = { address: 'ton', decimals: 9, symbol: 'GRAM' };
             state.swap.toToken = {
                 address: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs',
                 decimals: 6,

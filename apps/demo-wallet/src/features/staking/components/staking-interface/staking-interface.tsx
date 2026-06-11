@@ -112,7 +112,9 @@ export const StakingInterface: FC = () => {
                             className="block w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-lg font-medium"
                         />
                         <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center space-x-2">
-                            <span className="text-sm font-bold text-gray-500">{tab === 'stake' ? 'TON' : 'tsTON'}</span>
+                            <span className="text-sm font-bold text-gray-500">
+                                {tab === 'stake' ? 'GRAM' : 'tsTON'}
+                            </span>
                         </div>
                     </div>
                     {validationError && amount !== '' && <p className="mt-2 text-sm text-red-500">{validationError}</p>}
@@ -141,7 +143,7 @@ export const StakingInterface: FC = () => {
                             ))}
                         </div>
                         <p className="text-[10px] text-gray-500 italic">
-                            {unstakeMode === UnstakeMode.INSTANT && 'Receive TON immediately'}
+                            {unstakeMode === UnstakeMode.INSTANT && 'Receive GRAM immediately'}
                             {unstakeMode === UnstakeMode.WHEN_AVAILABLE && 'Immediate if liquid, or up to ~18h queue'}
                             {unstakeMode === UnstakeMode.ROUND_END && 'Wait for cycle end (~18h) for best rate'}
                         </p>
@@ -153,7 +155,7 @@ export const StakingInterface: FC = () => {
                         <div className="flex justify-between text-sm">
                             <span className="text-blue-600">You will receive</span>
                             <span className="font-bold text-blue-900">
-                                {currentQuote.amountOut} {tab === 'stake' ? 'tsTON' : 'TON'}
+                                {currentQuote.amountOut} {tab === 'stake' ? 'tsTON' : 'GRAM'}
                             </span>
                         </div>
                     </div>

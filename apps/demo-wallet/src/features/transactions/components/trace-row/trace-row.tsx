@@ -106,7 +106,7 @@ export const TraceRow: React.FC<TraceRowProps> = memo(
                             </span>
                             <span className="text-xs text-gray-500">{formatAddress(tx.account)}</span>
                         </div>
-                        <div className="text-xs text-gray-500">Fee: {formatTonAmount(tx.total_fees || '0')} TON</div>
+                        <div className="text-xs text-gray-500">Fee: {formatTonAmount(tx.total_fees || '0')} GRAM</div>
                     </div>
 
                     {/* Incoming message */}
@@ -121,7 +121,7 @@ export const TraceRow: React.FC<TraceRowProps> = memo(
                                         d="M17 13l-5 5m0 0l-5-5m5 5V6"
                                     />
                                 </svg>
-                                <span>In: +{formatTonAmount(tx.in_msg!.value!)} TON</span>
+                                <span>In: +{formatTonAmount(tx.in_msg!.value!)} GRAM</span>
                                 <span className="text-gray-500">from {formatAddress(tx.in_msg!.source || '')}</span>
                                 <span className="text-gray-400">({formatMessageType(tx.in_msg || null)})</span>
                             </div>
@@ -141,7 +141,7 @@ export const TraceRow: React.FC<TraceRowProps> = memo(
                                             d="M7 11l5-5m0 0l5 5m-5-5v12"
                                         />
                                     </svg>
-                                    <span>Out: -{formatTonAmount(msg.value || '0')} TON</span>
+                                    <span>Out: -{formatTonAmount(msg.value || '0')} GRAM</span>
                                     <span className="text-gray-500">to {formatAddress(msg.destination)}</span>
                                     <span className="text-gray-400">({formatMessageType(msg)})</span>
                                 </div>
@@ -314,7 +314,7 @@ export const TraceRow: React.FC<TraceRowProps> = memo(
         if (isPending && pendingPreview) {
             const { type, amount, address, timestamp } = pendingPreview;
             const label = type === 'send' ? 'Sent' : type === 'receive' ? 'Received' : 'Contract Interaction';
-            const amountStr = amount !== '0' ? `${formatTonAmount(amount)} TON` : 'Contract';
+            const amountStr = amount !== '0' ? `${formatTonAmount(amount)} GRAM` : 'Contract';
             const sign = type === 'send' ? '-' : type === 'receive' ? '+' : '';
             const amountColor =
                 type === 'send' ? 'text-red-600' : type === 'receive' ? 'text-green-600' : 'text-blue-600';
@@ -535,7 +535,7 @@ export const TraceRow: React.FC<TraceRowProps> = memo(
                                 }`}
                             >
                                 {traceInfo.type === 'send' ? '-' : traceInfo.type === 'receive' ? '+' : ''}
-                                {traceInfo.amount !== '0' ? `${formatTonAmount(traceInfo.amount)} TON` : 'Contract'}
+                                {traceInfo.amount !== '0' ? `${formatTonAmount(traceInfo.amount)} GRAM` : 'Contract'}
                             </p>
                             <p
                                 className={`text-xs ${traceInfo.status === 'confirmed' ? 'text-green-500' : 'text-red-500'}`}

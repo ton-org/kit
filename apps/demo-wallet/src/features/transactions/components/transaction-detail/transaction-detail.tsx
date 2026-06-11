@@ -259,7 +259,7 @@ export const TransactionDetail: React.FC = () => {
                                     }`}
                                 >
                                     {transaction.type === 'send' ? '-' : '+'}
-                                    {formatTonAmount(transaction.amount)} TON
+                                    {formatTonAmount(transaction.amount)} GRAM
                                 </p>
                                 <p
                                     className={`text-sm font-medium ${
@@ -336,7 +336,7 @@ export const TransactionDetail: React.FC = () => {
                         {/* Fees */}
                         <div className="flex items-center justify-between">
                             <span className="text-sm font-medium text-gray-500">Transaction Fees</span>
-                            <span className="text-sm text-gray-900">{formatTonAmount(transaction.totalFees)} TON</span>
+                            <span className="text-sm text-gray-900">{formatTonAmount(transaction.totalFees)} GRAM</span>
                         </div>
 
                         {/* Logical Time */}
@@ -398,7 +398,7 @@ export const TransactionDetail: React.FC = () => {
                                         <div className="flex justify-between">
                                             <span className="text-sm text-gray-500">Value:</span>
                                             <span className="text-sm">
-                                                {formatTonAmount(transaction.inMessage.value || '0')} TON
+                                                {formatTonAmount(transaction.inMessage.value || '0')} GRAM
                                             </span>
                                         </div>
                                     </div>
@@ -427,7 +427,7 @@ export const TransactionDetail: React.FC = () => {
                                                 <div className="flex justify-between">
                                                     <span className="text-sm text-gray-500">Value:</span>
                                                     <span className="text-sm">
-                                                        {formatTonAmount(msg.value || '0')} TON
+                                                        {formatTonAmount(msg.value || '0')} GRAM
                                                     </span>
                                                 </div>
                                             </div>

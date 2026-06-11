@@ -68,7 +68,7 @@ export const WalletPreview: React.FC<WalletPreviewProps> = ({
     };
 
     const formatBalance = (balanceStr?: string | null): string => {
-        if (!balanceStr || balanceStr === '0') return '0 TON';
+        if (!balanceStr || balanceStr === '0') return '0 GRAM';
 
         try {
             // Balance is in nanotons, convert to TON (1 TON = 1e9 nanotons)
@@ -77,15 +77,15 @@ export const WalletPreview: React.FC<WalletPreviewProps> = ({
 
             // Format with appropriate decimal places
             if (ton >= 1000) {
-                return `${ton.toFixed(2)} TON`;
+                return `${ton.toFixed(2)} GRAM`;
             } else if (ton >= 1) {
-                return `${ton.toFixed(4)} TON`;
+                return `${ton.toFixed(4)} GRAM`;
             } else if (ton > 0) {
-                return `${ton.toFixed(6)} TON`;
+                return `${ton.toFixed(6)} GRAM`;
             }
-            return '0 TON';
+            return '0 GRAM';
         } catch (_error) {
-            return '- TON';
+            return '- GRAM';
         }
     };
 

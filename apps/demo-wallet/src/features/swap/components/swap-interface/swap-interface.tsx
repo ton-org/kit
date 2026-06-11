@@ -68,8 +68,8 @@ export const SwapInterface: FC<SwapInterfaceProps> = ({ className }) => {
     const getTokenView = (token: SwapToken): TokenView => {
         if (token.address === 'ton') {
             return {
-                symbol: token.symbol || 'TON',
-                icon: '/ton.svg',
+                symbol: token.symbol || 'GRAM',
+                icon: '/gram.svg',
                 balance: formatUnits(balance || '0', token.decimals),
             };
         }

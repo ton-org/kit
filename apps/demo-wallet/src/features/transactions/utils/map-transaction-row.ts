@@ -23,11 +23,11 @@ export interface TransactionRowModel {
     id: string;
     /** Tonviewer transaction URL. Undefined for not-yet-on-chain pending transactions (row is not clickable). */
     explorerUrl?: string;
-    /** Primary label, e.g. "Sent 5 TON" / "Received 1 USDT". */
+    /** Primary label, e.g. "Sent 5 GRAM" / "Received 1 USDT". */
     title: string;
     /** Truncated trace id shown as the subtitle. */
     subtitleId: string;
-    /** Signed crypto amount, e.g. "+5 TON" / "-1 USDT". */
+    /** Signed crypto amount, e.g. "+5 GRAM" / "-1 USDT". */
     amount: string;
     /** Outgoing transfers are red, incoming are green. */
     isOutgoing: boolean;
@@ -45,7 +45,7 @@ interface PendingLike {
     preview?: { type: 'send' | 'receive' | 'contract'; amount: string };
 }
 
-const TON_DECIMALS = 9;
+const GRAM_DECIMALS = 9;
 /** Cap on fractional digits shown for amounts (matches the appkit widget formatter). */
 const AMOUNT_DECIMALS = 4;
 
@@ -86,7 +86,7 @@ const describeAction = (action: Action, isOutgoing: boolean): { title: string; v
     const label = isOutgoing ? 'Sent' : 'Received';
 
     if (action.type === 'TonTransfer' && 'TonTransfer' in action) {
-        const value = `${formatAmount(action.TonTransfer.amount, TON_DECIMALS)} TON`;
+        const value = `${formatAmount(action.TonTransfer.amount, GRAM_DECIMALS)} GRAM`;
         return { title: `${label} ${value}`, value };
     }
     if (action.type === 'JettonTransfer' && 'JettonTransfer' in action) {
@@ -166,7 +166,7 @@ export const mapPendingToRow = (
     }
 
     const isOutgoing = pending.preview?.type === 'send';
-    const value = pending.preview ? `${formatAmount(pending.preview.amount, TON_DECIMALS)} TON` : '';
+    const value = pending.preview ? `${formatAmount(pending.preview.amount, GRAM_DECIMALS)} GRAM` : '';
     const title = pending.preview ? `${isOutgoing ? 'Sent' : 'Received'} ${value}` : 'Processing';
     return { ...base, title, amount: signedAmount(value, isOutgoing), isOutgoing };
 };

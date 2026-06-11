@@ -56,7 +56,7 @@ export const Staking: FC = () => {
                     </div>
                     <div className="ml-3">
                         <p className="text-sm text-blue-800">
-                            Staking involves locking your TON to earn rewards. Please note that unstaking may take some
+                            Staking involves locking your GRAM to earn rewards. Please note that unstaking may take some
                             time depending on the pool cycle.
                         </p>
                     </div>

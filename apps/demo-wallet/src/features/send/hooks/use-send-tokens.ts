@@ -14,7 +14,7 @@ import type { TokenOption } from '../types';
 import { getJettonsImage, getJettonsName, getJettonsSymbol } from '@/features/jettons';
 import { findRate, toDecimal } from '@/core/utils';
 
-const TON_DECIMALS = 9;
+const GRAM_DECIMALS = 9;
 /** Kept aside on a MAX TON send so the transfer still has gas to pay for itself. */
 const TON_GAS_RESERVE = 0.01;
 
@@ -25,22 +25,22 @@ export const useSendTokens = (): TokenOption[] => {
     const { entries: rates } = useRates();
 
     return useMemo<TokenOption[]>(() => {
-        const tonAmount = toDecimal(balance, TON_DECIMALS);
+        const tonAmount = toDecimal(balance, GRAM_DECIMALS);
         const tonOption: TokenOption = {
             token: { type: 'TON' },
             id: 'TON',
-            icon: '/ton.svg',
-            fallbackText: 'TN',
-            name: 'Toncoin',
-            symbol: 'TON',
-            decimals: TON_DECIMALS,
+            icon: '/gram.svg',
+            fallbackText: 'GR',
+            name: 'Gram',
+            symbol: 'GRAM',
+            decimals: GRAM_DECIMALS,
             balance: tonAmount,
             maxSendable: Math.max(0, tonAmount - TON_GAS_RESERVE),
             rate: rates['TON']?.rate,
         };
 
         const jettonOptions = userJettons.map((jetton): TokenOption => {
-            const decimals = jetton.decimalsNumber ?? TON_DECIMALS;
+            const decimals = jetton.decimalsNumber ?? GRAM_DECIMALS;
             const amount = toDecimal(jetton.balance, decimals);
             const symbol = getJettonsSymbol(jetton) ?? '';
             return {

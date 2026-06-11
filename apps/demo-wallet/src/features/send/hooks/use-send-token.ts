@@ -15,7 +15,7 @@ import type { UseGaslessJettonSendResult } from './use-gasless-jetton-send';
 
 import { parseUnits } from '@/core/utils/units';
 
-const TON_DECIMALS = 9;
+const GRAM_DECIMALS = 9;
 
 interface UseSendTokenParams {
     wallet: Wallet | null | undefined;
@@ -80,7 +80,7 @@ export const useSendToken = ({
         if (tokenType === 'TON') {
             const tx = await wallet.createTransferTonTransaction({
                 recipientAddress: recipient,
-                transferAmount: parseUnits(amount, TON_DECIMALS).toString(),
+                transferAmount: parseUnits(amount, GRAM_DECIMALS).toString(),
             });
             await walletKit.handleNewTransaction(wallet, tx);
             return undefined;

@@ -62,7 +62,7 @@ export const WelcomeScreen: React.FC = () => {
                 <img src="/favicon.svg" alt="WalletKit" className="w-40 h-40 object-contain" />
                 <h1 className="mt-6 text-2xl font-bold text-gray-900">Your TON wallet</h1>
                 <p className="mt-2 text-base text-gray-500">
-                    Create a new wallet or add an existing one to start sending and receiving TON.
+                    Create a new wallet or add an existing one to start sending and receiving GRAM.
                 </p>
             </div>
 

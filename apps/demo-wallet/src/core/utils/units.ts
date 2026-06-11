@@ -89,7 +89,7 @@ export function formatTon(value: bigint | string) {
 
 export function formatNanoTonAmount(value?: bigint | string) {
     try {
-        return `${formatTon(value ?? '0')} TON`;
+        return `${formatTon(value ?? '0')} GRAM`;
     } catch {
         return `${value ?? '0'} nanotons`;
     }

@@ -22,7 +22,7 @@ export const Swap: FC = () => {
     const { setFromToken, setToToken, clearSwap } = useSwap();
 
     useEffect(() => {
-        setFromToken({ address: 'ton', decimals: 9, symbol: 'TON' });
+        setFromToken({ address: 'ton', decimals: 9, symbol: 'GRAM' });
         setToToken({ address: USDT_ADDRESS, decimals: 6, symbol: 'USDT' });
 
         return () => clearSwap();

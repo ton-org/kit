@@ -14,7 +14,7 @@ import type { AssetRowData } from '../components/asset-row';
 import { getJettonsName, getJettonsSymbol } from '@/features/jettons';
 import { findRate, formatRate, toDecimal } from '@/core/utils';
 
-const TON_DECIMALS = 9;
+const GRAM_DECIMALS = 9;
 
 /** Candidate icon URLs (best-first), appending the inline base64 image as a last resort. */
 export const imageSources = (urls: string[] | undefined, dataBase64?: string): string[] => [
@@ -40,13 +40,13 @@ export const useAssetRows = (): AssetRows => {
     const tonRow = useMemo<AssetRowData | null>(() => {
         if (!assetsReady) return null;
         const rateEntry = rates['TON'];
-        const amount = toDecimal(balance, TON_DECIMALS);
+        const amount = toDecimal(balance, GRAM_DECIMALS);
         return {
             id: 'TON',
-            icon: '/ton.svg',
-            fallbackText: 'TN',
-            name: 'Toncoin',
-            symbol: 'TON',
+            icon: '/gram.svg',
+            fallbackText: 'GR',
+            name: 'Gram',
+            symbol: 'GRAM',
             amount,
             rateLabel: rateEntry ? formatRate(rateEntry.rate) : undefined,
             fiat: rateEntry ? amount * rateEntry.rate : undefined,

@@ -45,7 +45,7 @@ export const StakingInfo: FC = () => {
                             {providerInfo?.instantUnstakeAvailable
                                 ? Number(providerInfo?.instantUnstakeAvailable).toFixed(4)
                                 : '0.00'}{' '}
-                            TON
+                            GRAM
                         </span>
                     </div>
                 </div>

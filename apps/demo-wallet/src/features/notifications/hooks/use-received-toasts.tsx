@@ -15,8 +15,8 @@ import type { RateEntry } from '@demo/wallet-core';
 import { getJettonsSymbol } from '@/features/jettons';
 import { formatLargeValue, toDecimal } from '@/core/utils';
 
-const TON_KEY = 'TON';
-const TON_DECIMALS = 9;
+const GRAM_KEY = 'GRAM';
+const GRAM_DECIMALS = 9;
 
 const safeBigInt = (value: string | undefined): bigint | null => {
     if (!value) return null;
@@ -68,15 +68,15 @@ export const useReceivedToasts = (): void => {
         const next = safeBigInt(balance);
         if (next === null) return;
 
-        const prev = balancesRef.current.get(TON_KEY);
-        balancesRef.current.set(TON_KEY, next);
+        const prev = balancesRef.current.get(GRAM_KEY);
+        balancesRef.current.set(GRAM_KEY, next);
 
         if (!tonSeededRef.current) {
             tonSeededRef.current = true;
             return;
         }
         if (prev !== undefined && next > prev) {
-            toastReceived(toDecimal(next - prev, TON_DECIMALS), 'TON', ratesRef.current[TON_KEY]?.rate);
+            toastReceived(toDecimal(next - prev, GRAM_DECIMALS), 'GRAM', ratesRef.current[GRAM_KEY]?.rate);
         }
     }, [balance]);
 

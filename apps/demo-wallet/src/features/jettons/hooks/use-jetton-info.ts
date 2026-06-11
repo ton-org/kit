@@ -18,11 +18,11 @@ export type TokenInfo = Partial<Omit<JettonInfo, 'decimals'>> & {
     decimals?: number;
 };
 
-export const TON_INFO: TokenInfo = {
-    name: 'TON',
-    symbol: 'TON',
+export const GRAM_INFO: TokenInfo = {
+    name: 'Gram',
+    symbol: 'GRAM',
     decimals: 9,
-    images: ['/ton.png'],
+    images: ['/gram.svg'],
 };
 
 export function useActiveWalletNetwork(): NetworkType {

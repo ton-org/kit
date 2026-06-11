@@ -101,7 +101,7 @@ function TonItemAction({ item, index }: { item: Extract<StructuredItem, { type: 
         <div className="p-3 border border-gray-200 rounded-lg space-y-2">
             <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                    <div className="text-sm font-medium text-gray-900">Send TON #{index + 1}</div>
+                    <div className="text-sm font-medium text-gray-900">Send GRAM #{index + 1}</div>
                     <div className="text-xs text-gray-500 truncate">
                         To <AddressLink address={item.address} />
                     </div>

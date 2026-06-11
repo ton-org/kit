@@ -76,7 +76,7 @@ export const TonTransferCard: React.FC<TonTransferCardProps> = memo(
                 <div className="text-right">
                     <p className={`text-sm font-medium ${isOutgoing ? 'text-red-600' : 'text-green-600'}`}>
                         {isOutgoing ? '-' : '+'}
-                        {amount} TON
+                        {amount} GRAM
                     </p>
                     <p className="text-xs text-gray-400">{formatTimestamp(timestamp)}</p>
                 </div>
