@@ -6,7 +6,7 @@
  *
  */
 
-export * from './TransactionStates';
-export * from './TonTransferCard';
-export * from './TransactionCard';
-export * from './ActionCard';
+export * from './transaction-states';
+export * from './ton-transfer-card';
+export * from './transaction-card';
+export * from './action-card';

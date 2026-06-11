@@ -13,8 +13,13 @@ import { useWalletStore } from '@demo/wallet-core';
 import { Base64ToHex } from '@ton/walletkit';
 import type { Event, Action } from '@ton/walletkit';
 
-import { TraceRow } from './TraceRow';
-import { TransactionErrorState, TransactionLoadingState, TransactionEmptyState, ActionCard } from './transactions';
+import { TraceRow } from '../trace-row';
+import {
+    TransactionErrorState,
+    TransactionLoadingState,
+    TransactionEmptyState,
+    ActionCard,
+} from '../transaction-cards';
 
 import { formatTonForDisplay, getTonviewerTxUrl, sameAddress } from '@/core/utils';
 

@@ -25,13 +25,10 @@ export { ReceiveModal } from './ReceiveModal';
 export { MnemonicDisplay } from './MnemonicDisplay';
 export { NetworkSelector } from './NetworkSelector';
 export { SettingsDropdown } from './SettingsDropdown';
-export { RecentTransactions } from './RecentTransactions';
 export { SignDataRequestModal } from './SignDataRequestModal';
 export { SignMessageRequestModal } from './SignMessageRequestModal';
-export { TraceRow } from './TraceRow';
 export { TransactionRequestModal } from './TransactionRequestModal';
 export { WalletPreview } from './WalletPreview';
 export { WalletSwitcher } from './WalletSwitcher';
 
 // Transaction components
-export * from './transactions';

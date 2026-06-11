@@ -9,7 +9,7 @@
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 
-import { TraceRow } from '../components/TraceRow';
+import { TraceRow } from '../trace-row';
 
 export const TracePage: React.FC = () => {
     const { traceId: fullTraceId } = useParams<{ traceId: string }>();

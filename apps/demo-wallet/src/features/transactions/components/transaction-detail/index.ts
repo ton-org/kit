@@ -6,5 +6,4 @@
  *
  */
 
-export * from './WalletDashboard';
-export * from './TonConnectRoute';
+export * from './transaction-detail';

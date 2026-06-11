@@ -9,8 +9,8 @@
 import React, { memo, useMemo } from 'react';
 import type { Action } from '@ton/walletkit';
 
-import { TransactionCard } from './TransactionCard';
-import type { TxFinality } from './TransactionCard';
+import { TransactionCard } from './transaction-card';
+import type { TxFinality } from './transaction-card';
 
 import { formatTonForDisplay, sameAddress } from '@/core/utils';
 
