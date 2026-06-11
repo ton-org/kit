@@ -10,6 +10,8 @@ import React, { memo, useMemo } from 'react';
 import type { ToncenterEmulationResponse } from '@ton/walletkit';
 import { emulationEvent } from '@ton/walletkit';
 
+import { shortenAddress } from '@/utils';
+
 interface ActionPreviewListProps {
     emulationResult: ToncenterEmulationResponse;
     walletAddress?: string;
@@ -77,7 +79,7 @@ export const ActionPreviewList: React.FC<ActionPreviewListProps> = memo(
                                                     key={`acc-${i}`}
                                                     className="text-[10px] px-2 py-0.5 bg-gray-100 text-gray-700 rounded"
                                                 >
-                                                    {acc.name ?? shortenAddress(acc.address)}
+                                                    {acc.name ?? shortenAddress(acc.address, 6)}
                                                 </span>
                                             ))}
                                         </div>
@@ -91,9 +93,3 @@ export const ActionPreviewList: React.FC<ActionPreviewListProps> = memo(
         );
     },
 );
-
-function shortenAddress(addr?: string): string {
-    if (!addr) return '';
-    const a = String(addr);
-    return a.length <= 12 ? a : `${a.slice(0, 6)}...${a.slice(-6)}`;
-}

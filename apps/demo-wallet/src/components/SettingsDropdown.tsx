@@ -6,15 +6,44 @@
  *
  */
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ChevronRight, KeyRound, Lock, Plus, Trash2 } from 'lucide-react';
 import { useAuth, useWallet } from '@demo/wallet-core';
 
 import { MnemonicDisplay } from './MnemonicDisplay';
+import { ToggleRow } from './ToggleRow';
 import { createComponentLogger } from '../utils/logger';
 
-// Create logger for settings dropdown component
+import { Modal } from '@/core/components/ui/modal';
+import { SettingsIcon } from '@/core/components/ui/icons';
+import { CreateWalletModal, WALLET_SETUP_ROUTE } from '@/features/wallet-setup';
+import type { CreateWalletMode } from '@/features/wallet-setup';
+
 const log = createComponentLogger('SettingsDropdown');
+
+interface ActionRowProps {
+    icon: React.ReactNode;
+    label: string;
+    onClick: () => void;
+    danger?: boolean;
+    disabled?: boolean;
+}
+
+const ActionRow: React.FC<ActionRowProps> = ({ icon, label, onClick, danger = false, disabled = false }) => (
+    <button
+        type="button"
+        onClick={onClick}
+        disabled={disabled}
+        className={`w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors disabled:opacity-50 ${
+            danger ? 'text-red-600 hover:bg-red-50' : 'text-gray-900 hover:bg-gray-100/60'
+        }`}
+    >
+        <span className="flex-shrink-0">{icon}</span>
+        <span className="flex-1 text-sm font-semibold">{label}</span>
+        <ChevronRight className={`w-4 h-4 flex-shrink-0 ${danger ? 'text-red-400' : 'text-gray-400'}`} />
+    </button>
+);
 
 export const SettingsDropdown: React.FC = () => {
     const navigate = useNavigate();
@@ -29,32 +58,32 @@ export const SettingsDropdown: React.FC = () => {
         setShowFastSend,
     } = useAuth();
     const { getDecryptedMnemonic } = useWallet();
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-    const [showMnemonicModal, setShowMnemonicModal] = useState(false);
+
+    const [panel, setPanel] = useState<'menu' | 'create' | 'mnemonic' | null>(null);
     const [mnemonic, setMnemonic] = useState<string[]>([]);
     const [isLoadingMnemonic, setIsLoadingMnemonic] = useState(false);
     const [mnemonicError, setMnemonicError] = useState('');
-    const dropdownRef = useRef<HTMLDivElement>(null);
 
     const handleLockWallet = () => {
+        setPanel(null);
         lock();
-        setIsDropdownOpen(false);
     };
 
     const handleDeleteWallet = () => {
         if (window.confirm('Are you sure you want to delete your wallet? This action cannot be undone.')) {
+            setPanel(null);
             reset();
-            setIsDropdownOpen(false);
         }
     };
 
-    const handleCreateNewWallet = () => {
-        setIsDropdownOpen(false);
-        navigate('/setup-wallet');
+    const handleCreateNewWallet = () => setPanel('create');
+
+    const handleSelectCreateMode = (mode: CreateWalletMode) => {
+        setPanel(null);
+        navigate(WALLET_SETUP_ROUTE[mode]);
     };
 
     const handleViewRecoveryPhrase = async () => {
-        setIsDropdownOpen(false);
         setIsLoadingMnemonic(true);
         setMnemonicError('');
 
@@ -62,7 +91,7 @@ export const SettingsDropdown: React.FC = () => {
             const decryptedMnemonic = await getDecryptedMnemonic();
             if (decryptedMnemonic) {
                 setMnemonic(decryptedMnemonic);
-                setShowMnemonicModal(true);
+                setPanel('mnemonic');
             } else {
                 setMnemonicError('Unable to retrieve recovery phrase. Please ensure you are logged in.');
             }
@@ -75,321 +104,120 @@ export const SettingsDropdown: React.FC = () => {
     };
 
     const handleCloseMnemonicModal = () => {
-        setShowMnemonicModal(false);
+        setPanel(null);
         setMnemonic([]);
         setMnemonicError('');
     };
 
-    // Close dropdown when clicking outside
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                setIsDropdownOpen(false);
-            }
-        };
-
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, []);
-
-    // Close modal with Escape key
-    useEffect(() => {
-        const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key === 'Escape' && showMnemonicModal) {
-                handleCloseMnemonicModal();
-            }
-        };
-
-        if (showMnemonicModal) {
-            document.addEventListener('keydown', handleKeyDown);
-            return () => {
-                document.removeEventListener('keydown', handleKeyDown);
-            };
-        }
-    }, [showMnemonicModal]);
-
     return (
         <>
-            <div className="relative" ref={dropdownRef}>
-                <button
-                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    className="p-1 rounded-md hover:bg-gray-100 transition-colors"
-                    aria-label="Wallet menu"
-                    data-testid="wallet-menu"
-                >
-                    <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
+            <button
+                onClick={() => setPanel('menu')}
+                className="p-1.5 -mr-1.5 rounded-md hover:bg-gray-100 transition-colors"
+                aria-label="Settings"
+                data-testid="wallet-menu"
+            >
+                <SettingsIcon className="w-6 h-6 text-[#14181F]" />
+            </button>
+
+            <Modal.Container
+                isOpened={panel === 'menu'}
+                onOpenChange={(open) => !open && setPanel(null)}
+                className="px-2"
+            >
+                <Modal.Header onClose={() => setPanel(null)}>
+                    <Modal.Title>Settings</Modal.Title>
+                </Modal.Header>
+
+                <Modal.Body className="gap-3">
+                    <div className="rounded-2xl bg-[#F7F8FA] divide-y divide-gray-200/70 overflow-hidden">
+                        <ToggleRow
+                            testId="auto-lock"
+                            label="Auto-Lock"
+                            description="Lock wallet on app reload (more secure)"
+                            checked={!persistPassword}
+                            onChange={(checked) => setPersistPassword(!checked)}
+                            info={
+                                <>
+                                    <strong>Security notice:</strong> when auto-lock is off, your password is stored
+                                    locally and the wallet stays unlocked. Only use for development.
+                                </>
+                            }
                         />
-                    </svg>
-                </button>
-
-                {isDropdownOpen && (
-                    <div className="absolute right-0 mt-1 w-80 bg-white rounded-md shadow-lg border border-gray-200 z-10">
-                        <div className="py-1">
-                            {/* Wallet Actions */}
-                            <div className="px-4 py-2 border-b border-gray-100">
-                                <h3 className="text-sm font-medium text-gray-700 mb-2">Wallet Actions</h3>
-                                <div className="space-y-1">
-                                    <button
-                                        onClick={handleCreateNewWallet}
-                                        className="w-full text-left px-2 py-1 text-sm text-blue-700 hover:bg-blue-50 rounded flex items-center space-x-2 font-medium"
-                                    >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M12 4v16m8-8H4"
-                                            />
-                                        </svg>
-                                        <span>Create New Wallet</span>
-                                    </button>
-                                    <button
-                                        onClick={handleViewRecoveryPhrase}
-                                        disabled={isLoadingMnemonic}
-                                        className="w-full text-left px-2 py-1 text-sm text-gray-700 hover:bg-gray-100 rounded flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                                            />
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                                            />
-                                        </svg>
-                                        <span>{isLoadingMnemonic ? 'Loading...' : 'View Recovery Phrase'}</span>
-                                    </button>
-                                    <button
-                                        onClick={handleLockWallet}
-                                        className="w-full text-left px-2 py-1 text-sm text-gray-700 hover:bg-gray-100 rounded flex items-center space-x-2"
-                                    >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                                            />
-                                        </svg>
-                                        <span>Lock Wallet</span>
-                                    </button>
-                                    <button
-                                        onClick={handleDeleteWallet}
-                                        className="w-full text-left px-2 py-1 text-sm text-red-600 hover:bg-red-50 rounded flex items-center space-x-2"
-                                    >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                            />
-                                        </svg>
-                                        <span>Delete Wallet</span>
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Settings Section */}
-                            <div className="px-4 py-3">
-                                <h3 className="text-sm font-medium text-gray-700 mb-3">Settings</h3>
-                                <div className="space-y-4">
-                                    {/* Auto-Lock */}
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <label className="text-sm font-medium text-gray-700">Auto-Lock</label>
-                                            <p className="text-xs text-gray-500 mt-1">
-                                                Lock wallet on app reload (more secure)
-                                            </p>
-                                        </div>
-                                        <label
-                                            data-testid="auto-lock"
-                                            className="relative inline-flex items-center cursor-pointer"
-                                        >
-                                            <input
-                                                type="checkbox"
-                                                className="sr-only peer"
-                                                checked={!persistPassword}
-                                                onChange={(e) => setPersistPassword(!e.target.checked)}
-                                            />
-                                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-                                        </label>
-                                    </div>
-
-                                    {persistPassword && (
-                                        <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
-                                            <div className="flex">
-                                                <div className="flex-shrink-0">
-                                                    <svg
-                                                        className="h-5 w-5 text-yellow-400"
-                                                        viewBox="0 0 20 20"
-                                                        fill="currentColor"
-                                                    >
-                                                        <path
-                                                            fillRule="evenodd"
-                                                            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                                                            clipRule="evenodd"
-                                                        />
-                                                    </svg>
-                                                </div>
-                                                <div className="ml-3">
-                                                    <p className="text-sm text-yellow-800">
-                                                        <strong>Security Notice:</strong> Auto-lock is disabled. Your
-                                                        password is stored locally and the wallet stays unlocked. Only
-                                                        use for development.
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Hold to Sign */}
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <label className="text-sm font-medium text-gray-700">Hold to Sign</label>
-                                            <p className="text-xs text-gray-500 mt-1">
-                                                Require holding button for 3 seconds to approve transactions
-                                            </p>
-                                        </div>
-                                        <label
-                                            data-testid="hold-to-sign"
-                                            className="relative inline-flex items-center cursor-pointer"
-                                        >
-                                            <input
-                                                type="checkbox"
-                                                className="sr-only peer"
-                                                checked={holdToSign ?? true}
-                                                onChange={(e) => setHoldToSign(e.target.checked)}
-                                            />
-                                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-                                        </label>
-                                    </div>
-
-                                    {/* Show fast send */}
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <label className="text-sm font-medium text-gray-700">Show fast send</label>
-                                            <p className="text-xs text-gray-500 mt-1">
-                                                Show &quot;Send Fast&quot; button on send screen (1 nano, no
-                                                confirmation)
-                                            </p>
-                                        </div>
-                                        <label
-                                            data-testid="show-fast-send"
-                                            className="relative inline-flex items-center cursor-pointer"
-                                        >
-                                            <input
-                                                type="checkbox"
-                                                className="sr-only peer"
-                                                checked={showFastSend ?? false}
-                                                onChange={(e) => setShowFastSend(e.target.checked)}
-                                            />
-                                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-                                        </label>
-                                    </div>
-
-                                    {!holdToSign && (
-                                        <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
-                                            <div className="flex">
-                                                <div className="flex-shrink-0">
-                                                    <svg
-                                                        className="h-5 w-5 text-yellow-400"
-                                                        viewBox="0 0 20 20"
-                                                        fill="currentColor"
-                                                    >
-                                                        <path
-                                                            fillRule="evenodd"
-                                                            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                                                            clipRule="evenodd"
-                                                        />
-                                                    </svg>
-                                                </div>
-                                                <div className="ml-3">
-                                                    <p className="text-sm text-yellow-800">
-                                                        <strong>Security Notice:</strong> Disabling hold-to-sign makes
-                                                        it easier to accidentally approve transactions. Only use for
-                                                        testing.
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
+                        <ToggleRow
+                            testId="hold-to-sign"
+                            label="Hold to Sign"
+                            description="Hold the button for 3 seconds to approve transactions"
+                            checked={holdToSign ?? true}
+                            onChange={setHoldToSign}
+                            info={
+                                <>
+                                    <strong>Security notice:</strong> disabling hold-to-sign makes it easier to
+                                    accidentally approve transactions. Only use for testing.
+                                </>
+                            }
+                        />
+                        <ToggleRow
+                            testId="show-fast-send"
+                            label="Show fast send"
+                            description="Show “Send Fast” button (1 nano, no confirmation)"
+                            checked={showFastSend ?? false}
+                            onChange={setShowFastSend}
+                        />
                     </div>
-                )}
-            </div>
 
-            {/* Recovery Phrase Modal */}
-            {showMnemonicModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
-                        <div className="p-6">
-                            <div className="flex items-center justify-between mb-4">
-                                <h2 data-testid="request" className="text-xl font-bold text-gray-900">
-                                    Your Recovery Phrase
-                                </h2>
-                                <button
-                                    onClick={handleCloseMnemonicModal}
-                                    className="text-gray-400 hover:text-gray-600"
-                                    aria-label="Close"
-                                >
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M6 18L18 6M6 6l12 12"
-                                        />
-                                    </svg>
-                                </button>
-                            </div>
-
-                            <div className="space-y-4">
-                                {/* Mnemonic Display */}
-                                {mnemonic.length > 0 && (
-                                    <MnemonicDisplay
-                                        mnemonic={mnemonic}
-                                        showWarning={true}
-                                        warningType="red"
-                                        warningText="Never share your recovery phrase with anyone. Anyone with access to these words can control your wallet."
-                                    />
-                                )}
-
-                                {/* Error Display */}
-                                {mnemonicError && (
-                                    <div className="text-red-600 text-sm text-center bg-red-50 p-3 rounded-md">
-                                        {mnemonicError}
-                                    </div>
-                                )}
-
-                                {/* Close Button */}
-                                <div className="pt-4">
-                                    <button
-                                        onClick={handleCloseMnemonicModal}
-                                        className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                                    >
-                                        Close
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
+                    <div className="rounded-2xl bg-[#F7F8FA] divide-y divide-gray-200/70 overflow-hidden">
+                        <ActionRow
+                            icon={<Plus className="w-5 h-5" />}
+                            label="Create New Wallet"
+                            onClick={handleCreateNewWallet}
+                        />
+                        <ActionRow
+                            icon={<KeyRound className="w-5 h-5" />}
+                            label={isLoadingMnemonic ? 'Loading…' : 'View Recovery Phrase'}
+                            onClick={handleViewRecoveryPhrase}
+                            disabled={isLoadingMnemonic}
+                        />
+                        <ActionRow icon={<Lock className="w-5 h-5" />} label="Lock Wallet" onClick={handleLockWallet} />
+                        <ActionRow
+                            icon={<Trash2 className="w-5 h-5" />}
+                            label="Delete Wallet"
+                            onClick={handleDeleteWallet}
+                            danger
+                        />
                     </div>
-                </div>
-            )}
+
+                    {mnemonicError && (
+                        <p className="text-red-600 text-sm text-center bg-red-50 p-3 rounded-xl">{mnemonicError}</p>
+                    )}
+                </Modal.Body>
+            </Modal.Container>
+
+            <CreateWalletModal
+                isOpen={panel === 'create'}
+                onClose={() => setPanel(null)}
+                onSelect={handleSelectCreateMode}
+            />
+
+            <Modal.Container
+                isOpened={panel === 'mnemonic'}
+                onOpenChange={(open) => !open && handleCloseMnemonicModal()}
+                className="px-2"
+            >
+                <Modal.Header onClose={handleCloseMnemonicModal}>
+                    <Modal.Title>Recovery Phrase</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    {mnemonic.length > 0 && (
+                        <MnemonicDisplay
+                            mnemonic={mnemonic}
+                            showWarning
+                            warningType="red"
+                            warningText="Never share your recovery phrase with anyone. Anyone with access to these words can control your wallet."
+                        />
+                    )}
+                </Modal.Body>
+            </Modal.Container>
         </>
     );
 };

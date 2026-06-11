@@ -46,7 +46,6 @@ export const SendTransaction: React.FC = () => {
     const [showTokenSelector, setShowTokenSelector] = useState(false);
     const tokenSelectorRef = useRef<HTMLDivElement>(null);
 
-    const navigate = useNavigate();
     const { balance, currentWallet, address, savedWallets, activeWalletId, switchWallet, removeWallet, renameWallet } =
         useWallet();
     const { showFastSend } = useAuth();
@@ -56,8 +55,8 @@ export const SendTransaction: React.FC = () => {
     const selectedJettonInfo = useFormattedJetton(selectedToken?.data);
     const getJettonInfo = (jetton: Jetton) => getFormattedJettonInfo(formatJettonAmount)(jetton);
 
-    // Single send entry point — dispatches gasless vs regular (TON/jetton).
-    // Gasless is offered only for jettons on a SignMessage-capable wallet.
+    const navigate = useNavigate();
+
     const sender = useSendToken({
         wallet: currentWallet,
         walletKit,

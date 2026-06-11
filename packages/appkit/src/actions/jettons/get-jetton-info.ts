@@ -41,43 +41,13 @@ export const getJettonInfo = async (
         limit: 1,
     });
 
-    if (!response.jetton_masters?.length || !response.jetton_masters[0]) {
+    const master = response.masters[0];
+    if (!master) {
         return null;
     }
 
-    const jetton = response.jetton_masters[0];
-    const metadata = response.metadata?.[jetton.address];
-    const tokenInfo = metadata?.token_info?.find((t) => t.valid && t.type === 'jetton_masters') as
-        | {
-              name?: string;
-              symbol?: string;
-              description?: string;
-              image?: string;
-              extra?: { decimals?: string | number; uri?: string };
-          }
-        | undefined;
-
-    let decimals: number | undefined;
-    if (tokenInfo?.extra?.decimals !== undefined) {
-        try {
-            decimals =
-                typeof tokenInfo.extra.decimals === 'string'
-                    ? parseInt(tokenInfo.extra.decimals, 10)
-                    : tokenInfo.extra.decimals;
-        } catch {
-            // ignore
-        }
-    }
-
-    const result: GetJettonInfoReturnType = {
-        address,
-        decimals,
-        name: tokenInfo?.name ?? '',
-        symbol: tokenInfo?.symbol ?? '',
-        description: tokenInfo?.description ?? '',
-        image: tokenInfo?.image,
-        uri: tokenInfo?.extra?.uri,
-    };
+    // Keep the requested bounceable address as the canonical identifier.
+    const result: GetJettonInfoReturnType = { ...master, address };
 
     await appKit.cache.set(cacheKey, result);
 

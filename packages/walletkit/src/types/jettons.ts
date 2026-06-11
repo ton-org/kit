@@ -8,7 +8,7 @@
 
 // Jettons API types based on JETTONS.md specification
 
-import type { Jetton, Network } from '../api/models';
+import type { EmulationAddressBookEntry, Jetton, Network } from '../api/models';
 
 // === Core Jetton Information ===
 export interface JettonInfo {
@@ -18,11 +18,20 @@ export interface JettonInfo {
     description: string;
     decimals?: number;
     totalSupply?: string;
-    image?: string;
+    images?: string[];
     image_data?: string;
     uri?: string;
     verification?: JettonVerification;
     metadata?: Record<string, unknown>;
+}
+
+/**
+ * Normalized response for a jetton-masters lookup.
+ * Both API clients map their raw responses into this shape.
+ */
+export interface JettonMastersResponse {
+    masters: JettonInfo[];
+    addressBook: Record<string, EmulationAddressBookEntry>;
 }
 
 export interface JettonVerification {

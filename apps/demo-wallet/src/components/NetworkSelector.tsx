@@ -9,12 +9,21 @@
 import React from 'react';
 import type { NetworkType } from '@demo/wallet-core';
 
+import { Segmented } from '@/core/components/ui/segmented';
+import type { SegmentedOption } from '@/core/components/ui/segmented';
+
 interface NetworkSelectorProps {
     value: NetworkType;
     onChange: (network: NetworkType) => void;
     label?: string;
     compact?: boolean;
 }
+
+const COMPACT_OPTIONS: SegmentedOption<NetworkType>[] = [
+    { value: 'mainnet', label: 'Mainnet', testId: 'network-select-mainnet' },
+    { value: 'testnet', label: 'Testnet', testId: 'network-select-testnet' },
+    { value: 'tetra', label: 'Tetra', testId: 'network-select-tetra' },
+];
 
 export const NetworkSelector: React.FC<NetworkSelectorProps> = ({
     value,
@@ -26,38 +35,7 @@ export const NetworkSelector: React.FC<NetworkSelectorProps> = ({
         return (
             <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-700">{label}</span>
-                <div className="flex rounded-lg border border-gray-200 overflow-hidden">
-                    <button
-                        type="button"
-                        data-testid="network-select-mainnet"
-                        onClick={() => onChange('mainnet')}
-                        className={`px-3 py-1.5 text-xs font-medium transition-all ${
-                            value === 'mainnet' ? 'bg-blue-500 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
-                        }`}
-                    >
-                        Mainnet
-                    </button>
-                    <button
-                        type="button"
-                        data-testid="network-select-testnet"
-                        onClick={() => onChange('testnet')}
-                        className={`px-3 py-1.5 text-xs font-medium transition-all border-l border-gray-200 ${
-                            value === 'testnet' ? 'bg-blue-500 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
-                        }`}
-                    >
-                        Testnet
-                    </button>
-                    <button
-                        type="button"
-                        data-testid="network-select-tetra"
-                        onClick={() => onChange('tetra')}
-                        className={`px-3 py-1.5 text-xs font-medium transition-all border-l border-gray-200 ${
-                            value === 'tetra' ? 'bg-blue-500 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
-                        }`}
-                    >
-                        Tetra
-                    </button>
-                </div>
+                <Segmented value={value} onChange={onChange} options={COMPACT_OPTIONS} />
             </div>
         );
     }

@@ -19,9 +19,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requir
     const { isPasswordSet, isUnlocked } = useAuth();
     const { hasWallet } = useWallet();
 
-    // If no password is set, redirect to password setup
+    // If no password is set (brand new or after a reset), start from the welcome screen
     if (!isPasswordSet) {
-        return <Navigate to="/setup-password" replace />;
+        return <Navigate to="/welcome" replace />;
     }
 
     // If password is set but wallet is locked, redirect to unlock
@@ -29,9 +29,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requir
         return <Navigate to="/unlock" replace />;
     }
 
-    // If wallet is required but doesn't exist, redirect to wallet setup
+    // If wallet is required but doesn't exist, send the user to the welcome screen
     if (requiresWallet && !hasWallet) {
-        return <Navigate to="/setup-wallet" replace />;
+        return <Navigate to="/welcome" replace />;
     }
 
     return <>{children}</>;

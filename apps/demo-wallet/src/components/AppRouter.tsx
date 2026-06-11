@@ -13,9 +13,6 @@ import { useWalletStore, useWallet } from '@demo/wallet-core';
 import { ProtectedRoute } from './ProtectedRoute';
 import { LoaderCircle } from './LoaderCircle';
 import {
-    SetupPassword,
-    UnlockWallet,
-    SetupWallet,
     WalletDashboard,
     SendTransaction,
     TracePage,
@@ -25,7 +22,11 @@ import {
     TonConnectRoute,
 } from '../pages';
 
+import { SetupPasswordScreen, UnlockScreen } from '@/features/auth';
+import { LedgerScreen } from '@/features/ledger';
+import { WelcomeScreen, CreateWalletScreen, ImportWalletScreen } from '@/features/wallet-setup';
 import { useWalletDataUpdater } from '@/hooks/useWalletDataUpdater';
+import { useReceivedToasts } from '@/hooks/useReceivedToasts';
 import { Button } from '@/components/Button';
 
 export const AppRouter: React.FC = () => {
@@ -36,11 +37,12 @@ export const AppRouter: React.FC = () => {
     const { hasWallet } = useWallet();
 
     useWalletDataUpdater();
+    useReceivedToasts();
 
     const getInitialRoute = () => {
-        if (!isPasswordSet) return '/setup-password';
+        if (!isPasswordSet) return '/welcome';
         if (!isUnlocked) return '/unlock';
-        if (!hasWallet) return '/setup-wallet';
+        if (!hasWallet) return '/welcome';
         return '/wallet';
     };
 
@@ -83,15 +85,32 @@ export const AppRouter: React.FC = () => {
         <BrowserRouter>
             <Routes>
                 {/* Public routes */}
-                <Route path="/setup-password" element={<SetupPassword />} />
-                <Route path="/unlock" element={<UnlockWallet />} />
+                <Route path="/welcome" element={<WelcomeScreen />} />
+                <Route path="/setup-password" element={<SetupPasswordScreen />} />
+                <Route path="/unlock" element={<UnlockScreen />} />
 
                 {/* Protected routes - require authentication */}
                 <Route
-                    path="/setup-wallet"
+                    path="/create-wallet"
                     element={
                         <ProtectedRoute>
-                            <SetupWallet />
+                            <CreateWalletScreen />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/import-wallet"
+                    element={
+                        <ProtectedRoute>
+                            <ImportWalletScreen />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/ledger"
+                    element={
+                        <ProtectedRoute>
+                            <LedgerScreen />
                         </ProtectedRoute>
                     }
                 />

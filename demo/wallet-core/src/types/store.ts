@@ -246,6 +246,26 @@ export interface NftsSlice {
     formatNftIndex: (index: string) => string;
 }
 
+// Rates slice interface
+export interface RateEntry {
+    rate: number;
+    change24h?: number;
+    currency: 'USD';
+}
+
+export interface RatesSlice {
+    rates: {
+        entries: Record<string, RateEntry>;
+        isLoading: boolean;
+        error: string | null;
+        lastUpdated: number;
+    };
+
+    loadRates: () => Promise<void>;
+    clearRates: () => void;
+    getRate: (key: string) => RateEntry | undefined;
+}
+
 // Swap slice interface
 export interface SwapState {
     fromToken: SwapToken;
@@ -345,6 +365,7 @@ export interface AppState
         TonConnectSlice,
         JettonsSlice,
         NftsSlice,
+        RatesSlice,
         SwapSlice,
         StakingSlice,
         GaslessSlice {
@@ -368,6 +389,8 @@ export type TonConnectSliceCreator = StateCreator<AppState, [], [], TonConnectSl
 export type JettonsSliceCreator = StateCreator<AppState, [], [], JettonsSlice>;
 
 export type NftsSliceCreator = StateCreator<AppState, [], [], NftsSlice>;
+
+export type RatesSliceCreator = StateCreator<AppState, [], [], RatesSlice>;
 
 export type SwapSliceCreator = StateCreator<AppState, [['zustand/immer', never]], [], SwapSlice>;
 

@@ -10,7 +10,7 @@ import React, { memo } from 'react';
 import { Link } from 'react-router-dom';
 import type { TonTransferAction } from '@ton/walletkit';
 
-import { formatAddress, formatTimestamp } from '../../utils';
+import { shortenAddress, formatTimestamp } from '../../utils';
 import { formatTon } from '../../utils/units';
 
 interface TonTransferCardProps {
@@ -67,7 +67,7 @@ export const TonTransferCard: React.FC<TonTransferCardProps> = memo(
                     </div>
                     <div>
                         <p className="text-sm font-medium text-gray-900">{isOutgoing ? 'Sent TON' : 'Received TON'}</p>
-                        <p className="text-xs text-gray-500">{formatAddress(otherAddress)}</p>
+                        <p className="text-xs text-gray-500">{shortenAddress(otherAddress)}</p>
                         {action.TonTransfer.comment && (
                             <p className="mt-1 text-xs text-gray-600 break-all">{action.TonTransfer.comment}</p>
                         )}

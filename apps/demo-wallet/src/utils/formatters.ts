@@ -9,17 +9,17 @@
 import { Address } from '@ton/core';
 import { Base64ToHex } from '@ton/walletkit';
 
-export function normalizeAddress(address: string): string | null {
+export function normalizeAddress(address: string, bounceable = false): string | null {
     try {
-        return Address.parse(address).toString();
+        return Address.parse(address).toString({ bounceable });
     } catch {
         return null;
     }
 }
 
-export function shortenAddress(addr?: string, count = 6): string {
+export function shortenAddress(addr?: string, count = 4, bounceable = false): string {
     if (!addr) return '';
-    const normalized = normalizeAddress(addr) ?? addr;
+    const normalized = normalizeAddress(addr, bounceable) ?? addr;
     return normalized.length <= count * 2 ? normalized : `${normalized.slice(0, count)}...${normalized.slice(-count)}`;
 }
 
@@ -59,15 +59,6 @@ export const formatTonForDisplay = (amountOrValue: string): string => {
               ) || 0
             : parseFloat(amountOrValue || '0') / 1e9;
     return num.toFixed(4);
-};
-
-/**
- * Formats a blockchain address to a shortened form (first 6 and last 6 characters)
- * @param addr - Full blockchain address
- * @returns Shortened address (e.g., "EQAbc...xyz123")
- */
-export const formatAddress = (addr: string): string => {
-    return shortenAddress(addr);
 };
 
 type ExplorerNetwork = 'mainnet' | 'testnet' | 'tetra';

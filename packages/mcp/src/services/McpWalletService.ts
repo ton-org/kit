@@ -528,40 +528,19 @@ export class McpWalletService {
             limit: 1,
         });
 
-        if (!response.jetton_masters?.length || !response.jetton_masters[0]) {
+        const master = response.masters[0];
+        if (!master) {
             return null;
         }
 
-        const jetton = response.jetton_masters[0];
-        const jettonMasterAddress = (jetton as { address?: string; jetton?: string }).address ?? jetton.jetton;
-        const metadata = jettonMasterAddress ? response.metadata?.[jettonMasterAddress] : undefined;
-        const tokenInfo = metadata?.token_info?.find((item) => item.valid && item.type === 'jetton_masters') as
-            | {
-                  name?: string;
-                  symbol?: string;
-                  description?: string;
-                  image?: string;
-                  extra?: { decimals?: string | number; uri?: string };
-              }
-            | undefined;
-
-        let decimals: number | undefined;
-        if (tokenInfo?.extra?.decimals !== undefined) {
-            const value = tokenInfo.extra.decimals;
-            decimals = typeof value === 'string' ? Number.parseInt(value, 10) : value;
-            if (!Number.isFinite(decimals)) {
-                decimals = undefined;
-            }
-        }
-
         return {
-            address: jettonMasterAddress ?? normalizedAddress,
-            name: tokenInfo?.name ?? '',
-            symbol: tokenInfo?.symbol ?? '',
-            decimals,
-            description: tokenInfo?.description ?? '',
-            image: tokenInfo?.image,
-            uri: tokenInfo?.extra?.uri,
+            address: master.address || normalizedAddress,
+            name: master.name,
+            symbol: master.symbol,
+            decimals: master.decimals,
+            description: master.description,
+            image: master.images?.[0],
+            uri: master.uri,
         };
     }
 
@@ -994,7 +973,7 @@ export class McpWalletService {
             address: nft.address,
             name: nft.info?.name,
             description: nft.info?.description,
-            image: typeof nft.info?.image === 'string' ? nft.info.image : nft.info?.image?.url,
+            image: typeof nft.info?.image === 'string' ? nft.info.image : nft.info?.image?.urls?.[0],
             collection: nft.collection
                 ? {
                       address: nft.collection.address,
@@ -1025,7 +1004,7 @@ export class McpWalletService {
             address: nft.address,
             name: nft.info?.name,
             description: nft.info?.description,
-            image: typeof nft.info?.image === 'string' ? nft.info.image : nft.info?.image?.url,
+            image: typeof nft.info?.image === 'string' ? nft.info.image : nft.info?.image?.urls?.[0],
             collection: nft.collection
                 ? {
                       address: nft.collection.address,
@@ -1057,7 +1036,7 @@ export class McpWalletService {
             address: nft.address,
             name: nft.info?.name,
             description: nft.info?.description,
-            image: typeof nft.info?.image === 'string' ? nft.info.image : nft.info?.image?.url,
+            image: typeof nft.info?.image === 'string' ? nft.info.image : nft.info?.image?.urls?.[0],
             collection: nft.collection
                 ? {
                       address: nft.collection.address,

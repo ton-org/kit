@@ -10,7 +10,8 @@ import type { FC } from 'react';
 import { useState, useEffect } from 'react';
 
 import { Button } from '../Button';
-import { Modal } from '../Modal';
+
+import { Modal } from '@/core/components/ui/modal';
 
 interface SwapSettingsProps {
     slippageBps: number;
@@ -63,11 +64,11 @@ export const SwapSettings: FC<SwapSettingsProps> = ({ slippageBps, setSlippageBp
                 </svg>
             </button>
 
-            <Modal.Container isOpen={open} onClose={handleCancel}>
+            <Modal.Container isOpened={open} onOpenChange={(value) => !value && handleCancel()}>
                 <Modal.Header onClose={handleCancel}>
                     <Modal.Title>Swap Settings</Modal.Title>
                 </Modal.Header>
-                <Modal.Body className="space-y-6">
+                <Modal.Body className="gap-6">
                     <div className="space-y-3">
                         <label className="block text-sm font-medium text-gray-700">Slippage Tolerance</label>
                         <div className="grid grid-cols-4 gap-2">

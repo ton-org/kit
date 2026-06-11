@@ -148,7 +148,9 @@ export const createWalletManagementSlice =
                     state.walletManagement.activeWalletId = walletId;
                     state.walletManagement.address = address;
                     state.walletManagement.publicKey = publicKey;
-                    state.walletManagement.balance = '0';
+                    // Leave balance undefined (shows skeleton) until the real balance loads,
+                    // so the received-toast hook seeds the actual balance instead of diffing from 0.
+                    state.walletManagement.balance = undefined;
                     state.walletManagement.currentWallet = wallet;
                 });
 
@@ -366,28 +368,30 @@ export const createWalletManagementSlice =
 
             const isRemovingActiveWallet = state.walletManagement.activeWalletId === walletId;
             const isLastWallet = state.walletManagement.savedWallets.length === 1;
+            // Pick the next wallet to switch to BEFORE removing. Don't touch activeWalletId here —
+            // switchWallet must see it still pointing at the removed wallet, otherwise it treats the
+            // target as "already active" and early-returns without loading address/currentWallet.
+            const nextActiveId =
+                isRemovingActiveWallet && !isLastWallet
+                    ? state.walletManagement.savedWallets.find((w) => w.id !== walletId)?.id
+                    : undefined;
 
             set((state) => {
                 state.walletManagement.savedWallets.splice(walletIndex, 1);
 
-                if (isRemovingActiveWallet) {
-                    if (state.walletManagement.savedWallets.length > 0) {
-                        const newActiveId = state.walletManagement.savedWallets[0].id;
-                        state.walletManagement.activeWalletId = newActiveId;
-                    } else {
-                        state.walletManagement.hasWallet = false;
-                        state.walletManagement.isAuthenticated = false;
-                        state.walletManagement.activeWalletId = undefined;
-                        state.walletManagement.address = undefined;
-                        state.walletManagement.publicKey = undefined;
-                        state.walletManagement.balance = undefined;
-                        state.walletManagement.currentWallet = undefined;
-                        state.walletManagement.events = [];
-                        state.walletManagement.pendingTransactions = [];
-                        state.walletManagement.confirmedTraceIds = [];
-                        state.walletManagement.confirmedExternalHashes = [];
-                        state.walletManagement.isStreamingConnected = false;
-                    }
+                if (isRemovingActiveWallet && isLastWallet) {
+                    state.walletManagement.hasWallet = false;
+                    state.walletManagement.isAuthenticated = false;
+                    state.walletManagement.activeWalletId = undefined;
+                    state.walletManagement.address = undefined;
+                    state.walletManagement.publicKey = undefined;
+                    state.walletManagement.balance = undefined;
+                    state.walletManagement.currentWallet = undefined;
+                    state.walletManagement.events = [];
+                    state.walletManagement.pendingTransactions = [];
+                    state.walletManagement.confirmedTraceIds = [];
+                    state.walletManagement.confirmedExternalHashes = [];
+                    state.walletManagement.isStreamingConnected = false;
                 }
             });
 
@@ -397,9 +401,10 @@ export const createWalletManagementSlice =
 
             log.info(`Removed wallet ${walletId}`);
 
-            const newState = get();
-            if (newState.walletManagement.activeWalletId && newState.walletManagement.activeWalletId !== walletId) {
-                get().switchWallet(newState.walletManagement.activeWalletId);
+            if (nextActiveId) {
+                void get()
+                    .switchWallet(nextActiveId)
+                    .catch((err) => log.error('Error switching wallet after removal:', err));
             }
         },
 

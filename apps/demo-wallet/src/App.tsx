@@ -12,7 +12,7 @@ import type { WalletKitConfig } from '@demo/wallet-core';
 
 import { AppRouter } from './components';
 
-import { Toaster } from '@/components/ui/sonner';
+import { Toaster } from '@/core/components/ui/sonner';
 import {
     DISABLE_AUTO_EMULATION,
     DISABLE_HTTP_BRIDGE,

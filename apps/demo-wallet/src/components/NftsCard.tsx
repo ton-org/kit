@@ -6,330 +6,66 @@
  *
  */
 
-import React, { useState } from 'react';
+import React from 'react';
 import type { NFT } from '@ton/walletkit';
+import { ChevronRight } from 'lucide-react';
 import { useNfts } from '@demo/wallet-core';
 
-import { Button } from './Button';
-import { Card } from './Card';
+import { FallbackImage } from './FallbackImage';
 
-interface NftsCardProps {
-    className?: string;
-}
+const getNftImageSources = (nft: NFT): string[] => {
+    const img = nft.info?.image;
+    if (!img) return [];
+    return [...img.urls, ...(img.data ? [`data:image/png;base64,${img.data}`] : [])];
+};
 
-export const NftsCard: React.FC<NftsCardProps> = ({ className = '' }) => {
-    const { userNfts, isLoadingNfts, error, loadUserNfts, formatNftIndex } = useNfts();
-    const [selectedNft, setSelectedNft] = useState<NFT | null>(null);
+const getNftName = (nft: NFT, formatNftIndex: (index: string) => string): string => {
+    if (nft.info?.name) return nft.info.name;
+    if (nft.index) return `NFT ${formatNftIndex(nft.index)}`;
+    return 'NFT';
+};
 
-    const formatAddress = (address: string): string => {
-        return `${address.slice(0, 4)}...${address.slice(-4)}`;
-    };
+const NftTile: React.FC<{ nft: NFT; formatNftIndex: (index: string) => string }> = ({ nft, formatNftIndex }) => {
+    const name = getNftName(nft, formatNftIndex);
+    const indexLabel = nft.index ? formatNftIndex(nft.index) : null;
 
-    const getNftImage = (nft: NFT): string => {
-        if (!nft?.info?.image) {
-            return '';
-        }
-
-        return (
-            nft.info.image.url ||
-            nft.info.image.data ||
-            nft.info.image.mediumUrl ||
-            nft.info.image.largeUrl ||
-            nft.info.image.smallUrl ||
-            ''
-        );
-    };
-
-    const getNftName = (nft: NFT): string => {
-        if (nft.info?.name) {
-            return nft.info.name;
-        }
-
-        if (nft.index) {
-            return `NFT ${formatNftIndex(nft.index)}`;
-        }
-
-        return '';
-    };
-
-    const getNftDescription = (nft: NFT): string | null => {
-        if (nft.info?.description) {
-            return nft.info.description;
-        }
-        return null;
-    };
-
-    const getCollectionName = (item: NFT): string => {
-        if (item.collection && item.collection.name) {
-            return item.collection.name;
-        }
-
-        return 'Unknown Collection';
-    };
-
-    // Show top 3 NFTs
-    const topNfts = userNfts.slice(0, 3);
-    const totalNfts = userNfts.length;
-
-    if (error) {
-        return (
-            <Card title="NFTs" className={className} compact>
-                <div className="text-center py-4">
-                    <div className="text-red-400 mb-2">
-                        <svg className="w-8 h-8 mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                            <path
-                                fillRule="evenodd"
-                                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                                clipRule="evenodd"
-                            />
-                        </svg>
+    return (
+        <article className="flex-shrink-0 w-36 bg-gray-100 rounded-2xl overflow-hidden">
+            <div className="aspect-square w-full overflow-hidden bg-gray-300">
+                <FallbackImage src={getNftImageSources(nft)} alt={name} className="w-full h-full object-cover" />
+            </div>
+            <div className="p-2">
+                <div className="text-sm font-semibold text-gray-900 truncate">{name}</div>
+                {indexLabel && (
+                    <div className="text-xs text-gray-500">
+                        {indexLabel?.length > 10 ? `${indexLabel.slice(0, 6)}…` : indexLabel}
                     </div>
-                    <p className="text-sm text-red-600 mb-3">Failed to load NFTs</p>
-                    <Button size="sm" variant="secondary" onClick={() => loadUserNfts()}>
-                        Try Again
-                    </Button>
-                </div>
-            </Card>
-        );
+                )}
+            </div>
+        </article>
+    );
+};
+
+export const NftsCard: React.FC = () => {
+    const { userNfts, formatNftIndex } = useNfts();
+
+    // Only render when there are NFTs to show — no skeletons, no empty block.
+    if (userNfts.length === 0) {
+        return null;
     }
 
     return (
-        <Card title="NFTs" className={className} compact>
-            {isLoadingNfts ? (
-                <div className="flex items-center justify-center py-8">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                    <span className="ml-3 text-sm text-gray-600">Loading NFTs...</span>
-                </div>
-            ) : totalNfts === 0 ? (
-                <div className="text-center py-6">
-                    <div className="text-gray-400 mb-2">
-                        <svg className="w-10 h-10 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                            />
-                        </svg>
-                    </div>
-                    <p className="text-sm text-gray-500">No NFTs yet</p>
-                    <p className="text-xs text-gray-400 mt-1">Your NFT collection will appear here</p>
-                </div>
-            ) : (
-                <div className="space-y-4">
-                    {/* Summary */}
-                    <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-100 space-y-1">
-                        <p className="text-base font-semibold text-gray-900">
-                            {totalNfts} {totalNfts === 1 ? 'NFT' : 'NFTs'}
-                        </p>
-                        <p className="text-sm text-gray-600">Digital collectibles</p>
-                    </div>
+        <section>
+            <header className="flex items-center gap-1 mb-2">
+                <h2 className="text-base font-semibold text-gray-900">NFTs</h2>
+                <ChevronRight className="w-4 h-4 text-gray-400" />
+            </header>
 
-                    {/* Top NFTs */}
-                    <div className="grid grid-cols-1 gap-3">
-                        {topNfts.map((nft) => (
-                            <div
-                                key={nft.address}
-                                className="flex items-center space-x-3 p-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
-                                onClick={() => setSelectedNft(nft)}
-                            >
-                                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
-                                    {getNftImage(nft) ? (
-                                        <img
-                                            src={getNftImage(nft)!}
-                                            alt={getNftName(nft)}
-                                            className="w-full h-full object-cover"
-                                            onError={(e) => {
-                                                // Fallback to placeholder if image fails to load
-                                                const target = e.target as HTMLImageElement;
-                                                target.style.display = 'none';
-                                                const parent = target.parentElement;
-                                                if (parent) {
-                                                    parent.innerHTML = `
-                                                        <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                                                        </svg>
-                                                    `;
-                                                }
-                                            }}
-                                        />
-                                    ) : (
-                                        <svg
-                                            className="w-6 h-6 text-gray-400"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                                            />
-                                        </svg>
-                                    )}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <h4 className="text-sm font-medium text-gray-900 truncate">{getNftName(nft)}</h4>
-                                    <p className="text-xs text-gray-500 truncate">
-                                        {getCollectionName(nft) || formatAddress(nft.address)}
-                                    </p>
-                                    {nft.isOnSale && (
-                                        <div className="flex items-center mt-1">
-                                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                                                On Sale
-                                            </span>
-                                        </div>
-                                    )}
-                                </div>
-                                <div className="flex-shrink-0">
-                                    <svg
-                                        className="w-4 h-4 text-gray-400"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M9 5l7 7-7 7"
-                                        />
-                                    </svg>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    {totalNfts > 3 && (
-                        <div className="text-center pt-2">
-                            <p className="text-xs text-gray-500">Showing 3 of {totalNfts} NFTs</p>
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {/* NFT Details Modal */}
-            {selectedNft && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-lg max-w-md w-full max-h-96 overflow-y-auto">
-                        <div className="p-6">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-lg font-medium text-gray-900 truncate">
-                                    {getNftName(selectedNft)}
-                                </h3>
-                                <button
-                                    onClick={() => setSelectedNft(null)}
-                                    className="text-gray-400 hover:text-gray-500"
-                                >
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M6 18L18 6M6 6l12 12"
-                                        />
-                                    </svg>
-                                </button>
-                            </div>
-
-                            <div className="space-y-4">
-                                {/* NFT Image */}
-                                <div className="w-full h-48 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
-                                    {getNftImage(selectedNft) ? (
-                                        <img
-                                            src={getNftImage(selectedNft)!}
-                                            alt={getNftName(selectedNft)}
-                                            className="w-full h-full object-cover"
-                                        />
-                                    ) : (
-                                        <svg
-                                            className="w-16 h-16 text-gray-400"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                                            />
-                                        </svg>
-                                    )}
-                                </div>
-
-                                {/* Description */}
-                                {getNftDescription(selectedNft) && (
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Description</label>
-                                        <p className="text-sm text-gray-600 mt-1">{getNftDescription(selectedNft)}</p>
-                                    </div>
-                                )}
-
-                                {/* Collection */}
-                                {selectedNft.collection && (
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Collection</label>
-                                        <p className="text-sm text-gray-900">{getCollectionName(selectedNft)}</p>
-                                        {getNftDescription(selectedNft) && (
-                                            <p className="text-xs text-gray-500 mt-1">
-                                                {getNftDescription(selectedNft)}
-                                            </p>
-                                        )}
-                                    </div>
-                                )}
-
-                                {/* Details */}
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Index</label>
-                                        <p className="text-sm text-gray-900">
-                                            {selectedNft?.index ? formatNftIndex(selectedNft?.index) : '-'}
-                                        </p>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Status</label>
-                                        <p className="text-sm text-gray-900">
-                                            {selectedNft.isOnSale ? 'On Sale' : 'Not for Sale'}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">Contract Address</label>
-                                    <p className="text-sm font-mono text-gray-900 break-all">{selectedNft.address}</p>
-                                </div>
-
-                                {selectedNft.ownerAddress && (
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Owner</label>
-                                        <p className="text-sm font-mono text-gray-900 break-all">
-                                            {selectedNft.ownerAddress}
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="flex space-x-3 mt-6">
-                                <Button
-                                    className="flex-1"
-                                    onClick={() => {
-                                        // TODO: Implement send NFT functionality
-                                        // This would navigate to send page with selected NFT
-                                        setSelectedNft(null);
-                                    }}
-                                >
-                                    Transfer
-                                </Button>
-                                <Button variant="secondary" onClick={() => setSelectedNft(null)} className="flex-1">
-                                    Close
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-        </Card>
+            <div className="flex gap-3 overflow-x-auto -mx-4 px-4 pb-1 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
+                {userNfts.map((nft) => (
+                    <NftTile key={nft.address} nft={nft} formatNftIndex={formatNftIndex} />
+                ))}
+            </div>
+        </section>
     );
 };

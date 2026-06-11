@@ -1,7 +1,11 @@
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'Inter Variable', system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
+
+  /* Always reserve the vertical scrollbar so layout doesn't jump when content
+     grows past the viewport (noticeable inside Telegram). */
+  overflow-y: scroll;
 
   color-scheme: light dark;
   /* color: rgba(255, 255, 255, 0.87); */

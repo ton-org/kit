@@ -23,13 +23,13 @@ import type {
     EmulationAccountState,
     EmulationMessage,
     EmulationAction,
-    EmulationAddressBookEntry,
     AccountStatus,
 } from '../../../api/models';
 import { Base64ToHex, asBase64 } from '../../../utils/base64';
 import { asHex } from '../../../utils/hex';
 import { asAddressFriendly, asMaybeAddressFriendly } from '../../../utils/address';
 import { parseMsgSizeCount } from '../utils';
+import { mapAddressBook } from './map-address-book';
 
 function normalizeAccountStatus(status: string): AccountStatus {
     if (status === 'active') return 'active';
@@ -189,16 +189,7 @@ export function mapToncenterEmulationResponse(raw: ToncenterEmulationResponse): 
         Object.entries(raw.transactions ?? {}).map(([hash, tx]) => [Base64ToHex(hash), mapTransaction(tx)]),
     );
 
-    const addressBook: Record<string, EmulationAddressBookEntry> = Object.fromEntries(
-        Object.entries(raw.address_book ?? {}).map(([addr, row]) => [
-            addr,
-            {
-                domain: row.domain ?? undefined,
-                userFriendly: asAddressFriendly(row.user_friendly),
-                interfaces: row.interfaces ?? [],
-            },
-        ]),
-    );
+    const addressBook = mapAddressBook(raw.address_book);
 
     const codeCells: Record<string, Base64String> = Object.fromEntries(
         Object.entries(raw.code_cells ?? {}).map(([hash, cell]) => [Base64ToHex(hash), asBase64(cell)]),

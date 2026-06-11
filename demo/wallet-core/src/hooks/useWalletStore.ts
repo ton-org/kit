@@ -220,6 +220,23 @@ export const useJettons = () => {
 };
 
 /**
+ * Hook for Rates (USD prices and 24h change per asset key)
+ */
+export const useRates = () => {
+    return useWalletStore(
+        useShallow((state) => ({
+            entries: state.rates.entries,
+            isLoading: state.rates.isLoading,
+            error: state.rates.error,
+            lastUpdated: state.rates.lastUpdated,
+            loadRates: state.loadRates,
+            clearRates: state.clearRates,
+            getRate: state.getRate,
+        })),
+    );
+};
+
+/**
  * Hook for Swap
  */
 export const useSwap = () => {
