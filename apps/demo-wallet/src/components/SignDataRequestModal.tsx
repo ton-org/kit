@@ -12,11 +12,12 @@ import type { SavedWallet } from '@demo/wallet-core';
 import { useAuth } from '@demo/wallet-core';
 
 import { Button } from './Button';
-import { Card } from './Card';
 import { DAppInfo } from './DAppInfo';
 import { WalletPreview } from './WalletPreview';
 import { HoldToSignButton } from './HoldToSignButton';
 import { createComponentLogger } from '../utils/logger';
+
+import { Card } from '@/core/components/ui/card';
 
 // Create logger for sign data request modal
 const log = createComponentLogger('SignDataRequestModal');

@@ -11,7 +11,7 @@ import type { NFT } from '@ton/walletkit';
 import { ChevronRight } from 'lucide-react';
 import { useNfts } from '@demo/wallet-core';
 
-import { FallbackImage } from './FallbackImage';
+import { FallbackImage } from '@/core/components/ui/fallback-image';
 
 const getNftImageSources = (nft: NFT): string[] => {
     const img = nft.info?.image;

@@ -9,7 +9,7 @@
 import type { FC } from 'react';
 import { useStaking } from '@demo/wallet-core';
 
-import { Card } from '../Card';
+import { Card } from '@/core/components/ui/card';
 
 export const StakingInfo: FC = () => {
     const { stakedBalance, providerInfo } = useStaking();

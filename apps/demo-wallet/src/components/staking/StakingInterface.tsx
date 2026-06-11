@@ -12,9 +12,9 @@ import { useStaking } from '@demo/wallet-core';
 import { useNavigate } from 'react-router-dom';
 import { UnstakeMode } from '@ton/walletkit';
 
-import { Card } from '../Card';
 import { Button } from '../Button';
 
+import { Card } from '@/core/components/ui/card';
 import { cn } from '@/lib/utils';
 
 export const StakingInterface: FC = () => {

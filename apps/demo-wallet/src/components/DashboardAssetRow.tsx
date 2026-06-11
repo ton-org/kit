@@ -8,8 +8,7 @@
 
 import React from 'react';
 
-import { FallbackImage } from './FallbackImage';
-
+import { FallbackImage } from '@/core/components/ui/fallback-image';
 import { useCountUp } from '@/core/hooks/use-count-up';
 import { formatAmount, formatPercent, formatUsd } from '@/core/utils';
 

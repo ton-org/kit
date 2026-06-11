@@ -13,9 +13,11 @@ import type { Jetton, TONTransferRequest } from '@ton/walletkit';
 import { useWallet, useJettons, useWalletKit, useAuth, getTransactionExplorerUrls } from '@demo/wallet-core';
 import { toast } from 'sonner';
 
-import { Layout, Button, Input, Card, AnimatedBalance, WalletSwitcher } from '../components';
+import { Layout, Button, AnimatedBalance, WalletSwitcher } from '../components';
 import { createComponentLogger } from '../utils/logger';
 
+import { Input } from '@/core/components/ui/input';
+import { Card } from '@/core/components/ui/card';
 import { getFormattedJettonInfo } from '@/utils/jetton';
 import { useFormattedJetton } from '@/hooks/useFormattedJetton';
 import { useJettonInfo } from '@/hooks/useJettonInfo';

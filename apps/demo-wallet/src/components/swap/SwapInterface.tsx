@@ -16,8 +16,8 @@ import { SwapSettings } from './SwapSettings';
 import { TokenInput } from './TokenInput';
 import { QuoteTimer } from './QuoteTimer';
 import { Button } from '../Button';
-import { Card } from '../Card';
 
+import { Card } from '@/core/components/ui/card';
 import { cn } from '@/lib/utils';
 
 function getPriceImpactColor(priceImpact: number): string {

@@ -8,11 +8,9 @@
 
 export { AnimatedBalance } from './AnimatedBalance';
 export { Button } from './Button';
-export { Card } from './Card';
 export { ConnectRequestModal } from './ConnectRequestModal';
 export { DAppInfo } from './DAppInfo';
 export { DisconnectNotifications } from './DisconnectNotifications';
-export { Input } from './Input';
 export { JettonsCard } from './JettonsCard';
 export { JettonRow } from './JettonRow';
 export { JettonsList } from './JettonsList';
@@ -22,7 +20,6 @@ export { Layout } from './Layout';
 export { NewLayout } from './NewLayout';
 export { DashboardHeader } from './DashboardHeader';
 export { BalanceTotal } from './BalanceTotal';
-export { FallbackImage } from './FallbackImage';
 export { DashboardActionButton } from './DashboardActionButton';
 export { DashboardActions } from './DashboardActions';
 export { DashboardAssetRow, DashboardAssetRowSkeleton } from './DashboardAssetRow';
