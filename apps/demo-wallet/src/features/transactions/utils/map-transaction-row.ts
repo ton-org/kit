@@ -6,9 +6,13 @@
  *
  */
 
+import { Base64ToHex } from '@ton/walletkit';
 import type { Action, Event } from '@ton/walletkit';
 
-import { formatTonForDisplay, sameAddress } from '@/core/utils';
+import { formatTonForDisplay, getTonviewerTxUrl, sameAddress } from '@/core/utils';
+
+/** Network accepted by the explorer-url builder (mainnet/testnet/tetra). */
+type ExplorerNetwork = Parameters<typeof getTonviewerTxUrl>[0];
 
 /** Status badge shown on the transaction icon. */
 export type TransactionRowStatus = 'success' | 'loading' | 'failed';
@@ -17,8 +21,8 @@ export type TransactionRowStatus = 'success' | 'loading' | 'failed';
 export interface TransactionRowModel {
     /** Unique React key. */
     id: string;
-    /** Trace id used to navigate to the trace page. */
-    traceId: string;
+    /** Tonviewer transaction URL. Undefined for not-yet-on-chain pending transactions (row is not clickable). */
+    explorerUrl?: string;
     /** Primary label, e.g. "Sent 5 TON" / "Received 1 USDT". */
     title: string;
     /** Truncated trace id shown as the subtitle. */
@@ -107,17 +111,22 @@ const signedAmount = (value: string, isOutgoing: boolean): string => (value ? `$
  * Maps a historical event to a row. Returns null for events without actions
  * (rendered elsewhere via the trace fetch — skipped in the dashboard preview).
  */
-export const mapEventToRow = (event: Event, myAddress: string): TransactionRowModel | null => {
+export const mapEventToRow = (
+    event: Event,
+    myAddress: string,
+    network: ExplorerNetwork,
+): TransactionRowModel | null => {
     if (!event.actions || event.actions.length === 0) return null;
     const action = selectRelevantAction(event.actions, myAddress);
     const isOutgoing = isOutgoingFromAction(action, myAddress);
     const { title, value } = describeAction(action, isOutgoing);
-    const traceId = String(event.eventId);
+    const eventId = String(event.eventId);
+    const hash = event.traceExternalHash ? Base64ToHex(event.traceExternalHash) : eventId;
     return {
-        id: traceId,
-        traceId,
+        id: eventId,
+        explorerUrl: getTonviewerTxUrl(network, hash),
         title,
-        subtitleId: truncateMiddle(traceId),
+        subtitleId: truncateMiddle(eventId),
         amount: signedAmount(value, isOutgoing),
         isOutgoing,
         status: action.status === 'failure' ? 'failed' : 'success',
@@ -132,11 +141,19 @@ const pendingStatus = (pending: PendingLike): TransactionRowStatus => {
 };
 
 /** Maps a streaming pending transaction to a row (via its parsed action, falling back to the preview). */
-export const mapPendingToRow = (pending: PendingLike, myAddress: string, timestamp: number): TransactionRowModel => {
+export const mapPendingToRow = (
+    pending: PendingLike,
+    myAddress: string,
+    timestamp: number,
+    network: ExplorerNetwork,
+): TransactionRowModel => {
     const status = pendingStatus(pending);
+    // Not-yet-on-chain (still loading) transactions have no explorer page yet.
+    const explorerUrl =
+        status === 'loading' ? undefined : getTonviewerTxUrl(network, pending.externalHash ?? pending.traceId);
     const base = {
         id: `pending-${pending.traceId}`,
-        traceId: pending.traceId,
+        explorerUrl,
         subtitleId: truncateMiddle(pending.traceId),
         status,
         date: formatTxDate(timestamp),

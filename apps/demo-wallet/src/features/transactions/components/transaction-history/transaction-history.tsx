@@ -29,13 +29,19 @@ const nowSeconds = (): number => Math.floor(Date.now() / 1000);
  * while loading or when there is nothing to show.
  */
 export const TransactionHistory: React.FC = () => {
-    const { events, loadEvents, address, pendingTransactions } = useWalletStore(
-        useShallow((state) => ({
-            events: state.walletManagement.events,
-            loadEvents: state.loadEvents,
-            address: state.walletManagement.address,
-            pendingTransactions: state.walletManagement.pendingTransactions,
-        })),
+    const { events, loadEvents, address, pendingTransactions, network } = useWalletStore(
+        useShallow((state) => {
+            const activeWallet = state.walletManagement.savedWallets.find(
+                (w) => w.id === state.walletManagement.activeWalletId,
+            );
+            return {
+                events: state.walletManagement.events,
+                loadEvents: state.loadEvents,
+                address: state.walletManagement.address,
+                pendingTransactions: state.walletManagement.pendingTransactions,
+                network: activeWallet?.network ?? 'testnet',
+            };
+        }),
     );
 
     useEffect(() => {
@@ -66,18 +72,18 @@ export const TransactionHistory: React.FC = () => {
             })
             .map((p) => {
                 const timestamp = p.preview?.timestamp ?? nowSeconds();
-                return { timestamp, row: mapPendingToRow(p, myAddress, timestamp) };
+                return { timestamp, row: mapPendingToRow(p, myAddress, timestamp, network) };
             });
 
         const eventRows = eventItems
-            .map((ev) => ({ timestamp: ev.timestamp, row: mapEventToRow(ev, myAddress) }))
+            .map((ev) => ({ timestamp: ev.timestamp, row: mapEventToRow(ev, myAddress, network) }))
             .filter((item): item is { timestamp: number; row: TransactionRowModel } => item.row !== null);
 
         return [...pendingRows, ...eventRows]
             .sort((a, b) => b.timestamp - a.timestamp)
             .slice(0, MAX_ROWS)
             .map((item) => item.row);
-    }, [events, pendingTransactions, address]);
+    }, [events, pendingTransactions, address, network]);
 
     // Like NftsCard: render nothing while loading or when empty.
     if (rows.length === 0) {
