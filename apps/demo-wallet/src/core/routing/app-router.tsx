@@ -17,7 +17,7 @@ import { WalletDashboard } from '@/features/dashboard';
 import { AssetsScreen } from '@/features/assets';
 import { NftsScreen } from '@/features/nft';
 import { TonConnectRoute } from '@/features/ton-connect';
-import { TracePage, TransactionDetail } from '@/features/transactions';
+import { TracePage, TransactionDetail, HistoryScreen } from '@/features/transactions';
 import { Staking } from '@/features/staking';
 import { Swap } from '@/features/swap';
 import { SendTransaction } from '@/features/send';
@@ -136,6 +136,14 @@ export const AppRouter: React.FC = () => {
                     element={
                         <ProtectedRoute requiresWallet>
                             <NftsScreen />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/wallet/history"
+                    element={
+                        <ProtectedRoute requiresWallet>
+                            <HistoryScreen />
                         </ProtectedRoute>
                     }
                 />
