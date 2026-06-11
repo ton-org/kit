@@ -19,7 +19,11 @@ import { onMessage, sendMessage, setNamespace } from '@truecarry/webext-bridge/w
 
 import { getTonConnectDeviceInfo, getTonConnectWalletManifest } from '../utils/walletManifest';
 
-import { JS_BRIDGE_MESSAGE_TO_BACKGROUND, JS_BRIDGE_MESSAGE_TO_CONTENT, JS_BRIDGE_NAMESPACE } from '@/lib/constants';
+import {
+    JS_BRIDGE_MESSAGE_TO_BACKGROUND,
+    JS_BRIDGE_MESSAGE_TO_CONTENT,
+    JS_BRIDGE_NAMESPACE,
+} from '@/core/lib/constants';
 
 try {
     setNamespace(JS_BRIDGE_NAMESPACE);

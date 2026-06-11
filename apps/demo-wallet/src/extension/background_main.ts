@@ -19,9 +19,14 @@ import { INJECT_CONTENT_SCRIPT, TONCONNECT_BRIDGE_REQUEST } from '@ton/walletkit
 
 import { getTonConnectDeviceInfo, getTonConnectWalletManifest } from '../utils/walletManifest';
 
-import { JS_BRIDGE_MESSAGE_TO_BACKGROUND } from '@/lib/constants';
-import { SendMessageToExtensionContentFromBackground } from '@/lib/extensionBackground';
-import { DISABLE_AUTO_POPUP, ENV_TON_API_KEY_MAINNET, ENV_TON_API_KEY_TESTNET, ENV_TON_API_KEY_TETRA } from '@/lib/env';
+import { JS_BRIDGE_MESSAGE_TO_BACKGROUND } from '@/core/lib/constants';
+import { SendMessageToExtensionContentFromBackground } from '@/core/lib/extensionBackground';
+import {
+    DISABLE_AUTO_POPUP,
+    ENV_TON_API_KEY_MAINNET,
+    ENV_TON_API_KEY_TESTNET,
+    ENV_TON_API_KEY_TETRA,
+} from '@/core/lib/env';
 
 // Initialize WalletKit and JSBridge
 let walletKit: TonWalletKit | null = null;

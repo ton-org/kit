@@ -8,7 +8,7 @@
 
 import { useEffect } from 'react';
 
-import { log } from '@/utils/logger';
+import { log } from '@/core/lib/logger';
 
 // Hook to listen for paste events and handle TON Connect URLs
 export function usePasteHandler(handleTonConnectUrl: (url: string) => Promise<void>) {

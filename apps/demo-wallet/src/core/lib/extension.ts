@@ -10,7 +10,7 @@ import type { sendMessage } from '@truecarry/webext-bridge/background';
 
 import { JS_BRIDGE_MESSAGE_TO_CONTENT } from './constants';
 
-import { createComponentLogger } from '@/utils/logger';
+import { createComponentLogger } from '@/core/lib/logger';
 
 const log = createComponentLogger('Extension');
 

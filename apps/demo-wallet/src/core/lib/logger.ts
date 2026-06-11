@@ -148,17 +148,17 @@ export default log;
 Usage examples:
 
 // Basic logging
-import log from './utils/logger';
+import log from '@/core/lib/logger';
 log.info('User connected wallet');
 log.error('Transaction failed', error);
 
 // Component-specific logging
-import { createComponentLogger } from './utils/logger';
+import { createComponentLogger } from '@/core/lib/logger';
 const componentLog = createComponentLogger('WalletDashboard');
 componentLog.debug('Component mounted');
 
 // Runtime log level control (useful for debugging)
-import { setLogLevel, getLogLevel } from './utils/logger';
+import { setLogLevel, getLogLevel } from '@/core/lib/logger';
 setLogLevel(5); // Enable debug logging
 
 // Log levels:

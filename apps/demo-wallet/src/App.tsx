@@ -22,9 +22,9 @@ import {
     ENV_TON_API_KEY_TESTNET,
     ENV_TON_API_KEY_TETRA,
     ENV_TON_API_PROVIDER,
-} from '@/lib/env';
-import { isExtension } from '@/utils/isExtension';
-import type { SendMessageToExtensionContent, CreateExtensionStorageAdapter } from '@/lib/extensionPopup';
+} from '@/core/lib/env';
+import { isExtension } from '@/core/lib/is-extension';
+import type { SendMessageToExtensionContent, CreateExtensionStorageAdapter } from '@/core/lib/extensionPopup';
 
 import './App.css';
 import './storePatch';
@@ -33,7 +33,7 @@ let jsBridgeTransport: typeof SendMessageToExtensionContent | undefined;
 let storage: ReturnType<typeof CreateExtensionStorageAdapter> | undefined;
 
 if (isExtension()) {
-    const { SendMessageToExtensionContent, CreateExtensionStorageAdapter } = await import('@/lib/extensionPopup');
+    const { SendMessageToExtensionContent, CreateExtensionStorageAdapter } = await import('@/core/lib/extensionPopup');
     jsBridgeTransport = SendMessageToExtensionContent;
     storage = CreateExtensionStorageAdapter();
 }

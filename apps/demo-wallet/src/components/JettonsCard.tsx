@@ -11,8 +11,8 @@ import { useJettons } from '@demo/wallet-core';
 
 import { Button } from './Button';
 import { JettonRow } from './JettonRow';
-import { createComponentLogger } from '../utils/logger';
 
+import { createComponentLogger } from '@/core/lib/logger';
 import { Card } from '@/core/components/ui/card';
 import { getJettonsName } from '@/utils/jetton';
 

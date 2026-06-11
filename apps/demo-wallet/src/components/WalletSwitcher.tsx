@@ -10,7 +10,7 @@ import React, { useState } from 'react';
 import { getNetworkLabel } from '@demo/wallet-core';
 import type { SavedWallet } from '@demo/wallet-core';
 
-import { createComponentLogger } from '../utils/logger';
+import { createComponentLogger } from '@/core/lib/logger';
 
 const log = createComponentLogger('WalletSwitcher');
 

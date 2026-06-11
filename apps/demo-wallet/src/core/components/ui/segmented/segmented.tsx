@@ -6,7 +6,7 @@
  *
  */
 
-import { cn } from '@/lib/utils';
+import { cn } from '@/core/lib/utils';
 
 export interface SegmentedOption<T extends string> {
     value: T;

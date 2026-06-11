@@ -11,8 +11,8 @@ import { useNavigate } from 'react-router-dom';
 import { useTonConnect } from '@demo/wallet-core';
 
 import { LoaderCircle } from '../components/LoaderCircle';
-import { createComponentLogger } from '../utils/logger';
 
+import { createComponentLogger } from '@/core/lib/logger';
 import { Layout } from '@/core/components/shared/layout';
 
 const log = createComponentLogger('TonConnectRoute');

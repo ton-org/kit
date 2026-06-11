@@ -13,8 +13,8 @@ import { useAuth, useWallet } from '@demo/wallet-core';
 
 import { MnemonicDisplay } from './MnemonicDisplay';
 import { ToggleRow } from './ToggleRow';
-import { createComponentLogger } from '../utils/logger';
 
+import { createComponentLogger } from '@/core/lib/logger';
 import { Modal } from '@/core/components/ui/modal';
 import { SettingsIcon } from '@/core/components/ui/icons';
 import { CreateWalletModal, WALLET_SETUP_ROUTE } from '@/features/wallet-setup';

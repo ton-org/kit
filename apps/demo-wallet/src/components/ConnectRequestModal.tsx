@@ -15,7 +15,8 @@ import { toast } from 'sonner';
 import { Button } from './Button';
 import { DAppInfo } from './DAppInfo';
 import { WalletPreview } from './WalletPreview';
-import { createComponentLogger } from '../utils/logger';
+
+import { createComponentLogger } from '@/core/lib/logger';
 
 // Create logger for connect request modal
 const log = createComponentLogger('ConnectRequestModal');

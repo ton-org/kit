@@ -15,8 +15,8 @@ import { Button } from './Button';
 import { DAppInfo } from './DAppInfo';
 import { WalletPreview } from './WalletPreview';
 import { HoldToSignButton } from './HoldToSignButton';
-import { createComponentLogger } from '../utils/logger';
 
+import { createComponentLogger } from '@/core/lib/logger';
 import { Card } from '@/core/components/ui/card';
 
 // Create logger for sign data request modal

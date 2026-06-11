@@ -15,7 +15,7 @@ import { UnstakeMode } from '@ton/walletkit';
 import { Button } from '../Button';
 
 import { Card } from '@/core/components/ui/card';
-import { cn } from '@/lib/utils';
+import { cn } from '@/core/lib/utils';
 
 export const StakingInterface: FC = () => {
     const {

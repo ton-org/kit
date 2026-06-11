@@ -14,8 +14,8 @@ import { useWallet, useJettons, useWalletKit, useAuth, getTransactionExplorerUrl
 import { toast } from 'sonner';
 
 import { Button, AnimatedBalance, WalletSwitcher } from '../components';
-import { createComponentLogger } from '../utils/logger';
 
+import { createComponentLogger } from '@/core/lib/logger';
 import { Layout } from '@/core/components/shared/layout';
 import { Input } from '@/core/components/ui/input';
 import { Card } from '@/core/components/ui/card';

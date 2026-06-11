@@ -12,7 +12,7 @@ import { useJettons } from '@demo/wallet-core';
 import type { Jetton } from '@ton/walletkit';
 import type { SwapToken } from '@ton/walletkit';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@/core/lib/utils';
 import { USDT_ADDRESS } from '@/constants/swap';
 import { getJettonsImage, getJettonsSymbol } from '@/utils/jetton';
 import { CircleLogo } from '@/components/CircleLogo';

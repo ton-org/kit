@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogTitle } from '../dialog';
 import { Drawer, DrawerContent, DrawerTitle } from '../drawer';
 
 import { Button } from '@/components/Button';
-import { cn } from '@/lib/utils';
+import { cn } from '@/core/lib/utils';
 import { useIsMobile } from '@/core/hooks/use-media-query';
 
 export interface ModalContainerProps extends ComponentProps<'div'> {

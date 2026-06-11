@@ -13,7 +13,7 @@ import type { ToncenterTraceItem } from '@ton/walletkit';
 import { useWalletKit, useWalletStore, getChainNetwork } from '@demo/wallet-core';
 
 import { getTonviewerTxUrl } from '@/core/utils';
-import { log } from '@/utils/logger';
+import { log } from '@/core/lib/logger';
 
 // Local type definitions for transaction data
 interface TransactionMessage {

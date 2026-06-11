@@ -18,7 +18,7 @@ import { QuoteTimer } from './QuoteTimer';
 import { Button } from '../Button';
 
 import { Card } from '@/core/components/ui/card';
-import { cn } from '@/lib/utils';
+import { cn } from '@/core/lib/utils';
 
 function getPriceImpactColor(priceImpact: number): string {
     if (priceImpact > 500) return 'text-destructive';

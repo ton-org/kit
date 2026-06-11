@@ -11,7 +11,7 @@ import { CreateTonMnemonic } from '@ton/walletkit';
 import { useWallet, useAuth } from '@demo/wallet-core';
 import type { NetworkType } from '@demo/wallet-core';
 
-import { createComponentLogger } from '../utils/logger';
+import { createComponentLogger } from '@/core/lib/logger';
 
 // Create logger for TON wallet hook
 const log = createComponentLogger('useTonWallet');

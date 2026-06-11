@@ -13,7 +13,7 @@ import type { SwapToken } from '@ton/walletkit';
 import { TokenSelector } from './TokenSelector';
 import { Button } from '../Button';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@/core/lib/utils';
 
 interface Props {
     label: string;
