@@ -26,7 +26,7 @@ import { SetupPasswordScreen, UnlockScreen } from '@/features/auth';
 import { LedgerScreen } from '@/features/ledger';
 import { WelcomeScreen, CreateWalletScreen, ImportWalletScreen } from '@/features/wallet-setup';
 import { useWalletDataUpdater } from '@/hooks/useWalletDataUpdater';
-import { useReceivedToasts } from '@/hooks/useReceivedToasts';
+import { useReceivedToasts } from '@/features/notifications';
 import { Button } from '@/components/Button';
 
 export const AppRouter: React.FC = () => {

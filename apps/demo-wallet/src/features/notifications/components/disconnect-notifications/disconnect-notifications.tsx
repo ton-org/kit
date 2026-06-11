@@ -9,7 +9,7 @@
 import React from 'react';
 import { useDisconnectEvents } from '@demo/wallet-core';
 
-import { Button } from './Button';
+import { Button } from '@/components/Button';
 
 interface DisconnectNotificationsProps {
     className?: string;
