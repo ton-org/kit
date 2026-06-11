@@ -11,3 +11,6 @@ export * from './components/transaction-detail';
 export * from './components/trace-row';
 export * from './components/recent-transactions';
 export * from './components/transaction-cards';
+export * from './components/transaction-row';
+export * from './components/transaction-history';
+export * from './utils/map-transaction-row';

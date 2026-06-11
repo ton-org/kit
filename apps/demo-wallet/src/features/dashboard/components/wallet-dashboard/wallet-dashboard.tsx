@@ -28,6 +28,7 @@ import {
 } from '@/features/ton-connect';
 import { NewLayout } from '@/core/components/shared/new-layout';
 import { NftsCard } from '@/features/nft';
+import { TransactionHistory } from '@/features/transactions';
 import { usePasteHandler } from '@/core/hooks/use-paste-handler';
 
 export const WalletDashboard: React.FC = () => {
@@ -55,6 +56,7 @@ export const WalletDashboard: React.FC = () => {
                 <DashboardActions />
                 <DashboardAssets />
                 <NftsCard />
+                <TransactionHistory />
             </div>
 
             {pendingConnectRequest && (
