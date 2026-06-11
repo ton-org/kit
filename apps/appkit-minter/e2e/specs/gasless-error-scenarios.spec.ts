@@ -10,7 +10,7 @@ import { test, expect } from '../qa/test-base';
 import { gaslessMeta } from '../qa/allure-meta';
 
 /**
- * §11 — security checks driven purely by mocking the TonAPI gasless endpoints,
+ * Security checks driven purely by mocking the TonAPI gasless endpoints,
  * needing NO wallet connection. They hook the eager `/v2/gasless/config` fetch
  * that fires on load.
  *
@@ -20,13 +20,13 @@ import { gaslessMeta } from '../qa/allure-meta';
  * two-tab fixture.
  */
 test.describe('Relayer error rendering (no wallet)', () => {
-    // Load-time facet of §11.1: a hostile config response must not crash the app or
-    // execute script on boot. The render-sink facet (relayer error shown as escaped
-    // text) is covered with a connected wallet in gasless-security.spec.ts.
+    // Load-time facet of hostile config handling: a hostile config response must not
+    // crash the app or execute script on boot. The render-sink facet (relayer error
+    // shown as escaped text) is covered with a connected wallet in gasless-security.spec.ts.
     test('Hostile config response (HTTP 400) does not crash the app or execute script (load without wallet)', async ({
         page,
     }) => {
-        await gaslessMeta('Config errors', '§11.1');
+        await gaslessMeta('Config errors');
         await test.step('Mock config with XSS payload in the error string', async () => {
             const XSS = '<img src=x onerror=window.__xssFired=true><script>window.__xssFired2=true</script>';
             await page.route(/\/v2\/gasless\/config/, (route) =>
@@ -62,7 +62,7 @@ test.describe('Relayer error rendering (no wallet)', () => {
     });
 
     test('App loads with a config that has no supported assets (no crash)', async ({ page }) => {
-        await gaslessMeta('Config errors', '§11.15');
+        await gaslessMeta('Config errors');
         await test.step('Mock config with a valid relay address and empty gas_jettons', async () => {
             // NB: relay_address must be a checksum-valid friendly address, else the
             // walletkit config mapper throws before the empty-assets path is reached.

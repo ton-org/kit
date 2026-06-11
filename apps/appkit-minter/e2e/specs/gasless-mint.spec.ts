@@ -13,7 +13,7 @@ import { mockGaslessConfig, mockGaslessEstimateOk, USDT_MASTER } from '../mocks/
 import { gaslessMeta } from '../qa/allure-meta';
 
 /**
- * §9 — Gasless NFT mint flow (Generate → Settings → Confirm).
+ * Gasless NFT mint flow (Generate → Settings → Confirm).
  *
  * Tiers:
  *  - no wallet: the Mint settings gasless toggle is disabled with a reason hint.
@@ -26,7 +26,7 @@ import { gaslessMeta } from '../qa/allure-meta';
 // --- no wallet: gasless toggle is disabled with a reason ---
 base.describe('Mint settings (no wallet)', () => {
     base('Without a SignMessage wallet the Gasless toggle is disabled and a reason is shown', async ({ page }) => {
-        await gaslessMeta('Mint', '§9.2');
+        await gaslessMeta('Mint');
         const minter = new MinterPage(page);
         await base.step('Generate a card and open Mint settings', async () => {
             await page.goto('/');
@@ -53,7 +53,7 @@ test.describe('Gasless mint (two-tab wallet, mocked relayer)', () => {
         widget,
         wallet,
     }) => {
-        await gaslessMeta('Mint', '§9.7');
+        await gaslessMeta('Mint');
         await mockGaslessConfig(app, { assets: [USDT_MASTER] });
         await mockGaslessEstimateOk(app);
 
@@ -81,7 +81,7 @@ test.describe('Gasless mint (two-tab wallet, mocked relayer)', () => {
         widget,
         wallet,
     }) => {
-        await gaslessMeta('Mint', '§9.10');
+        await gaslessMeta('Mint');
         await mockGaslessConfig(app, { assets: [USDT_MASTER] });
         // Default `from` echoes the wallet, so the send reaches the SignMessage
         // prompt rather than tripping the WALLET_MISMATCH guard first.
@@ -109,7 +109,7 @@ test.describe('Gasless mint (two-tab wallet, mocked relayer)', () => {
 // --- real on-chain mint (mainnet) — monitor only, broadcasts funds ---
 test.describe('Gasless mint (real send) @real-send', () => {
     test('Successful Gasless mint lands on-chain', async ({ app, minter, widget, wallet }) => {
-        await gaslessMeta('Mint', '§9.11');
+        await gaslessMeta('Mint');
         await test.step('Connect Wallet, generate a card and open Confirm with Gasless', async () => {
             await connectWallet({ widget, wallet });
             await minter.generateCard();

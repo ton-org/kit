@@ -41,7 +41,7 @@ interface ConfigOpts {
     /** Fee-asset master addresses the relayer "accepts". Defaults to USDT. */
     assets?: string[];
     relayAddress?: string;
-    /** Artificial latency before responding — lets a test observe the loading state (§2.3). */
+    /** Artificial latency before responding — lets a test observe the loading state. */
     delayMs?: number;
 }
 
@@ -64,15 +64,15 @@ interface EstimateOkOpts {
      * Echoed `from`. Defaults to the `wallet_address` of the incoming estimate
      * request, so the quote always belongs to the connected wallet and clears the
      * WALLET_MISMATCH guard. Pass an explicit (different) address to *trigger* that
-     * guard — §11.2.
+     * guard
      */
     from?: string;
-    /** Seconds-from-now the quote stays valid. Negative ⇒ already expired (§11.3). */
+    /** Seconds-from-now the quote stays valid. Negative ⇒ already expired. */
     validForSeconds?: number;
     relayAddress?: string;
-    /** If provided, each estimate request URL is pushed here — lets a test prove a re-quote fired (§11.7). */
+    /** If provided, each estimate request URL is pushed here — lets a test prove a re-quote fired. */
     capture?: string[];
-    /** Artificial latency before responding — lets a test observe "Quoting…" / the fee skeleton (§4.2/§9.9). */
+    /** Artificial latency before responding — lets a test observe "Quoting…" / the fee skeleton. */
     delayMs?: number;
 }
 
@@ -108,7 +108,7 @@ interface EstimateErrorOpts {
     status?: number;
     /** Relayer error body. Mirrors the shape TonAPI returns (kept for realism). */
     body?: unknown;
-    /** Return a 200 with a non-JSON body to exercise the "Unexpected non-JSON" path (§6.2). */
+    /** Return a 200 with a non-JSON body to exercise the "Unexpected non-JSON" path. */
     nonJson?: boolean;
 }
 
@@ -163,7 +163,7 @@ interface SendErrorOpts {
     capture?: SendCapture;
 }
 
-/** Mock `POST /v2/gasless/send` with a relayer error (§6.5 — quote should invalidate). */
+/** Mock `POST /v2/gasless/send` with a relayer error. */
 export async function mockGaslessSendError(page: Page, opts: SendErrorOpts = {}): Promise<void> {
     await page.route(SEND_RE, (route) => {
         if (opts.capture) {
@@ -179,7 +179,7 @@ export async function mockGaslessSendError(page: Page, opts: SendErrorOpts = {})
 
 /**
  * Mock `POST /v2/gasless/send` with a per-call status sequence — e.g. `[503, 200]`
- * makes the first send fail transiently and the retry succeed (§6.4). Statuses
+ * makes the first send fail transiently and the retry succeed. Statuses
  * beyond the list reuse the last one. 2xx returns a success body; others an error.
  */
 export async function mockGaslessSendSequence(page: Page, statuses: number[], capture?: SendCapture): Promise<void> {

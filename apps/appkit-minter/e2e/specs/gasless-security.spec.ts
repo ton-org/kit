@@ -22,7 +22,7 @@ import { gaslessMeta } from '../qa/allure-meta';
 import type { MinterPage } from '../pages/MinterPage';
 
 /**
- * §6 / §11 — relayer-error handling, driven by mocking the gasless endpoints.
+ * Relayer-error handling, driven by mocking the gasless endpoints.
  * The wallet connects (signing is local and free); the relayer is faked so the
  * dApp's guards and error rendering run deterministically with no on-chain send.
  *
@@ -49,7 +49,7 @@ test.describe('Relayer error handling (two-tab wallet, mocked relayer)', () => {
         widget,
         wallet,
     }) => {
-        await gaslessMeta('Relayer errors', '§11.1');
+        await gaslessMeta('Relayer errors');
         const XSS = '<img src=x onerror=window.__xss=1><script>window.__xss2=1</script>';
         let dialogFired = false;
         app.on('dialog', async (d) => {
@@ -75,7 +75,7 @@ test.describe('Relayer error handling (two-tab wallet, mocked relayer)', () => {
     });
 
     test('Estimate HTTP 400 — quote error shown, send stays blocked', async ({ app, minter, widget, wallet }) => {
-        await gaslessMeta('Relayer errors', '§6.1');
+        await gaslessMeta('Relayer errors');
         await test.step('Mock config and estimate error (HTTP 400)', async () => {
             await mockGaslessConfig(app, { assets: [USDT_MASTER] });
             await mockGaslessEstimateError(app, {
@@ -101,7 +101,7 @@ test.describe('Relayer error handling (two-tab wallet, mocked relayer)', () => {
         widget,
         wallet,
     }) => {
-        await gaslessMeta('Relayer errors', '§6.2');
+        await gaslessMeta('Relayer errors');
         const pageErrors: string[] = [];
         await test.step('Mock config and a non-JSON estimate response', async () => {
             app.on('pageerror', (e) => pageErrors.push(e.message));
@@ -119,7 +119,7 @@ test.describe('Relayer error handling (two-tab wallet, mocked relayer)', () => {
     });
 
     test('Send HTTP 500 — error shown, form recovers (quote re-requested)', async ({ app, minter, widget, wallet }) => {
-        await gaslessMeta('Relayer errors', '§6.5');
+        await gaslessMeta('Relayer errors');
         const capture: SendCapture = { requests: [] };
         await test.step('Mock config, a successful estimate and a send error (HTTP 500)', async () => {
             await mockGaslessConfig(app, { assets: [USDT_MASTER] });
@@ -151,7 +151,7 @@ test.describe('Relayer error handling (two-tab wallet, mocked relayer)', () => {
         widget,
         wallet,
     }) => {
-        await gaslessMeta('Relayer errors', '§11.2');
+        await gaslessMeta('Relayer errors');
         await test.step('Mock config and estimate with a foreign `from` address', async () => {
             await mockGaslessConfig(app, { assets: [USDT_MASTER] });
             // `from` is a different address than the connected wallet → mismatch guard.
@@ -170,7 +170,7 @@ test.describe('Relayer error handling (two-tab wallet, mocked relayer)', () => {
     });
 
     test('QUOTE_EXPIRED — a stale quote is rejected before signing', async ({ app, minter, widget, wallet }) => {
-        await gaslessMeta('Relayer errors', '§11.3');
+        await gaslessMeta('Relayer errors');
         await test.step('Mock config and an already expired estimate quote', async () => {
             await mockGaslessConfig(app, { assets: [USDT_MASTER] });
             await mockGaslessEstimateOk(app, { validForSeconds: -60 }); // already expired
@@ -192,7 +192,7 @@ test.describe('Relayer error handling (two-tab wallet, mocked relayer)', () => {
         widget,
         wallet,
     }) => {
-        await gaslessMeta('Relayer errors', '§11.14');
+        await gaslessMeta('Relayer errors');
         await test.step('Mock config and an estimate whose `from` is not a valid address', async () => {
             await mockGaslessConfig(app, { assets: [USDT_MASTER] });
             // an unparseable `from` makes quote mapping fail → quote error, never a usable quote

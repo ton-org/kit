@@ -63,7 +63,7 @@ jobs:
       - name: Run appkit-minter e2e (exclude real-send)
         run: |
           cd apps/appkit-minter
-          xvfb-run npx playwright test --config e2e.config.ts --retries=3 --grep-invert "@real-send"
+          xvfb-run npx playwright test --config e2e.config.ts --grep-invert "@real-send"
         env:
           # SignMessage-capable demo wallet imported by the two-tab fixture. Used
           # only to sign locally — the relayer is mocked, so no funds are spent.
@@ -88,27 +88,10 @@ jobs:
           # appkit-minter TestOps project (368).
           ALLURE_PROJECT_ID: ${{ secrets.ALLURE_MINTER_PROJECT_ID }}
 
-      - name: Generate Allure HTML report
-        if: always()
-        run: |
-          curl -fsSL https://github.com/allure-framework/allure2/releases/download/2.42.1/allure-2.42.1.tgz \
-            -o /tmp/allure.tgz
-          tar -xzf /tmp/allure.tgz -C /tmp
-          /tmp/allure-2.42.1/bin/allure generate apps/appkit-minter/allure-results \
-            -o apps/appkit-minter/allure-report --clean
-
-      - name: Upload Allure HTML report
+      - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: allure-report-appkit-minter
-          path: apps/appkit-minter/allure-report/
-          retention-days: 7
-
-      - name: Upload Playwright artifacts (traces + screenshots on failure)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-artifacts-appkit-minter
+          name: playwright-report-appkit-minter
           path: apps/appkit-minter/test-results/
           retention-days: 3

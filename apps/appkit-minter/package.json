@@ -13,7 +13,7 @@
     "clean": "git clean -xdf .cache .turbo dist node_modules allure-results playwright-report test-results",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
     "e2e:deps": "playwright install --with-deps",
-    "e2e": "playwright test --config e2e.config.ts --retries=3",
+    "e2e": "playwright test --config e2e.config.ts",
     "e2e:headed": "playwright test --config e2e.config.ts --headed"
   },
   "dependencies": {

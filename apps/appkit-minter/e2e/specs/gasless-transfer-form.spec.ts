@@ -14,8 +14,8 @@ import { gaslessMeta } from '../qa/allure-meta';
 import { mockGaslessConfig, mockGaslessEstimateOk, USDT_MASTER } from '../mocks/gaslessRelayer';
 
 /**
- * §2 / §4 / §7 / §8 — газлесс-блок и состояние формы перевода (без отправки).
- * Релеер замокан; тесты проверяют только UI-состояния модалки перевода.
+ * Gasless block and transfer-form state (without sending).
+ * The relayer is mocked; these tests only verify the UI states of the transfer modal.
  */
 const test = testWithGaslessFixture({
     appUrl: process.env.MINTER_URL ?? 'http://localhost:5174/',
@@ -23,7 +23,7 @@ const test = testWithGaslessFixture({
 
 test.describe('Gasless transfer form — states', () => {
     test('Fee asset selector is hidden while Gasless is off', async ({ app, minter, widget, wallet }) => {
-        await gaslessMeta('Transfer', '§2.1');
+        await gaslessMeta('Transfer');
         await mockGaslessConfig(app, { assets: [USDT_MASTER] });
         await test.step('Connect Wallet and open USDT transfer (Gasless off)', async () => {
             await connectWallet({ widget, wallet });
@@ -36,7 +36,7 @@ test.describe('Gasless transfer form — states', () => {
     });
 
     test('Fee asset selector appears when Gasless is enabled', async ({ app, minter, widget, wallet }) => {
-        await gaslessMeta('Transfer', '§2.2');
+        await gaslessMeta('Transfer');
         await mockGaslessConfig(app, { assets: [USDT_MASTER] });
         await test.step('Connect Wallet, open USDT transfer and enable Gasless', async () => {
             await connectWallet({ widget, wallet });
@@ -54,7 +54,7 @@ test.describe('Gasless transfer form — states', () => {
         widget,
         wallet,
     }) => {
-        await gaslessMeta('Transfer', '§4.1');
+        await gaslessMeta('Transfer');
         await mockGaslessConfig(app, { assets: [USDT_MASTER] });
         await test.step('Connect Wallet, open USDT transfer and fill the fields', async () => {
             await connectWallet({ widget, wallet });
@@ -68,7 +68,7 @@ test.describe('Gasless transfer form — states', () => {
     });
 
     test('Recipient and amount are preserved when Gasless is enabled', async ({ app, minter, widget, wallet }) => {
-        await gaslessMeta('Transfer', '§8.4');
+        await gaslessMeta('Transfer');
         await mockGaslessConfig(app, { assets: [USDT_MASTER] });
         await mockGaslessEstimateOk(app);
         await test.step('Connect Wallet, open USDT transfer and fill the fields', async () => {
@@ -84,7 +84,7 @@ test.describe('Gasless transfer form — states', () => {
     });
 
     test('Toggling Gasless back and forth does not break the form', async ({ app, minter, widget, wallet }) => {
-        await gaslessMeta('Transfer', '§8.3');
+        await gaslessMeta('Transfer');
         await mockGaslessConfig(app, { assets: [USDT_MASTER] });
         await mockGaslessEstimateOk(app);
         await test.step('Connect Wallet, open USDT transfer and fill the fields', async () => {
@@ -107,7 +107,7 @@ test.describe('Gasless transfer form — states', () => {
     });
 
     test('Closing via "Cancel" resets the form on reopen', async ({ app, minter, widget, wallet }) => {
-        await gaslessMeta('Transfer', '§7.1');
+        await gaslessMeta('Transfer');
         await mockGaslessConfig(app, { assets: [USDT_MASTER] });
         await test.step('Connect Wallet, open USDT transfer and fill the recipient', async () => {
             await connectWallet({ widget, wallet });
@@ -122,13 +122,13 @@ test.describe('Gasless transfer form — states', () => {
         });
     });
 
-    // §2.5 (USDT-absent → first asset auto-selected) needs the relayer /config mocked
+    // The "USDT absent → first asset auto-selected" case needs the relayer /config mocked
     // BEFORE the app's eager on-load fetch (which otherwise caches the real config that
     // includes USDT). That requires a pre-navigation route hook in the fixture — tracked
     // in the backlog; the post-goto mock here can't override the cached config.
 
     test('No quote is requested while inputs are incomplete', async ({ app, minter, widget, wallet }) => {
-        await gaslessMeta('Transfer', '§3.1');
+        await gaslessMeta('Transfer');
         const estimates: string[] = [];
         await mockGaslessConfig(app, { assets: [USDT_MASTER] });
         await mockGaslessEstimateOk(app, { capture: estimates });
@@ -151,7 +151,7 @@ test.describe('Gasless transfer form — states', () => {
         widget,
         wallet,
     }) => {
-        await gaslessMeta('Transfer', '§4.2');
+        await gaslessMeta('Transfer');
         await mockGaslessConfig(app, { assets: [USDT_MASTER] });
         await mockGaslessEstimateOk(app, { delayMs: 4000 }); // slow quote → observable "Quoting…"
         await test.step('Connect Wallet, open USDT transfer, enable Gasless and fill the fields', async () => {
@@ -170,7 +170,7 @@ test.describe('Gasless transfer form — states', () => {
     });
 
     test('Changing the amount re-requests the quote', async ({ app, minter, widget, wallet }) => {
-        await gaslessMeta('Transfer', '§3.4');
+        await gaslessMeta('Transfer');
         const estimates: string[] = [];
         await mockGaslessConfig(app, { assets: [USDT_MASTER] });
         await mockGaslessEstimateOk(app, { capture: estimates });
@@ -190,7 +190,7 @@ test.describe('Gasless transfer form — states', () => {
     });
 
     test('Changing the recipient re-requests the quote', async ({ app, minter, widget, wallet }) => {
-        await gaslessMeta('Transfer', '§3.5');
+        await gaslessMeta('Transfer');
         const estimates: string[] = [];
         await mockGaslessConfig(app, { assets: [USDT_MASTER] });
         await mockGaslessEstimateOk(app, { capture: estimates });
@@ -211,7 +211,7 @@ test.describe('Gasless transfer form — states', () => {
     });
 
     test('Closing via Escape resets the form on reopen', async ({ app, minter, widget, wallet }) => {
-        await gaslessMeta('Transfer', '§7.3');
+        await gaslessMeta('Transfer');
         await mockGaslessConfig(app, { assets: [USDT_MASTER] });
         await test.step('Connect Wallet, open USDT transfer and fill the fields', async () => {
             await connectWallet({ widget, wallet });

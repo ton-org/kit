@@ -18,7 +18,7 @@ import type { SendCapture } from '../mocks/gaslessRelayer';
 const NOT_MASTER = 'EQAvlWFDxGF2lXm67y4yzC17wYKD9A0guwPkMs1gOsM__NOT';
 
 /**
- * §11.6 / §11.7 — concurrency guards on the gasless transfer form, with the
+ * Concurrency guards on the gasless transfer form, with the
  * relayer mocked (no broadcast).
  */
 const test = testWithGaslessFixture({
@@ -32,7 +32,7 @@ test.describe('Gasless transfer races (two-tab wallet, mocked relayer)', () => {
         widget,
         wallet,
     }) => {
-        await gaslessMeta('Races', '§11.6');
+        await gaslessMeta('Races');
         const capture: SendCapture = { requests: [] };
         await test.step('Mock the relayer and fill the gasless transfer', async () => {
             await mockGaslessConfig(app, { assets: [USDT_MASTER] });
@@ -68,7 +68,7 @@ test.describe('Gasless transfer races (two-tab wallet, mocked relayer)', () => {
         widget,
         wallet,
     }) => {
-        await gaslessMeta('Races', '§11.7');
+        await gaslessMeta('Races');
         const estimates: string[] = [];
         await test.step('Mock the relayer with two assets and fill the gasless transfer', async () => {
             await mockGaslessConfig(app, { assets: [USDT_MASTER, NOT_MASTER] });

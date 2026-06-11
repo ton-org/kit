@@ -12,7 +12,7 @@ import { MinterPage } from '../pages/MinterPage';
 import { gaslessMeta } from '../qa/allure-meta';
 
 /**
- * §1 — Gasless availability.
+ * Gasless availability.
  *
  * NB: the appkit-minter transfer modal is reached via the Assets list, which is
  * EMPTY until a wallet is connected. So the "gasless block visible/hidden" checks
@@ -23,7 +23,7 @@ import { gaslessMeta } from '../qa/allure-meta';
 // --- wallet-less: Assets empty state renders without crashing ---
 base.describe('Availability (no wallet)', () => {
     base('Assets list shows empty state without a connected wallet (no crash)', async ({ page }) => {
-        await gaslessMeta('Availability', '§1.4');
+        await gaslessMeta('Availability');
         const pageErrors: string[] = [];
         await base.step('Open the jettons list without a connected wallet', async () => {
             page.on('pageerror', (e) => pageErrors.push(e.message));
@@ -46,7 +46,7 @@ const test = testWithGaslessFixture({
 
 test.describe('Availability (two-tab wallet)', () => {
     test('No Gasless block in the TON transfer modal', async ({ minter, widget, wallet }) => {
-        await gaslessMeta('Availability', '§1.1');
+        await gaslessMeta('Availability');
         await test.step('Connect wallet and open TON transfer', async () => {
             await connectWallet({ widget, wallet });
             await minter.openTransfer('Toncoin');
@@ -57,7 +57,7 @@ test.describe('Availability (two-tab wallet)', () => {
     });
 
     test('Jetton transfer — Gasless checkbox enabled for a SignMessage wallet', async ({ minter, widget, wallet }) => {
-        await gaslessMeta('Availability', '§1.2/§1.5');
+        await gaslessMeta('Availability');
         await test.step('Connect wallet and open USDT transfer', async () => {
             await connectWallet({ widget, wallet });
             await minter.openTransfer('Tether USD');

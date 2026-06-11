@@ -14,7 +14,7 @@ import { mockGaslessConfig, mockGaslessEstimateOk, USDT_MASTER } from '../mocks/
 import { gaslessMeta } from '../qa/allure-meta';
 
 /**
- * §11.10 / §11.11 — transfer-form input edge cases under gasless. The relayer is
+ * Transfer-form input edge cases under gasless. The relayer is
  * mocked so any failure is attributable to the input, not the network.
  */
 const test = testWithGaslessFixture({
@@ -28,7 +28,7 @@ test.describe('Transfer-form input edge cases (two-tab wallet, mocked relayer)',
         widget,
         wallet,
     }) => {
-        await gaslessMeta('Input', '§11.10');
+        await gaslessMeta('Input');
         await test.step('Mock relayer config and estimate', async () => {
             await mockGaslessConfig(app, { assets: [USDT_MASTER] });
             await mockGaslessEstimateOk(app);
@@ -52,7 +52,7 @@ test.describe('Transfer-form input edge cases (two-tab wallet, mocked relayer)',
         widget,
         wallet,
     }) => {
-        await gaslessMeta('Input', '§11.11');
+        await gaslessMeta('Input');
         await test.step('Mock relayer config and estimate', async () => {
             await mockGaslessConfig(app, { assets: [USDT_MASTER] });
             await mockGaslessEstimateOk(app);

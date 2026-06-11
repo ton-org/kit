@@ -15,7 +15,7 @@ import { mockGaslessConfig, mockGaslessEstimateOk, mockGaslessSendOk, USDT_MASTE
 import type { SendCapture } from '../mocks/gaslessRelayer';
 
 /**
- * §1–§6 — gasless jetton transfer via the demo wallet (two-tab fixture).
+ * Gasless jetton transfer via the demo wallet (two-tab fixture).
  * Requires WALLET_MNEMONIC (V5 wallet with SignMessage holding the jetton). The relayer
  * is mocked — no funds are spent and TonAPI is not hit; the exception is the test tagged
  * `@real-send`, which actually broadcasts to mainnet (manual run only).
@@ -31,7 +31,7 @@ test.describe('Gasless jetton transfer', () => {
         widget,
         wallet,
     }) => {
-        await gaslessMeta('Transfer', '§2.4/§3.2/§3.3');
+        await gaslessMeta('Transfer');
         await mockGaslessConfig(app, { assets: [USDT_MASTER] });
         await mockGaslessEstimateOk(app);
 
@@ -48,7 +48,7 @@ test.describe('Gasless jetton transfer', () => {
     });
 
     test('Relayer request is built correctly (without a real send)', async ({ app, minter, widget, wallet }) => {
-        await gaslessMeta('Transfer', '§5.4');
+        await gaslessMeta('Transfer');
         const capture: SendCapture = { requests: [] };
         await mockGaslessConfig(app, { assets: [USDT_MASTER] });
         await mockGaslessEstimateOk(app);
@@ -73,7 +73,7 @@ test.describe('Gasless jetton transfer', () => {
     });
 
     test('Sign rejection in the wallet — form recovers, error is shown', async ({ app, minter, widget, wallet }) => {
-        await gaslessMeta('Transfer', '§6.3');
+        await gaslessMeta('Transfer');
         await mockGaslessConfig(app, { assets: [USDT_MASTER] });
         await mockGaslessEstimateOk(app);
 
@@ -100,7 +100,7 @@ test.describe('Gasless jetton transfer', () => {
 // --- real on-chain send (mainnet) — manual run only, broadcasts funds ---
 test.describe('Gasless jetton transfer (real send) @real-send', () => {
     test('Successful gasless send goes through on-chain', async ({ app, minter, widget, wallet }) => {
-        await gaslessMeta('Transfer', '§5.1/§5.2');
+        await gaslessMeta('Transfer');
         await test.step('Connect wallet and fill the gasless transfer', async () => {
             await connectWallet({ widget, wallet });
             await minter.openTransfer('Tether USD');

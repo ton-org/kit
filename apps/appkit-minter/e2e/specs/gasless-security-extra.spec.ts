@@ -20,9 +20,9 @@ import {
 import type { SendCapture } from '../mocks/gaslessRelayer';
 
 /**
- * §6.4 — устойчивость к временной ошибке релеера: первая отправка отвечает 503,
- * SDK повторяет запрос. Проверяем сам факт ретрая по числу запросов (без реальной
- * сети). Релеер замокан.
+ * Resilience to a transient relayer error: the first send responds 503,
+ * and the SDK retries the request. We verify the retry happens by counting
+ * requests (without a real network). The relayer is mocked.
  */
 const test = testWithGaslessFixture({
     appUrl: process.env.MINTER_URL ?? 'http://localhost:5174/',
@@ -30,7 +30,7 @@ const test = testWithGaslessFixture({
 
 test.describe('Gasless transfer — resilience to relayer errors', () => {
     test('Transient send error (503) triggers a retry request', async ({ app, minter, widget, wallet }) => {
-        await gaslessMeta('Relayer errors', '§6.4');
+        await gaslessMeta('Relayer errors');
         const capture: SendCapture = { requests: [] };
         await mockGaslessConfig(app, { assets: [USDT_MASTER] });
         await mockGaslessEstimateOk(app);

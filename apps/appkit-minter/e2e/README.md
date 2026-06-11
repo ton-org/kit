@@ -30,13 +30,16 @@ apps/appkit-minter/
       gaslessFixture.ts      two-tab fixture (minter + demo wallet) + connectWallet()
     specs/                   (all gasless-prefixed so they sit alongside the
                              existing general minter UI specs without colliding)
-      gasless-availability.spec.ts   §1  — gasless block visibility
-      gasless-error-scenarios.spec.ts §11 — relayer error rendering on load (no wallet)
-      gasless-transfer.spec.ts        §2/§3/§5/§6 — gasless jetton transfer
-      gasless-mint.spec.ts            §9  — gasless NFT mint (settings/confirm/reject)
-      gasless-security.spec.ts        §6/§11 — relayer errors, WALLET_MISMATCH, QUOTE_EXPIRED
-      gasless-input-edges.spec.ts     §11.10/§11.11 — malformed recipient, empty amount, inert HTML
-      gasless-races.spec.ts           §11.6/§11.7 — double-submit guard, fee-asset re-quote
+      gasless-availability.spec.ts    gasless block visibility
+      gasless-error-scenarios.spec.ts relayer error rendering on load (no wallet)
+      gasless-transfer.spec.ts        gasless jetton transfer (quote + send)
+      gasless-transfer-form.spec.ts   transfer form states (toggle, re-quote, reset)
+      gasless-mint.spec.ts            gasless NFT mint (settings/confirm/reject)
+      gasless-mint-extra.spec.ts      additional mint states (cancel, quote-loading)
+      gasless-security.spec.ts        relayer errors, WALLET_MISMATCH, QUOTE_EXPIRED, XSS
+      gasless-security-extra.spec.ts  resilience to a transient relayer error (retry)
+      gasless-input-edges.spec.ts     malformed recipient, empty amount, inert HTML
+      gasless-races.spec.ts           double-submit guard, fee-asset re-quote
 ```
 
 > The `qa/` and `wallet/` helpers are duplicated from `demo-wallet/e2e` for now so
@@ -64,7 +67,7 @@ Why code-defined (vs. describing steps directly in TestOps):
 The only real downside — slightly less rich step formatting — is outweighed by
 zero drift across a fast-moving feature. `detail: false` in the Allure reporter
 keeps the TestOps scenario clean (only our `test.step` labels; no Playwright
-hook/fixture noise). Plan traceability is preserved via a `§x.y` tag per test.
+hook/fixture noise).
 
 ## Testing approaches
 
@@ -94,16 +97,16 @@ pnpm --filter appkit-minter e2e:deps
 
 # --- no-wallet specs only (no mnemonic needed) ---
 # the demo-wallet server is skipped when no wallet is required
-E2E_WALLET_SOURCE=none pnpm --filter appkit-minter e2e -- --grep "no wallet"
+E2E_WALLET_SOURCE=none pnpm --filter appkit-minter e2e --grep "no wallet"
 
 # --- all gate specs (two-tab wallet, mocked relayer) ---
 # build BOTH chains so the minter (5174) and the demo wallet (5173) dev servers run
 pnpm --filter "appkit-minter..." --filter "demo-wallet..." build
 # a SignMessage-capable mainnet V5 wallet that holds the test jetton (e.g. USDT)
-WALLET_MNEMONIC="word1 word2 …" pnpm --filter appkit-minter e2e -- --grep-invert "@real-send"
+WALLET_MNEMONIC="word1 word2 …" pnpm --filter appkit-minter e2e --grep-invert "@real-send"
 
 # --- real-send specs (broadcasts real funds on mainnet) ---
-WALLET_MNEMONIC="word1 word2 …" pnpm --filter appkit-minter e2e -- --grep "@real-send"
+WALLET_MNEMONIC="word1 word2 …" pnpm --filter appkit-minter e2e --grep "@real-send"
 ```
 
 Useful env vars:
@@ -129,12 +132,11 @@ the minter PR.
 
 `tx-formation` correctness is still covered in CI without broadcasting: the
 `/v2/gasless/send` mock captures the request body and the spec asserts a public
-key + non-empty signed BoC — see `gasless-transfer.spec.ts` §5.4 and
-`gasless-races.spec.ts`.
+key + non-empty signed BoC — see `gasless-transfer.spec.ts` and `gasless-races.spec.ts`.
 
-The `@real-send` specs (`gasless-transfer.spec.ts` §5.1, `gasless-mint.spec.ts`)
+The `@real-send` specs (in `gasless-transfer.spec.ts` and `gasless-mint.spec.ts`)
 **do broadcast** real mainnet transactions and are therefore **not run in CI** —
-they exist for manual/local real-send verification (`pnpm e2e -- --grep "@real-send"`).
+they exist for manual/local real-send verification (`pnpm e2e --grep "@real-send"`).
 A scheduled-monitor workflow that would run them against the live relayer was
 considered out of scope here (kept as a QA-side snippet, not in this repo).
 

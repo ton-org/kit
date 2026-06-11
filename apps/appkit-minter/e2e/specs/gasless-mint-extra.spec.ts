@@ -16,7 +16,7 @@ import { mockGaslessConfig, mockGaslessEstimateOk, USDT_MASTER } from '../mocks/
 const NOT_MASTER = 'EQAvlWFDxGF2lXm67y4yzC17wYKD9A0guwPkMs1gOsM__NOT';
 
 /**
- * §9 — additional gasless-mint flow states (no send). Relayer is mocked.
+ * Additional gasless-mint flow states (no send). Relayer is mocked.
  */
 const test = testWithGaslessFixture({
     appUrl: process.env.MINTER_URL ?? 'http://localhost:5174/',
@@ -29,7 +29,7 @@ test.describe('Gasless Mint — additional states', () => {
         widget,
         wallet,
     }) => {
-        await gaslessMeta('Mint', '§9.6');
+        await gaslessMeta('Mint');
         await test.step('Connect wallet, generate card and open Confirm (Gasless disabled)', async () => {
             await connectWallet({ widget, wallet });
             await minter.generateCard();
@@ -44,7 +44,7 @@ test.describe('Gasless Mint — additional states', () => {
     });
 
     test('Gasless setting persists when mint settings are reopened', async ({ app, minter, widget, wallet }) => {
-        await gaslessMeta('Mint', '§9.16');
+        await gaslessMeta('Mint');
         await mockGaslessConfig(app, { assets: [USDT_MASTER] });
         await mockGaslessEstimateOk(app);
         await test.step('Connect wallet, generate card and enable Gasless in settings', async () => {
@@ -59,7 +59,7 @@ test.describe('Gasless Mint — additional states', () => {
     });
 
     test('Changing the fee asset in Confirm updates the selected value', async ({ app, minter, widget, wallet }) => {
-        await gaslessMeta('Mint', '§9.8');
+        await gaslessMeta('Mint');
         await mockGaslessConfig(app, { assets: [USDT_MASTER, NOT_MASTER] });
         await mockGaslessEstimateOk(app);
         await test.step('Connect wallet, generate card, enable Gasless and open Confirm', async () => {
@@ -76,7 +76,7 @@ test.describe('Gasless Mint — additional states', () => {
     });
 
     test('Cancelling Mint settings without Save keeps the previous state', async ({ app, minter, widget, wallet }) => {
-        await gaslessMeta('Mint', '§9.4');
+        await gaslessMeta('Mint');
         await mockGaslessConfig(app, { assets: [USDT_MASTER] });
         await test.step('Connect wallet, generate card, open Mint settings', async () => {
             await connectWallet({ widget, wallet });
@@ -95,7 +95,7 @@ test.describe('Gasless Mint — additional states', () => {
     });
 
     test('Confirm is blocked while the gas-fee quote is loading', async ({ app, minter, widget, wallet }) => {
-        await gaslessMeta('Mint', '§9.9');
+        await gaslessMeta('Mint');
         await mockGaslessConfig(app, { assets: [USDT_MASTER] });
         await mockGaslessEstimateOk(app, { delayMs: 4000 }); // slow quote → confirm stays disabled while loading
         await test.step('Connect wallet, generate card, enable Gasless and open Confirm', async () => {
