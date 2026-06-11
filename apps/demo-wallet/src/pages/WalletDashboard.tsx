@@ -24,10 +24,10 @@ import {
     TransactionRequestModal,
     SignDataRequestModal,
     SignMessageRequestModal,
-    NftsCard,
 } from '../components';
 
 import { NewLayout } from '@/core/components/shared/new-layout';
+import { NftsCard } from '@/features/nft';
 import { usePasteHandler } from '@/core/hooks/use-paste-handler';
 
 export const WalletDashboard: React.FC = () => {

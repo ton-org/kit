@@ -14,7 +14,6 @@ export { JettonsCard } from './JettonsCard';
 export { JettonRow } from './JettonRow';
 export { JettonsList } from './JettonsList';
 export { Modal } from '@/core/components/ui/modal';
-export { NftsCard } from './NftsCard';
 export { DashboardHeader } from './DashboardHeader';
 export { BalanceTotal } from './BalanceTotal';
 export { DashboardActionButton } from './DashboardActionButton';
