@@ -13,7 +13,8 @@ import { useWalletStore, useWallet } from '@demo/wallet-core';
 import { ProtectedRoute } from './protected-route';
 
 import { LoaderCircle } from '@/components/LoaderCircle';
-import { WalletDashboard, TonConnectRoute } from '@/pages';
+import { WalletDashboard } from '@/pages';
+import { TonConnectRoute } from '@/features/ton-connect';
 import { TracePage, TransactionDetail } from '@/features/transactions';
 import { Staking } from '@/features/staking';
 import { Swap } from '@/features/swap';

@@ -13,8 +13,8 @@ import { getTransactionExplorerUrls, useTransactionRequests } from '@demo/wallet
 import type { SavedWallet } from '@demo/wallet-core';
 import { toast } from 'sonner';
 
-import { RequestModal } from './RequestModal';
-import { TransactionRequestDetails } from './TransactionRequestDetails';
+import { RequestModal } from '../request-modal';
+import { TransactionRequestDetails } from '../transaction-request-details';
 
 import { useActiveWalletNetwork } from '@/features/jettons';
 

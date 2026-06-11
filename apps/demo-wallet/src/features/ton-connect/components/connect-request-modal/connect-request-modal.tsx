@@ -12,10 +12,10 @@ import { getNetworkType, getNetworkLabel } from '@demo/wallet-core';
 import type { SavedWallet } from '@demo/wallet-core';
 import { toast } from 'sonner';
 
-import { Button } from './Button';
-import { DAppInfo } from './DAppInfo';
-import { WalletPreview } from './WalletPreview';
+import { DAppInfo } from '../dapp-info';
 
+import { Button } from '@/components/Button';
+import { WalletPreview } from '@/components/WalletPreview';
 import { createComponentLogger } from '@/core/lib/logger';
 
 // Create logger for connect request modal

@@ -15,17 +15,14 @@ import {
     useSignMessageRequests,
 } from '@demo/wallet-core';
 
+import { DashboardHeader, BalanceTotal, DashboardActions, DashboardAssets } from '../components';
+
 import {
-    DashboardHeader,
-    BalanceTotal,
-    DashboardActions,
-    DashboardAssets,
     ConnectRequestModal,
     TransactionRequestModal,
     SignDataRequestModal,
     SignMessageRequestModal,
-} from '../components';
-
+} from '@/features/ton-connect';
 import { NewLayout } from '@/core/components/shared/new-layout';
 import { NftsCard } from '@/features/nft';
 import { usePasteHandler } from '@/core/hooks/use-paste-handler';

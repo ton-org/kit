@@ -9,8 +9,7 @@
 import React, { useCallback, useState } from 'react';
 import { useTonConnect } from '@demo/wallet-core';
 
-import { Button } from './Button';
-
+import { Button } from '@/components/Button';
 import { Modal } from '@/core/components/ui/modal';
 
 interface ConnectDappModalProps {

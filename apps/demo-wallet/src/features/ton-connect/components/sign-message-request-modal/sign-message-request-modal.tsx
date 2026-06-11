@@ -11,8 +11,8 @@ import type { SignMessageRequestEvent } from '@ton/walletkit';
 import type { SavedWallet } from '@demo/wallet-core';
 import { useSignMessageRequests } from '@demo/wallet-core';
 
-import { RequestModal } from './RequestModal';
-import { TransactionRequestDetails } from './TransactionRequestDetails';
+import { RequestModal } from '../request-modal';
+import { TransactionRequestDetails } from '../transaction-request-details';
 
 interface SignMessageRequestModalProps {
     request: SignMessageRequestEvent;

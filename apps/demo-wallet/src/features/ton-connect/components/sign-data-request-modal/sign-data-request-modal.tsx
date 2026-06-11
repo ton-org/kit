@@ -11,11 +11,11 @@ import type { SignDataRequestEvent } from '@ton/walletkit';
 import type { SavedWallet } from '@demo/wallet-core';
 import { useAuth } from '@demo/wallet-core';
 
-import { Button } from './Button';
-import { DAppInfo } from './DAppInfo';
-import { WalletPreview } from './WalletPreview';
-import { HoldToSignButton } from './HoldToSignButton';
+import { DAppInfo } from '../dapp-info';
 
+import { Button } from '@/components/Button';
+import { WalletPreview } from '@/components/WalletPreview';
+import { HoldToSignButton } from '@/components/HoldToSignButton';
 import { createComponentLogger } from '@/core/lib/logger';
 import { Card } from '@/core/components/ui/card';
 

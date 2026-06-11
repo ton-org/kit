@@ -12,8 +12,8 @@ import { useWallet } from '@demo/wallet-core';
 
 import { SettingsDropdown } from './SettingsDropdown';
 import { WalletSelectorModal } from './WalletSelectorModal';
-import { ConnectDappModal } from './ConnectDappModal';
 
+import { ConnectDappModal } from '@/features/ton-connect';
 import { ScanIcon } from '@/core/components/ui/icons';
 
 export const DashboardHeader: React.FC = () => {

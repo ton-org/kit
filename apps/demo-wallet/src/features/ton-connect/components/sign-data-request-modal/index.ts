@@ -6,4 +6,4 @@
  *
  */
 
-export * from './WalletDashboard';
+export * from './sign-data-request-modal';

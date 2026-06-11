@@ -12,10 +12,9 @@ import { useAuth, useWalletKit, useWalletStore } from '@demo/wallet-core';
 import type { SavedWallet } from '@demo/wallet-core';
 import { toast } from 'sonner';
 
-import { Button } from './Button';
-import { HoldToSignButton } from './HoldToSignButton';
-import { SuccessCard } from './SuccessCard';
-
+import { Button } from '@/components/Button';
+import { HoldToSignButton } from '@/components/HoldToSignButton';
+import { SuccessCard } from '@/components/SuccessCard';
 import { JettonFlow } from '@/features/jettons';
 import { createComponentLogger } from '@/core/lib/logger';
 

@@ -6,4 +6,4 @@
  *
  */
 
-export * from './WalletDashboard';
+export * from './connect-request-modal';
