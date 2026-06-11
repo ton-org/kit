@@ -15,7 +15,7 @@ import type { NetworkType } from '@demo/wallet-core';
 import { CenteredScreen } from '@/core/components/shared/centered-screen';
 import { Button } from '@/core/components/ui/button';
 import { NetworkSelector } from '@/features/wallets';
-import { useTonWallet } from '@/hooks';
+import { useTonWallet } from '@/core/hooks';
 
 /** Dedicated screen for connecting a Ledger hardware wallet. */
 export const LedgerScreen: React.FC = () => {

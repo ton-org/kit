@@ -10,7 +10,7 @@ import React, { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTonConnect } from '@demo/wallet-core';
 
-import { LoaderCircle } from '@/components/LoaderCircle';
+import { LoaderCircle } from '@/core/components/ui/loader-circle';
 import { createComponentLogger } from '@/core/lib/logger';
 import { Layout } from '@/core/components/shared/layout';
 

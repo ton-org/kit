@@ -9,3 +9,5 @@
 export * from './use-count-up';
 export * from './use-media-query';
 export * from './use-paste-handler';
+export * from './use-ton-wallet';
+export * from './use-wallet-data-updater';

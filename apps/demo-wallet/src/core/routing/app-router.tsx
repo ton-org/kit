@@ -12,7 +12,7 @@ import { useWalletStore, useWallet } from '@demo/wallet-core';
 
 import { ProtectedRoute } from './protected-route';
 
-import { LoaderCircle } from '@/components/LoaderCircle';
+import { LoaderCircle } from '@/core/components/ui/loader-circle';
 import { WalletDashboard } from '@/features/dashboard';
 import { TonConnectRoute } from '@/features/ton-connect';
 import { TracePage, TransactionDetail } from '@/features/transactions';
@@ -22,7 +22,7 @@ import { SendTransaction } from '@/features/send';
 import { SetupPasswordScreen, UnlockScreen } from '@/features/auth';
 import { LedgerScreen } from '@/features/ledger';
 import { WelcomeScreen, CreateWalletScreen, ImportWalletScreen } from '@/features/wallet-setup';
-import { useWalletDataUpdater } from '@/hooks/useWalletDataUpdater';
+import { useWalletDataUpdater } from '@/core/hooks/use-wallet-data-updater';
 import { useReceivedToasts } from '@/features/notifications';
 import { Button } from '@/components/Button';
 

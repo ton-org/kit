@@ -15,7 +15,7 @@ import { DAppInfo } from '../dapp-info';
 
 import { Button } from '@/components/Button';
 import { WalletPreview } from '@/features/wallets';
-import { HoldToSignButton } from '@/components/HoldToSignButton';
+import { HoldToSignButton } from '@/core/components/ui/hold-to-sign-button';
 import { createComponentLogger } from '@/core/lib/logger';
 import { Card } from '@/core/components/ui/card';
 

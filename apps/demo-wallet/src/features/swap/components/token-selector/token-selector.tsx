@@ -16,7 +16,7 @@ import { USDT_ADDRESS } from '../../constants/swap';
 
 import { cn } from '@/core/lib/utils';
 import { getJettonsImage, getJettonsSymbol } from '@/features/jettons';
-import { CircleLogo } from '@/components/CircleLogo';
+import { CircleLogo } from '@/core/components/ui/circle-logo';
 
 interface TokenSelectorProps {
     selectedToken: SwapToken;

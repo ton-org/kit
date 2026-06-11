@@ -17,8 +17,7 @@ import browser from 'webextension-polyfill';
 import { onMessage } from '@truecarry/webext-bridge/background';
 import { INJECT_CONTENT_SCRIPT, TONCONNECT_BRIDGE_REQUEST } from '@ton/walletkit/bridge';
 
-import { getTonConnectDeviceInfo, getTonConnectWalletManifest } from '../utils/walletManifest';
-
+import { getTonConnectDeviceInfo, getTonConnectWalletManifest } from '@/core/lib/wallet-manifest';
 import { JS_BRIDGE_MESSAGE_TO_BACKGROUND } from '@/core/lib/constants';
 import { SendMessageToExtensionContentFromBackground } from '@/core/lib/extensionBackground';
 import {

@@ -17,8 +17,7 @@ import { ExtensionTransport, injectBridgeCode } from '@ton/walletkit/bridge';
 import type { MessageSender, MessageListener } from '@ton/walletkit/bridge';
 import { onMessage, sendMessage, setNamespace } from '@truecarry/webext-bridge/window';
 
-import { getTonConnectDeviceInfo, getTonConnectWalletManifest } from '../utils/walletManifest';
-
+import { getTonConnectDeviceInfo, getTonConnectWalletManifest } from '@/core/lib/wallet-manifest';
 import {
     JS_BRIDGE_MESSAGE_TO_BACKGROUND,
     JS_BRIDGE_MESSAGE_TO_CONTENT,

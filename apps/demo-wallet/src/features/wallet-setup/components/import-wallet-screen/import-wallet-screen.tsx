@@ -16,7 +16,7 @@ import { Button } from '@/core/components/ui/button';
 import { Segmented } from '@/core/components/ui/segmented';
 import type { SegmentedOption } from '@/core/components/ui/segmented';
 import { NetworkSelector } from '@/features/wallets';
-import { useTonWallet } from '@/hooks';
+import { useTonWallet } from '@/core/hooks';
 import {
     applyMnemonicPaste,
     evaluateBip39Slots,

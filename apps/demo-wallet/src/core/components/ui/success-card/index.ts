@@ -6,5 +6,4 @@
  *
  */
 
-export * from './useTonWallet';
-export * from './useWalletDataUpdater';
+export * from './success-card';

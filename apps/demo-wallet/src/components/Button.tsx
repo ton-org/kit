@@ -8,7 +8,7 @@
 
 import React from 'react';
 
-import { LoaderCircle } from './LoaderCircle';
+import { LoaderCircle } from '@/core/components/ui/loader-circle';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     variant?: 'primary' | 'secondary' | 'danger';

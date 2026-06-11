@@ -13,8 +13,8 @@ import type { SavedWallet } from '@demo/wallet-core';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/Button';
-import { HoldToSignButton } from '@/components/HoldToSignButton';
-import { SuccessCard } from '@/components/SuccessCard';
+import { HoldToSignButton } from '@/core/components/ui/hold-to-sign-button';
+import { SuccessCard } from '@/core/components/ui/success-card';
 import { JettonFlow } from '@/features/jettons';
 import { createComponentLogger } from '@/core/lib/logger';
 
