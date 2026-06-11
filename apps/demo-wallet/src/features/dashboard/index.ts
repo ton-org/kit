@@ -11,6 +11,5 @@ export * from './components/animated-balance';
 export * from './components/balance-total';
 export * from './components/dashboard-action-button';
 export * from './components/dashboard-actions';
-export * from './components/dashboard-asset-row';
 export * from './components/dashboard-assets';
 export * from './components/dashboard-header';

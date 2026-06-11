@@ -12,7 +12,9 @@ import { FallbackImage } from '@/core/components/ui/fallback-image';
 import { useCountUp } from '@/core/hooks/use-count-up';
 import { formatLargeValue } from '@/core/utils';
 
-interface DashboardAssetRowProps {
+/** View-model for a single balance row (TON or a jetton). */
+export interface AssetRowData {
+    id: string;
     /** One or more candidate icon URLs, tried in order until one loads. */
     icon?: string | string[];
     fallbackText: string;
@@ -24,15 +26,7 @@ interface DashboardAssetRowProps {
     fiat?: number;
 }
 
-export const DashboardAssetRow: React.FC<DashboardAssetRowProps> = ({
-    icon,
-    fallbackText,
-    name,
-    symbol,
-    amount,
-    rateLabel,
-    fiat,
-}) => {
+export const AssetRow: React.FC<AssetRowData> = ({ icon, fallbackText, name, symbol, amount, rateLabel, fiat }) => {
     const animatedAmount = useCountUp(amount);
     const animatedFiat = useCountUp(fiat ?? 0);
     const hasFiat = fiat !== undefined;
@@ -69,7 +63,7 @@ export const DashboardAssetRow: React.FC<DashboardAssetRowProps> = ({
     );
 };
 
-export const DashboardAssetRowSkeleton: React.FC = () => (
+export const AssetRowSkeleton: React.FC = () => (
     <div className="flex items-center gap-3 py-2">
         <span className="w-10 h-10 rounded-full bg-gray-100 animate-pulse flex-shrink-0" />
         <div className="flex-1 min-w-0 space-y-1.5">

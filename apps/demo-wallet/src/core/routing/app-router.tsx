@@ -14,6 +14,7 @@ import { ProtectedRoute } from './protected-route';
 
 import { LoaderCircle } from '@/core/components/ui/loader-circle';
 import { WalletDashboard } from '@/features/dashboard';
+import { AssetsScreen } from '@/features/assets';
 import { TonConnectRoute } from '@/features/ton-connect';
 import { TracePage, TransactionDetail } from '@/features/transactions';
 import { Staking } from '@/features/staking';
@@ -118,6 +119,14 @@ export const AppRouter: React.FC = () => {
                     element={
                         <ProtectedRoute requiresWallet>
                             <WalletDashboard />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/wallet/assets"
+                    element={
+                        <ProtectedRoute requiresWallet>
+                            <AssetsScreen />
                         </ProtectedRoute>
                     }
                 />
