@@ -44,23 +44,6 @@ export const formatTimestamp = (timestampSeconds: number): string => {
     return new Date(timestampSeconds * 1000).toLocaleString();
 };
 
-/**
- * Formats TON amount for consistent display (4 decimals).
- * Accepts amount in nanoton (string) or formatted value like "0.001 TON".
- * TODO - make better function for formatting amounts
- */
-export const formatTonForDisplay = (amountOrValue: string): string => {
-    const num =
-        amountOrValue.includes('TON') || amountOrValue.includes('.')
-            ? parseFloat(
-                  String(amountOrValue)
-                      .replace(/\s*TON\s*$/i, '')
-                      .trim(),
-              ) || 0
-            : parseFloat(amountOrValue || '0') / 1e9;
-    return num.toFixed(4);
-};
-
 type ExplorerNetwork = 'mainnet' | 'testnet' | 'tetra';
 
 function getTonviewerHost(network: ExplorerNetwork): string {

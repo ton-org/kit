@@ -21,7 +21,7 @@ import {
     ActionCard,
 } from '../transaction-cards';
 
-import { formatTonForDisplay, getTonviewerTxUrl, sameAddress } from '@/core/utils';
+import { formatLargeValue, formatUnits, getTonviewerTxUrl, sameAddress } from '@/core/utils';
 
 interface RecentTransactionsProps {
     embedded?: boolean;
@@ -282,7 +282,9 @@ export const RecentTransactions: React.FC<RecentTransactionsProps> = memo(({ emb
                                     );
                                 }
 
-                                const amountFormatted = preview ? formatTonForDisplay(preview.amount) : '0';
+                                const amountFormatted = preview
+                                    ? formatLargeValue(formatUnits(preview.amount, 9), 4)
+                                    : '0';
                                 const description = preview
                                     ? preview.type === 'send'
                                         ? `Sent ${amountFormatted} TON`

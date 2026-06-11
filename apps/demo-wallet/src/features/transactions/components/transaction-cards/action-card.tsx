@@ -12,7 +12,7 @@ import type { Action } from '@ton/walletkit';
 import { TransactionCard } from './transaction-card';
 import type { TxFinality } from './transaction-card';
 
-import { formatTonForDisplay, sameAddress } from '@/core/utils';
+import { formatLargeValue, formatUnits, sameAddress } from '@/core/utils';
 
 interface ActionCardProps {
     action: Action;
@@ -60,16 +60,16 @@ export const ActionCard: React.FC<ActionCardProps> = memo(
         const { description: displayDesc, value: displayValue } = useMemo(() => {
             const descMatch = description?.match(TON_TRANSFER_DESC);
             const valueMatch = value?.match(TON_VALUE);
-            if (descMatch && valueMatch && action.type === 'TonTransfer') {
-                const amount = formatTonForDisplay(valueMatch[1]);
+            if (descMatch && valueMatch && action.type === 'TonTransfer' && 'TonTransfer' in action) {
+                const amount = formatLargeValue(formatUnits(action.TonTransfer.amount, 9), 4);
                 const label = isOutgoing ? 'Sent' : 'Received';
                 return {
                     description: `${label} ${amount} TON`,
                     value: `${amount} TON`,
                 };
             }
-            if (valueMatch && action.type === 'TonTransfer') {
-                const amount = formatTonForDisplay(valueMatch[1]);
+            if (valueMatch && action.type === 'TonTransfer' && 'TonTransfer' in action) {
+                const amount = formatLargeValue(formatUnits(action.TonTransfer.amount, 9), 4);
                 return { description, value: `${amount} TON` };
             }
             const jettonMatch = description?.match(JETTON_TRANSFER_DESC);
