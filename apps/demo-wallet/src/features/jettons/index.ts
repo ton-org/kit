@@ -8,8 +8,6 @@
 
 export * from './components/jetton-row';
 export * from './components/jetton-flow';
-export * from './components/jettons-card';
-export * from './components/jettons-list';
 export * from './hooks/use-jetton-info';
 export * from './hooks/use-formatted-jetton';
 export * from './utils/jetton';
