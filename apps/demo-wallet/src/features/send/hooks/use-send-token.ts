@@ -88,7 +88,7 @@ export const useSendToken = ({
 
         if (jetton) {
             const decimals = jetton.decimalsNumber;
-            if (!decimals) throw new Error('Jetton decimals not found');
+            if (decimals == null) throw new Error('Jetton decimals not found');
 
             const tx = await wallet.createTransferJettonTransaction({
                 recipientAddress: recipient,

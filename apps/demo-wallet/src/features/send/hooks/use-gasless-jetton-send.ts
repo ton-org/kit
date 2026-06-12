@@ -100,7 +100,7 @@ export const useGaslessJettonSend = ({
             !isValidAddress(recipient) ||
             !(inputAmount > 0) ||
             !gasless.feeAsset ||
-            !jettonDecimals
+            jettonDecimals == null
         ) {
             return;
         }
