@@ -22,16 +22,19 @@ export const DashboardActions: React.FC = () => {
                 icon={<SendIcon className="w-6 h-6" />}
                 label="Send"
                 onClick={() => navigate('/send')}
+                testId="send-button"
             />
             <DashboardActionButton
                 icon={<SwapIcon className="w-6 h-6" />}
                 label="Swap"
                 onClick={() => navigate('/swap')}
+                testId="swap-button"
             />
             <DashboardActionButton
                 icon={<StakeIcon className="w-6 h-6" />}
                 label="Stake"
                 onClick={() => navigate('/staking')}
+                testId="stake-button"
             />
         </div>
     );

@@ -169,7 +169,7 @@ export const ImportWalletScreen: React.FC = () => {
     };
 
     const footer = (
-        <Button fullWidth onClick={handleSubmit} disabled={!isValid || isLoading}>
+        <Button fullWidth onClick={handleSubmit} disabled={!isValid || isLoading} data-testid="import-wallet-process">
             Continue
         </Button>
     );
@@ -195,15 +195,23 @@ export const ImportWalletScreen: React.FC = () => {
                 </div>
 
                 <div className="mt-4 flex items-center justify-between">
-                    <span className="text-sm text-gray-500">{validation.nonEmptyWords.length}/24 words</span>
+                    <span className="text-sm text-gray-500" data-testid="word-count">
+                        {validation.nonEmptyWords.length}/24 words
+                    </span>
                     <div className="flex gap-3">
-                        <button type="button" onClick={clearAll} className="text-xs text-gray-500 hover:text-gray-700">
+                        <button
+                            type="button"
+                            onClick={clearAll}
+                            className="text-xs text-gray-500 hover:text-gray-700"
+                            data-testid="clear-mnemonic"
+                        >
                             Clear
                         </button>
                         <button
                             type="button"
                             onClick={handleClickPaste}
                             className="text-xs text-blue-600 hover:text-blue-800"
+                            data-testid="paste-mnemonic"
                         >
                             Paste
                         </button>
@@ -218,6 +226,7 @@ export const ImportWalletScreen: React.FC = () => {
                                     inputRefs.current[index] = el;
                                 }}
                                 type="text"
+                                data-testid={`mnemonic-input-${index}`}
                                 value={word}
                                 onChange={(e) => handleWordChange(index, e.target.value)}
                                 onKeyDown={(e) => handleKeyDown(index, e)}

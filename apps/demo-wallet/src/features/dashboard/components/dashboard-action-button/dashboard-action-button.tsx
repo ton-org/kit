@@ -13,6 +13,7 @@ interface DashboardActionButtonProps {
     label: string;
     onClick?: () => void;
     'aria-label'?: string;
+    testId?: string;
 }
 
 export const DashboardActionButton: React.FC<DashboardActionButtonProps> = ({
@@ -20,10 +21,12 @@ export const DashboardActionButton: React.FC<DashboardActionButtonProps> = ({
     label,
     onClick,
     'aria-label': ariaLabel,
+    testId,
 }) => (
     <button
         type="button"
         onClick={onClick}
+        data-testid={testId}
         aria-label={ariaLabel ?? label}
         className="flex-1 flex flex-col items-center justify-center gap-1 py-3 rounded-2xl bg-[#F7F8FA] text-gray-900 text-sm font-medium hover:scale-[1.03] active:scale-[0.97] transition-transform"
     >

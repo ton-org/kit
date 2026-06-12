@@ -142,6 +142,7 @@ export const StakingInterface: FC = () => {
                     value={amount}
                     onValueChange={handleAmountChange}
                     ticker={isStake ? STAKE_TICKER : STAKED_TICKER}
+                    baseTestId="stake-amount"
                 />
             </div>
 

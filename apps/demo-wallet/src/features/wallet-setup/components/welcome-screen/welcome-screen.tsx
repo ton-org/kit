@@ -37,10 +37,10 @@ export const WelcomeScreen: React.FC = () => {
 
     const footer = (
         <div className="space-y-2">
-            <Button fullWidth onClick={() => start('create')}>
+            <Button fullWidth onClick={() => start('create')} data-testid="welcome-create">
                 Create a new wallet
             </Button>
-            <Button variant="secondary" fullWidth onClick={() => setIsAddOpen(true)}>
+            <Button variant="secondary" fullWidth onClick={() => setIsAddOpen(true)} data-testid="welcome-add-existing">
                 Add an existing wallet
             </Button>
             <p className="pt-1 text-center text-xs text-gray-400">

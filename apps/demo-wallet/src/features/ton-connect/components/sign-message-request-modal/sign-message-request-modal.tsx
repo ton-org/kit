@@ -42,6 +42,7 @@ export const SignMessageRequestModal: React.FC<SignMessageRequestModalProps> = (
             approveLabel="Sign message"
             disclaimer="Only sign if you trust the requesting dApp — it can submit this transaction later."
             testIds={{ approve: 'sign-message-approve', reject: 'sign-message-reject' }}
+            modalTestId="sign-message-request"
             onApprove={handleApprove}
             onReject={handleReject}
             loggerName="SignMessageRequestModal"

@@ -46,7 +46,12 @@ export const AmountField: React.FC<AmountFieldProps> = ({ value, onChange, token
     return (
         <div className="space-y-4">
             <div className="space-y-2 py-2">
-                <CenteredAmountInput value={value} onValueChange={handleAmountChange} ticker={token.symbol} />
+                <CenteredAmountInput
+                    value={value}
+                    onValueChange={handleAmountChange}
+                    ticker={token.symbol}
+                    baseTestId="send-amount"
+                />
                 {fiatValue !== undefined && <AmountReversed value={fiatValue} symbol="≈$" decimals={2} />}
             </div>
             <AmountPresets presets={presets} onPresetSelect={onChange} />

@@ -16,6 +16,7 @@ export interface OptionRowProps {
     loading?: boolean;
     disabled?: boolean;
     onClick?: () => void;
+    testId?: string;
 }
 
 /** Selectable list row: leading icon, title/subtitle, trailing chevron (or spinner). */
@@ -26,9 +27,11 @@ export const OptionRow: React.FC<OptionRowProps> = ({
     loading = false,
     disabled = false,
     onClick,
+    testId,
 }) => (
     <button
         type="button"
+        data-testid={testId}
         onClick={onClick}
         disabled={disabled}
         className="w-full flex items-center gap-3 bg-[#F7F8FA] rounded-2xl px-4 py-4 text-left transition-transform hover:scale-[1.01] active:scale-[0.99] disabled:opacity-60 disabled:hover:scale-100 disabled:active:scale-100"

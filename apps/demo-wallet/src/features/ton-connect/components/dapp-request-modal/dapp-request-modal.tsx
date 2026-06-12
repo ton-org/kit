@@ -43,6 +43,8 @@ interface DappRequestModalProps {
     rejectDisabled?: boolean;
     rejectTestId?: string;
     disclaimer: React.ReactNode;
+    /** Distinguishes the request type for tests (e.g. "connect-request"). */
+    testId?: string;
     /** When set, replaces the request content with this in-modal view (e.g. the wallet picker),
      *  reusing the same overlay so switching doesn't flicker. */
     altView?: React.ReactNode;
@@ -65,6 +67,7 @@ export const DappRequestModal: React.FC<DappRequestModalProps> = ({
     rejectDisabled,
     rejectTestId,
     disclaimer,
+    testId,
     altView,
 }) => (
     <Modal.Container
@@ -72,6 +75,7 @@ export const DappRequestModal: React.FC<DappRequestModalProps> = ({
         onOpenChange={() => {}}
         dismissible={false}
         className="flex max-h-[88vh] flex-col overflow-hidden"
+        data-testid={testId}
     >
         {altView ?? (
             <>

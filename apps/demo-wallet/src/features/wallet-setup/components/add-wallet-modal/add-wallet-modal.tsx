@@ -37,6 +37,7 @@ export const AddWalletModal: React.FC<AddWalletModalProps> = ({ isOpen, onClose,
             {OPTIONS.map(({ mode, title, subtitle, Icon }) => (
                 <OptionRow
                     key={mode}
+                    testId={`add-wallet-${mode}`}
                     icon={<Icon className="w-7 h-7" strokeWidth={1.8} />}
                     title={title}
                     subtitle={subtitle}

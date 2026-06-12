@@ -104,6 +104,7 @@ export const ConnectRequestModal: React.FC<ConnectRequestModalProps> = ({
     return (
         <DappRequestModal
             isOpen={isOpen}
+            testId="connect-request"
             dAppInfo={dApp}
             domain={request.domain}
             verb="Connect to"

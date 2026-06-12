@@ -68,6 +68,7 @@ export const TransactionRequestModal: React.FC<TransactionRequestModalProps> = (
             approveLabel="Approve & Sign"
             disclaimer="Only approve transactions from dApps you trust. Blockchain transactions are irreversible."
             testIds={{ approve: 'send-transaction-approve', reject: 'send-transaction-reject' }}
+            modalTestId="transaction-request"
             onApprove={handleApprove}
             onReject={handleReject}
             loggerName="TransactionRequestModal"

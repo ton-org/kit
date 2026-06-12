@@ -23,6 +23,8 @@ export interface CenteredAmountInputProps extends ComponentProps<'div'> {
     ticker?: string;
     symbol?: string;
     placeholder?: string;
+    /** Base test id; the inner <input> gets `${baseTestId}-input` (e.g. "send-amount" → "send-amount-input"). */
+    baseTestId?: string;
 }
 
 /** Big centered amount input whose font shrinks to fit the available width (ported from appkit-react). */
@@ -33,6 +35,7 @@ export const CenteredAmountInput: FC<CenteredAmountInputProps> = ({
     symbol,
     placeholder = '0',
     className,
+    baseTestId,
     ...props
 }) => {
     const wrapperRef = useRef<HTMLDivElement>(null);
@@ -102,6 +105,7 @@ export const CenteredAmountInput: FC<CenteredAmountInputProps> = ({
                 )}
                 <input
                     ref={inputRef}
+                    data-testid={baseTestId ? `${baseTestId}-input` : undefined}
                     className="min-w-[24px] max-w-full border-0 bg-transparent p-0 text-right text-gray-900 outline-none placeholder:text-gray-400"
                     type="text"
                     inputMode="decimal"

@@ -33,6 +33,7 @@ export const DashboardHeader: React.FC = () => {
                 onClick={() => setIsConnectOpen(true)}
                 className="p-1.5 -ml-1.5 rounded-md hover:bg-gray-100 transition-colors"
                 aria-label="Scan"
+                data-testid="connect-dapp-button"
             >
                 <ScanIcon className="w-5 h-5" />
             </button>

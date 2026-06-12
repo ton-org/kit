@@ -32,6 +32,8 @@ interface RequestModalProps {
     approveLabel: string;
     disclaimer: React.ReactNode;
     testIds: { approve: string; reject: string };
+    /** Distinguishes the request type for tests (e.g. "transaction-request"). */
+    modalTestId: string;
     onApprove: () => Promise<void>;
     onReject: () => void;
     loggerName: string;
@@ -49,6 +51,7 @@ export const RequestModal: React.FC<RequestModalProps> = ({
     approveLabel,
     disclaimer,
     testIds,
+    modalTestId,
     onApprove,
     onReject,
     loggerName,
@@ -138,6 +141,7 @@ export const RequestModal: React.FC<RequestModalProps> = ({
     return (
         <DappRequestModal
             isOpen={isOpen}
+            testId={modalTestId}
             dAppInfo={request.dAppInfo}
             domain={request.domain}
             verb={verb}

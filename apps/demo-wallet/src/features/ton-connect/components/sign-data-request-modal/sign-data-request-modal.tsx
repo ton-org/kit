@@ -101,6 +101,7 @@ export const SignDataRequestModal: React.FC<SignDataRequestModalProps> = ({
     return (
         <DappRequestModal
             isOpen={isOpen}
+            testId="sign-data-request"
             dAppInfo={dApp}
             domain={request.domain}
             verb="Sign data for"
