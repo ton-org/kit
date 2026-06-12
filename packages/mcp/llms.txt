@@ -87,32 +87,29 @@ Get list of known/popular Jettons on TON.
 Returns: array with symbol, name, address, decimals
 
 ### send_ton
-Send TON to an address.
+Build a TON transfer to an address. Does NOT broadcast.
 Parameters:
 - toAddress (required): recipient address
 - amount (required): amount in TON (e.g., "1.5")
 - comment (optional): transaction memo
-- broadcast (optional): if false, sign and return boc/normalizedBoc without sending (default true)
-Returns: top-level normalizedHash plus details; with broadcast=false also boc and normalizedBoc (base64)
+Returns: transaction {messages, validUntil} ready for emulate_transaction (preview) then send_raw_transaction (broadcast)
 
 ### send_jetton
-Send Jettons to an address.
+Build a Jetton transfer to an address. Does NOT broadcast.
 Parameters:
 - toAddress (required): recipient address
 - jettonAddress (required): token contract address
 - amount (required): human-readable amount
 - comment (optional): transaction memo
-- broadcast (optional): if false, sign and return boc/normalizedBoc without sending (default true)
-Returns: top-level normalizedHash plus details; with broadcast=false also boc and normalizedBoc (base64)
+Returns: transaction {messages, validUntil} ready for emulate_transaction (preview) then send_raw_transaction (broadcast)
 
 ### send_raw_transaction
-Send raw transaction with full control.
+Sign and broadcast a raw transaction with full control. This is the tool that actually sends prepared transactions (from send_ton/send_jetton/send_nft/get_swap_quote).
 Parameters:
 - messages (required): array of {address, amount (nanoTON), stateInit?, payload?}
 - validUntil (optional): expiry timestamp
 - fromAddress (optional): sender address
-- broadcast (optional): if false, sign and return boc/normalizedBoc without sending (default true)
-Returns: top-level normalizedHash plus details; with broadcast=false also boc and normalizedBoc (base64)
+Returns: top-level normalizedHash plus details
 
 ### emulate_transaction
 Simulate a raw transaction without broadcasting it (fake signature, balance preview).
@@ -120,7 +117,6 @@ Parameters:
 - messages (required): array of {address, amount (nanoTON), stateInit?, payload?}
 - validUntil (optional): expiry timestamp
 Returns: expected TON and Jetton balance changes, fees, and high-level actions
-Note: for a real signed BoC without broadcast, use send_raw_transaction with broadcast=false instead
 
 ### get_swap_quote
 Get quote for token swap.
@@ -150,22 +146,20 @@ Parameters:
 - nftAddress (required): NFT item contract address
 
 ### send_nft
-Transfer NFT to another address.
+Build an NFT transfer to another address. Does NOT broadcast.
 Parameters:
 - nftAddress (required): NFT to transfer
 - toAddress (required): recipient address
 - comment (optional): transaction memo
-- broadcast (optional): if false, sign and return boc/normalizedBoc without sending (default true)
-Returns: normalizedHash plus details; with broadcast=false also boc and normalizedBoc (base64)
+Returns: transaction {messages, validUntil} ready for emulate_transaction (preview) then send_raw_transaction (broadcast)
 
 ### deploy_agentic_subwallet
-Deploy a new Agentic sub-wallet from the current Agentic root wallet (WALLET_VERSION=agentic, deployedByUser=true).
+Deploy a new Agentic sub-wallet from the current Agentic root wallet (WALLET_VERSION=agentic, deployedByUser=true). Signs and broadcasts.
 Parameters:
 - operatorPublicKey (required): sub-wallet operator public key (decimal or 0x hex)
 - metadata (required): on-chain NFT metadata (TEP-64), must include name
 - amountTon (optional): deployment TON amount (default "0.05")
-- broadcast (optional): if false, sign and return boc/normalizedBoc without sending (default true)
-Returns: normalizedHash, sub-wallet address, and deployment details; with broadcast=false also boc and normalizedBoc (base64)
+Returns: normalizedHash, sub-wallet address, and deployment details
 
 ### resolve_dns
 Resolve TON DNS-compatible domain to wallet address.
@@ -321,6 +315,6 @@ Parameters:
 - Read tools can work with imported agentic wallets without `operator_private_key`; write tools cannot
 - generate_ton_proof is not a transaction, but it requires signing access and will not work with read-only imported agentic wallets
 - TonProof signs wallet ownership for a domain and payload; only generate it for domains/payloads the user or verifying service intentionally provided
-- Send tools accept optional `broadcast` (default true). With `broadcast=false`, the wallet signs with a real signature and returns `boc`/`normalizedBoc` without sending; do not poll get_transaction_status until the BoC is broadcast separately
-- Use `emulate_transaction` for balance preview (fake signature). Use `broadcast=false` on send tools when you need the actual signed BoC
-- **Default flow:** After any broadcast send, poll get_transaction_status until completed or failed. User can specify whether to check status.
+- `send_ton`/`send_jetton`/`send_nft` and `get_swap_quote` only BUILD transactions (return `transaction.messages`); they do not broadcast. `send_raw_transaction` is the only tool that signs and sends.
+- Standard transfer flow: build with send_ton/send_jetton/send_nft → preview with `emulate_transaction` → broadcast with `send_raw_transaction`
+- **Default flow:** After broadcasting via send_raw_transaction, poll get_transaction_status until completed or failed. User can specify whether to check status.

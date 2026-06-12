@@ -21,25 +21,90 @@ function parseToolResult(
 }
 
 describe('transfer tools', () => {
-    it('returns normalizedHash at the top level for send tools', async () => {
+    it('send_ton prepares a transaction without broadcasting', async () => {
         const service = {
-            sendTon: vi.fn(async () => ({
-                success: true,
-                message: 'TON sent',
-                normalizedHash: 'hash-ton',
+            buildTonTransferTransaction: vi.fn(async () => ({
+                messages: [{ address: 'EQTo', amount: '1500000000' }],
+                validUntil: 123,
             })),
-            getJettons: vi.fn(async () => [
-                {
-                    address: 'EQJetton',
-                    decimals: 9,
-                    symbol: 'JET',
-                },
-            ]),
-            sendJetton: vi.fn(async () => ({
-                success: true,
-                message: 'Jetton sent',
-                normalizedHash: 'hash-jetton',
+        } as never;
+
+        const tools = createMcpTransferTools(service);
+
+        const result = parseToolResult(
+            await tools.send_ton.handler({
+                toAddress: 'EQTo',
+                amount: '1.5',
+            }),
+        );
+
+        expect(result).toMatchObject({
+            success: true,
+            transaction: {
+                messages: [{ address: 'EQTo', amount: '1500000000' }],
+                validUntil: 123,
+            },
+        });
+        expect(result.note).toContain('send_raw_transaction');
+        expect(result).not.toHaveProperty('normalizedHash');
+
+        expect(
+            (service as { buildTonTransferTransaction: ReturnType<typeof vi.fn> }).buildTonTransferTransaction,
+        ).toHaveBeenCalledWith('EQTo', '1500000000', undefined);
+    });
+
+    it('send_jetton converts the amount with jetton decimals and prepares messages', async () => {
+        const service = {
+            getJettons: vi.fn(async () => [{ address: 'EQJetton', decimals: 9, symbol: 'JET' }]),
+            buildJettonTransferTransaction: vi.fn(async () => ({
+                messages: [{ address: 'EQWallet', amount: '50000000', payload: 'base64payload' }],
             })),
+        } as never;
+
+        const tools = createMcpTransferTools(service);
+
+        const result = parseToolResult(
+            await tools.send_jetton.handler({
+                toAddress: 'EQTo',
+                jettonAddress: 'EQJetton',
+                amount: '2.5',
+            }),
+        );
+
+        expect(result).toMatchObject({
+            success: true,
+            transaction: {
+                messages: [{ address: 'EQWallet', amount: '50000000', payload: 'base64payload' }],
+            },
+        });
+        expect(result.note).toContain('send_raw_transaction');
+
+        expect(
+            (service as { buildJettonTransferTransaction: ReturnType<typeof vi.fn> }).buildJettonTransferTransaction,
+        ).toHaveBeenCalledWith('EQTo', 'EQJetton', '2500000000', undefined);
+    });
+
+    it('send_jetton fails when jetton decimals cannot be determined', async () => {
+        const service = {
+            getJettons: vi.fn(async () => []),
+            buildJettonTransferTransaction: vi.fn(),
+        } as never;
+
+        const tools = createMcpTransferTools(service);
+        const result = await tools.send_jetton.handler({
+            toAddress: 'EQTo',
+            jettonAddress: 'EQUnknown',
+            amount: '1',
+        });
+
+        expect(result.isError).toBe(true);
+        expect(
+            (service as { buildJettonTransferTransaction: ReturnType<typeof vi.fn> }).buildJettonTransferTransaction,
+        ).not.toHaveBeenCalled();
+    });
+
+    it('send_raw_transaction signs, broadcasts, and returns normalizedHash', async () => {
+        const service = {
             sendRawTransaction: vi.fn(async () => ({
                 success: true,
                 message: 'Raw transaction sent',
@@ -49,147 +114,37 @@ describe('transfer tools', () => {
 
         const tools = createMcpTransferTools(service);
 
-        const tonResult = parseToolResult(
-            await tools.send_ton.handler({
-                toAddress: 'EQTo',
-                amount: '1.5',
-            }),
-        );
-        expect(tonResult).toMatchObject({
-            success: true,
-            normalizedHash: 'hash-ton',
-        });
-
-        const jettonResult = parseToolResult(
-            await tools.send_jetton.handler({
-                toAddress: 'EQTo',
-                jettonAddress: 'EQJetton',
-                amount: '2.5',
-            }),
-        );
-        expect(jettonResult).toMatchObject({
-            success: true,
-            normalizedHash: 'hash-jetton',
-        });
-
-        const rawResult = parseToolResult(
+        const result = parseToolResult(
             await tools.send_raw_transaction.handler({
                 messages: [{ address: 'EQTo', amount: '123' }],
             }),
         );
-        expect(rawResult).toMatchObject({
+
+        expect(result).toMatchObject({
             success: true,
             normalizedHash: 'hash-raw',
         });
-    });
 
-    it('with broadcast=false exposes signed BoC fields from the service', async () => {
-        const service = {
-            sendTon: vi.fn(async () => ({
-                success: true,
-                message: 'signed',
-                normalizedHash: 'nh',
-                boc: 'boc-raw',
-                normalizedBoc: 'boc-norm',
-            })),
-            getJettons: vi.fn(async () => []),
-            sendJetton: vi.fn(),
-            sendRawTransaction: vi.fn(),
-        } as never;
-
-        const tools = createMcpTransferTools(service);
-        const ton = parseToolResult(
-            await tools.send_ton.handler({
-                toAddress: 'EQTo',
-                amount: '1',
-                broadcast: false,
-            }),
-        );
-
-        expect(ton).toMatchObject({
-            success: true,
-            normalizedHash: 'nh',
-            boc: 'boc-raw',
-            normalizedBoc: 'boc-norm',
-        });
-        expect(ton.details).toMatchObject({
-            broadcast: false,
-            boc: 'boc-raw',
-            normalizedBoc: 'boc-norm',
-        });
-
-        expect(service.sendTon).toHaveBeenCalledWith('EQTo', '1000000000', undefined, { broadcast: false });
-    });
-
-    it('send_jetton with broadcast=false returns signed BoC fields', async () => {
-        const service = {
-            sendTon: vi.fn(),
-            getJettons: vi.fn(async () => [{ address: 'EQJetton', decimals: 9, symbol: 'JET' }]),
-            sendJetton: vi.fn(async () => ({
-                success: true,
-                message: 'signed jetton',
-                normalizedHash: 'nh-j',
-                boc: 'boc-j',
-                normalizedBoc: 'norm-j',
-            })),
-            sendRawTransaction: vi.fn(),
-        } as never;
-
-        const tools = createMcpTransferTools(service);
-        const result = parseToolResult(
-            await tools.send_jetton.handler({
-                toAddress: 'EQTo',
-                jettonAddress: 'EQJetton',
-                amount: '10',
-                broadcast: false,
-            }),
-        );
-
-        expect(result).toMatchObject({
-            success: true,
-            normalizedHash: 'nh-j',
-            boc: 'boc-j',
-            normalizedBoc: 'norm-j',
-        });
-        expect(result.details).toMatchObject({
-            broadcast: false,
-            boc: 'boc-j',
-            normalizedBoc: 'norm-j',
+        expect((service as { sendRawTransaction: ReturnType<typeof vi.fn> }).sendRawTransaction).toHaveBeenCalledWith({
+            messages: [{ address: 'EQTo', amount: '123' }],
+            validUntil: undefined,
+            fromAddress: undefined,
         });
     });
 
-    it('send_raw_transaction with broadcast=false returns signed BoC fields', async () => {
+    it('send_raw_transaction surfaces service failures', async () => {
         const service = {
-            sendTon: vi.fn(),
-            getJettons: vi.fn(async () => []),
-            sendJetton: vi.fn(),
             sendRawTransaction: vi.fn(async () => ({
-                success: true,
-                message: 'signed raw',
-                normalizedHash: 'nh-r',
-                boc: 'boc-r',
-                normalizedBoc: 'norm-r',
+                success: false,
+                message: 'broadcast failed',
             })),
         } as never;
 
         const tools = createMcpTransferTools(service);
-        const result = parseToolResult(
-            await tools.send_raw_transaction.handler({
-                messages: [{ address: 'EQTo', amount: '500' }],
-                broadcast: false,
-            }),
-        );
+        const result = await tools.send_raw_transaction.handler({
+            messages: [{ address: 'EQTo', amount: '123' }],
+        });
 
-        expect(result).toMatchObject({
-            success: true,
-            normalizedHash: 'nh-r',
-            boc: 'boc-r',
-            normalizedBoc: 'norm-r',
-        });
-        expect(result.details).toMatchObject({
-            broadcast: false,
-            boc: 'boc-r',
-            normalizedBoc: 'norm-r',
-        });
+        expect(result.isError).toBe(true);
     });
 });

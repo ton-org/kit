@@ -15,7 +15,7 @@ Swap tokens on TON via DEX aggregator. Two-step flow: get a quote, confirm with 
 | ---- | -------- | -------- |
 | `get_swap_quote` | `fromToken`, `toToken`, `amount` | `walletSelector` |
 | `emulate_transaction` | `messages` | `validUntil` |
-| `send_raw_transaction` | `messages` | `broadcast`, `validUntil`, `walletSelector` |
+| `send_raw_transaction` | `messages` | `validUntil`, `walletSelector` |
 | `get_known_jettons` | — | — |
 
 ## Workflow
@@ -33,6 +33,5 @@ Swap tokens on TON via DEX aggregator. Two-step flow: get a quote, confirm with 
 
 - Always confirm the swap with the user before executing; prefer the host client's structured confirmation UI when available, otherwise accept natural-language yes/no and do not require a fixed confirmation phrase
 - The quote returns transaction messages ready for `send_raw_transaction`
-- Use `broadcast: false` on `send_raw_transaction` when you need a real signed BoC without broadcasting; do not poll `get_transaction_status` until the BoC is sent separately
 - After execution, poll `get_transaction_status` by default. User can specify whether to check status.
 - If no wallet is configured, use the `ton-create-wallet` skill first

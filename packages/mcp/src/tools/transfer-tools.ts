@@ -12,18 +12,10 @@ import type { McpWalletService } from '../services/McpWalletService.js';
 import { toRawAmount, TON_DECIMALS } from './types.js';
 import type { ToolResponse } from './types.js';
 
-export const optionalBroadcastSchemaField = z
-    .boolean()
-    .optional()
-    .describe(
-        'If false, signs and returns boc and normalizedBoc (base64) without sending to the network. Default true.',
-    );
-
 export const sendTonSchema = z.object({
     toAddress: z.string().min(1).describe('Recipient TON address'),
     amount: z.string().min(1).describe('Amount of TON to send (e.g., "1.5" for 1.5 TON)'),
     comment: z.string().optional().describe('Optional comment/memo for the transaction'),
-    broadcast: optionalBroadcastSchemaField,
 });
 
 export const sendJettonSchema = z.object({
@@ -31,7 +23,6 @@ export const sendJettonSchema = z.object({
     jettonAddress: z.string().min(1).describe('Jetton master contract address'),
     amount: z.string().min(1).describe('Amount of tokens to send in human-readable format'),
     comment: z.string().optional().describe('Optional comment/memo for the transaction'),
-    broadcast: optionalBroadcastSchemaField,
 });
 
 const transactionMessageSchema = z.object({
@@ -45,7 +36,6 @@ export const sendRawTransactionSchema = z.object({
     messages: z.array(transactionMessageSchema).min(1).describe('Array of messages to include in the transaction'),
     validUntil: z.number().optional().describe('Unix timestamp after which the transaction becomes invalid'),
     fromAddress: z.string().optional().describe('Sender wallet address'),
-    broadcast: optionalBroadcastSchemaField,
 });
 
 export const emulateTransactionSchema = z.object({
@@ -53,65 +43,66 @@ export const emulateTransactionSchema = z.object({
     validUntil: z.number().optional().describe('Unix timestamp after which the transaction becomes invalid'),
 });
 
+const PREPARED_TRANSACTION_NOTE =
+    'Transaction prepared but NOT sent. Preview it with emulate_transaction, then broadcast with send_raw_transaction (which signs and sends).';
+
 export function createMcpTransferTools(service: McpWalletService) {
     return {
         send_ton: {
             description:
-                'Send TON from the wallet to an address. Amount is in TON (e.g., "1.5" means 1.5 TON). Returns normalizedHash. With broadcast=false, signs and returns boc/normalizedBoc without sending. Default flow after send: poll get_transaction_status until completed or failed; user can skip.',
+                'Prepare a TON transfer from the wallet to an address. Amount is in TON (e.g., "1.5" means 1.5 TON). Does NOT broadcast: returns ready-to-send transaction messages. Preview them with emulate_transaction, then broadcast with send_raw_transaction.',
             inputSchema: sendTonSchema,
             handler: async (args: z.infer<typeof sendTonSchema>): Promise<ToolResponse> => {
-                const rawAmount = toRawAmount(args.amount, TON_DECIMALS);
+                try {
+                    const rawAmount = toRawAmount(args.amount, TON_DECIMALS);
 
-                const result = await service.sendTon(args.toAddress, rawAmount, args.comment, {
-                    broadcast: args.broadcast,
-                });
+                    const transaction = await service.buildTonTransferTransaction(
+                        args.toAddress,
+                        rawAmount,
+                        args.comment,
+                    );
 
-                if (!result.success) {
+                    return {
+                        content: [
+                            {
+                                type: 'text' as const,
+                                text: JSON.stringify(
+                                    {
+                                        success: true,
+                                        transaction,
+                                        note: PREPARED_TRANSACTION_NOTE,
+                                        details: {
+                                            to: args.toAddress,
+                                            amount: `${args.amount} TON`,
+                                            comment: args.comment || null,
+                                        },
+                                    },
+                                    null,
+                                    2,
+                                ),
+                            },
+                        ],
+                    };
+                } catch (error) {
                     return {
                         content: [
                             {
                                 type: 'text' as const,
                                 text: JSON.stringify({
                                     success: false,
-                                    error: result.message,
+                                    error: error instanceof Error ? error.message : 'Unknown error',
                                 }),
                             },
                         ],
                         isError: true,
                     };
                 }
-
-                return {
-                    content: [
-                        {
-                            type: 'text' as const,
-                            text: JSON.stringify(
-                                {
-                                    success: true,
-                                    message: result.message,
-                                    normalizedHash: result.normalizedHash,
-                                    ...(result.boc ? { boc: result.boc, normalizedBoc: result.normalizedBoc } : {}),
-                                    details: {
-                                        to: args.toAddress,
-                                        amount: `${args.amount} TON`,
-                                        comment: args.comment || null,
-                                        broadcast: args.broadcast !== false,
-                                        normalizedHash: result.normalizedHash,
-                                        ...(result.boc ? { boc: result.boc, normalizedBoc: result.normalizedBoc } : {}),
-                                    },
-                                },
-                                null,
-                                2,
-                            ),
-                        },
-                    ],
-                };
             },
         },
 
         send_jetton: {
             description:
-                'Send Jettons (tokens) from the wallet to an address. Amount is in human-readable format. Returns normalizedHash. With broadcast=false, signs and returns boc/normalizedBoc without sending. Default flow after send: poll get_transaction_status until completed or failed; user can skip.',
+                'Prepare a Jetton (token) transfer from the wallet to an address. Amount is in human-readable format. Does NOT broadcast: returns ready-to-send transaction messages. Preview them with emulate_transaction, then broadcast with send_raw_transaction.',
             inputSchema: sendJettonSchema,
             handler: async (args: z.infer<typeof sendJettonSchema>): Promise<ToolResponse> => {
                 // Fetch jetton info for decimals
@@ -157,8 +148,62 @@ export function createMcpTransferTools(service: McpWalletService) {
 
                 const rawAmount = toRawAmount(args.amount, decimals);
 
-                const result = await service.sendJetton(args.toAddress, args.jettonAddress, rawAmount, args.comment, {
-                    broadcast: args.broadcast,
+                try {
+                    const transaction = await service.buildJettonTransferTransaction(
+                        args.toAddress,
+                        args.jettonAddress,
+                        rawAmount,
+                        args.comment,
+                    );
+
+                    return {
+                        content: [
+                            {
+                                type: 'text' as const,
+                                text: JSON.stringify(
+                                    {
+                                        success: true,
+                                        transaction,
+                                        note: PREPARED_TRANSACTION_NOTE,
+                                        details: {
+                                            to: args.toAddress,
+                                            jettonAddress: args.jettonAddress,
+                                            amount: `${args.amount} ${symbol || 'tokens'}`,
+                                            comment: args.comment || null,
+                                        },
+                                    },
+                                    null,
+                                    2,
+                                ),
+                            },
+                        ],
+                    };
+                } catch (error) {
+                    return {
+                        content: [
+                            {
+                                type: 'text' as const,
+                                text: JSON.stringify({
+                                    success: false,
+                                    error: error instanceof Error ? error.message : 'Unknown error',
+                                }),
+                            },
+                        ],
+                        isError: true,
+                    };
+                }
+            },
+        },
+
+        send_raw_transaction: {
+            description:
+                'Sign and broadcast a raw transaction with full control over messages. Amounts are in nanotons. Supports multiple messages. Returns normalizedHash. This is the tool that actually sends prepared transactions (from send_ton/send_jetton/send_nft/get_swap_quote). Default flow after send: poll get_transaction_status until completed or failed; user can skip.',
+            inputSchema: sendRawTransactionSchema,
+            handler: async (args: z.infer<typeof sendRawTransactionSchema>): Promise<ToolResponse> => {
+                const result = await service.sendRawTransaction({
+                    messages: args.messages,
+                    validUntil: args.validUntil,
+                    fromAddress: args.fromAddress,
                 });
 
                 if (!result.success) {
@@ -185,74 +230,13 @@ export function createMcpTransferTools(service: McpWalletService) {
                                     success: true,
                                     message: result.message,
                                     normalizedHash: result.normalizedHash,
-                                    ...(result.boc ? { boc: result.boc, normalizedBoc: result.normalizedBoc } : {}),
-                                    details: {
-                                        to: args.toAddress,
-                                        jettonAddress: args.jettonAddress,
-                                        amount: `${args.amount} ${symbol || 'tokens'}`,
-                                        comment: args.comment || null,
-                                        broadcast: args.broadcast !== false,
-                                        normalizedHash: result.normalizedHash,
-                                        ...(result.boc ? { boc: result.boc, normalizedBoc: result.normalizedBoc } : {}),
-                                    },
-                                },
-                                null,
-                                2,
-                            ),
-                        },
-                    ],
-                };
-            },
-        },
-
-        send_raw_transaction: {
-            description:
-                'Send a raw transaction with full control over messages. Amounts are in nanotons. Supports multiple messages. Returns normalizedHash. With broadcast=false, signs and returns boc/normalizedBoc without sending. Default flow after send: poll get_transaction_status until completed or failed; user can skip.',
-            inputSchema: sendRawTransactionSchema,
-            handler: async (args: z.infer<typeof sendRawTransactionSchema>): Promise<ToolResponse> => {
-                const result = await service.sendRawTransaction(
-                    {
-                        messages: args.messages,
-                        validUntil: args.validUntil,
-                        fromAddress: args.fromAddress,
-                    },
-                    { broadcast: args.broadcast },
-                );
-
-                if (!result.success) {
-                    return {
-                        content: [
-                            {
-                                type: 'text' as const,
-                                text: JSON.stringify({
-                                    success: false,
-                                    error: result.message,
-                                }),
-                            },
-                        ],
-                        isError: true,
-                    };
-                }
-
-                return {
-                    content: [
-                        {
-                            type: 'text' as const,
-                            text: JSON.stringify(
-                                {
-                                    success: true,
-                                    message: result.message,
-                                    normalizedHash: result.normalizedHash,
-                                    ...(result.boc ? { boc: result.boc, normalizedBoc: result.normalizedBoc } : {}),
                                     details: {
                                         messageCount: args.messages.length,
                                         messages: args.messages.map((m) => ({
                                             to: m.address,
                                             amount: `${m.amount} nanoTON`,
                                         })),
-                                        broadcast: args.broadcast !== false,
                                         normalizedHash: result.normalizedHash,
-                                        ...(result.boc ? { boc: result.boc, normalizedBoc: result.normalizedBoc } : {}),
                                     },
                                 },
                                 null,

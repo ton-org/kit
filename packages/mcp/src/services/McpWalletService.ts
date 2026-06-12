@@ -30,8 +30,6 @@ import {
     getJettonWalletAddressFromClient,
     HexToBase64,
     Uint8ArrayToHex,
-    CallForSuccess,
-    getNormalizedExtMessageHash,
 } from '@ton/walletkit';
 import type {
     Wallet,
@@ -147,8 +145,25 @@ export interface TransferResult {
     success: boolean;
     message: string;
     normalizedHash?: string;
-    boc?: string;
-    normalizedBoc?: string;
+}
+
+/** JSON-serializable message: amount is a nanoton string, stateInit/payload are Base64. */
+export interface PreparedTransactionMessage {
+    address: string;
+    amount: string;
+    stateInit?: string;
+    payload?: string;
+}
+
+/** A transaction built but not signed or broadcast. */
+export interface PreparedTransaction {
+    messages: PreparedTransactionMessage[];
+    validUntil?: number;
+}
+
+/** A prepared transaction submitted for signing and broadcast. */
+export interface RawTransactionRequest extends PreparedTransaction {
+    fromAddress?: string;
 }
 
 export interface DeployAgenticSubwalletResult extends TransferResult {
@@ -175,16 +190,8 @@ export interface SwapQuoteResult {
     minReceived: string;
     provider: string;
     expiresAt?: number;
-    /** Raw transaction params ready to send */
-    transaction: {
-        messages: Array<{
-            address: string;
-            amount: string;
-            stateInit?: string;
-            payload?: string;
-        }>;
-        validUntil?: number;
-    };
+    /** Prepared transaction ready to preview/broadcast via send_raw_transaction. */
+    transaction: PreparedTransaction;
 }
 
 /**
@@ -237,7 +244,6 @@ interface DeployAgenticSubwalletParams {
     operatorPublicKey: string;
     amountNano: string;
     metadata: Record<string, string | number | boolean>;
-    broadcast?: boolean;
 }
 
 interface AgenticRootWalletState {
@@ -412,27 +418,16 @@ export class McpWalletService {
         };
     }
 
-    private async signTransactionAndMaybeBroadcast(
-        request: TransactionRequest,
-        broadcast: boolean,
-    ): Promise<
-        { ok: true; normalizedHash: string; boc: string; normalizedBoc: string } | { ok: false; message: string }
-    > {
-        try {
-            const boc = await this.wallet.getSignedSendTransaction(request, { fakeSignature: false });
-            const { hash: normalizedHash, boc: normalizedBoc } = getNormalizedExtMessageHash(boc);
-
-            if (broadcast) {
-                await CallForSuccess(() => this.wallet.getClient().sendBoc(boc));
-            }
-
-            return { ok: true, normalizedHash, boc, normalizedBoc };
-        } catch (error) {
-            return {
-                ok: false,
-                message: error instanceof Error ? error.message : 'Unknown error',
-            };
-        }
+    private static toPreparedTransaction(tx: TransactionRequest): PreparedTransaction {
+        return {
+            messages: tx.messages.map((m) => ({
+                address: m.address,
+                amount: m.amount.toString(),
+                ...(m.stateInit ? { stateInit: m.stateInit } : {}),
+                ...(m.payload ? { payload: m.payload } : {}),
+            })),
+            validUntil: tx.validUntil,
+        };
     }
 
     static async create(config: McpWalletServiceConfig): Promise<McpWalletService> {
@@ -703,121 +698,49 @@ export class McpWalletService {
         return results;
     }
 
-    /**
-     * Send TON
-     */
-    async sendTon(
+    /** Build a TON transfer transaction without signing or broadcasting it. */
+    async buildTonTransferTransaction(
         toAddress: string,
         amountNano: string,
         comment?: string,
-        options?: { broadcast?: boolean },
-    ): Promise<TransferResult> {
-        const broadcast = options?.broadcast !== false;
+    ): Promise<PreparedTransaction> {
+        const tx = await this.wallet.createTransferTonTransaction({
+            recipientAddress: toAddress,
+            transferAmount: amountNano,
+            comment,
+        });
 
-        try {
-            const tx = await this.wallet.createTransferTonTransaction({
-                recipientAddress: toAddress,
-                transferAmount: amountNano,
-                comment,
-            });
-
-            const result = await this.signTransactionAndMaybeBroadcast(tx, broadcast);
-
-            if (!result.ok) {
-                return { success: false, message: result.message };
-            }
-
-            return {
-                success: true,
-                message: broadcast
-                    ? `Successfully sent ${amountNano} nanoTON to ${toAddress}`
-                    : `Signed TON transfer to ${toAddress} (not broadcast)`,
-                normalizedHash: result.normalizedHash,
-                ...(broadcast ? {} : { boc: result.boc, normalizedBoc: result.normalizedBoc }),
-            };
-        } catch (error) {
-            return {
-                success: false,
-                message: error instanceof Error ? error.message : 'Unknown error',
-            };
-        }
+        return McpWalletService.toPreparedTransaction(tx);
     }
 
-    /**
-     * Send Jetton
-     */
-    async sendJetton(
+    /** Build a Jetton transfer transaction without signing or broadcasting it. */
+    async buildJettonTransferTransaction(
         toAddress: string,
         jettonAddress: string,
         amountRaw: string,
         comment?: string,
-        options?: { broadcast?: boolean },
-    ): Promise<TransferResult> {
-        const broadcast = options?.broadcast !== false;
+    ): Promise<PreparedTransaction> {
+        const tx = await this.wallet.createTransferJettonTransaction({
+            recipientAddress: toAddress,
+            jettonAddress,
+            transferAmount: amountRaw,
+            comment,
+        });
 
-        try {
-            const tx = await this.wallet.createTransferJettonTransaction({
-                recipientAddress: toAddress,
-                jettonAddress,
-                transferAmount: amountRaw,
-                comment,
-            });
-
-            const result = await this.signTransactionAndMaybeBroadcast(tx, broadcast);
-
-            if (!result.ok) {
-                return { success: false, message: result.message };
-            }
-
-            return {
-                success: true,
-                message: broadcast
-                    ? `Successfully sent jettons to ${toAddress}`
-                    : `Signed jetton transfer to ${toAddress} (not broadcast)`,
-                normalizedHash: result.normalizedHash,
-                ...(broadcast ? {} : { boc: result.boc, normalizedBoc: result.normalizedBoc }),
-            };
-        } catch (error) {
-            return {
-                success: false,
-                message: error instanceof Error ? error.message : 'Unknown error',
-            };
-        }
+        return McpWalletService.toPreparedTransaction(tx);
     }
 
     /**
-     * Send a raw transaction request directly
+     * Sign and broadcast a prepared raw transaction directly.
      */
-    async sendRawTransaction(
-        request: {
-            messages: Array<{
-                address: string;
-                amount: string;
-                mode?: number;
-                stateInit?: string;
-                payload?: string;
-            }>;
-            validUntil?: number;
-            fromAddress?: string;
-        },
-        options?: { broadcast?: boolean },
-    ): Promise<TransferResult> {
-        const broadcast = options?.broadcast !== false;
-
+    async sendRawTransaction(request: RawTransactionRequest): Promise<TransferResult> {
         try {
-            const result = await this.signTransactionAndMaybeBroadcast(request as TransactionRequest, broadcast);
-
-            if (!result.ok) {
-                return { success: false, message: result.message };
-            }
+            const tx = await this.wallet.sendTransaction(request as TransactionRequest);
 
             return {
                 success: true,
-                message: broadcast
-                    ? `Successfully sent transaction with ${request.messages.length} message(s)`
-                    : `Signed transaction with ${request.messages.length} message(s) (not broadcast)`,
-                normalizedHash: result.normalizedHash,
-                ...(broadcast ? {} : { boc: result.boc, normalizedBoc: result.normalizedBoc }),
+                message: `Successfully sent transaction with ${request.messages.length} message(s)`,
+                normalizedHash: tx.normalizedHash,
             };
         } catch (error) {
             return {
@@ -831,8 +754,6 @@ export class McpWalletService {
      * Deploy a new Agentic sub-wallet from the current Agentic root wallet.
      */
     async deployAgenticSubwallet(params: DeployAgenticSubwalletParams): Promise<DeployAgenticSubwalletResult> {
-        const broadcast = params.broadcast !== false;
-
         try {
             this.assertAgenticWalletVersion();
 
@@ -908,7 +829,7 @@ export class McpWalletService {
 
             const stateInit = beginCell().store(storeStateInit(childInit)).endCell();
 
-            const tx = {
+            const response = await this.wallet.sendTransaction({
                 validUntil: Math.floor(Date.now() / 1000) + AGENTIC_DEFAULT_VALID_UNTIL,
                 messages: [
                     {
@@ -918,24 +839,12 @@ export class McpWalletService {
                         payload: deployBody.toBoc().toString('base64'),
                     },
                 ],
-            } as TransactionRequest;
-
-            const result = await this.signTransactionAndMaybeBroadcast(tx, broadcast);
-
-            if (!result.ok) {
-                return {
-                    success: false,
-                    message: result.message,
-                };
-            }
+            } as TransactionRequest);
 
             return {
                 success: true,
-                message: broadcast
-                    ? `Successfully sent deploy transaction for sub-wallet ${childAddressFriendly}`
-                    : `Signed deploy transaction for sub-wallet ${childAddressFriendly} (not broadcast)`,
-                normalizedHash: result.normalizedHash,
-                ...(broadcast ? {} : { boc: result.boc, normalizedBoc: result.normalizedBoc }),
+                message: `Successfully sent deploy transaction for sub-wallet ${childAddressFriendly}`,
+                normalizedHash: response.normalizedHash,
                 subwalletAddress: childAddressFriendly,
                 subwalletNftIndex: subwalletNftIndex.toString(),
                 ownerAddress: rootState.ownerAddress.toString(),
@@ -1018,15 +927,7 @@ export class McpWalletService {
             minReceived: quote.minReceived,
             provider: quote.providerId,
             expiresAt: quote.expiresAt,
-            transaction: {
-                messages: tx.messages.map((m) => ({
-                    address: m.address,
-                    amount: m.amount.toString(),
-                    stateInit: m.stateInit,
-                    payload: m.payload,
-                })),
-                validUntil: tx.validUntil,
-            },
+            transaction: McpWalletService.toPreparedTransaction(tx),
         };
     }
 
@@ -1034,15 +935,7 @@ export class McpWalletService {
      * Emulate a transaction without broadcasting it.
      * Returns the emulated preview with money flow analysis.
      */
-    async emulateTransaction(params: {
-        messages: Array<{
-            address: string;
-            amount: string;
-            stateInit?: string;
-            payload?: string;
-        }>;
-        validUntil?: number;
-    }) {
+    async emulateTransaction(params: PreparedTransaction) {
         const preview = await this.wallet.getTransactionPreview({
             messages: params.messages as TransactionRequest['messages'],
             validUntil: params.validUntil,
@@ -1141,44 +1034,19 @@ export class McpWalletService {
         };
     }
 
-    /**
-     * Send NFT
-     */
-    async sendNft(
+    /** Build an NFT transfer transaction without signing or broadcasting it. */
+    async buildNftTransferTransaction(
         nftAddress: string,
         toAddress: string,
         comment?: string,
-        options?: { broadcast?: boolean },
-    ): Promise<TransferResult> {
-        const broadcast = options?.broadcast !== false;
+    ): Promise<PreparedTransaction> {
+        const tx = await this.wallet.createTransferNftTransaction({
+            nftAddress,
+            recipientAddress: toAddress,
+            comment,
+        });
 
-        try {
-            const tx = await this.wallet.createTransferNftTransaction({
-                nftAddress,
-                recipientAddress: toAddress,
-                comment,
-            });
-
-            const result = await this.signTransactionAndMaybeBroadcast(tx, broadcast);
-
-            if (!result.ok) {
-                return { success: false, message: result.message };
-            }
-
-            return {
-                success: true,
-                message: broadcast
-                    ? `Successfully sent NFT ${nftAddress} to ${toAddress}`
-                    : `Signed NFT transfer ${nftAddress} to ${toAddress} (not broadcast)`,
-                normalizedHash: result.normalizedHash,
-                ...(broadcast ? {} : { boc: result.boc, normalizedBoc: result.normalizedBoc }),
-            };
-        } catch (error) {
-            return {
-                success: false,
-                message: error instanceof Error ? error.message : 'Unknown error',
-            };
-        }
+        return McpWalletService.toPreparedTransaction(tx);
     }
 
     /**

@@ -19,14 +19,10 @@ function parseToolResult(result: Awaited<ReturnType<ReturnType<typeof createMcpN
 }
 
 describe('nft tools', () => {
-    it('send_nft with broadcast=false returns signed BoC fields', async () => {
+    it('send_nft prepares a transfer without broadcasting', async () => {
         const service = {
-            sendNft: vi.fn(async () => ({
-                success: true,
-                message: 'signed nft',
-                normalizedHash: 'nh-nft',
-                boc: 'boc-nft',
-                normalizedBoc: 'norm-nft',
+            buildNftTransferTransaction: vi.fn(async () => ({
+                messages: [{ address: 'EQNft', amount: '100000000', payload: 'transfer-body' }],
             })),
             getNfts: vi.fn(),
             getNftsByAddress: vi.fn(),
@@ -38,18 +34,19 @@ describe('nft tools', () => {
             await tools.send_nft.handler({
                 nftAddress: 'EQNft',
                 toAddress: 'EQTo',
-                broadcast: false,
             }),
         );
 
         expect(result).toMatchObject({
             success: true,
-            normalizedHash: 'nh-nft',
-            boc: 'boc-nft',
-            normalizedBoc: 'norm-nft',
-            broadcast: false,
+            transaction: {
+                messages: [{ address: 'EQNft', amount: '100000000', payload: 'transfer-body' }],
+            },
+            nftAddress: 'EQNft',
+            recipient: 'EQTo',
         });
+        expect(result.note).toContain('send_raw_transaction');
 
-        expect(service.sendNft).toHaveBeenCalledWith('EQNft', 'EQTo', undefined, { broadcast: false });
+        expect(service.buildNftTransferTransaction).toHaveBeenCalledWith('EQNft', 'EQTo', undefined);
     });
 });

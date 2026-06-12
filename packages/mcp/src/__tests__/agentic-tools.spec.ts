@@ -21,14 +21,12 @@ function parseToolResult(
 }
 
 describe('agentic tools', () => {
-    it('deploy_agentic_subwallet with broadcast=false returns signed BoC fields', async () => {
+    it('deploy_agentic_subwallet signs, broadcasts, and returns deployment details', async () => {
         const service = {
             deployAgenticSubwallet: vi.fn(async () => ({
                 success: true,
-                message: 'signed deploy',
+                message: 'deployed',
                 normalizedHash: 'nh-deploy',
-                boc: 'boc-deploy',
-                normalizedBoc: 'norm-deploy',
                 subwalletAddress: 'EQSub',
                 subwalletNftIndex: '1',
                 ownerAddress: 'EQOwner',
@@ -43,24 +41,21 @@ describe('agentic tools', () => {
             await tools.deploy_agentic_subwallet.handler({
                 operatorPublicKey: '0xabc',
                 metadata: { name: 'TestBot' },
-                broadcast: false,
             }),
         );
 
-        expect(result).toMatchObject({ success: true, message: 'signed deploy' });
+        expect(result).toMatchObject({ success: true, message: 'deployed' });
         expect(result.details).toMatchObject({
             normalizedHash: 'nh-deploy',
-            boc: 'boc-deploy',
-            normalizedBoc: 'norm-deploy',
-            broadcast: false,
             subwalletAddress: 'EQSub',
         });
+        expect(result.details).not.toHaveProperty('broadcast');
+        expect(result.details).not.toHaveProperty('boc');
 
         expect(service.deployAgenticSubwallet).toHaveBeenCalledWith({
             operatorPublicKey: '0xabc',
             amountNano: '50000000',
             metadata: { name: 'TestBot' },
-            broadcast: false,
         });
     });
 });

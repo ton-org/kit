@@ -9,7 +9,6 @@
 import { z } from 'zod';
 
 import type { McpWalletService } from '../services/McpWalletService.js';
-import { optionalBroadcastSchemaField } from './transfer-tools.js';
 import { toRawAmount, TON_DECIMALS } from './types.js';
 import type { ToolResponse } from './types.js';
 
@@ -28,14 +27,13 @@ export const deployAgenticSubwalletSchema = z.object({
         .describe('Public key for the new sub-wallet operator (uint256, decimal or 0x-prefixed hex).'),
     metadata: agenticMetadataSchema.describe('Required onchain NFT metadata (TEP-64). Must include at least `name`.'),
     amountTon: z.string().optional().describe('TON amount to attach for deployment in TON units (default: "0.05").'),
-    broadcast: optionalBroadcastSchemaField,
 });
 
 export function createMcpAgenticTools(service: McpWalletService) {
     return {
         deploy_agentic_subwallet: {
             description:
-                'Deploy a new Agentic sub-wallet from the current Agentic root wallet. Works only when WALLET_VERSION=agentic and current wallet is deployedByUser=true. Returns normalizedHash and the new sub-wallet address. With broadcast=false, signs and returns boc/normalizedBoc without sending.',
+                'Deploy a new Agentic sub-wallet from the current Agentic root wallet. Works only when WALLET_VERSION=agentic and current wallet is deployedByUser=true. Signs and broadcasts the deploy transaction, returning normalizedHash and the new sub-wallet address.',
             inputSchema: deployAgenticSubwalletSchema,
             handler: async (args: z.infer<typeof deployAgenticSubwalletSchema>): Promise<ToolResponse> => {
                 try {
@@ -48,7 +46,6 @@ export function createMcpAgenticTools(service: McpWalletService) {
                         operatorPublicKey: args.operatorPublicKey,
                         amountNano: toRawAmount(amountTon, TON_DECIMALS),
                         metadata: args.metadata,
-                        broadcast: args.broadcast,
                     });
 
                     if (!result.success) {
@@ -76,10 +73,6 @@ export function createMcpAgenticTools(service: McpWalletService) {
                                         message: result.message,
                                         details: {
                                             normalizedHash: result.normalizedHash,
-                                            ...(result.boc
-                                                ? { boc: result.boc, normalizedBoc: result.normalizedBoc }
-                                                : {}),
-                                            broadcast: args.broadcast !== false,
                                             subwalletAddress: result.subwalletAddress,
                                             subwalletNftIndex: result.subwalletNftIndex,
                                             ownerAddress: result.ownerAddress,

@@ -4,7 +4,7 @@
 
 ### Patch Changes
 
-- Added optional `broadcast` parameter to `send_ton`, `send_jetton`, `send_raw_transaction`, `send_nft`, and `deploy_agentic_subwallet`. When `broadcast` is `false`, the wallet signs with a real signature and returns `boc`/`normalizedBoc` without sending to the network.
+- `send_ton`, `send_jetton`, and `send_nft` no longer broadcast. They now build a transaction and return ready-to-send `transaction.messages`, mirroring the `get_swap_quote` pipeline. Preview them with `emulate_transaction`, then broadcast with `send_raw_transaction` (the only tool that signs and sends).
 
 ## 0.1.15-alpha.18
 
