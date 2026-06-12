@@ -3,8 +3,7 @@
 ## Code conventions
 
 - All file names must be in kebab-case.
-- For creating new actions and hooks, use the `add-action-and-hook` skill.
-- For creating new UI components, use the `add-ui-component` skill.
+- For creating new actions, hooks, and UI components, use the `kit-dev` skill.
 - Every component must have a Storybook story (`.stories.tsx`).
 
 ## Hook ordering in components and custom hooks
@@ -25,7 +24,7 @@ only to prepare input for a hook right below it can live next to that hook.
 
 - Always use CSS Modules (`.module.css`).
 - Use `clsx` for conditional class names.
-- Use design tokens from `src/styles/index.css` — never hardcode colors or spacing.
+- Use `--ta-*` design tokens from `src/styles/index.css` for colors, border-radius, and border-width. For padding/gap/margin use literal `px` — spacing tokens do not exist.
 - Use `composes` with relative paths for typography from `src/styles/typography.module.css`.
 
 ## i18n
