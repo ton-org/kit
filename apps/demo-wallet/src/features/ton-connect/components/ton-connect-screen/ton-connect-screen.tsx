@@ -12,7 +12,7 @@ import { useTonConnect } from '@demo/wallet-core';
 
 import { LoaderCircle } from '@/core/components/ui/loader-circle';
 import { createComponentLogger } from '@/core/lib/logger';
-import { Layout } from '@/core/components/shared/layout';
+import { CenteredScreen } from '@/core/components/shared/centered-screen';
 
 const log = createComponentLogger('TonConnectRoute');
 
@@ -32,10 +32,11 @@ export const TonConnectRoute: React.FC = () => {
     }, [handleTonConnectUrl, navigate]);
 
     return (
-        <Layout title="Connecting to dApp">
-            <div className="py-10">
-                <LoaderCircle size="lg" />
+        <CenteredScreen>
+            <div className="flex flex-col items-center gap-4 px-4 text-center">
+                <LoaderCircle size="lg" className="text-blue-500" />
+                <p className="text-base font-medium text-gray-500">Connecting…</p>
             </div>
-        </Layout>
+        </CenteredScreen>
     );
 };
