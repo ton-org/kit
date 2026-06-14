@@ -37,29 +37,33 @@ export const useWalletDataUpdater = () => {
         })();
     }, [address, updateBalance, loadUserJettons, loadUserNfts, loadRates, clearNfts, clearJettons, clearRates]);
 
-    // Background refresh: balance + jettons every 10s. Rates are requested too but
-    // self-throttle to 60s (see loadRates), so this doesn't spam the rates backend.
+    // Periodic refresh — sequential to avoid overloading the backend (ported from main):
+    // balance → jettons → rates → NFTs, chained via setTimeout, every 20s. Rates self-throttle
+    // to 60s (see loadRates), so re-requesting on each tick is cheap.
     useEffect(() => {
         if (!address) return;
 
-        const interval = setInterval(() => {
-            void (async () => {
-                await Promise.allSettled([updateBalance(), loadUserJettons()]);
-                await loadRates();
-            })();
-        }, 10_000);
+        let cancelled = false;
+        let timeout: ReturnType<typeof setTimeout>;
+        const refreshInterval = 30_000;
 
-        return () => clearInterval(interval);
-    }, [address, updateBalance, loadUserJettons, loadRates]);
+        const tick = async () => {
+            await updateBalance().catch(() => {});
+            if (cancelled) return;
+            await loadUserJettons().catch(() => {});
+            if (cancelled) return;
+            await loadRates().catch(() => {});
+            if (cancelled) return;
+            await refreshNfts().catch(() => {});
+            if (cancelled) return;
+            timeout = setTimeout(() => void tick(), refreshInterval);
+        };
 
-    // Periodic refresh for NFTs (slower cadence — NFTs change rarely)
-    useEffect(() => {
-        if (!address) return;
+        timeout = setTimeout(() => void tick(), refreshInterval);
 
-        const timeout = setInterval(() => {
-            void refreshNfts();
-        }, 60_000);
-
-        return () => clearInterval(timeout);
-    }, [address, refreshNfts]);
+        return () => {
+            cancelled = true;
+            clearTimeout(timeout);
+        };
+    }, [address, updateBalance, loadUserJettons, loadRates, refreshNfts]);
 };

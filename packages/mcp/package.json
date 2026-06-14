@@ -1,6 +1,6 @@
 {
   "name": "@ton/mcp",
-  "version": "0.1.15-alpha.20",
+  "version": "0.1.15-alpha.21",
   "description": "TON MCP Server - Model Context Protocol server for TON blockchain wallet operations",
   "license": "MIT",
   "type": "module",
@@ -52,6 +52,8 @@
     "lint": "eslint src --max-warnings 0",
     "lint:fix": "eslint src --max-warnings 0 --fix",
     "test": "vitest run",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "quality": "pnpm test",
     "clean": "git clean -xdf dist node_modules .turbo",
     "typecheck": "tsc --noEmit"
   },

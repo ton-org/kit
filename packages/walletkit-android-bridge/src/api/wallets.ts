@@ -132,6 +132,14 @@ export async function getWalletNetwork(args: { walletId: string }) {
     return wallet(args.walletId, 'getNetwork');
 }
 
+export async function getWalletPublicKey(args: { walletId: string }) {
+    return wallet(args.walletId, 'getPublicKey');
+}
+
+export async function getSignedSignMessage(args: { walletId: string; request: TransactionRequest }) {
+    return wallet(args.walletId, 'getSignedSignMessage', args.request);
+}
+
 export async function removeWallet(args: { walletId: string }) {
     return kit('removeWallet', args.walletId);
 }
