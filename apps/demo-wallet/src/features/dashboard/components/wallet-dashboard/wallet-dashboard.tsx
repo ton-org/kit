@@ -29,8 +29,15 @@ import {
 import { NewLayout } from '@/core/components/shared/new-layout';
 import { NftsCard } from '@/features/nft';
 import { TransactionHistory } from '@/features/transactions';
+import { useTonWallet } from '@/core/hooks';
 
 export const WalletDashboard: React.FC = () => {
+    // Re-initialize the wallet when the dashboard mounts (gated behind the unlocked route), so
+    // WalletKit + currentWallet are restored when booting straight onto it — e.g. an extension
+    // popup reopen. Must NOT move to AppRouter: useTonWallet inits once and at the root it fires
+    // before the store rehydrates (isUnlocked=false), skipping loadAllWallets with no retry.
+    useTonWallet();
+
     const { getAvailableWallets, savedWallets, getActiveWallet } = useWallet();
     const activeWallet = getActiveWallet();
     const { pendingConnectRequest, isConnectModalOpen, approveConnectRequest, rejectConnectRequest } = useTonConnect();
