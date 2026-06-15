@@ -9,7 +9,7 @@
 import { Address } from '@ton/core';
 
 import { Base64ToBigInt, Base64Normalize, Base64ToHex } from '../../utils/base64';
-import type { JettonInfo } from '../../types';
+import type { JettonInfo, JettonMastersResponse } from '../../types';
 import type { ToncenterEmulationResponse } from './types/raw-emulation';
 import type {
     ApiClient,
@@ -58,6 +58,7 @@ import { mapAccountStatesEntry, makeNonExistingAccountState } from './mappers/ma
 import type { ToncenterAccountStatesResponse } from './types/account-states';
 import type { EmulationResult } from '../../api/models';
 import { mapToncenterEmulationResponse } from './mappers/map-emulation';
+import { mapJettonMastersResponse } from './mappers/map-jetton-masters';
 import { BaseApiClient } from '../BaseApiClient';
 import type { BaseApiClientConfig } from '../BaseApiClient';
 import type { V2AddressInformation, V2SendMessageResult, V3RunGetMethodRequest, TonBlockIdExt } from './types/internal';
@@ -367,12 +368,14 @@ export class ApiClientToncenter extends BaseApiClient implements ApiClient {
         return undefined;
     }
 
-    async jettonsByAddress(request: GetJettonsByAddressRequest): Promise<ToncenterResponseJettonMasters> {
-        return this.getJson<ToncenterResponseJettonMasters>('/api/v3/jetton/masters', {
+    async jettonsByAddress(request: GetJettonsByAddressRequest): Promise<JettonMastersResponse> {
+        const raw = await this.getJson<ToncenterResponseJettonMasters>('/api/v3/jetton/masters', {
             address: request.address,
             offset: request.offset,
             limit: request.limit,
         });
+
+        return mapJettonMastersResponse(raw);
     }
 
     async jettonsByOwnerAddress(request: GetJettonsByOwnerRequest): Promise<JettonsResponse> {
@@ -403,7 +406,7 @@ export class ApiClientToncenter extends BaseApiClient implements ApiClient {
                     name: jettonInfo.name,
                     description: jettonInfo.description,
                     image: {
-                        url: jettonInfo.image,
+                        urls: jettonInfo.images ?? [],
                         data: jettonInfo.image_data,
                     },
                     symbol: jettonInfo.symbol,
@@ -454,7 +457,7 @@ export class ApiClientToncenter extends BaseApiClient implements ApiClient {
                 symbol: metadataJettonInfo.symbol ?? '',
                 description: metadataJettonInfo.description ?? '',
                 decimals,
-                image: metadataJettonInfo.image,
+                images: metadataJettonInfo.image ? [metadataJettonInfo.image] : undefined,
                 image_data: metadataJettonInfo.extra.image_data,
                 uri: metadataJettonInfo.extra.uri,
             };

@@ -131,7 +131,9 @@ function JettonItemAction({ item, index }: { item: Extract<StructuredItem, { typ
                         To <AddressLink address={item.destination} />
                     </div>
                     <div className="text-xs text-gray-500 truncate flex items-center gap-1">
-                        {jettonInfo?.image && <img src={jettonInfo.image} alt="" className="w-4 h-4 rounded-full" />}
+                        {jettonInfo?.images?.[0] && (
+                            <img src={jettonInfo.images[0]} alt="" className="w-4 h-4 rounded-full" />
+                        )}
                         <span>{jettonInfo?.name ?? 'Jetton'}</span>
                         <AddressLink
                             address={item.master}

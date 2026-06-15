@@ -33,6 +33,7 @@ export { DEFAULT_DURABLE_EVENTS_CONFIG } from './durableEvents';
 // Jettons types
 export type {
     JettonInfo,
+    JettonMastersResponse,
     JettonVerification,
     AddressJetton,
     JettonBalance,

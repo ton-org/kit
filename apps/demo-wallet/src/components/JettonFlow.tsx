@@ -46,10 +46,10 @@ export const JettonImage = memo(function JettonImage({
     jettonAddress: Address | string | undefined;
 }) {
     const jettonInfo = useJettonInfo(resolveTokenAddress(jettonAddress));
-    if (!jettonInfo?.image) {
-        return <img src={TON_INFO.image} alt={TON_INFO.name} className="w-8 h-8 rounded-full" />;
+    if (!jettonInfo?.images?.[0]) {
+        return <img src={TON_INFO.images?.[0]} alt={TON_INFO.name} className="w-8 h-8 rounded-full" />;
     }
-    return <img src={jettonInfo.image} alt={jettonInfo.name} className="w-8 h-8 rounded-full" />;
+    return <img src={jettonInfo.images[0]} alt={jettonInfo.name} className="w-8 h-8 rounded-full" />;
 });
 
 const JettonFlowItem = memo(function JettonFlowItem({

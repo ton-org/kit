@@ -68,10 +68,13 @@ export function tokenMetaToNftCollection(address: string, data: TokenInfoNFTColl
         name: data.name,
         description: data.description,
         image: {
-            url: image,
-            smallUrl: data?.extra?._image_small,
-            mediumUrl: data?.extra?._image_medium,
-            largeUrl: data?.extra?._image_big,
+            urls: [
+                ...new Set(
+                    [image, data?.extra?._image_medium, data?.extra?._image_big, data?.extra?._image_small].filter(
+                        (url): url is string => Boolean(url),
+                    ),
+                ),
+            ],
         },
         extra: data.extra,
     };

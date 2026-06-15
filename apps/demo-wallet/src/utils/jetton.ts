@@ -30,14 +30,7 @@ export const getJettonsImage = (jetton: Jetton): string | undefined => {
     }
 
     const img = jetton.info.image;
-    return (
-        img.url ||
-        (img.data ? `data:image/png;base64,${img.data}` : undefined) ||
-        img.mediumUrl ||
-        img.largeUrl ||
-        img.smallUrl ||
-        ''
-    );
+    return img.urls[0] || (img.data ? `data:image/png;base64,${img.data}` : undefined) || '';
 };
 
 export const getFormattedJettonInfo =

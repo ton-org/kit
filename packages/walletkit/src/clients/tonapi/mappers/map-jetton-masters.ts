@@ -8,67 +8,45 @@
 
 import { Address } from '@ton/core';
 
-import type { ToncenterResponseJettonMasters } from '../../toncenter/types/jettons';
+import type { JettonInfo, JettonMastersResponse } from '../../../types/jettons';
+import type { EmulationAddressBookEntry } from '../../../api/models';
 import type { TonApiJettonInfo } from '../types/jettons';
 import { asAddressFriendly } from '../../../utils/address';
-import type { AddressBookRowV3 } from '../../../types/toncenter/v3/AddressBookRowV3';
 
 function toRaw(address: string): string {
     return Address.parse(address).toRawString();
 }
 
-export function mapJettonMasters(jettonInfo: TonApiJettonInfo): ToncenterResponseJettonMasters {
-    const addressBook: Record<string, AddressBookRowV3> = {};
-
+export function mapJettonMasters(jettonInfo: TonApiJettonInfo): JettonMastersResponse {
     const jettonRaw = toRaw(jettonInfo.metadata.address);
     const jettonFriendly = asAddressFriendly(jettonInfo.metadata.address);
 
+    const addressBook: Record<string, EmulationAddressBookEntry> = {};
+
     if (jettonInfo.admin) {
-        const adminRaw = toRaw(jettonInfo.admin.address);
-        const adminFriendly = asAddressFriendly(jettonInfo.admin.address);
-        addressBook[adminRaw] = {
-            user_friendly: adminFriendly,
-            domain: jettonInfo.admin.name ?? null,
+        addressBook[toRaw(jettonInfo.admin.address)] = {
+            userFriendly: asAddressFriendly(jettonInfo.admin.address),
+            domain: jettonInfo.admin.name ?? undefined,
             interfaces: [],
         };
     }
 
     addressBook[jettonRaw] = {
-        user_friendly: jettonFriendly,
-        domain: null,
+        userFriendly: jettonFriendly,
+        domain: undefined,
         interfaces: ['jetton_master'],
     };
 
-    return {
-        jetton_masters: [
-            {
-                address: jettonRaw,
-                balance: '0',
-                owner: jettonInfo.admin ? toRaw(jettonInfo.admin.address) : '',
-                jetton: jettonRaw,
-                last_transaction_lt: jettonInfo.last_transaction_lt?.toString() ?? '0',
-                code_hash: jettonInfo.code_hash ?? '',
-                data_hash: jettonInfo.data_hash ?? '',
-            },
-        ],
-        address_book: addressBook,
-        metadata: {
-            [jettonRaw]: {
-                is_indexed: true,
-                token_info: [
-                    {
-                        valid: true,
-                        type: 'jetton_masters',
-                        name: jettonInfo.metadata.name,
-                        symbol: jettonInfo.metadata.symbol,
-                        description: jettonInfo.metadata.description,
-                        image: jettonInfo.metadata.image,
-                        extra: {
-                            decimals: jettonInfo.metadata.decimals,
-                        },
-                    },
-                ],
-            },
-        },
+    const master: JettonInfo = {
+        address: jettonFriendly,
+        name: jettonInfo.metadata.name,
+        symbol: jettonInfo.metadata.symbol,
+        description: jettonInfo.metadata.description ?? '',
+        decimals: jettonInfo.metadata.decimals ? parseInt(jettonInfo.metadata.decimals, 10) : undefined,
+        // Proxied preview (cache.tonapi.io) first, raw metadata image last.
+        images: [jettonInfo.preview, jettonInfo.metadata.image].filter((url): url is string => Boolean(url)),
+        totalSupply: jettonInfo.total_supply,
     };
+
+    return { masters: [master], addressBook };
 }

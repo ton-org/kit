@@ -30,14 +30,7 @@ export const NftsCard: React.FC<NftsCardProps> = ({ className = '' }) => {
             return '';
         }
 
-        return (
-            nft.info.image.url ||
-            nft.info.image.data ||
-            nft.info.image.mediumUrl ||
-            nft.info.image.largeUrl ||
-            nft.info.image.smallUrl ||
-            ''
-        );
+        return nft.info.image.urls[0] || nft.info.image.data || '';
     };
 
     const getNftName = (nft: NFT): string => {

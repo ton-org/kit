@@ -9,7 +9,22 @@
 import type { NFT, NFTsResponse } from '../../../api/models';
 import type { AddressBookEntry } from '../../../api/models/core/AddressBook';
 import { asAddressFriendly } from '../../../utils/address';
-import type { TonApiNftItem } from '../types/nfts';
+import type { TonApiNftItem, TonApiNftPreview } from '../types/nfts';
+
+/** Pixel area for a `"WxH"` resolution string; 0 when unparseable. */
+function previewArea(resolution: string): number {
+    const parts = resolution.split('x');
+    const width = parseInt(parts[0] ?? '', 10);
+    const height = parseInt(parts[1] ?? '', 10);
+    return Number.isFinite(width) && Number.isFinite(height) ? width * height : 0;
+}
+
+/** Preview URLs ordered largest-first, so consumers prefer the highest-resolution image. */
+function previewUrlsLargestFirst(previews?: TonApiNftPreview[]): string[] {
+    return [...(previews ?? [])]
+        .sort((a, b) => previewArea(b.resolution) - previewArea(a.resolution))
+        .map((preview) => preview.url);
+}
 
 export function mapNftItem(item: TonApiNftItem): NFT {
     const isVerified = item.trust === 'whitelist' || item.verified;
@@ -29,7 +44,14 @@ export function mapNftItem(item: TonApiNftItem): NFT {
             name: item.metadata.name ?? '',
             description: item.metadata.description ?? '',
             image: {
-                url: item.metadata.image ?? '',
+                // Largest proxied preview first (crisp + more likely to load), original metadata image last.
+                urls: [
+                    ...new Set(
+                        [...previewUrlsLargestFirst(item.previews), item.metadata.image].filter((url): url is string =>
+                            Boolean(url),
+                        ),
+                    ),
+                ],
             },
         },
         attributes: item.metadata.attributes?.map((attr) => ({

@@ -112,41 +112,21 @@ export class JettonsManager implements JettonsAPI {
             }
 
             const apiClient = this.networkManager.getClient(targetNetwork);
-            const jettonFromApi = await apiClient.jettonsByAddress({
+            const { masters } = await apiClient.jettonsByAddress({
                 address: address,
                 offset: 0,
                 limit: 1,
             });
 
-            if (jettonFromApi && jettonFromApi?.jetton_masters?.length > 0 && jettonFromApi?.jetton_masters?.[0]) {
-                const jetton = jettonFromApi?.jetton_masters?.[0];
-                const metadata = jettonFromApi?.metadata?.[jetton.address];
-                const tokenInfo = metadata?.token_info?.find((t) => t.valid && t.type === 'jetton_masters') as
-                    | EmulationTokenInfoMasters
-                    | undefined;
-
-                let decimals: number;
-                try {
-                    decimals = parseInt(tokenInfo?.extra.decimals as string, 10);
-                } catch {
-                    decimals = 9;
-                }
-
-                const result: JettonInfo = {
-                    address: jetton.jetton,
-                    name: tokenInfo?.name ?? '',
-                    symbol: tokenInfo?.symbol ?? '',
-                    description: tokenInfo?.description ?? '',
-                    decimals: decimals,
-                    image: tokenInfo?.image,
-                    uri: tokenInfo?.extra?.uri,
-                    totalSupply: '0',
-                };
-                this.cache.set(cacheKey, result);
-
-                return result;
+            const info = masters[0];
+            if (!info) {
+                return null;
             }
-            return null;
+
+            const result: JettonInfo = { ...info, decimals: info.decimals ?? 9 };
+            this.cache.set(cacheKey, result);
+
+            return result;
         } catch (error) {
             log.error('Error getting jetton info', { error, jettonAddress, network: targetNetwork });
             return null;
@@ -218,7 +198,7 @@ export class JettonsManager implements JettonsAPI {
                 name: emulationInfo.name,
                 symbol: emulationInfo.symbol,
                 description: emulationInfo.description,
-                image: emulationInfo.image,
+                images: emulationInfo.image ? [emulationInfo.image] : undefined,
                 decimals:
                     typeof emulationInfo.extra.decimals === 'string'
                         ? parseInt(emulationInfo.extra.decimals, 10)

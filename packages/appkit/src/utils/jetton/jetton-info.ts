@@ -40,14 +40,8 @@ export const getJettonsImage = (jetton: Jetton): string | undefined => {
         return;
     }
 
-    return (
-        jetton.info.image.url ||
-        (jetton.info.image.data ? atob(jetton.info.image.data) : undefined) ||
-        jetton.info.image.mediumUrl ||
-        jetton.info.image.largeUrl ||
-        jetton.info.image.smallUrl ||
-        ''
-    );
+    const { urls, data } = jetton.info.image;
+    return urls[0] || (data ? atob(data) : undefined) || '';
 };
 
 export const getFormattedJettonInfo = (jetton: Jetton) => {
