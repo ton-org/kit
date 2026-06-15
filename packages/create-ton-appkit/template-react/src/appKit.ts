@@ -28,9 +28,5 @@ export const appKit = new AppKit({
         }),
     ],
     // DeFi providers — https://docs.ton.org/applications/appkit/howto/providers#how-they-are-registered
-    providers: [
-        createOmnistonProvider(),
-        createDeDustProvider(),
-        createTonstakersProvider(),
-    ],
+    providers: [createOmnistonProvider(), createDeDustProvider(), createTonstakersProvider()],
 });
