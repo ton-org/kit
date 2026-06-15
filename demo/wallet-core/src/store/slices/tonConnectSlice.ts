@@ -187,14 +187,13 @@ export const createTonConnectSlice: TonConnectSliceCreator = (set: SetState, get
             const result = await state.walletCore.walletKit.approveTransactionRequest(
                 state.tonConnect.pendingTransactionRequestEvent,
             );
-            setTimeout(() => {
-                set((state) => {
-                    state.tonConnect.pendingTransactionRequestEvent = undefined;
-                    state.tonConnect.isTransactionModalOpen = false;
-                });
 
-                state.clearCurrentRequestFromQueue();
-            }, 3000);
+            set((state) => {
+                state.tonConnect.pendingTransactionRequestEvent = undefined;
+                state.tonConnect.isTransactionModalOpen = false;
+            });
+
+            state.clearCurrentRequestFromQueue();
             return result;
         } catch (error) {
             log.error('Failed to approve transaction request:', error);
@@ -267,14 +266,12 @@ export const createTonConnectSlice: TonConnectSliceCreator = (set: SetState, get
         try {
             await state.walletCore.walletKit.approveSignDataRequest(state.tonConnect.pendingSignDataRequestEvent);
 
-            setTimeout(() => {
-                set((state) => {
-                    state.tonConnect.pendingSignDataRequestEvent = undefined;
-                    state.tonConnect.isSignDataModalOpen = false;
-                });
+            set((state) => {
+                state.tonConnect.pendingSignDataRequestEvent = undefined;
+                state.tonConnect.isSignDataModalOpen = false;
+            });
 
-                state.clearCurrentRequestFromQueue();
-            }, 3000);
+            state.clearCurrentRequestFromQueue();
         } catch (error) {
             log.error('Failed to approve sign data request:', error);
             state.clearCurrentRequestFromQueue();
@@ -343,13 +340,13 @@ export const createTonConnectSlice: TonConnectSliceCreator = (set: SetState, get
         }
         try {
             await state.walletCore.walletKit.approveSignMessageRequest(state.tonConnect.pendingSignMessageRequestEvent);
-            setTimeout(() => {
-                set((state) => {
-                    state.tonConnect.pendingSignMessageRequestEvent = undefined;
-                    state.tonConnect.isSignMessageModalOpen = false;
-                });
-                state.clearCurrentRequestFromQueue();
-            }, 3000);
+
+            set((state) => {
+                state.tonConnect.pendingSignMessageRequestEvent = undefined;
+                state.tonConnect.isSignMessageModalOpen = false;
+            });
+
+            state.clearCurrentRequestFromQueue();
         } catch (error) {
             log.error('Failed to approve sign message request:', error);
             state.clearCurrentRequestFromQueue();

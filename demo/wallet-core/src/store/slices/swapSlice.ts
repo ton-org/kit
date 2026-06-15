@@ -15,9 +15,12 @@ import type { SetState, SwapSliceCreator } from '../../types/store';
 
 const log = createComponentLogger('SwapSlice');
 
+/** GRAM kept aside on a native-coin swap so the transaction still has gas to pay for itself (matches the Max button). */
+const NATIVE_GAS_RESERVE = '0.1';
+
 export const createSwapSlice: SwapSliceCreator = (set: SetState, get) => ({
     swap: {
-        fromToken: { address: 'ton', decimals: 9, symbol: 'TON' },
+        fromToken: { address: 'ton', decimals: 9, symbol: 'GRAM' },
         toToken: { address: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs', decimals: 6, symbol: 'USDT' },
         amount: '',
         destinationAddress: '',
@@ -27,6 +30,7 @@ export const createSwapSlice: SwapSliceCreator = (set: SetState, get) => ({
         error: null,
         slippageBps: 100,
         isReverseSwap: false,
+        providerId: 'omniston',
     },
 
     setFromToken: (token: SwapToken) => {
@@ -71,6 +75,16 @@ export const createSwapSlice: SwapSliceCreator = (set: SetState, get) => ({
     setSlippageBps: (slippage: number) => {
         set((state) => {
             state.swap.slippageBps = slippage;
+        });
+    },
+
+    setSwapProviderId: (providerId: string) => {
+        set((state) => {
+            state.swap.providerId = providerId;
+            // The existing quote came from the previous provider — drop it so the
+            // next quote is fetched from the newly selected one.
+            state.swap.currentQuote = null;
+            state.swap.error = null;
         });
     },
 
@@ -136,6 +150,9 @@ export const createSwapSlice: SwapSliceCreator = (set: SetState, get) => ({
             if (amountBigInt > tonBalance) {
                 return 'Insufficient balance';
             }
+            if (amountBigInt > tonBalance - parseUnits(NATIVE_GAS_RESERVE, fromToken.decimals)) {
+                return `Keep ~${NATIVE_GAS_RESERVE} GRAM for network fees`;
+            }
         } else {
             // Check jetton balance
             const jetton = state.jettons.userJettons.find((j) => j.address === fromToken.address);
@@ -157,7 +174,7 @@ export const createSwapSlice: SwapSliceCreator = (set: SetState, get) => ({
 
     getSwapQuote: async () => {
         const state = get();
-        const { fromToken, toToken, amount, isReverseSwap, slippageBps } = state.swap;
+        const { fromToken, toToken, amount, isReverseSwap, slippageBps, providerId } = state.swap;
 
         // Validate inputs
         const validationError = get().validateSwapInputs();
@@ -227,7 +244,7 @@ export const createSwapSlice: SwapSliceCreator = (set: SetState, get) => ({
                 };
             }
 
-            const quote = await state.walletCore.walletKit.swap.getQuote(quoteParams, 'omniston');
+            const quote = await state.walletCore.walletKit.swap.getQuote(quoteParams, providerId);
 
             // Update the opposite amount based on which one was specified
             set((state) => {
@@ -262,7 +279,7 @@ export const createSwapSlice: SwapSliceCreator = (set: SetState, get) => ({
             set((state) => {
                 state.swap.error = validationError;
             });
-            return;
+            return false;
         }
 
         if (!currentQuote) {
@@ -270,7 +287,7 @@ export const createSwapSlice: SwapSliceCreator = (set: SetState, get) => ({
             set((state) => {
                 state.swap.error = 'No quote available. Please get a quote first.';
             });
-            return;
+            return false;
         }
 
         if (!state.walletCore.walletKit) {
@@ -278,7 +295,7 @@ export const createSwapSlice: SwapSliceCreator = (set: SetState, get) => ({
             set((state) => {
                 state.swap.error = 'WalletKit not initialized';
             });
-            return;
+            return false;
         }
 
         if (!state.walletManagement.currentWallet) {
@@ -286,7 +303,7 @@ export const createSwapSlice: SwapSliceCreator = (set: SetState, get) => ({
             set((state) => {
                 state.swap.error = 'No active wallet';
             });
-            return;
+            return false;
         }
 
         if (!state.walletManagement.address) {
@@ -294,7 +311,7 @@ export const createSwapSlice: SwapSliceCreator = (set: SetState, get) => ({
             set((state) => {
                 state.swap.error = 'No wallet address';
             });
-            return;
+            return false;
         }
 
         set((state) => {
@@ -326,6 +343,7 @@ export const createSwapSlice: SwapSliceCreator = (set: SetState, get) => ({
             });
 
             log.info('Swap executed successfully');
+            return true;
         } catch (error) {
             log.error('Failed to execute swap:', error);
 
@@ -335,12 +353,13 @@ export const createSwapSlice: SwapSliceCreator = (set: SetState, get) => ({
                 state.swap.isSwapping = false;
                 state.swap.error = errorMessage;
             });
+            return false;
         }
     },
 
     clearSwap: () => {
         set((state) => {
-            state.swap.fromToken = { address: 'ton', decimals: 9, symbol: 'TON' };
+            state.swap.fromToken = { address: 'ton', decimals: 9, symbol: 'GRAM' };
             state.swap.toToken = {
                 address: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs',
                 decimals: 6,
@@ -353,6 +372,7 @@ export const createSwapSlice: SwapSliceCreator = (set: SetState, get) => ({
             state.swap.error = null;
             state.swap.slippageBps = 100;
             state.swap.isReverseSwap = false;
+            state.swap.providerId = 'omniston';
         });
     },
 });

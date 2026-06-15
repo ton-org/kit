@@ -246,6 +246,26 @@ export interface NftsSlice {
     formatNftIndex: (index: string) => string;
 }
 
+// Rates slice interface
+export interface RateEntry {
+    rate: number;
+    change24h?: number;
+    currency: 'USD';
+}
+
+export interface RatesSlice {
+    rates: {
+        entries: Record<string, RateEntry>;
+        isLoading: boolean;
+        error: string | null;
+        lastUpdated: number;
+    };
+
+    loadRates: () => Promise<void>;
+    clearRates: () => void;
+    getRate: (key: string) => RateEntry | undefined;
+}
+
 // Swap slice interface
 export interface SwapState {
     fromToken: SwapToken;
@@ -258,6 +278,8 @@ export interface SwapState {
     error: string | null;
     slippageBps: number;
     isReverseSwap: boolean;
+    /** Selected swap provider id (e.g. 'omniston', 'dedust'); quotes are fetched from it. */
+    providerId: string;
 }
 
 // Staking slice interface
@@ -281,8 +303,8 @@ export interface StakingSlice {
     setStakingProviderId: (providerId: string) => void;
     setUnstakeMode: (mode: UnstakeModes) => void;
     getStakingQuote: (params: Omit<StakingQuoteParams, 'network'>) => Promise<void>;
-    stake: (params: Omit<StakeParams, 'userAddress'>) => Promise<void>;
-    unstake: (params: Omit<StakeParams, 'userAddress'>) => Promise<void>;
+    stake: (params: Omit<StakeParams, 'userAddress'>) => Promise<boolean>;
+    unstake: (params: Omit<StakeParams, 'userAddress'>) => Promise<boolean>;
     loadStakingData: (userAddress: string) => Promise<void>;
     clearStaking: () => void;
     validateStakingInputs: () => string | null;
@@ -329,9 +351,10 @@ export interface SwapSlice {
     setDestinationAddress: (address: string) => void;
     setIsReverseSwap: (isReverseSwap: boolean) => void;
     setSlippageBps: (slippage: number) => void;
+    setSwapProviderId: (providerId: string) => void;
     swapTokens: () => void;
     getSwapQuote: () => Promise<void>;
-    executeSwap: () => Promise<void>;
+    executeSwap: () => Promise<boolean>;
     clearSwap: () => void;
     validateSwapInputs: () => string | null;
 }
@@ -345,6 +368,7 @@ export interface AppState
         TonConnectSlice,
         JettonsSlice,
         NftsSlice,
+        RatesSlice,
         SwapSlice,
         StakingSlice,
         GaslessSlice {
@@ -368,6 +392,8 @@ export type TonConnectSliceCreator = StateCreator<AppState, [], [], TonConnectSl
 export type JettonsSliceCreator = StateCreator<AppState, [], [], JettonsSlice>;
 
 export type NftsSliceCreator = StateCreator<AppState, [], [], NftsSlice>;
+
+export type RatesSliceCreator = StateCreator<AppState, [], [], RatesSlice>;
 
 export type SwapSliceCreator = StateCreator<AppState, [['zustand/immer', never]], [], SwapSlice>;
 

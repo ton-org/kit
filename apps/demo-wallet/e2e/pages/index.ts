@@ -8,4 +8,3 @@
 
 export { SetupPasswordPage } from './SetupPasswordPage';
 export { SetupWalletPage } from './SetupWalletPage';
-export { UnlockWalletPage } from './UnlockWalletPage';

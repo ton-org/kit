@@ -5,6 +5,20 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@theme {
+  --font-sans: 'Inter Variable', system-ui, Avenir, Helvetica, Arial, sans-serif;
+  --font-display: 'Inter Display', 'Inter Variable', system-ui, sans-serif;
+}
+
+@font-face {
+  font-family: 'Inter Display';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url('@fontsource-variable/inter/files/inter-latin-opsz-normal.woff2') format('woff2-variations');
+  font-variation-settings: 'opsz' 32;
+}
+
 #root {
   width: 100%;
 }
@@ -158,5 +172,12 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+  button:not(:disabled),
+  [role='button'],
+  a,
+  summary,
+  label[for] {
+    cursor: pointer;
   }
 }

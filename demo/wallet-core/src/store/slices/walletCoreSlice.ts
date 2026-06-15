@@ -19,6 +19,7 @@ import {
 } from '@ton/walletkit';
 import type { ITonWalletKit } from '@ton/walletkit';
 import { createOmnistonProvider } from '@ton/walletkit/swap/omniston';
+import { createDeDustProvider } from '@ton/walletkit/swap/dedust';
 import { createTonstakersProvider } from '@ton/walletkit/staking/tonstakers';
 import { createTonApiGaslessProvider } from '@ton/walletkit/gasless/tonapi';
 
@@ -109,6 +110,7 @@ function createWalletKitInstance(walletKitConfig?: WalletKitConfig): ITonWalletK
     }) as ITonWalletKit;
 
     walletKit.swap.registerProvider(createOmnistonProvider());
+    walletKit.swap.registerProvider(createDeDustProvider());
 
     const streamingProvider =
         walletKitConfig?.tonApiProvider === 'tonapi' ? createTonApiStreamingProvider : createTonCenterStreamingProvider;

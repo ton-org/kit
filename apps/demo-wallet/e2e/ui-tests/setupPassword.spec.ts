@@ -9,14 +9,13 @@
 import { expect } from '@playwright/test';
 import { step } from 'allure-js-commons';
 
-import { SetupPasswordPage, SetupWalletPage, UnlockWalletPage } from '../pages';
+import { SetupPasswordPage, SetupWalletPage } from '../pages';
 import { testWithUIFixture } from './UITestFixture';
 import { TEST_PASSWORD, LONG_PASSWORD, XSS_PASSWORD_PAYLOAD } from '../constants';
 
 const test = testWithUIFixture().extend<{
     setupPassword: SetupPasswordPage;
     setupWallet: SetupWalletPage;
-    unlockWallet: UnlockWalletPage;
 }>({
     setupPassword: async ({ page }, use) => {
         await use(new SetupPasswordPage(page));
@@ -24,20 +23,19 @@ const test = testWithUIFixture().extend<{
     setupWallet: async ({ page }, use) => {
         await use(new SetupWalletPage(page));
     },
-    unlockWallet: async ({ page }, use) => {
-        await use(new UnlockWalletPage(page));
-    },
 });
 
 test.describe('SetupPassword', () => {
-    test.beforeEach(async ({ setupPassword }) => {
+    test.beforeEach(async ({ page, setupPassword }) => {
+        // The redesign starts on Welcome; "Create a new wallet" leads to the password screen.
+        await page.getByTestId('welcome-create').click();
         await setupPassword.waitForPage();
     });
 
     test.describe('display', () => {
         test('page renders correctly', async ({ setupPassword }) => {
-            await step('Verify subtitle contains "Create Password"', async () => {
-                await expect(setupPassword.subtitle).toHaveText('Create Password');
+            await step('Verify subtitle contains "Create a password"', async () => {
+                await expect(setupPassword.subtitle).toHaveText('Create a password');
             });
             await step('Verify password input is visible', async () => {
                 await expect(setupPassword.passwordInput).toBeVisible();
@@ -54,7 +52,7 @@ test.describe('SetupPassword', () => {
         });
 
         test('helper text is visible', async ({ setupPassword }) => {
-            await step('Verify helper text contains "At least 4 characters"', async () => {
+            await step('Verify the "remember your password" helper is visible', async () => {
                 await expect(setupPassword.helperText).toBeVisible();
             });
         });
@@ -104,17 +102,19 @@ test.describe('SetupPassword', () => {
 
     test.describe('validation errors', () => {
         test('error when password is less than 4 characters', async ({ setupPassword, page }) => {
-            await step('Submit password shorter than 4 characters', async () => {
-                await setupPassword.submit('ab');
+            // Submit stays disabled for an invalid password, so the hint shows on input (no click).
+            await step('Type a password shorter than 4 characters', async () => {
+                await setupPassword.fillPassword('ab');
             });
-            await step('Verify error contains "Password must be at least 4 characters long"', async () => {
-                await expect(page.getByText('Password must be at least 4 characters long')).toBeVisible();
+            await step('Verify error contains "Password must be at least 4 characters"', async () => {
+                await expect(page.getByText('Password must be at least 4 characters')).toBeVisible();
             });
         });
 
         test('error when passwords do not match', async ({ setupPassword, page }) => {
-            await step('Submit mismatched passwords', async () => {
-                await setupPassword.submit(TEST_PASSWORD, 'diff');
+            await step('Type mismatched passwords', async () => {
+                await setupPassword.fillPassword(TEST_PASSWORD);
+                await setupPassword.fillConfirm('diff');
             });
             await step('Verify error contains "Passwords do not match"', async () => {
                 await expect(page.getByText('Passwords do not match')).toBeVisible();
@@ -122,8 +122,9 @@ test.describe('SetupPassword', () => {
         });
 
         test('fields retain values after error', async ({ setupPassword }) => {
-            await step('Submit password shorter than 4 characters', async () => {
-                await setupPassword.submit('ab');
+            await step('Type a password shorter than 4 characters', async () => {
+                await setupPassword.fillPassword('ab');
+                await setupPassword.fillConfirm('ab');
             });
             await step('Verify password field retains its value', async () => {
                 await expect(setupPassword.passwordInput).toHaveValue('ab');
@@ -135,11 +136,11 @@ test.describe('SetupPassword', () => {
     });
 
     test.describe('positive', () => {
-        test('valid password redirects to /setup-wallet', async ({ setupPassword, setupWallet }) => {
+        test('valid password redirects to the recovery-phrase screen', async ({ setupPassword, setupWallet }) => {
             await step('Submit valid password', async () => {
                 await setupPassword.submit(TEST_PASSWORD);
             });
-            await step('Verify Setup Wallet page is displayed', async () => {
+            await step('Verify the recovery-phrase (create-wallet) screen is displayed', async () => {
                 await setupWallet.waitForPage();
             });
         });
@@ -150,7 +151,7 @@ test.describe('SetupPassword', () => {
             await step('Submit valid password', async () => {
                 await setupPassword.submit(TEST_PASSWORD);
             });
-            await step('Wait for Setup Wallet page', async () => {
+            await step('Wait for the recovery-phrase screen', async () => {
                 await setupWallet.waitForPage();
             });
 
@@ -173,7 +174,7 @@ test.describe('SetupPassword', () => {
             await step('Submit 500-character password', async () => {
                 await setupPassword.submit(LONG_PASSWORD);
             });
-            await step('Verify Setup Wallet page is displayed', async () => {
+            await step('Verify the recovery-phrase screen is displayed', async () => {
                 await setupWallet.waitForPage();
             });
         });
@@ -185,7 +186,7 @@ test.describe('SetupPassword', () => {
             await step('Paste and submit password', async () => {
                 await setupPassword.submitByPasting(TEST_PASSWORD);
             });
-            await step('Verify Setup Wallet page is displayed', async () => {
+            await step('Verify the recovery-phrase screen is displayed', async () => {
                 await setupWallet.waitForPage();
             });
         });
@@ -203,7 +204,7 @@ test.describe('SetupPassword', () => {
             await step('Submit XSS payload as password', async () => {
                 await setupPassword.submit(XSS_PASSWORD_PAYLOAD);
             });
-            await step('Verify Setup Wallet page is displayed', async () => {
+            await step('Verify the recovery-phrase screen is displayed', async () => {
                 await setupWallet.waitForPage();
             });
             await step('Verify no XSS dialog was triggered', async () => {

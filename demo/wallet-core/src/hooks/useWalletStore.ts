@@ -220,6 +220,23 @@ export const useJettons = () => {
 };
 
 /**
+ * Hook for Rates (USD prices and 24h change per asset key)
+ */
+export const useRates = () => {
+    return useWalletStore(
+        useShallow((state) => ({
+            entries: state.rates.entries,
+            isLoading: state.rates.isLoading,
+            error: state.rates.error,
+            lastUpdated: state.rates.lastUpdated,
+            loadRates: state.loadRates,
+            clearRates: state.clearRates,
+            getRate: state.getRate,
+        })),
+    );
+};
+
+/**
  * Hook for Swap
  */
 export const useSwap = () => {
@@ -235,11 +252,13 @@ export const useSwap = () => {
             error: state.swap.error,
             slippageBps: state.swap.slippageBps,
             isReverseSwap: state.swap.isReverseSwap,
+            providerId: state.swap.providerId,
             setFromToken: state.setFromToken,
             setToToken: state.setToToken,
             setSwapAmount: state.setSwapAmount,
             setDestinationAddress: state.setDestinationAddress,
             setSlippageBps: state.setSlippageBps,
+            setSwapProviderId: state.setSwapProviderId,
             setIsReverseSwap: state.setIsReverseSwap,
             swapTokens: state.swapTokens,
             getSwapQuote: state.getSwapQuote,

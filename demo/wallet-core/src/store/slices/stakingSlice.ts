@@ -135,7 +135,7 @@ export const createStakingSlice: StakingSliceCreator = (set: SetState, get) => (
             set((state) => {
                 state.staking.error = 'Wallet not ready';
             });
-            return;
+            return false;
         }
 
         set((state) => {
@@ -159,6 +159,7 @@ export const createStakingSlice: StakingSliceCreator = (set: SetState, get) => (
                 state.staking.amount = '';
                 state.staking.currentQuote = null;
             });
+            return true;
         } catch (error) {
             log.error('Failed to stake:', error);
             const errorMessage = error instanceof Error ? error.message : 'Failed to stake';
@@ -166,6 +167,7 @@ export const createStakingSlice: StakingSliceCreator = (set: SetState, get) => (
                 state.staking.isStaking = false;
                 state.staking.error = errorMessage;
             });
+            return false;
         }
     },
 
@@ -178,7 +180,7 @@ export const createStakingSlice: StakingSliceCreator = (set: SetState, get) => (
             set((state) => {
                 state.staking.error = 'Wallet not ready';
             });
-            return;
+            return false;
         }
 
         set((state) => {
@@ -202,6 +204,7 @@ export const createStakingSlice: StakingSliceCreator = (set: SetState, get) => (
                 state.staking.amount = '';
                 state.staking.currentQuote = null;
             });
+            return true;
         } catch (error) {
             log.error('Failed to unstake:', error);
             const errorMessage = error instanceof Error ? error.message : 'Failed to unstake';
@@ -209,6 +212,7 @@ export const createStakingSlice: StakingSliceCreator = (set: SetState, get) => (
                 state.staking.isUnstaking = false;
                 state.staking.error = errorMessage;
             });
+            return false;
         }
     },
 
