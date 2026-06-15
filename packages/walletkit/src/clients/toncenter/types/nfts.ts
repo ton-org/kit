@@ -68,16 +68,10 @@ export function toApiTokenInfo(data: TokenInfo): APITokenInfo {
         name: data.name,
         description: data.description,
         image: {
-            urls: [
-                ...new Set(
-                    [
-                        data.image ?? data.extra?._image_medium,
-                        data.extra?._image_medium,
-                        data.extra?._image_big,
-                        data.extra?._image_small,
-                    ].filter((url): url is string => Boolean(url)),
-                ),
-            ],
+            url: data.image ?? data.extra?._image_medium,
+            smallUrl: data.extra?._image_small,
+            mediumUrl: data.extra?._image_medium,
+            largeUrl: data.extra?._image_big,
         },
         animation: {
             url: animationUrl,

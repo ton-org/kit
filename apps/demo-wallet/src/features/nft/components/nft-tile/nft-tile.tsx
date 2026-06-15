@@ -10,11 +10,12 @@ import React from 'react';
 import type { NFT } from '@ton/walletkit';
 
 import { FallbackImage } from '@/core/components/ui/fallback-image';
+import { tokenImageUrls } from '@/core/utils';
 
 const getNftImageSources = (nft: NFT): string[] => {
     const img = nft.info?.image;
     if (!img) return [];
-    return [...img.urls, ...(img.data ? [`data:image/png;base64,${img.data}`] : [])];
+    return [...tokenImageUrls(img), ...(img.data ? [`data:image/png;base64,${img.data}`] : [])];
 };
 
 const getNftName = (nft: NFT, formatNftIndex: (index: string) => string): string => {

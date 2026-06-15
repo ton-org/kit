@@ -61,17 +61,21 @@ describe('Jetton Actions Examples (Integration)', () => {
         // Default jettonsByAddress mock for actions that auto-resolve decimals
         mockClient.jettonsByAddress.mockImplementation((params: { address: string }) =>
             Promise.resolve({
-                masters: [
-                    {
-                        address: params.address,
-                        name: 'Test Jetton',
-                        symbol: 'TEST',
-                        description: 'Test Jetton',
-                        decimals: 6,
-                        images: [],
+                jetton_masters: [{ address: params.address, jetton: params.address }],
+                metadata: {
+                    [params.address]: {
+                        token_info: [
+                            {
+                                valid: true,
+                                type: 'jetton_masters',
+                                name: 'Test Jetton',
+                                symbol: 'TEST',
+                                description: 'Test Jetton',
+                                extra: { decimals: 6 },
+                            },
+                        ],
                     },
-                ],
-                addressBook: {},
+                },
             }),
         );
 
@@ -104,18 +108,22 @@ describe('Jetton Actions Examples (Integration)', () => {
     describe('getJettonInfoExample', () => {
         it('should get and log jetton info', async () => {
             mockClient.jettonsByAddress.mockResolvedValue({
-                masters: [
-                    {
-                        address: JETTON_ADDRESS,
-                        name: 'Test Jetton',
-                        symbol: 'TEST',
-                        description: 'Test Description',
-                        decimals: 6,
-                        images: ['test-image-url'],
-                        uri: 'test-uri',
+                jetton_masters: [{ address: JETTON_ADDRESS, jetton: JETTON_ADDRESS }],
+                metadata: {
+                    [JETTON_ADDRESS]: {
+                        token_info: [
+                            {
+                                valid: true,
+                                type: 'jetton_masters',
+                                name: 'Test Jetton',
+                                symbol: 'TEST',
+                                description: 'Test Description',
+                                image: 'test-image-url',
+                                extra: { decimals: 6, uri: 'test-uri' },
+                            },
+                        ],
                     },
-                ],
-                addressBook: {},
+                },
             });
 
             await getJettonInfoExample(appKit);

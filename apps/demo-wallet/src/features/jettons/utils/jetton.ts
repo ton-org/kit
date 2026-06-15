@@ -8,6 +8,8 @@
 
 import type { Jetton } from '@ton/walletkit';
 
+import { tokenImageUrls } from '@/core/utils';
+
 export const getJettonsSymbol = (jetton: Jetton): string | undefined => {
     if (!jetton?.info?.symbol) {
         return;
@@ -30,7 +32,7 @@ export const getJettonsImage = (jetton: Jetton): string | undefined => {
     }
 
     const img = jetton.info.image;
-    return img.urls[0] || (img.data ? `data:image/png;base64,${img.data}` : undefined) || '';
+    return tokenImageUrls(img)[0] || (img.data ? `data:image/png;base64,${img.data}` : undefined) || '';
 };
 
 export const getFormattedJettonInfo =

@@ -11,4 +11,5 @@ export * from './formatters';
 export * from './payload';
 export * from './rates';
 export * from './telegram';
+export * from './token-image';
 export * from './units';

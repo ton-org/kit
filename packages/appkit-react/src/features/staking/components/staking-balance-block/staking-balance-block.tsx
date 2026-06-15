@@ -61,7 +61,7 @@ export const StakingBalanceBlock: FC<StakingBalanceBlockProps> = ({
     return (
         <div className={clsx(styles.container, className)} {...props}>
             <div className={styles.iconContainer}>
-                {isNativeTon ? <TonIconCircle size={36} /> : <Logo size={36} src={jettonInfo?.images?.[0]} />}
+                {isNativeTon ? <TonIconCircle size={36} /> : <Logo size={36} src={jettonInfo?.image} />}
             </div>
 
             <div className={styles.info}>

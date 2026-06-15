@@ -38,7 +38,7 @@ import type {
 } from '../../api/models';
 import type { EmulationResult } from '../../api/models';
 import type { ToncenterTracesResponse } from '../../types/toncenter/emulation';
-import type { JettonMastersResponse } from '../../types/jettons';
+import type { ToncenterResponseJettonMasters } from '../toncenter/types/jettons';
 import { BaseApiClient } from '../BaseApiClient';
 import type { BaseApiClientConfig } from '../BaseApiClient';
 import { TonClientError } from '../TonClientError';
@@ -161,7 +161,7 @@ export class ApiClientTonApi extends BaseApiClient implements ApiClient {
         return state.rawBalance;
     }
 
-    async jettonsByAddress(request: GetJettonsByAddressRequest): Promise<JettonMastersResponse> {
+    async jettonsByAddress(request: GetJettonsByAddressRequest): Promise<ToncenterResponseJettonMasters> {
         const raw = await this.getJson<TonApiJettonInfo>(`/v2/jettons/${request.address}`);
 
         return mapJettonMasters(raw);

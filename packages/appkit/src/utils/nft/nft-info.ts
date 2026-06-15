@@ -13,9 +13,12 @@ import { middleEllipsis } from '../string/middle-ellipsis';
 export const getNftImage = (nft: NFT): string | null => {
     if (!nft.info?.image) return null;
 
-    const { urls, data } = nft.info.image;
+    const { url, data, mediumUrl, smallUrl, largeUrl } = nft.info.image;
 
-    if (urls[0]) return urls[0];
+    if (url) return url;
+    if (mediumUrl) return mediumUrl;
+    if (largeUrl) return largeUrl;
+    if (smallUrl) return smallUrl;
 
     if (data) {
         try {

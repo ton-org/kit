@@ -35,7 +35,6 @@ export interface EmulationTokenInfoMasters extends EmulationTokenInfoBase {
     name: string;
     symbol: string;
     description: string;
-    /** Raw toncenter wire image (single URL). */
     image?: string;
     extra: {
         _image_big?: string;

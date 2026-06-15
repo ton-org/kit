@@ -81,19 +81,14 @@ describe('Gasless Actions Examples', () => {
         const mockClient = {
             jettonsByAddress: vi.fn().mockImplementation((params: { address: string }) =>
                 Promise.resolve({
-                    masters: [
-                        {
-                            address: params.address,
-                            name: 'Tether USD',
-                            symbol: 'USDT',
-                            description: '',
-                            decimals: 6,
-                            images: [],
-                            image_data: undefined,
-                            uri: undefined,
+                    jetton_masters: [{ address: params.address, jetton: params.address }],
+                    metadata: {
+                        [params.address]: {
+                            token_info: [
+                                { valid: true, type: 'jetton_masters', symbol: 'USDT', extra: { decimals: 6 } },
+                            ],
                         },
-                    ],
-                    addressBook: {},
+                    },
                 }),
             ),
             runGetMethod: vi.fn().mockImplementation((_addr: string, method: string) => {

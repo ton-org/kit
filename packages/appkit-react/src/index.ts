@@ -15,7 +15,6 @@ export * from './components/ui/block';
 export * from './components/ui/info-block';
 export * from './components/ui/button';
 export * from './components/ui/logo';
-export * from './components/ui/fallback-image';
 export * from './components/ui/modal';
 export * from './components/ui/skeleton';
 export * from './components/ui/input';

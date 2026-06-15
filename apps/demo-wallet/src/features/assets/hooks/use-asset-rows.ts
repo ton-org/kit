@@ -12,7 +12,7 @@ import { useJettons, useRates, useWallet } from '@demo/wallet-core';
 import type { AssetRowData } from '../components/asset-row';
 
 import { getJettonsName, getJettonsSymbol } from '@/features/jettons';
-import { findRate, formatRate, toDecimal } from '@/core/utils';
+import { findRate, formatRate, toDecimal, tokenImageUrls } from '@/core/utils';
 
 const GRAM_DECIMALS = 9;
 
@@ -64,7 +64,7 @@ export const useAssetRows = (): AssetRows => {
                 return {
                     row: {
                         id: jetton.address,
-                        icon: imageSources(jetton.info?.image?.urls, jetton.info?.image?.data),
+                        icon: imageSources(tokenImageUrls(jetton.info?.image), jetton.info?.image?.data),
                         fallbackText: symbol.slice(0, 2).toUpperCase() || '??',
                         name: getJettonsName(jetton) ?? symbol,
                         symbol,

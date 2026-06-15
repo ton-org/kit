@@ -8,8 +8,7 @@
 
 import type { Address } from '@ton/core';
 
-import type { ToncenterTracesResponse } from '../../types/toncenter/emulation';
-import type { JettonMastersResponse } from '../../types/jettons';
+import type { ToncenterResponseJettonMasters, ToncenterTracesResponse } from '../../types/toncenter/emulation';
 import type { Event } from '../../types/toncenter/AccountEvent';
 import type {
     AccountState,
@@ -139,7 +138,7 @@ export interface ApiClient {
     resolveDnsWallet(domain: string): Promise<string | undefined>;
     backResolveDnsWallet(address: UserFriendlyAddress): Promise<string | undefined>;
 
-    jettonsByAddress(request: GetJettonsByAddressRequest): Promise<JettonMastersResponse>;
+    jettonsByAddress(request: GetJettonsByAddressRequest): Promise<ToncenterResponseJettonMasters>;
     jettonsByOwnerAddress(request: GetJettonsByOwnerRequest): Promise<JettonsResponse>;
 
     getEvents(request: GetEventsRequest): Promise<GetEventsResponse>;

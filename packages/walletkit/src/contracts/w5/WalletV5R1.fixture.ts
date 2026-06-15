@@ -10,14 +10,14 @@ import { Dictionary } from '@ton/core';
 
 import { mockFn } from '../../../mock.config';
 import type { ApiClient, GetEventsResponse } from '../../api/interfaces';
-import type { JettonMastersResponse, ToncenterTracesResponse } from '../../types';
+import type { ToncenterTracesResponse } from '../../types';
 import type { AccountState, EmulationResponse, MasterchainInfo } from '../../api/models';
 import type { ResponseUserJettons } from '../../types/export/responses/jettons';
 import type { NftItemsResponse } from '../../clients/toncenter/types/nfts';
 import type { WalletV5R1Id } from './WalletV5R1';
 import { walletV5ConfigToCell } from './WalletV5R1';
 import { WalletV5R1Adapter } from './WalletV5R1Adapter';
-import type { ToncenterTransactionsResponse } from '../../types/toncenter/emulation';
+import type { ToncenterResponseJettonMasters, ToncenterTransactionsResponse } from '../../types/toncenter/emulation';
 import { Signer } from '../../utils/Signer';
 import { Network } from '../../api/models';
 
@@ -99,7 +99,7 @@ export function createMockApiClient(): ApiClient {
         getTransactionsByHash: mockFn().mockResolvedValue({} as ToncenterTransactionsResponse),
         resolveDnsWallet: mockFn().mockResolvedValue({} as string | undefined),
         backResolveDnsWallet: mockFn().mockResolvedValue({} as string | undefined),
-        jettonsByAddress: mockFn().mockResolvedValue({ masters: [], addressBook: {} } as JettonMastersResponse),
+        jettonsByAddress: mockFn().mockResolvedValue({} as ToncenterResponseJettonMasters),
         jettonsByOwnerAddress: mockFn().mockResolvedValue({
             jettons: [],
             address_book: {},

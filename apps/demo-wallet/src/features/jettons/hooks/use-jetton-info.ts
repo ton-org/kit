@@ -14,8 +14,10 @@ import type { NetworkType } from '@demo/wallet-core';
 
 import { normalizeAddress } from '@/core/utils/formatters';
 
-export type TokenInfo = Partial<Omit<JettonInfo, 'decimals'>> & {
+export type TokenInfo = Partial<Omit<JettonInfo, 'decimals' | 'image'>> & {
     decimals?: number;
+    /** Candidate icon URLs, best-first. Derived from the kit's single `image`. */
+    images?: string[];
 };
 
 export const GRAM_INFO: TokenInfo = {
@@ -60,7 +62,7 @@ export function useJettonInfo(tokenAddress: Address | string | null | undefined)
         async function updateTokenInfo() {
             if (!tokenAddress) return;
             const info = await walletKit?.jettons?.getJettonInfo(tokenAddress.toString(), chainNetwork);
-            setTokenInfo(info ?? null);
+            setTokenInfo(info ? { ...info, images: info.image ? [info.image] : undefined } : null);
         }
 
         updateTokenInfo();

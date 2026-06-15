@@ -15,7 +15,7 @@ import type { JettonInfo } from '@ton/walletkit';
 import { AssetRow, AssetRowSkeleton, imageSources, useAssetRows } from '@/features/assets';
 import type { AssetRowData } from '@/features/assets';
 import { getJettonsName, getJettonsSymbol } from '@/features/jettons';
-import { findRate, formatRate, toDecimal } from '@/core/utils';
+import { findRate, formatRate, toDecimal, tokenImageUrls } from '@/core/utils';
 
 const JETTON_SLOTS = 2;
 
@@ -78,8 +78,8 @@ export const DashboardAssets: React.FC = () => {
             padded.push({
                 id: def.address,
                 icon: held
-                    ? imageSources(held.info?.image?.urls, held.info?.image?.data)
-                    : imageSources(info?.images, info?.image_data),
+                    ? imageSources(tokenImageUrls(held.info?.image), held.info?.image?.data)
+                    : imageSources(info?.image ? [info.image] : undefined, info?.image_data),
                 fallbackText: def.symbol.slice(0, 2).toUpperCase(),
                 name: (held && getJettonsName(held)) || info?.name || def.name,
                 symbol: (held && getJettonsSymbol(held)) || info?.symbol || def.symbol,

@@ -56,7 +56,7 @@ const toUIToken = (
         name: jettonInfo?.name ?? token.ticker,
         decimals: token.decimals,
         address: token.address,
-        logo: token.address === 'ton' ? undefined : jettonInfo?.images?.[0],
+        logo: token.address === 'ton' ? undefined : jettonInfo?.image,
         network,
     };
 };

@@ -36,7 +36,7 @@ export function mapUserJettons(rawResponse: TonApiJettonsBalances): JettonsRespo
                 name: wallet.jetton.name,
                 description: wallet.jetton.description ?? '',
                 image: {
-                    urls: wallet.jetton.image ? [wallet.jetton.image] : [],
+                    url: wallet.jetton.image,
                 },
                 symbol: wallet.jetton.symbol,
             },
