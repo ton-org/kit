@@ -254,13 +254,13 @@ function buildEvent(data: ToncenterTraceItem, account: string, actions: Action[]
 }
 
 /**
- * Helper: Filter actions based on priority (Jetton/NFT take precedence over TON transfers)
+ * Helper: Filter actions based on priority (Jetton/NFT take precedence over GRAM transfers)
  */
 function filterActionsByPriority(actions: Action[]): Action[] {
     const hasJetton = actions.some((a) => a.type === 'JettonTransfer');
     const hasNft = actions.some((a) => a.type === 'NftItemTransfer');
 
-    // If high-priority actions exist, filter out low-level TON transfer noise
+    // If high-priority actions exist, filter out low-level GRAM transfer noise
     if (hasJetton || hasNft) {
         const keepTypes = hasJetton ? ['JettonTransfer'] : ['NftItemTransfer'];
         return actions.filter((a) => keepTypes.includes(a.type));
@@ -277,7 +277,7 @@ export function toEvent(data: ToncenterTraceItem, account: string, addressBook: 
     const transactions: Record<string, ToncenterTransaction> = data.transactions || {};
     const actions: Action[] = [];
 
-    // Parse TON transfers from owner's transactions
+    // Parse GRAM transfers from owner's transactions
     for (const txHash of Object.keys(transactions)) {
         const tx = transactions[txHash];
         if (asAddressFriendly(tx.account) !== accountFriendly) {
@@ -297,7 +297,7 @@ export function toEvent(data: ToncenterTraceItem, account: string, addressBook: 
         ...parseNftActions(accountFriendly, data, addressBook),
     );
 
-    // Filter by priority: Jetton/NFT actions hide underlying TON transfers
+    // Filter by priority: Jetton/NFT actions hide underlying GRAM transfers
     const filteredActions = filterActionsByPriority(actions);
 
     return buildEvent(data, account, filteredActions, addressBook);
