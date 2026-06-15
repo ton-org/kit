@@ -1,0 +1,46 @@
+{
+    "name": "create-ton-appkit",
+    "version": "0.0.1",
+    "type": "module",
+    "license": "MIT",
+    "description": "Scaffold a TON AppKit project",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/ton-org/kit",
+        "directory": "packages/create-ton-appkit"
+    },
+    "keywords": [
+        "ton",
+        "appkit",
+        "scaffold",
+        "create",
+        "starter",
+        "template"
+    ],
+    "engines": {
+        "node": ">=22.12.0"
+    },
+    "bin": {
+        "create-ton-appkit": "dist/index.js"
+    },
+    "files": [
+        "dist",
+        "template-*/**",
+        "!template-*/dist",
+        "!template-*/node_modules"
+    ],
+    "scripts": {
+        "build": "tsc -p tsconfig.json",
+        "typecheck": "tsc -p tsconfig.json --noEmit",
+        "prepack": "pnpm build",
+        "clean": "rm -rf dist node_modules"
+    },
+    "dependencies": {
+        "@clack/prompts": "^1.5.0",
+        "mri": "^1.2.0"
+    },
+    "devDependencies": {
+        "@types/node": "^25.9.1",
+        "typescript": "~6.0.2"
+    }
+}
