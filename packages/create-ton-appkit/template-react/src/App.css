@@ -63,7 +63,7 @@
 }
 
 .tab-btn:focus-visible {
-    outline: 2px solid var(--ta-color-accent);
+    outline: 2px solid var(--ta-color-text);
     outline-offset: 2px;
 }
 
