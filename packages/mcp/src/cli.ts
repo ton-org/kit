@@ -109,7 +109,7 @@ Examples:
   npx @ton/mcp@alpha get_balance
   npx @ton/mcp@alpha get_jetton_balance --jettonAddress EQAbc...
   npx @ton/mcp@alpha get_swap_quote --fromToken TON --toToken EQAbc... --amount 1
-  npx @ton/mcp@alpha send_ton --toAddress UQA... --amount 0.5
+  npx @ton/mcp@alpha build_ton_transfer --toAddress UQA... --amount 0.5
 
 Environment variables:
   NETWORK              mainnet (default) or testnet

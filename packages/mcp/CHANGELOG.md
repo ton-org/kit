@@ -1,5 +1,13 @@
 # @ton/mcp
 
+## Unreleased
+
+### Minor Changes
+
+- Added `build_ton_transfer`, `build_jetton_transfer`, and `build_nft_transfer` — prepare-only tools that build a transaction and return a ready-to-send `transaction` (`messages`, `validUntil`, `fromAddress`) without broadcasting, mirroring the `get_swap_quote` pipeline. Preview the result with `emulate_transaction`, then broadcast with `send_raw_transaction`, passing `transaction.fromAddress` along with the messages. Because they do not sign, the build tools are available to read-only and operator-keyless agentic wallets.
+
+    Transfers go through the single `build_*` → `emulate_transaction` → `send_raw_transaction` path. There are no one-shot `send_ton`/`send_jetton`/`send_nft` tools — build, preview, then broadcast explicitly.
+
 ## 0.1.15-alpha.18
 
 ### Patch Changes

@@ -128,8 +128,8 @@ export async function createTonWalletMCP(config: TonMcpFactoryConfig): Promise<M
         registerTool('get_jetton_info', addressTools.get_jetton_info);
         // registerTool('get_jetton_wallet_address', addressTools.get_jetton_wallet_address);
         registerTool('get_transactions', balanceTools.get_transactions);
-        registerTool('send_ton', transferTools.send_ton);
-        registerTool('send_jetton', transferTools.send_jetton);
+        registerTool('build_ton_transfer', transferTools.build_ton_transfer);
+        registerTool('build_jetton_transfer', transferTools.build_jetton_transfer);
         registerTool('send_raw_transaction', transferTools.send_raw_transaction);
         registerTool('emulate_transaction', transferTools.emulate_transaction);
         registerTool('get_transaction_status', transactionTools.get_transaction_status);
@@ -137,7 +137,7 @@ export async function createTonWalletMCP(config: TonMcpFactoryConfig): Promise<M
         registerTool('get_nfts', nftTools.get_nfts);
         registerTool('get_nfts_by_address', addressTools.get_nfts_by_address);
         registerTool('get_nft', nftTools.get_nft);
-        registerTool('send_nft', nftTools.send_nft);
+        registerTool('build_nft_transfer', nftTools.build_nft_transfer);
         registerTool('resolve_dns', dnsTools.resolve_dns);
         registerTool('back_resolve_dns', dnsTools.back_resolve_dns);
         registerTool('generate_ton_proof', tonProofTools.generate_ton_proof);
@@ -251,16 +251,14 @@ export async function createTonWalletMCP(config: TonMcpFactoryConfig): Promise<M
         (service) => createMcpBalanceTools(service).get_transactions,
     );
     registerRegistryWalletTool(
-        'send_ton',
-        transferToolDefs.send_ton,
-        (service) => createMcpTransferTools(service).send_ton,
-        { requiresSigning: true },
+        'build_ton_transfer',
+        transferToolDefs.build_ton_transfer,
+        (service) => createMcpTransferTools(service).build_ton_transfer,
     );
     registerRegistryWalletTool(
-        'send_jetton',
-        transferToolDefs.send_jetton,
-        (service) => createMcpTransferTools(service).send_jetton,
-        { requiresSigning: true },
+        'build_jetton_transfer',
+        transferToolDefs.build_jetton_transfer,
+        (service) => createMcpTransferTools(service).build_jetton_transfer,
     );
     registerRegistryWalletTool(
         'send_raw_transaction',
@@ -296,9 +294,11 @@ export async function createTonWalletMCP(config: TonMcpFactoryConfig): Promise<M
         (service) => createMcpAddressTools(service).get_nfts_by_address,
     );
     registerRegistryWalletTool('get_nft', nftToolDefs.get_nft, (service) => createMcpNftTools(service).get_nft);
-    registerRegistryWalletTool('send_nft', nftToolDefs.send_nft, (service) => createMcpNftTools(service).send_nft, {
-        requiresSigning: true,
-    });
+    registerRegistryWalletTool(
+        'build_nft_transfer',
+        nftToolDefs.build_nft_transfer,
+        (service) => createMcpNftTools(service).build_nft_transfer,
+    );
     registerRegistryWalletTool(
         'resolve_dns',
         dnsToolDefs.resolve_dns,

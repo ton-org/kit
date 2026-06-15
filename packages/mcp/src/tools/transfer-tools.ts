@@ -12,13 +12,13 @@ import type { McpWalletService } from '../services/McpWalletService.js';
 import { toRawAmount, TON_DECIMALS } from './types.js';
 import type { ToolResponse } from './types.js';
 
-export const sendTonSchema = z.object({
+export const tonTransferSchema = z.object({
     toAddress: z.string().min(1).describe('Recipient TON address'),
     amount: z.string().min(1).describe('Amount of TON to send (e.g., "1.5" for 1.5 TON)'),
     comment: z.string().optional().describe('Optional comment/memo for the transaction'),
 });
 
-export const sendJettonSchema = z.object({
+export const jettonTransferSchema = z.object({
     toAddress: z.string().min(1).describe('Recipient TON address'),
     jettonAddress: z.string().min(1).describe('Jetton master contract address'),
     amount: z.string().min(1).describe('Amount of tokens to send in human-readable format'),
@@ -43,73 +43,80 @@ export const emulateTransactionSchema = z.object({
     validUntil: z.number().optional().describe('Unix timestamp after which the transaction becomes invalid'),
 });
 
+const PREPARED_TRANSACTION_NOTE =
+    'Transaction prepared but NOT sent. Preview it with emulate_transaction, then broadcast with send_raw_transaction (which signs and sends).';
+
+function toolError(message: string): ToolResponse {
+    return {
+        content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: message }) }],
+        isError: true,
+    };
+}
+
+/** Resolves a human-readable jetton amount to raw units using the wallet's known jetton decimals. */
+async function resolveJettonRawAmount(
+    service: McpWalletService,
+    jettonAddress: string,
+    amount: string,
+): Promise<{ rawAmount: string; symbol?: string } | { error: string }> {
+    let decimals: number | undefined;
+    let symbol: string | undefined;
+
+    try {
+        const jettons = await service.getJettons();
+        const jetton = jettons.find((j) => j.address.toLowerCase() === jettonAddress.toLowerCase());
+        if (jetton) {
+            decimals = jetton.decimals;
+            symbol = jetton.symbol;
+        }
+    } catch (error) {
+        return { error: `Failed to fetch jetton info: ${error instanceof Error ? error.message : 'Unknown error'}` };
+    }
+
+    if (decimals === undefined) {
+        return { error: `Cannot determine decimals for jetton ${jettonAddress}. The token may not be in your wallet.` };
+    }
+
+    return { rawAmount: toRawAmount(amount, decimals), symbol };
+}
+
 export function createMcpTransferTools(service: McpWalletService) {
     return {
-        send_ton: {
+        build_ton_transfer: {
             description:
-                'Send TON from the wallet to an address. Amount is in TON (e.g., "1.5" means 1.5 TON). Returns normalizedHash. Default flow: poll get_transaction_status until completed or failed; user can skip.',
-            inputSchema: sendTonSchema,
-            handler: async (args: z.infer<typeof sendTonSchema>): Promise<ToolResponse> => {
-                const rawAmount = toRawAmount(args.amount, TON_DECIMALS);
+                'Prepare a TON transfer from the wallet to an address. Amount is in TON (e.g., "1.5" means 1.5 TON). Does NOT broadcast: returns ready-to-send transaction messages. Preview them with emulate_transaction, then broadcast with send_raw_transaction.',
+            inputSchema: tonTransferSchema,
+            handler: async (args: z.infer<typeof tonTransferSchema>): Promise<ToolResponse> => {
+                try {
+                    const rawAmount = toRawAmount(args.amount, TON_DECIMALS);
 
-                const result = await service.sendTon(args.toAddress, rawAmount, args.comment);
+                    const transaction = await service.buildTonTransferTransaction(
+                        args.toAddress,
+                        rawAmount,
+                        args.comment,
+                    );
 
-                if (!result.success) {
                     return {
                         content: [
                             {
                                 type: 'text' as const,
-                                text: JSON.stringify({
-                                    success: false,
-                                    error: result.message,
-                                }),
+                                text: JSON.stringify(
+                                    {
+                                        success: true,
+                                        details: {
+                                            to: args.toAddress,
+                                            amount: `${args.amount} TON`,
+                                            comment: args.comment || null,
+                                        },
+                                        transaction,
+                                        note: PREPARED_TRANSACTION_NOTE,
+                                    },
+                                    null,
+                                    2,
+                                ),
                             },
                         ],
-                        isError: true,
                     };
-                }
-
-                return {
-                    content: [
-                        {
-                            type: 'text' as const,
-                            text: JSON.stringify(
-                                {
-                                    success: true,
-                                    message: result.message,
-                                    normalizedHash: result.normalizedHash,
-                                    details: {
-                                        to: args.toAddress,
-                                        amount: `${args.amount} TON`,
-                                        comment: args.comment || null,
-                                        normalizedHash: result.normalizedHash,
-                                    },
-                                },
-                                null,
-                                2,
-                            ),
-                        },
-                    ],
-                };
-            },
-        },
-
-        send_jetton: {
-            description:
-                'Send Jettons (tokens) from the wallet to an address. Amount is in human-readable format. Returns normalizedHash. Default flow: poll get_transaction_status until completed or failed; user can skip.',
-            inputSchema: sendJettonSchema,
-            handler: async (args: z.infer<typeof sendJettonSchema>): Promise<ToolResponse> => {
-                // Fetch jetton info for decimals
-                let decimals: number | undefined;
-                let symbol: string | undefined;
-
-                try {
-                    const jettons = await service.getJettons();
-                    const jetton = jettons.find((j) => j.address.toLowerCase() === args.jettonAddress.toLowerCase());
-                    if (jetton) {
-                        decimals = jetton.decimals;
-                        symbol = jetton.symbol;
-                    }
                 } catch (error) {
                     return {
                         content: [
@@ -117,71 +124,59 @@ export function createMcpTransferTools(service: McpWalletService) {
                                 type: 'text' as const,
                                 text: JSON.stringify({
                                     success: false,
-                                    error: `Failed to fetch jetton info: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                                    error: error instanceof Error ? error.message : 'Unknown error',
                                 }),
                             },
                         ],
                         isError: true,
                     };
                 }
+            },
+        },
 
-                if (decimals === undefined) {
+        build_jetton_transfer: {
+            description:
+                'Prepare a Jetton (token) transfer from the wallet to an address. Amount is in human-readable format. Does NOT broadcast: returns ready-to-send transaction messages. Preview them with emulate_transaction, then broadcast with send_raw_transaction.',
+            inputSchema: jettonTransferSchema,
+            handler: async (args: z.infer<typeof jettonTransferSchema>): Promise<ToolResponse> => {
+                const resolved = await resolveJettonRawAmount(service, args.jettonAddress, args.amount);
+                if ('error' in resolved) {
+                    return toolError(resolved.error);
+                }
+
+                try {
+                    const transaction = await service.buildJettonTransferTransaction(
+                        args.toAddress,
+                        args.jettonAddress,
+                        resolved.rawAmount,
+                        args.comment,
+                    );
+
                     return {
                         content: [
                             {
                                 type: 'text' as const,
-                                text: JSON.stringify({
-                                    success: false,
-                                    error: `Cannot determine decimals for jetton ${args.jettonAddress}. The token may not be in your wallet.`,
-                                }),
-                            },
-                        ],
-                        isError: true,
-                    };
-                }
-
-                const rawAmount = toRawAmount(args.amount, decimals);
-
-                const result = await service.sendJetton(args.toAddress, args.jettonAddress, rawAmount, args.comment);
-
-                if (!result.success) {
-                    return {
-                        content: [
-                            {
-                                type: 'text' as const,
-                                text: JSON.stringify({
-                                    success: false,
-                                    error: result.message,
-                                }),
-                            },
-                        ],
-                        isError: true,
-                    };
-                }
-
-                return {
-                    content: [
-                        {
-                            type: 'text' as const,
-                            text: JSON.stringify(
-                                {
-                                    success: true,
-                                    message: result.message,
-                                    normalizedHash: result.normalizedHash,
-                                    details: {
-                                        to: args.toAddress,
-                                        jettonAddress: args.jettonAddress,
-                                        amount: `${args.amount} ${symbol || 'tokens'}`,
-                                        comment: args.comment || null,
-                                        normalizedHash: result.normalizedHash,
+                                text: JSON.stringify(
+                                    {
+                                        success: true,
+                                        details: {
+                                            to: args.toAddress,
+                                            jettonAddress: args.jettonAddress,
+                                            amount: `${args.amount} ${resolved.symbol || 'tokens'}`,
+                                            comment: args.comment || null,
+                                        },
+                                        transaction,
+                                        note: PREPARED_TRANSACTION_NOTE,
                                     },
-                                },
-                                null,
-                                2,
-                            ),
-                        },
-                    ],
-                };
+                                    null,
+                                    2,
+                                ),
+                            },
+                        ],
+                    };
+                } catch (error) {
+                    return toolError(error instanceof Error ? error.message : 'Unknown error');
+                }
             },
         },
 

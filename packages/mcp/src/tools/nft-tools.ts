@@ -20,7 +20,7 @@ export const getNftSchema = z.object({
     nftAddress: z.string().min(1).describe('NFT item contract address'),
 });
 
-export const sendNftSchema = z.object({
+export const nftTransferSchema = z.object({
     nftAddress: z.string().min(1).describe('NFT item contract address to transfer'),
     toAddress: z.string().min(1).describe('Recipient TON address'),
     comment: z.string().optional().describe('Optional comment/memo for the transaction'),
@@ -143,13 +143,17 @@ export function createMcpNftTools(service: McpWalletService) {
             },
         },
 
-        send_nft: {
+        build_nft_transfer: {
             description:
-                'Transfer an NFT from the wallet to another address. Returns normalizedHash. Default flow: poll get_transaction_status until completed or failed; user can skip.',
-            inputSchema: sendNftSchema,
-            handler: async (args: z.infer<typeof sendNftSchema>): Promise<ToolResponse> => {
+                'Prepare an NFT transfer from the wallet to another address. Does NOT broadcast: returns ready-to-send transaction messages. Preview them with emulate_transaction, then broadcast with send_raw_transaction.',
+            inputSchema: nftTransferSchema,
+            handler: async (args: z.infer<typeof nftTransferSchema>): Promise<ToolResponse> => {
                 try {
-                    const result = await service.sendNft(args.nftAddress, args.toAddress, args.comment);
+                    const transaction = await service.buildNftTransferTransaction(
+                        args.nftAddress,
+                        args.toAddress,
+                        args.comment,
+                    );
 
                     return {
                         content: [
@@ -157,18 +161,20 @@ export function createMcpNftTools(service: McpWalletService) {
                                 type: 'text' as const,
                                 text: JSON.stringify(
                                     {
-                                        success: result.success,
-                                        message: result.message,
-                                        nftAddress: args.nftAddress,
-                                        recipient: args.toAddress,
-                                        normalizedHash: result.normalizedHash,
+                                        success: true,
+                                        details: {
+                                            nftAddress: args.nftAddress,
+                                            recipient: args.toAddress,
+                                            comment: args.comment || null,
+                                        },
+                                        transaction,
+                                        note: 'Transaction prepared but NOT sent. Preview it with emulate_transaction, then broadcast with send_raw_transaction (which signs and sends).',
                                     },
                                     null,
                                     2,
                                 ),
                             },
                         ],
-                        isError: !result.success,
                     };
                 } catch (error) {
                     return {

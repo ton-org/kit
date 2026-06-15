@@ -32,7 +32,7 @@ npx @ton/mcp@alpha get_jetton_balance --jettonAddress EQAbc...
 
 # All values are passed as plain strings; JSON objects/arrays are also accepted
 npx @ton/mcp@alpha get_transactions --limit 10
-npx @ton/mcp@alpha send_ton --toAddress UQA... --amount 0.1 --comment "hi"
+npx @ton/mcp@alpha build_ton_transfer --toAddress UQA... --amount 0.1 --comment "hi"
 npx @ton/mcp@alpha generate_ton_proof --domain getgems.io --payload getgems-llm
 ```
 
@@ -93,11 +93,13 @@ Without `MNEMONIC` or `PRIVATE_KEY`, the CLI uses the local config registry at `
 
 | Tool | Required args | Optional args |
 | ---- | ------------- | ------------- |
-| `send_ton` | `--toAddress`, `--amount` | `--comment`, `--walletSelector` |
-| `send_jetton` | `--toAddress`, `--jettonAddress`, `--amount` | `--comment`, `--walletSelector` |
-| `send_nft` | `--nftAddress`, `--toAddress` | `--comment`, `--walletSelector` |
+| `build_ton_transfer` | `--toAddress`, `--amount` | `--comment`, `--walletSelector` |
+| `build_jetton_transfer` | `--toAddress`, `--jettonAddress`, `--amount` | `--comment`, `--walletSelector` |
+| `build_nft_transfer` | `--nftAddress`, `--toAddress` | `--comment`, `--walletSelector` |
 | `send_raw_transaction` | `--messages` | `--validUntil`, `--fromAddress`, `--walletSelector` |
 | `emulate_transaction` | `--messages` | `--validUntil`, `--walletSelector` |
+
+`build_ton_transfer`/`build_jetton_transfer`/`build_nft_transfer` only build a transaction (return `transaction.messages` plus `transaction.fromAddress`); they do not broadcast. Preview with `emulate_transaction`, then broadcast with `send_raw_transaction --messages ... --fromAddress ...`.
 
 ### Swaps
 
@@ -153,8 +155,10 @@ npx @ton/mcp@alpha get_balance --walletSelector "my-hot-wallet"
 # In registry mode: list all registered wallets
 npx @ton/mcp@alpha list_wallets
 
-# Send TON (always confirm with user first)
-npx @ton/mcp@alpha send_ton --toAddress UQA... --amount 0.5 --comment "payment"
+# Send TON — build, preview, then broadcast (confirm with user before the broadcast step)
+npx @ton/mcp@alpha build_ton_transfer --toAddress UQA... --amount 0.5 --comment "payment"
+npx @ton/mcp@alpha emulate_transaction --messages '<transaction.messages>'        # recommended preview
+npx @ton/mcp@alpha send_raw_transaction --messages '<transaction.messages>' --fromAddress '<transaction.fromAddress>'
 
 # Swap quote
 npx @ton/mcp@alpha get_swap_quote --fromToken TON --toToken EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs --amount 1
@@ -165,10 +169,11 @@ npx @ton/mcp@alpha generate_ton_proof --domain getgems.io --payload getgems-llm
 
 ## Notes
 
-- Use `emulate_transaction` to dry-run any transaction before sending — it returns expected balance changes, fees, and high-level actions
+- `build_ton_transfer`/`build_jetton_transfer`/`build_nft_transfer` build a transaction only; `send_raw_transaction` is the tool that signs and broadcasts the prepared `transaction.messages` (pass `transaction.fromAddress` too — jetton/NFT messages are bound to the wallet they were built for)
+- Use `emulate_transaction` to preview expected balance changes before broadcasting (fake signature)
 - Use `generate_ton_proof` only with the exact domain and payload supplied by the user or verifying service; do not alter the payload before signing
 - `generate_ton_proof` requires signing access even though it does not broadcast a transaction
-- Always confirm with the user before running `send_ton`, `send_jetton`, `send_nft`, or `send_raw_transaction`;
+- `build_ton_transfer`/`build_jetton_transfer`/`build_nft_transfer` and `emulate_transaction` do not sign or broadcast — run them freely. Confirm with the user only before `send_raw_transaction` (the broadcast), after previewing with `emulate_transaction`;
 - For confirmations and small option sets, prefer the host client's structured confirmation/choice UI when available; otherwise use a short natural-language yes/no prompt and never require an exact magic word;
 - After sending, poll `get_transaction_status --normalizedHash <hash>` until status is `completed` or `failed` (unless the user asks to skip).
 - In registry mode the active wallet from `~/.config/ton/config.json` is used by default.

@@ -217,16 +217,18 @@ Get the status of a transaction by its normalized hash to know if it is pending,
 
 ### Transfers
 
-#### `send_ton`
-Send TON to an address. Amount is in human-readable format (e.g., `"1.5"` means 1.5 TON). Returns top-level `normalizedHash`. Default flow: poll `get_transaction_status` until completed or failed; user can skip.
+`build_ton_transfer`, `build_jetton_transfer`, and `build_nft_transfer` do **not** broadcast. They build a transaction and return ready-to-send `messages` (the `transaction` field). Preview them with `emulate_transaction`, then broadcast with `send_raw_transaction` — the same pipeline used by `get_swap_quote`. Only `send_raw_transaction` signs and sends. When broadcasting, pass the returned `transaction.fromAddress` along with the messages: jetton and NFT transfers are bound to the wallet they were built for.
+
+#### `build_ton_transfer`
+Build a TON transfer to an address. Amount is in human-readable format (e.g., `"1.5"` means 1.5 TON). Returns `transaction: { messages, validUntil, fromAddress }`. Preview with `emulate_transaction`, then broadcast with `send_raw_transaction`.
 
 **Parameters:**
 - `toAddress` (required): Recipient TON address
 - `amount` (required): Amount in TON (e.g., `"1.5"`)
 - `comment` (optional): Transaction comment/memo
 
-#### `send_jetton`
-Send Jettons to an address. Amount is in human-readable format. Returns top-level `normalizedHash`. Default flow: poll `get_transaction_status` until completed or failed; user can skip.
+#### `build_jetton_transfer`
+Build a Jetton transfer to an address. Amount is in human-readable format. Returns `transaction: { messages, validUntil, fromAddress }`. Preview with `emulate_transaction`, then broadcast with `send_raw_transaction` (pass `fromAddress` too — the messages target the sender's jetton wallet).
 
 **Parameters:**
 - `toAddress` (required): Recipient TON address
@@ -235,7 +237,7 @@ Send Jettons to an address. Amount is in human-readable format. Returns top-leve
 - `comment` (optional): Transaction comment/memo
 
 #### `send_raw_transaction`
-Send a raw transaction with full control over messages. Supports multiple messages. Returns top-level `normalizedHash`. Default flow: poll `get_transaction_status` until completed or failed; user can skip.
+Sign and broadcast a raw transaction with full control over messages. Supports multiple messages. This is the tool that actually sends prepared transactions (from `build_ton_transfer` / `build_jetton_transfer` / `build_nft_transfer` / `get_swap_quote`). Returns top-level `normalizedHash`. Default flow after send: poll `get_transaction_status` until completed or failed; user can skip.
 
 **Parameters:**
 - `messages` (required): Array of messages, each with:
@@ -244,7 +246,7 @@ Send a raw transaction with full control over messages. Supports multiple messag
   - `stateInit` (optional): Initial state for deploying a contract (Base64)
   - `payload` (optional): Message payload data (Base64)
 - `validUntil` (optional): Unix timestamp after which the transaction becomes invalid
-- `fromAddress` (optional): Sender wallet address
+- `fromAddress` (optional): Sender wallet address; when broadcasting a prepared transaction, pass its `transaction.fromAddress`
 
 #### `emulate_transaction`
 Dry-run a raw transaction without broadcasting it. Accepts the same `messages` format as `send_raw_transaction` and returns the expected TON and Jetton balance changes, fees, and high-level actions so agents can verify a transaction before sending.
@@ -287,8 +289,8 @@ Get detailed information about a specific NFT by its address.
 **Parameters:**
 - `nftAddress` (required): NFT item contract address
 
-#### `send_nft`
-Transfer an NFT from the wallet to another address. Returns `normalizedHash`. Default flow: poll `get_transaction_status` until completed or failed; user can skip.
+#### `build_nft_transfer`
+Build an NFT transfer from the wallet to another address. Returns `transaction: { messages, validUntil, fromAddress }`. Preview with `emulate_transaction`, then broadcast with `send_raw_transaction` (pass `fromAddress` too).
 
 **Parameters:**
 - `nftAddress` (required): NFT item contract address to transfer
