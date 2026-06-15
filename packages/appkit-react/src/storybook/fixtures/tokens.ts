@@ -12,12 +12,12 @@ import type { AppkitUIToken } from '../../types/appkit-ui-token';
 
 export const STORY_TOKENS: AppkitUIToken[] = [
     {
-        symbol: 'TON',
-        name: 'Toncoin',
+        symbol: 'GRAM',
+        name: 'Gram',
         decimals: 9,
         address: 'ton',
         network: Network.mainnet(),
-        logo: './tokens/ton.png',
+        logo: './tokens/gram.svg',
     },
     {
         symbol: 'USD₮',
@@ -55,7 +55,7 @@ export const STORY_TOKENS: AppkitUIToken[] = [
     },
     {
         symbol: 'tsTON',
-        name: 'Tonstakers TON',
+        name: 'Tonstakers GRAM',
         decimals: 9,
         address: 'EQC98_qAmNEptUtPc7W6xdHh_ZHrBUFpw5Ft_IzNU20QAJav',
         network: Network.mainnet(),

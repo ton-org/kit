@@ -47,7 +47,7 @@ export type GetGaslessJettonTransferQuoteErrorType = Error;
  * two-step flow.
  *
  * The jetton `responseDestination` (excess receiver) is set to the relayer's
- * address — the relayer paid the gas, so the unspent TON goes back to it rather
+ * address — the relayer paid the gas, so the unspent GRAM goes back to it rather
  * than to the user's wallet.
  *
  * The quote is always bound to the selected wallet's network — the same network

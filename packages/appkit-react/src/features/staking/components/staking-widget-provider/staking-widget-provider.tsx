@@ -100,15 +100,15 @@ export interface StakingContextType {
     toggleReversed: () => void;
     /** Amount displayed in the reversed (bottom) input */
     reversedAmount: string;
-    /** Sets the input amount to the maximum available balance (leaves room for TON gas on native stake) */
+    /** Sets the input amount to the maximum available balance (leaves room for GRAM gas on native stake) */
     onMaxClick: () => void;
-    /** True when the built transaction outflow exceeds the user's TON balance */
+    /** True when the built transaction outflow exceeds the user's GRAM balance */
     isLowBalanceWarningOpen: boolean;
-    /** `reduce` when the outgoing token is TON (user can fix by changing amount), `topup` otherwise. */
+    /** `reduce` when the outgoing token is GRAM (user can fix by changing amount), `topup` otherwise. */
     lowBalanceMode: LowBalanceMode;
-    /** Required TON amount for the pending operation, formatted as a decimal string. Empty when no pending op. */
+    /** Required GRAM amount for the pending operation, formatted as a decimal string. Empty when no pending op. */
     lowBalanceRequiredTon: string;
-    /** Replace the input with a value that fits into the current TON balance and close the warning */
+    /** Replace the input with a value that fits into the current GRAM balance and close the warning */
     onLowBalanceChange: () => void;
     /** Dismiss the low-balance warning without changing the input */
     onLowBalanceCancel: () => void;
@@ -202,8 +202,8 @@ export const StakingWidgetProvider: FC<StakingProviderProps> = ({ children, netw
 
     const isNativeTon = providerMetadata?.stakeToken.address === 'ton';
 
-    // Always fetch TON balance: even when the stake token is a jetton we need it to check whether the user has
-    // enough TON to cover network fees before sending.
+    // Always fetch GRAM balance: even when the stake token is a jetton we need it to check whether the user has
+    // enough GRAM to cover network fees before sending.
     const { data: nativeBalanceData, isLoading: isNativeBalanceLoading } = useBalance({
         network,
         query: { refetchInterval: 5000 },

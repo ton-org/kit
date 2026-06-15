@@ -25,8 +25,8 @@ const mockMetadata = {
     description: 'Staking provider',
     logo: './tokens/tston.svg',
     stakeToken: {
-        symbol: 'TON',
-        ticker: 'TON',
+        symbol: 'GRAM',
+        ticker: 'GRAM',
         decimals: 9,
         address: 'ton',
     },

@@ -61,7 +61,7 @@ export const SendJettonButton: FC<SendJettonButtonProps> = ({
             });
         }
 
-        return t('balances.sendJetton', { symbol: jetton.symbol, amount });
+        return t('balances.sendJetton', { symbol: jetton.symbol });
     }, [t, amount, jetton]);
 
     return (

@@ -46,7 +46,7 @@ export const CustomUI: Story = {
                     }}
                 >
                     <div>
-                        <label>Stake (TON)</label>
+                        <label>Stake (GRAM)</label>
                         <input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" />
                     </div>
                     <div>

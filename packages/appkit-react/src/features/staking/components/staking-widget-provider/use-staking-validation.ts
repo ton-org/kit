@@ -54,7 +54,7 @@ export const useStakingValidation = ({
         }
 
         if (direction === 'unstake') {
-            // On reversed unstake the user types the TON they want to receive; compare the tsTON
+            // On reversed unstake the user types the GRAM they want to receive; compare the tsTON
             // spend (quote.amountIn) to the staked balance instead.
             const outgoingAmount = isReversed ? quote?.amountIn : amount;
             if (isAmountExceedingBalance(outgoingAmount, stakedBalance)) {

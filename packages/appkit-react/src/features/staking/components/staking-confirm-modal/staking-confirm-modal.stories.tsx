@@ -18,7 +18,7 @@ const providerMetadata = {
     name: 'Tonstakers',
     supportedUnstakeModes: ['INSTANT'],
     supportsReversedQuote: true,
-    stakeToken: { ticker: 'TON', decimals: 9, address: 'ton' },
+    stakeToken: { ticker: 'GRAM', decimals: 9, address: 'ton' },
     receiveToken: { ticker: 'tsTON', decimals: 9, address: 'EQC98_qAmNEptUtPc7W6xdHh_ZHrBUFpw5Ft_IzNU20QAJav' },
 } as unknown as StakingProviderMetadata;
 

@@ -29,7 +29,7 @@ export interface CreateTransferTonTransactionParameters {
 export type CreateTransferTonTransactionReturnType = TransactionRequest;
 
 /**
- * Create a TON transfer transaction request
+ * Create a GRAM transfer transaction request
  */
 export const createTransferTonTransaction = (
     appKit: AppKit,
