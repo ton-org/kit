@@ -23,8 +23,8 @@ const mockMetadata = {
     name: 'Tonstakers',
     providerId: 'tonstakers',
     stakeToken: {
-        symbol: 'TON',
-        ticker: 'TON',
+        symbol: 'GRAM',
+        ticker: 'GRAM',
         decimals: 9,
         address: 'ton',
     },

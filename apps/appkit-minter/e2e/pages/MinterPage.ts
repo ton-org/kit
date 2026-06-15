@@ -9,7 +9,7 @@
 import type { Page, Locator } from '@playwright/test';
 
 /**
- * Page object for the appkit-minter dApp. Wraps the navigation, the jetton/TON
+ * Page object for the appkit-minter dApp. Wraps the navigation, the jetton/GRAM
  * transfer modal (with its gasless controls) and the NFT mint flow
  * (settings → confirm → low-balance modals).
  *
@@ -37,8 +37,8 @@ export class MinterPage {
 
     // ---- transfer modal ----
 
-    /** Opens the transfer modal for a jetton (by visible name) or Toncoin. */
-    async openTransfer(asset: 'Toncoin' | 'Tether USD' | string): Promise<void> {
+    /** Opens the transfer modal for a jetton (by visible name) or Gram. */
+    async openTransfer(asset: 'Gram' | 'Tether USD' | string): Promise<void> {
         await this.gotoJettons();
         await this.page.getByText(new RegExp(asset, 'i')).first().click();
         await this.transferModalTitle.waitFor({ state: 'visible' });

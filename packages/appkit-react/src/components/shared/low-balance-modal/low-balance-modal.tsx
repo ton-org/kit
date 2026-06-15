@@ -25,11 +25,11 @@ export interface LowBalanceModalProps {
     open: boolean;
     /**
      * `reduce`  — user can fix it by reducing the amount (shows Change/Cancel). Requires `onChange`.
-     * `topup`   — reducing doesn't help, user must top up TON (shows Close only).
+     * `topup`   — reducing doesn't help, user must top up GRAM (shows Close only).
      * `gasless` — alternative path via gasless flow (shows Switch/Cancel). Requires `onSwitchToGasless`.
      */
     mode: LowBalanceMode;
-    /** Required amount in TON, formatted as a decimal string (e.g. "0.423"). */
+    /** Required amount in GRAM, formatted as a decimal string (e.g. "0.423"). */
     requiredTon: string;
     onCancel: () => void;
     /** Primary action for `reduce` mode. */

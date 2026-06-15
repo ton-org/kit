@@ -13,8 +13,8 @@ import { FlowPreview } from './flow-preview';
 import type { AppkitUIToken } from '../../../types/appkit-ui-token';
 
 const tonToken: AppkitUIToken = {
-    symbol: 'TON',
-    name: 'Toncoin',
+    symbol: 'GRAM',
+    name: 'Gram',
     decimals: 9,
     address: 'ton',
     network: Network.mainnet(),

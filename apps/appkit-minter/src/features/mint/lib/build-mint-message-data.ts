@@ -12,7 +12,7 @@ import type { Base64String } from '@ton/appkit';
 import type { CardData } from '../types/card';
 import { buildSingleNftStateInit, encodeOnChainContent } from '../contracts';
 
-/** TON value sent with the NFT deploy message — funds the new contract. */
+/** GRAM value sent with the NFT deploy message — funds the new contract. */
 const NFT_DEPLOY_AMOUNT = toNano('0.001');
 /** TEP-66 royalty config — zero royalty, owner address as receiver. */
 const ROYALTY_BASE = 1000;
@@ -21,7 +21,7 @@ const ROYALTY_FACTOR = 0;
 export interface MintMessageData {
     /** Future NFT contract address — deterministic from `stateInit`. */
     address: string;
-    /** TON amount sent with the deploy (`NFT_DEPLOY_AMOUNT`). */
+    /** GRAM amount sent with the deploy (`NFT_DEPLOY_AMOUNT`). */
     amount: string;
     /** Serialized `StateInit` cell (BoC, base64). */
     stateInit: Base64String;

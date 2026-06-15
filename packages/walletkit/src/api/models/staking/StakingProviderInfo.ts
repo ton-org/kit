@@ -28,7 +28,7 @@ export interface StakingProviderInfo {
     instantUnstakeAvailable?: string;
 
     /**
-     * Exchange rate between stakeToken and receiveToken (e.g. 1 TON = 0.95 tsTON).
+     * Exchange rate between stakeToken and receiveToken (e.g. 1 GRAM = 0.95 tsTON).
      * Undefined when there is no receiveToken (direct/custodial staking).
      */
     exchangeRate?: string;

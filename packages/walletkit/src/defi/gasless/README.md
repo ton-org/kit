@@ -1,6 +1,6 @@
 # Gasless Manager
 
-`GaslessManager` lets a dApp submit on-chain transactions without the user holding TON for gas: a relayer co-signs and broadcasts the transaction, charging the user in a relayer-accepted asset (e.g. a jetton).
+`GaslessManager` lets a dApp submit on-chain transactions without the user holding GRAM for gas: a relayer co-signs and broadcasts the transaction, charging the user in a relayer-accepted asset (e.g. a jetton).
 
 ## Flow
 
@@ -52,7 +52,7 @@ const quote = await kit.gasless.getQuote({
     messages: [
         {
             address: 'EQ...jetton_wallet_address',
-            amount: '60000000', // 0.06 TON gas
+            amount: '60000000', // 0.06 GRAM gas
             payload: jettonTransferPayloadBase64,
         },
     ],

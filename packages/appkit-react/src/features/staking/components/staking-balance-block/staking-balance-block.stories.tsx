@@ -25,8 +25,8 @@ const mockMetadata = {
     description: 'Staking provider',
     logo: './tokens/tston.svg',
     stakeToken: {
-        symbol: 'TON',
-        ticker: 'TON',
+        symbol: 'GRAM',
+        ticker: 'GRAM',
         decimals: 9,
         address: 'ton',
     },
@@ -44,7 +44,7 @@ export const Stake: Story = {
     args: {
         direction: 'stake',
         providerMetadata: mockMetadata,
-        balance: '10000000000', // 10 TON
+        balance: '10000000000', // 10 GRAM
         isBalanceLoading: false,
     },
 };

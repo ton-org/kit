@@ -16,7 +16,7 @@ A production-ready wallet-side integration layer for TON Connect, designed for b
 - 💼 **Wallet Management** - Multi-wallet support with persistent storage
 - 🌉 **Bridge & JS Bridge** - HTTP bridge and browser extension support
 - 🎨 **Previews for actions** - Transaction emulation with money flow analysis
-- 🪙 **Asset Support** - TON, Jettons, NFTs with metadata
+- 🪙 **Asset Support** - GRAM, Jettons, NFTs with metadata
 
 **WalletKit Demo**: [https://walletkit-demo-wallet.vercel.app/](https://walletkit-demo-wallet.vercel.app/)
 
@@ -57,7 +57,7 @@ npm install @ton/walletkit
 Before handling requests, it's helpful to understand the preview data that the kit provides for each request type. These previews help you display user-friendly confirmation dialogs.
 
 - **ConnectPreview (`req.preview`)**: Information about the dApp asking to connect. Includes `manifest` (name, description, icon), `requestedItems`, and `permissions` your UI can show before approval.
-- **TransactionPreview (`tx.preview`)**: Human-readable transaction summary. On success, `preview.moneyFlow.ourTransfers` contains an array of net asset changes (TON and jettons) with positive amounts for incoming and negative for outgoing. `preview.moneyFlow.inputs` and `preview.moneyFlow.outputs` show raw TON flow, and `preview.emulationResult` has low-level emulation details. On error, `preview.result === 'error'` with an `emulationError`.
+- **TransactionPreview (`tx.preview`)**: Human-readable transaction summary. On success, `preview.moneyFlow.ourTransfers` contains an array of net asset changes (GRAM and jettons) with positive amounts for incoming and negative for outgoing. `preview.moneyFlow.inputs` and `preview.moneyFlow.outputs` show raw GRAM flow, and `preview.emulationResult` has low-level emulation details. On error, `preview.result === 'error'` with an `emulationError`.
 - **SignDataPreview (`sd.preview`)**: Shape of the data to sign. `kind` is `'text' | 'binary' | 'cell'`. Use this to render a safe preview.
 
 You can display these previews directly in your confirmation modals.
@@ -107,7 +107,7 @@ Render Sign-Data preview:
 
 You can create transactions from your wallet app (not from dApps) and feed them into the regular approval flow via `handleNewTransaction`. This triggers your `onTransactionRequest` callback, allowing the same UI confirmation flow for both dApp and wallet-initiated transactions.
 
-### Send TON
+### Send GRAM
 
 %%demo/examples/src#SEND_TON%%
 
@@ -117,7 +117,7 @@ You can create transactions from your wallet app (not from dApps) and feed them 
 
 **Notes:**
 - `amount` is the raw integer amount (apply jetton decimals yourself)
-- The transaction includes TON for gas automatically
+- The transaction includes GRAM for gas automatically
 
 ### Send NFTs
 

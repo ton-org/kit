@@ -30,18 +30,18 @@ export const JETTON_TRANSFER_OP = 0x0f8a7ea5;
 export const USDT_FORWARD_JETTON_AMOUNT = 1n;
 
 /**
- * TON budget for the jetton-transfer. Splits into:
- * - ~0.0099 TON gas at the user's jetton-wallet
- * - ~0.0099 TON gas at MintForward's jetton-wallet
+ * GRAM budget for the jetton-transfer. Splits into:
+ * - ~0.0099 GRAM gas at the user's jetton-wallet
+ * - ~0.0099 GRAM gas at MintForward's jetton-wallet
  * - `FORWARD_TON_AMOUNT` forwarded to MintForward as the deploy-funding payload
  * - remaining excess routed to `response_destination` (relayer)
  */
 export const JETTON_GAS_BUDGET = toNano('0.02');
 
 /**
- * TON delivered to MintForward with the transfer notification — must cover the
- * contract's own gas + the inner 0.001 TON NFT-deploy value. Lower than this
+ * GRAM delivered to MintForward with the transfer notification — must cover the
+ * contract's own gas + the inner 0.001 GRAM NFT-deploy value. Lower than this
  * (currently 0.0015) relies on accumulated balance from prior mints; safer
- * floor for cold-start funding is ~0.015 TON.
+ * floor for cold-start funding is ~0.015 GRAM.
  */
 export const FORWARD_TON_AMOUNT = toNano('0.0015');

@@ -37,7 +37,7 @@ export interface UseMintTransactionReturn {
  * Builder for the regular (non-gasless) NFT deploy.
  *
  * The deploy `messages` are derived eagerly from card + wallet so callers can
- * pre-check them (e.g. against the user's TON balance) without invoking the
+ * pre-check them (e.g. against the user's GRAM balance) without invoking the
  * build mutation. The mutation itself only adds a freshly stamped
  * `validUntil` at click-time.
  */

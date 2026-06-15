@@ -22,7 +22,7 @@ type Story = StoryObj<typeof SwapField>;
 export const Pay: Story = {
     args: {
         type: 'pay',
-        token: STORY_TOKENS[0], // TON
+        token: STORY_TOKENS[0], // GRAM
         amount: '10',
         balance: '100000000000',
         onAmountChange: () => {},

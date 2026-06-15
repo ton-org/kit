@@ -7,7 +7,7 @@
  */
 
 import type { FC } from 'react';
-import { TonIconCircle } from '@ton/appkit-react';
+import { GramIconCircle } from '@ton/appkit-react';
 
 import type { TokenInfo } from '../utils/get-token-summary';
 
@@ -26,7 +26,7 @@ export const TokenSummary: FC<TokenSummaryProps> = ({ tokenType, info }) => (
             {info.image ? (
                 <img src={info.image} alt={info.name} className="w-full h-full object-cover" />
             ) : tokenType === 'TON' ? (
-                <TonIconCircle size={40} />
+                <GramIconCircle size={40} />
             ) : (
                 <span className="text-sm font-bold text-tertiary-foreground">{info.symbol?.slice(0, 2)}</span>
             )}

@@ -285,7 +285,7 @@ function _mapAction(action: TonApiAction, event: TonApiAccountEvent, rootHash: H
             dex: payload.dex ?? '',
             sender: userWallet?.address ?? '',
             dex_incoming_transfer: {
-                asset: inAsset?.jetton?.address ?? 'TON',
+                asset: inAsset?.jetton?.address ?? 'GRAM',
                 source: userWallet?.address ?? '',
                 destination: router?.address ?? '',
                 source_jetton_wallet: null,
@@ -293,7 +293,7 @@ function _mapAction(action: TonApiAction, event: TonApiAccountEvent, rootHash: H
                 amount: String(payload.amount_in ?? payload.ton_in ?? inAsset?.amount ?? 0),
             },
             dex_outgoing_transfer: {
-                asset: outAsset?.jetton?.address ?? 'TON',
+                asset: outAsset?.jetton?.address ?? 'GRAM',
                 source: router?.address ?? '',
                 destination: userWallet?.address ?? '',
                 source_jetton_wallet: null,

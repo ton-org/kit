@@ -19,7 +19,7 @@ export interface TokenInfo {
 }
 
 /**
- * Derive display info for either native TON or a jetton — pure helper feeding
+ * Derive display info for either native GRAM or a jetton — pure helper feeding
  * `<TokenSummary>` and the modal's downstream transfer hooks.
  */
 export const getTokenSummary = (
@@ -28,7 +28,7 @@ export const getTokenSummary = (
     jetton: Jetton | undefined,
 ): TokenInfo => {
     if (tokenType === 'TON') {
-        return { name: 'Toncoin', symbol: 'TON', decimals: 9, balance: tonBalance, image: './ton.png', address: null };
+        return { name: 'Gram', symbol: 'GRAM', decimals: 9, balance: tonBalance, image: './gram.svg', address: null };
     }
     if (!jetton) throw new Error('Jetton not found');
     return getFormattedJettonInfo(jetton);

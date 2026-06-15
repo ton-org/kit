@@ -22,16 +22,16 @@ import type { Network } from '../api/models';
 import { asMaybeAddressFriendly } from '../utils';
 
 const log = globalLogger.createChild('JettonsManager');
-const TON_ADDRESS = 'TON';
+const GRAM_ADDRESS = 'TON';
 
 function isTonAddress(address: string): boolean {
     return address.toLowerCase() === 'ton';
 }
 
 const TON_INFO: JettonInfo = {
-    address: TON_ADDRESS,
-    name: 'TON',
-    symbol: 'TON',
+    address: GRAM_ADDRESS,
+    name: 'Gram',
+    symbol: 'GRAM',
     description: 'The Open Network native token',
     decimals: 9,
     totalSupply: '5000000000000000000',
@@ -65,7 +65,7 @@ export class JettonsManager implements JettonsAPI {
             ttl: 1000 * 60 * 10, // 10 minutes TTL
         });
 
-        // Add TON for all configured networks
+        // Add GRAM for all configured networks
         for (const network of this.networkManager.getConfiguredNetworks()) {
             this.addTonToCache(network);
         }
@@ -74,10 +74,10 @@ export class JettonsManager implements JettonsAPI {
     }
 
     /**
-     * Add TON native token to cache for a specific network
+     * Add GRAM native token to cache for a specific network
      */
     private addTonToCache(network: Network): void {
-        const cacheKey = createCacheKey(network, TON_ADDRESS);
+        const cacheKey = createCacheKey(network, GRAM_ADDRESS);
         this.cache.set(cacheKey, TON_INFO);
     }
 
@@ -287,7 +287,7 @@ export class JettonsManager implements JettonsAPI {
      */
     private normalizedCacheKey(network: Network, address: string): string {
         if (isTonAddress(address)) {
-            return createCacheKey(network, TON_ADDRESS);
+            return createCacheKey(network, GRAM_ADDRESS);
         }
         return createCacheKey(network, Address.parse(address).toString());
     }
@@ -330,13 +330,13 @@ export class JettonsManager implements JettonsAPI {
                     this.cache.delete(key);
                 }
             }
-            // Re-add TON for this network
+            // Re-add GRAM for this network
             this.addTonToCache(network);
             log.info('Jetton cache cleared for network', { network });
         } else {
             // Clear all entries
             this.cache.clear();
-            // Re-add TON for all configured networks
+            // Re-add GRAM for all configured networks
             for (const net of this.networkManager.getConfiguredNetworks()) {
                 this.addTonToCache(net);
             }

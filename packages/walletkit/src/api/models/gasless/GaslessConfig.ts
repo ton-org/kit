@@ -14,7 +14,7 @@ import type { GaslessSupportedAsset } from './GaslessSupportedAsset';
  *
  * Bundles every piece of provider state a consumer needs to drive a gasless
  * transfer end-to-end:
- *  - `relayAddress` — where the relayer wants residual TON (e.g. jetton-transfer
+ *  - `relayAddress` — where the relayer wants residual GRAM (e.g. jetton-transfer
  *    `responseDestination`) returned to.
  *  - `supportedAssets` — what the relayer accepts as fee payment.
  */

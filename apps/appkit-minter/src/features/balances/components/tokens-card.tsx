@@ -73,9 +73,9 @@ export const TokensCard: FC<ComponentProps<'div'>> = ({ className, ...props }) =
         <>
             <div className={cn('flex flex-col', className)} {...props}>
                 <JettonCard
-                    ticker="TON"
-                    name="Toncoin"
-                    image="/ton.png"
+                    ticker="GRAM"
+                    name="Gram"
+                    image="/gram.svg"
                     balance={balance || '0'}
                     onClick={() => setSelectedToken({ type: 'TON' })}
                     address="ton"

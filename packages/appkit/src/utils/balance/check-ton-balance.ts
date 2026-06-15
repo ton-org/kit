@@ -9,24 +9,24 @@
 import { parseUnits } from '@ton/walletkit';
 
 export interface CheckTonBalanceParams {
-    /** Outgoing messages of the built transaction — each `amount` is the TON value in nanos. */
+    /** Outgoing messages of the built transaction — each `amount` is the GRAM value in nanos. */
     messages: Array<{ amount: string }>;
     /**
-     * User's TON balance as a decimal string (`formatUnits(balance, 9)` format).
+     * User's GRAM balance as a decimal string (`formatUnits(balance, 9)` format).
      * `undefined` means "not loaded yet" — function returns `undefined` (no judgement).
      */
     tonBalance: string | undefined;
-    /** Extra TON headroom on top of total outflow. Caller-supplied — no opinion on default. */
+    /** Extra GRAM headroom on top of total outflow. Caller-supplied — no opinion on default. */
     gasBufferNanos: bigint;
 }
 
 export interface TonBalanceShortfall {
-    /** Total TON the user wallet must hold for the transaction to land. */
+    /** Total GRAM the user wallet must hold for the transaction to land. */
     requiredNanos: bigint;
 }
 
 /**
- * Pure balance check: does the user have enough TON for the built transaction?
+ * Pure balance check: does the user have enough GRAM for the built transaction?
  *
  * Returns `undefined` when the balance is sufficient OR when it hasn't loaded
  * yet (treating unloaded as "unknown" rather than "zero" avoids false-positive

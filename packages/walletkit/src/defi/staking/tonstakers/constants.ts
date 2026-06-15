@@ -15,7 +15,7 @@ export const CACHE_TIMEOUT = 30000;
 export const DEFAULT_METADATA: Record<string, StakingProviderMetadata> = {
     [Network.mainnet().chainId]: {
         name: 'Tonstakers',
-        stakeToken: { ticker: 'TON', decimals: 9, address: 'ton' },
+        stakeToken: { ticker: 'GRAM', decimals: 9, address: 'ton' },
         receiveToken: {
             ticker: 'tsTON',
             decimals: 9,
@@ -27,7 +27,7 @@ export const DEFAULT_METADATA: Record<string, StakingProviderMetadata> = {
     },
     [Network.testnet().chainId]: {
         name: 'Tonstakers',
-        stakeToken: { ticker: 'TON', decimals: 9, address: 'ton' },
+        stakeToken: { ticker: 'GRAM', decimals: 9, address: 'ton' },
         receiveToken: {
             ticker: 'TUNA',
             decimals: 9,

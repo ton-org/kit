@@ -27,7 +27,7 @@ import { useGaslessMintFee } from './use-gasless-mint-fee';
 import { useGaslessMintMessage } from './use-gasless-mint-message';
 import { useMintTransaction } from './use-mint-transaction';
 
-/** TON buffer beyond the deploy amount when checking shortfall for the regular flow. */
+/** GRAM buffer beyond the deploy amount when checking shortfall for the regular flow. */
 const REGULAR_MINT_GAS_BUFFER = toNano('0.01');
 
 export type MintShortfall = { mode: 'gasless' | 'topup'; requiredTon: string };
@@ -45,8 +45,8 @@ export interface UseMintNftReturn {
      * Run a pre-flight shortfall check. Returns `undefined` when the user can proceed
      * (or when the gasless flow is active — the relayer fronts gas there). Otherwise
      * returns a `MintShortfall` describing which path to suggest:
-     * - `'gasless'` if the user could switch flows to bypass the TON requirement.
-     * - `'topup'` if gasless isn't available — the user must add TON.
+     * - `'gasless'` if the user could switch flows to bypass the GRAM requirement.
+     * - `'topup'` if gasless isn't available — the user must add GRAM.
      */
     checkShortfall: () => MintShortfall | undefined;
 

@@ -7,7 +7,7 @@
  */
 
 import { isValidAddress } from '../../../utils/address';
-import { isValidNanotonAmount, validateTransactionMessage } from '../../../validation';
+import { isValidNanoAmount, validateTransactionMessage } from '../../../validation';
 import { CallForSuccess } from '../../../utils/retry';
 import { createTransactionPreview as createTransactionPreviewHelper } from '../../../utils/transactionPreview';
 import { createCommentPayloadBase64 } from '../../../utils/messageBuilders';
@@ -32,7 +32,7 @@ export class WalletTonClass implements WalletTonInterface {
         if (!isValidAddress(param.recipientAddress)) {
             throw new Error(`Invalid to address: ${param.recipientAddress}`);
         }
-        if (!isValidNanotonAmount(param.transferAmount)) {
+        if (!isValidNanoAmount(param.transferAmount)) {
             throw new Error(`Invalid amount: ${param.transferAmount}`);
         }
 
@@ -66,7 +66,7 @@ export class WalletTonClass implements WalletTonInterface {
             if (!isValidAddress(param.recipientAddress)) {
                 throw new Error(`Invalid to address: ${param.recipientAddress}`);
             }
-            if (!isValidNanotonAmount(param.transferAmount)) {
+            if (!isValidNanoAmount(param.transferAmount)) {
                 throw new Error(`Invalid amount: ${param.transferAmount}`);
             }
 

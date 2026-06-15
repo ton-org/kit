@@ -29,7 +29,7 @@ export interface JettonsTransferRequest {
     recipientAddress: UserFriendlyAddress;
 
     /**
-     * Address to receive the excess TON after the transfer.
+     * Address to receive the excess GRAM after the transfer.
      * Defaults to the sender's address when omitted.
      */
     responseDestination?: UserFriendlyAddress;

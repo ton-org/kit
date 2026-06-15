@@ -9,7 +9,6 @@
 // Type definitions module exports
 
 // Transaction types (from validation module)
-export type { HumanReadableTx } from '../validation/transaction';
 export type { ValidationResult } from '../validation/types';
 
 // Configuration types

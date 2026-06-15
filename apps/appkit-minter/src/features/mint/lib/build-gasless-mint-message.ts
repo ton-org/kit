@@ -26,7 +26,7 @@ export interface BuildGaslessMintMessageParams {
  * Pure builder for the gasless mint message. Wraps the NFT deploy spec into
  * a TEP-74 jetton-transfer's `forward_payload` addressed to the on-chain
  * forwarder contract. `response_destination = relayer` mirrors the standard
- * gasless pattern — relayer paid compute, captures the jetton-wallet's TON
+ * gasless pattern — relayer paid compute, captures the jetton-wallet's GRAM
  * excess.
  */
 export const buildGaslessMintMessage = (params: BuildGaslessMintMessageParams): TransactionRequestMessage => {

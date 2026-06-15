@@ -30,7 +30,7 @@ function summarizeTransaction(preview: TransactionEmulatedPreview) {
         kind: 'success' as const,
         transfers: transfers.map((transfer) => ({
             assetType: transfer.assetType,
-            jettonAddress: transfer.assetType === AssetType.ton ? 'TON' : (transfer.tokenAddress ?? ''),
+            jettonAddress: transfer.assetType === AssetType.ton ? 'GRAM' : (transfer.tokenAddress ?? ''),
             amount: transfer.amount, // string, can be positive or negative
             isIncoming: BigInt(transfer.amount) >= 0n,
         })),

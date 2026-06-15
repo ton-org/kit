@@ -45,11 +45,11 @@ const test = testWithGaslessFixture({
 });
 
 test.describe('Availability (two-tab wallet)', () => {
-    test('No Gasless block in the TON transfer modal', async ({ minter, widget, wallet }) => {
+    test('No Gasless block in the GRAM transfer modal', async ({ minter, widget, wallet }) => {
         await gaslessMeta('Availability');
-        await test.step('Connect wallet and open TON transfer', async () => {
+        await test.step('Connect wallet and open GRAM transfer', async () => {
             await connectWallet({ widget, wallet });
-            await minter.openTransfer('Toncoin');
+            await minter.openTransfer('Gram');
         });
         await test.step('Gasless block is absent', async () => {
             await expect(minter.gaslessLabel).toHaveCount(0);

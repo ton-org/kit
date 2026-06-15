@@ -65,7 +65,7 @@ export const MintSettingsModal: FC<MintSettingsModalProps> = ({ open, onClose })
                 <div className="flex items-center justify-between">
                     <div>
                         <div className="text-base text-foreground">Gasless</div>
-                        <div className="text-xs text-tertiary-foreground">Pay the fee in a jetton instead of TON.</div>
+                        <div className="text-xs text-tertiary-foreground">Pay the fee in a jetton instead of GRAM.</div>
                     </div>
                     <Switch checked={stagedEnabled} onCheckedChange={setStagedEnabled} disabled={!canEnable} />
                 </div>

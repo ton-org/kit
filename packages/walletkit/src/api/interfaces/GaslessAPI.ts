@@ -21,7 +21,7 @@ import type { DefiProvider } from './DefiProvider';
 /**
  * Gasless API interface exposed by GaslessManager.
  *
- * Gasless lets a dApp submit on-chain transactions without the user paying TON
+ * Gasless lets a dApp submit on-chain transactions without the user paying GRAM
  * for gas: a relayer co-signs and covers the gas, taking a jetton fee in return.
  */
 export interface GaslessAPI extends DefiManagerAPI<GaslessProviderInterface> {
