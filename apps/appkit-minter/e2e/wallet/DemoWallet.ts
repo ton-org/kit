@@ -27,30 +27,26 @@ export class DemoWallet extends WalletApp {
             throw new Error('[importWallet] mnemonic is required setup WALLET_MNEMONIC');
         }
         const app = await this.open();
+
+        // Welcome → "Add an existing wallet" → "Recovery phrase"
+        await app.getByTestId('welcome-add-existing').click();
+        await app.getByTestId('add-wallet-import').click();
+
         // Setup password
-        await app.getByTestId('title').filter({ hasText: 'Setup Password', visible: true });
-        await app.getByTestId('subtitle').filter({ hasText: 'Create Password', visible: true });
         await app.getByTestId('password').fill(this.password);
         await app.getByTestId('password-confirm').fill(this.password);
         await app.getByTestId('password-submit').click();
 
-        // Navigate to Import tab
-        await app.getByTestId('title').filter({ hasText: 'Setup Wallet' }).waitFor({ state: 'visible' });
-        await app.getByTestId('tab-import').click();
-        await app.getByTestId('subtitle').filter({ hasText: 'Import Wallet', visible: true });
-
-        // Select mainnet
+        // Import wallet screen: select mainnet, paste the phrase, continue
         await app.getByTestId('network-select-mainnet').click();
-
-        // Paste mnemonic using clipboard
         await app.evaluate(async (m) => {
             await navigator.clipboard.writeText(m);
         }, mnemonic);
         await app.getByTestId('paste-mnemonic').click();
-
-        // Import wallet
         await app.getByTestId('import-wallet-process').click();
-        await app.getByTestId('title').filter({ hasText: 'TON Wallet' }).waitFor({ state: 'attached' });
+
+        // Wait for the dashboard (the settings button only exists there)
+        await app.getByTestId('wallet-menu').waitFor({ state: 'visible' });
 
         // Disable auto-lock and hold-to-sign for e2e tests
         await app.getByTestId('wallet-menu').click();
@@ -64,6 +60,8 @@ export class DemoWallet extends WalletApp {
     async connectBy(url: string, shouldSkipConnect: boolean = false, confirm: boolean = true): Promise<void> {
         const app = await this.open();
         await delay(500);
+        // Open the "Connect to dApp" modal, then paste the TON Connect link.
+        await app.getByTestId('connect-dapp-button').click();
         await app.getByTestId('tonconnect-url').fill(url);
         await app.getByTestId('tonconnect-process').click();
 
@@ -79,11 +77,11 @@ export class DemoWallet extends WalletApp {
             return;
         }
 
-        const modal = app.getByTestId('request').filter({ hasText: 'Connect Request' });
+        const modal = app.getByTestId('connect-request');
         await modal.waitFor({ state: 'visible' });
         const chose = app.getByTestId(confirm ? 'connect-approve' : 'connect-reject');
 
-        await chose.waitFor({ state: 'attached' });
+        await chose.waitFor({ state: 'visible' });
         await chose.click();
         await modal.waitFor({ state: 'detached' });
         await this.close();
@@ -91,10 +89,10 @@ export class DemoWallet extends WalletApp {
 
     async signData(confirm: boolean = true): Promise<void> {
         const app = await this.open();
-        const modal = app.getByTestId('request').filter({ hasText: 'Sign Data Request' });
+        const modal = app.getByTestId('sign-data-request');
         await modal.waitFor({ state: 'visible' });
         const chose = app.getByTestId(confirm ? 'sign-data-approve' : 'sign-data-reject');
-        await chose.waitFor({ state: 'attached' });
+        await chose.waitFor({ state: 'visible' });
         await chose.click();
         await modal.waitFor({ state: 'detached' });
         await this.close();
@@ -110,10 +108,10 @@ export class DemoWallet extends WalletApp {
 
     async accept(confirm: boolean = true): Promise<void> {
         const app = await this.open();
-        const modal = app.getByTestId('request').filter({ hasText: 'Transaction Request' });
+        const modal = app.getByTestId('transaction-request');
         await modal.waitFor({ state: 'visible' });
         const chose = app.getByTestId(confirm ? 'send-transaction-approve' : 'send-transaction-reject');
-        await chose.waitFor({ state: 'attached' });
+        await chose.waitFor({ state: 'visible' });
         await chose.click();
         await modal.waitFor({ state: 'detached' });
         await this.close();
@@ -157,19 +155,15 @@ export class DemoWallet extends WalletApp {
         await app.getByTestId('use-my-address').click();
 
         // Fill in amount
-        await app.getByTestId('amount-input').fill(amount);
+        await app.getByTestId('send-amount-input').fill(amount);
 
         // Click send button
         await app.getByTestId('send-submit').click();
 
-        // Wait for transaction request modal
-        const modal = app.getByTestId('request').filter({ hasText: 'Transaction Request' });
-        await modal.waitFor({ state: 'visible' });
-
-        // Approve or reject
+        // Wait for the transaction request modal (anchored on its type-specific action button)
         const chose = app.getByTestId(confirm ? 'send-transaction-approve' : 'send-transaction-reject');
-        await chose.waitFor({ state: 'attached' });
+        await chose.waitFor({ state: 'visible' });
         await chose.click();
-        await modal.waitFor({ state: 'detached' });
+        await chose.waitFor({ state: 'detached' });
     }
 }

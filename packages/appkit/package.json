@@ -110,8 +110,8 @@
     "@tanstack/query-core": ">=5.0.0",
     "@ton/core": "^0.62.0 || ^0.63.0",
     "@ton/crypto": "^3.3.0",
-    "@tonconnect/ui": ">=3.0.0",
-    "@tonconnect/sdk": ">=4.0.0"
+    "@tonconnect/sdk": ">=4.0.0",
+    "@tonconnect/ui": ">=3.0.0"
   },
   "peerDependenciesMeta": {
     "@tonconnect/ui": {
@@ -129,10 +129,10 @@
   "license": "ISC",
   "packageManager": "pnpm@10.15.0",
   "devDependencies": {
-    "@tanstack/query-core": "catalog:",
+    "@tanstack/query-core": "^5.101.0",
     "@ton/core": "catalog:",
     "@tonconnect/ui": "catalog:",
     "typescript": "catalog:",
-    "vitest": "^4.1.4"
+    "vitest": "^4.1.8"
   }
 }

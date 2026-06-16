@@ -6,7 +6,7 @@
  *
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Address } from '@ton/core';
 import type { JettonInfo } from '@ton/walletkit';
 import { getChainNetwork, useWalletKit, useWalletStore } from '@demo/wallet-core';
@@ -46,7 +46,7 @@ export function useJettonInfo(tokenAddress: Address | string | null | undefined)
     const walletKit = useWalletKit();
     const network = useActiveWalletNetwork();
     const [tokenInfo, setTokenInfo] = useState<TokenInfo | null>(null);
-    const chainNetwork = getChainNetwork(network);
+    const chainNetwork = useMemo(() => getChainNetwork(network), [network]);
 
     useEffect(() => {
         if (!tokenAddress) {

@@ -12,7 +12,7 @@ allowBuilds:
 
 catalog:
   '@tanstack/query-core': ^5.100.14
-  '@tanstack/react-query': ^5.100.14
+  '@tanstack/react-query': ^5.101.0
   '@ton/core': ^0.63.1
   '@ton/crypto': ^3.3.0
   '@tonconnect/bridge-sdk': ^0.2.8
@@ -24,7 +24,7 @@ catalog:
   '@types/react-dom': 19.2.3
   buffer: ^6.0.3
   eslint: 9.39.4
-  lru-cache: ^11.5.0
+  lru-cache: ^11.5.1
   react: 19.2.3
   react-dom: 19.2.3
   react-native: 0.81.5
@@ -37,6 +37,7 @@ minimumReleaseAgeExclude:
   - '@tonconnect/sdk@4.0.0'
   - '@tonconnect/ui-react@3.0.0'
   - '@tonconnect/ui@3.0.0'
+  - '@truecarry/vite-plugin-web-extension@4.5.2'
 
 onlyBuiltDependencies:
   - node-hid
