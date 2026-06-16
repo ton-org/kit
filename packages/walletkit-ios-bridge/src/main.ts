@@ -41,6 +41,8 @@ import type {
     StakingProviderInterface,
     StakingAPI,
     EmbeddedRequestEvent,
+    GaslessAPI,
+    GaslessProviderInterface,
 } from '@ton/walletkit';
 import {
     CreateTonMnemonic,
@@ -74,6 +76,7 @@ import type {
     SwiftWalletKitConfiguration,
     SwiftWalletSigner,
 } from './types';
+import { TonApiGaslessProvider, type TonApiGaslessProviderConfig } from '@ton/walletkit/gasless/tonapi';
 
 declare global {
     interface Window {
@@ -609,6 +612,10 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, sessionMa
             return TonStakersStakingProvider.createFromContext(walletKit.createFactoryContext(), config ?? {});
         },
 
+        createTonApiGaslessProvider(config?: TonApiGaslessProviderConfig): GaslessProviderInterface {
+            return TonApiGaslessProvider.createFromContext(walletKit.createFactoryContext(), config ?? {});
+        },
+
         swap(): SwapAPI {
             return walletKit.swap;
         },
@@ -620,6 +627,10 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, sessionMa
         staking(): StakingAPI {
             return walletKit.staking;
         },
+
+        gasless(): GaslessAPI {
+            return walletKit.gasless;
+        }
     };
 };
 
