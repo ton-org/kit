@@ -100,6 +100,7 @@ export type {
 
 // Jetton models
 export type { Jetton } from './jettons/Jetton';
+export type { JettonInfo, JettonVerification } from './jettons/JettonInfo';
 export type { JettonsRequest } from './jettons/JettonsRequest';
 export type { JettonsResponse } from './jettons/JettonsResponse';
 export type { JettonsTransferRequest } from './jettons/JettonsTransferRequest';

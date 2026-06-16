@@ -81,7 +81,7 @@ export type SwiftFetchManifest = (manifestUrl: string) => Promise<ManifestFetchR
 export interface SwiftWalletKit {
     isReady(): boolean;
 
-    jettonsManager(): JettonsAPI;
+    jettons(): JettonsAPI;
 
     setEventsListeners(callback: (type: string, event: unknown) => Promise<void>): void;
 

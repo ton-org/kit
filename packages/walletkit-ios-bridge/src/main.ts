@@ -199,7 +199,7 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, sessionMa
             return initialized && !!walletKit;
         },
 
-        jettonsManager(): JettonsAPI {
+        jettons(): JettonsAPI {
             return walletKit.jettons;
         },
 
