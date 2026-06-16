@@ -12,6 +12,7 @@ import type { Network } from './network';
 import type { Base64String } from './primitives';
 
 export type { TransactionStatus } from '@ton/walletkit';
+export type { ExtraCurrencies } from '@ton/walletkit';
 
 export interface TransactionRequest {
     /**
