@@ -37,7 +37,7 @@ minimumReleaseAgeExclude:
   - '@tonconnect/sdk@4.0.0'
   - '@tonconnect/ui-react@3.0.0'
   - '@tonconnect/ui@3.0.0'
-  - '@truecarry/vite-plugin-web-extension@4.5.2'
+  - '@truecarry/vite-plugin-web-extension@4.5.3'
 
 onlyBuiltDependencies:
   - node-hid

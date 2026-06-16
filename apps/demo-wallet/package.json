@@ -36,7 +36,7 @@
     "@ton/core": "catalog:",
     "@ton/crypto": "catalog:",
     "@ton/walletkit": "workspace:*",
-    "@truecarry/vite-plugin-web-extension": "^4.5.2",
+    "@truecarry/vite-plugin-web-extension": "^4.5.3",
     "@truecarry/webext-bridge": "^6.0.2",
     "buffer": "catalog:",
     "class-variance-authority": "^0.7.1",
