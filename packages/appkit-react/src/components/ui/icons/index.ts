@@ -17,5 +17,6 @@ export * from './search-icon';
 export * from './sliders-icon';
 export * from './spinner-icon';
 export * from './success-icon';
+export * from './gram-icon';
 export * from './ton-icon';
 export * from './verified-icon';

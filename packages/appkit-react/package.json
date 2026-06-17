@@ -1,6 +1,6 @@
 {
   "name": "@ton/appkit-react",
-  "version": "1.0.0-alpha.3",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "build": "pnpm run build:esm && pnpm run copy:css",
@@ -14,7 +14,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/ton-connect/kit"
+    "url": "https://github.com/ton-org/kit"
   },
   "files": [
     "dist/**",
@@ -53,7 +53,7 @@
     "@storybook/react": "10.4.1",
     "@storybook/react-vite": "10.4.1",
     "@storybook/test": "^8.6.15",
-    "@tanstack/react-query": "catalog:",
+    "@tanstack/react-query": "^5.101.0",
     "@tonconnect/ui-react": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
@@ -67,8 +67,8 @@
   },
   "peerDependencies": {
     "@tanstack/react-query": ">=5.0.0",
-    "@tonconnect/ui": ">=2.4.1",
-    "@tonconnect/ui-react": ">=2.4.1",
+    "@tonconnect/ui": ">=3.0.0",
+    "@tonconnect/ui-react": ">=3.0.0",
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0"
   },

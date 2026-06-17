@@ -1,0 +1,23 @@
+html,
+body {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--ta-font-family);
+    font-size: var(--ta-body-size);
+    line-height: var(--ta-body-regular-line-height);
+    color: var(--ta-color-text);
+    background: var(--ta-color-background);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+    min-height: 100svh;
+}
+
+* {
+    box-sizing: border-box;
+}

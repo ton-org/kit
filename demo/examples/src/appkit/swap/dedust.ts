@@ -25,11 +25,11 @@ export const dedustQuickStartExample = (kit: AppKit) => {
 
 export const dedustProtocolRoutingExample = async (appKit: AppKit) => {
     // SAMPLE_START: DEDUST_PROTOCOL_ROUTING
-    const TON = { address: 'ton', decimals: 9 };
+    const GRAM = { address: 'ton', decimals: 9 };
     const USDT = { address: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs', decimals: 6 };
 
     const quote = await getSwapQuote(appKit, {
-        from: TON,
+        from: GRAM,
         to: USDT,
         amount: '1000000000',
         network: Network.mainnet(),
@@ -49,11 +49,11 @@ export const dedustProtocolRoutingExample = async (appKit: AppKit) => {
 
 export const dedustReferralFeesExample = async (appKit: AppKit) => {
     // SAMPLE_START: DEDUST_REFERRAL_FEES
-    const TON = { address: 'ton', decimals: 9 };
+    const GRAM = { address: 'ton', decimals: 9 };
     const USDT = { address: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs', decimals: 6 };
 
     const quote = await getSwapQuote(appKit, {
-        from: TON,
+        from: GRAM,
         to: USDT,
         amount: '1000000000',
         network: Network.mainnet(),
@@ -69,7 +69,7 @@ export const dedustReferralFeesExample = async (appKit: AppKit) => {
 
 export const dedustOverridingReferralExample = async (appKit: AppKit) => {
     // SAMPLE_START: DEDUST_OVERRIDING_REFERRAL
-    const TON = { address: 'ton', decimals: 9 };
+    const GRAM = { address: 'ton', decimals: 9 };
     const USDT = { address: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs', decimals: 6 };
 
     // Global referrer in config
@@ -82,7 +82,7 @@ export const dedustOverridingReferralExample = async (appKit: AppKit) => {
 
     // Override for specific quote
     const quote = await getSwapQuote(appKit, {
-        from: TON,
+        from: GRAM,
         to: USDT,
         amount: '1000000000',
         network: Network.mainnet(),
@@ -94,7 +94,7 @@ export const dedustOverridingReferralExample = async (appKit: AppKit) => {
 
     // Or use global settings by omitting providerOptions
     const quote2 = await getSwapQuote(appKit, {
-        from: TON,
+        from: GRAM,
         to: USDT,
         amount: '1000000000',
         network: Network.mainnet(),

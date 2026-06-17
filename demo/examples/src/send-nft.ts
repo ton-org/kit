@@ -23,7 +23,7 @@ export async function main() {
     const nftTransfer: NFTTransferRequest = {
         nftAddress: 'EQD...nft-item...',
         recipientAddress: 'EQC...recipient...',
-        transferAmount: '1', // TON used to invoke NFT transfer (nanotons)
+        transferAmount: '1', // GRAM used to invoke NFT transfer (nano units)
         comment: 'Gift',
     };
 

@@ -314,7 +314,7 @@ if (window.ton && window.ton.tonconnect) {
             validUntil: Math.floor(Date.now() / 1000) + 600,
             messages: [{
                 address: 'EQD...',
-                amount: '1000000000',  // 1 TON
+                amount: '1000000000',  // 1 GRAM
                 payload: ''
             }]
         }],

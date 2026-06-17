@@ -25,7 +25,7 @@ export const Default: Story = {
         tokens: STORY_TOKENS,
         network: undefined,
         fiatSymbol: '$',
-        defaultFromSymbol: 'TON',
+        defaultFromSymbol: 'GRAM',
         defaultToSymbol: 'USDT',
     },
 };
@@ -35,7 +35,7 @@ export const CustomUI: Story = {
         tokens: STORY_TOKENS,
         network: undefined,
         fiatSymbol: '$',
-        defaultFromSymbol: 'TON',
+        defaultFromSymbol: 'GRAM',
         defaultToSymbol: 'USDT',
     },
     render: (args) => (

@@ -8,11 +8,11 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { FC, PropsWithChildren } from 'react';
-import type { Network, StakingProvider, StakingQuoteDirection, TonShortfall } from '@ton/appkit';
+import type { Network, StakingProvider, StakingQuoteDirection, TransferShortfall } from '@ton/appkit';
 import {
     calcMaxSpendable,
+    checkTransferBalance,
     formatUnits,
-    getTonShortfall,
     setDefaultStakingProvider,
     validateNumericString,
 } from '@ton/appkit';
@@ -25,6 +25,7 @@ import type {
 } from '@ton/appkit';
 import { UnstakeMode } from '@ton/appkit';
 
+import type { LowBalanceMode } from '../../../../components/shared/low-balance-modal/low-balance-modal';
 import { useNetwork } from '../../../network';
 import { useAppKit } from '../../../settings/hooks/use-app-kit';
 import { useStakingQuote } from '../../hooks/use-staking-quote';
@@ -99,15 +100,15 @@ export interface StakingContextType {
     toggleReversed: () => void;
     /** Amount displayed in the reversed (bottom) input */
     reversedAmount: string;
-    /** Sets the input amount to the maximum available balance (leaves room for TON gas on native stake) */
+    /** Sets the input amount to the maximum available balance (leaves room for GRAM gas on native stake) */
     onMaxClick: () => void;
-    /** True when the built transaction outflow exceeds the user's TON balance */
+    /** True when the built transaction outflow exceeds the user's GRAM balance */
     isLowBalanceWarningOpen: boolean;
-    /** `reduce` when the outgoing token is TON (user can fix by changing amount), `topup` otherwise. */
-    lowBalanceMode: 'reduce' | 'topup';
-    /** Required TON amount for the pending operation, formatted as a decimal string. Empty when no pending op. */
+    /** `reduce` when the outgoing token is GRAM (user can fix by changing amount), `topup` otherwise. */
+    lowBalanceMode: LowBalanceMode;
+    /** Required GRAM amount for the pending operation, formatted as a decimal string. Empty when no pending op. */
     lowBalanceRequiredTon: string;
-    /** Replace the input with a value that fits into the current TON balance and close the warning */
+    /** Replace the input with a value that fits into the current GRAM balance and close the warning */
     onLowBalanceChange: () => void;
     /** Dismiss the low-balance warning without changing the input */
     onLowBalanceCancel: () => void;
@@ -172,7 +173,7 @@ export const StakingWidgetProvider: FC<StakingProviderProps> = ({ children, netw
     const [unstakeMode, setUnstakeMode] = useState<UnstakeModes>(UnstakeMode.INSTANT);
     const [direction, setDirection] = useState<StakingQuoteDirection>('stake');
     const [isReversed, setIsReversed] = useState(false);
-    const [pendingStake, setPendingStake] = useState<TonShortfall | undefined>(undefined);
+    const [pendingStake, setPendingStake] = useState<TransferShortfall | undefined>(undefined);
 
     const walletNetwork = useNetwork();
     const network = networkProp ?? walletNetwork;
@@ -201,8 +202,8 @@ export const StakingWidgetProvider: FC<StakingProviderProps> = ({ children, netw
 
     const isNativeTon = providerMetadata?.stakeToken.address === 'ton';
 
-    // Always fetch TON balance: even when the stake token is a jetton we need it to check whether the user has
-    // enough TON to cover network fees before sending.
+    // Always fetch GRAM balance: even when the stake token is a jetton we need it to check whether the user has
+    // enough GRAM to cover network fees before sending.
     const { data: nativeBalanceData, isLoading: isNativeBalanceLoading } = useBalance({
         network,
         query: { refetchInterval: 5000 },
@@ -331,9 +332,10 @@ export const StakingWidgetProvider: FC<StakingProviderProps> = ({ children, netw
             direction === 'stake' ? providerMetadata.stakeToken.address : providerMetadata.receiveToken?.address;
 
         if (outgoingTokenAddress) {
-            const shortfall = getTonShortfall({
+            const shortfall = checkTransferBalance({
                 messages: transactionParams.messages,
                 tonBalance: nativeBalanceData,
+                gasBufferNanos: 100_000_000n,
                 fromToken: { address: outgoingTokenAddress },
                 fromAmount: quote.amountIn,
             });
@@ -360,7 +362,7 @@ export const StakingWidgetProvider: FC<StakingProviderProps> = ({ children, netw
     }, []);
 
     const isLowBalanceWarningOpen = pendingStake !== undefined;
-    const lowBalanceMode: 'reduce' | 'topup' = pendingStake?.mode ?? 'reduce';
+    const lowBalanceMode: LowBalanceMode = pendingStake?.mode ?? 'reduce';
     const lowBalanceRequiredTon = useMemo(() => {
         if (!pendingStake) return '';
         return formatUnits(pendingStake.requiredNanos, 9);

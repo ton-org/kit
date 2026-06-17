@@ -120,7 +120,7 @@ describe('UI rendering functions', () => {
             expect(result.kind).toBe('success');
             if (result.kind === 'success' && result.transfers) {
                 expect(result.transfers).toHaveLength(2);
-                expect(result.transfers[0].jettonAddress).toBe('TON');
+                expect(result.transfers[0].jettonAddress).toBe('GRAM');
                 expect(result.transfers[0].isIncoming).toBe(false);
                 expect(result.transfers[1].jettonAddress).toBe('EQJetton123');
                 expect(result.transfers[1].isIncoming).toBe(true);

@@ -8,6 +8,26 @@
 
     Transfers go through the single `build_*` → `emulate_transaction` → `send_raw_transaction` path. There are no one-shot `send_ton`/`send_jetton`/`send_nft` tools — build, preview, then broadcast explicitly.
 
+## 0.1.15-alpha.20
+
+### Patch Changes
+
+- Updated dependencies [4a060fb]
+    - @ton/walletkit@1.0.0
+
+## 0.1.15-alpha.20
+
+### Patch Changes
+
+- Updated dependencies [912e0a2]
+    - @ton/walletkit@1.0.0-alpha.4
+
+## 0.1.15-alpha.19
+
+### Patch Changes
+
+- Fixed a transaction creation bug caused by an incorrect input cell format. Thanks @trypartyhard for the report.
+
 ## 0.1.15-alpha.18
 
 ### Patch Changes

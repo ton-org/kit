@@ -13,7 +13,9 @@ export { RarityBadge } from './components/rarity-badge';
 
 // Hooks
 export { useCardGenerator } from './hooks/use-card-generator';
-export { useNftMintTransaction } from './hooks/use-nft-mint-transaction';
+export { useMintNft } from './hooks/use-mint-nft';
+export { useMintTransaction } from './hooks/use-mint-transaction';
+export { useGaslessMintMessage } from './hooks/use-gasless-mint-message';
 
 // Store
 export { useMinterStore } from './store/minter-store';

@@ -36,7 +36,7 @@ src/
 │       └── extensions/            # Wallet-specific extensions
 │           ├── jetton.ts          # Jetton operations
 │           ├── nft.ts             # NFT operations
-│           └── ton.ts             # TON operations
+│           └── ton.ts             # GRAM operations
 ├── errors/                        # Error handling
 ├── handlers/                      # Event-specific handlers
 ├── storage/                       # Storage abstraction and adapters LocalStorage, In-memory, Extension
@@ -121,7 +121,7 @@ DEBUG=walletkit:* pnpm dev
 - Inspect browser console for errors
 
 **Transaction Preview Empty**
-- Ensure wallet has TON balance for fees
+- Ensure wallet has GRAM balance for fees
 - Check transaction BOC is valid
 - Look for emulation errors in preview
 

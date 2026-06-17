@@ -4,7 +4,7 @@ target: packages/walletkit/src/defi/staking/tonstakers/README.md
 
 # Tonstakers staking provider
 
-Liquid staking via [Tonstakers](https://tonstakers.com): stake TON for tsTON, unstake with configurable modes.
+Liquid staking via [Tonstakers](https://tonstakers.com): stake GRAM for tsTON, unstake with configurable modes.
 
 Public entry: **`createTonstakersProvider`** from `@ton/walletkit/staking/tonstakers`. It returns a factory `(ctx) => TonStakersStakingProvider` for `kit.staking.registerProvider(createTonstakersProvider(config))`. For advanced use, `TonStakersStakingProvider.createFromContext(ctx, config)` builds the provider from a `ProviderFactoryContext`.
 
@@ -28,7 +28,7 @@ Networks without a known Tonstakers pool and without `contractAddress` are skipp
 
 ## Stake transaction
 
-`buildStakeTransaction` adds a **1 TON** fee reserve on top of the staked amount (`CONTRACT.STAKE_FEE_RES`), in line with the pool contract.
+`buildStakeTransaction` adds a **1 GRAM** fee reserve on top of the staked amount (`CONTRACT.STAKE_FEE_RES`), in line with the pool contract.
 
 ## Unstake modes (`UnstakeMode`)
 
@@ -42,7 +42,7 @@ Networks without a known Tonstakers pool and without `contractAddress` are skipp
 
 ## Balances and pool info
 
-- `getStakedBalance` returns `StakingBalance`: `stakedBalance` (tsTON), `instantUnstakeAvailable` (pool-side TON liquidity for instant unstake), `providerId`.
+- `getStakedBalance` returns `StakingBalance`: `stakedBalance` (tsTON), `instantUnstakeAvailable` (pool-side GRAM liquidity for instant unstake), `providerId`.
 - `getStakingProviderInfo` returns APY (TonAPI), instant liquidity, and `providerId`. Responses are cached briefly to limit API calls.
 
 ## Resources

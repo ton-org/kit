@@ -33,12 +33,12 @@ export interface AccountState {
     status: AccountStatus;
 
     /**
-     * Balance in nanotons as a decimal string (raw on-chain amount).
+     * Balance in nano units as a decimal string (raw on-chain amount).
      */
     rawBalance: TokenAmount;
 
     /**
-     * Balance formatted in TON (10^9 nanotons = 1 TON).
+     * Balance formatted in GRAM (10^9 nano units = 1 GRAM).
      */
     balance: string;
 

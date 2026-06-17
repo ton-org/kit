@@ -43,9 +43,9 @@ export function parseOutgoingTonTransfers(
                 ...(comment !== undefined ? { comment } : {}),
             },
             simplePreview: {
-                name: 'Ton Transfer',
-                description: `Transferring ${fromNano(String(amount))} TON`,
-                value: `${fromNano(String(amount))} TON`,
+                name: 'Gram Transfer',
+                description: `Transferring ${fromNano(String(amount))} GRAM`,
+                value: `${fromNano(String(amount))} GRAM`,
                 accounts: [toAccount(sender, addressBook), recipientAccount],
             },
             baseTransactions: [Base64ToHex(tx.hash)],
@@ -72,7 +72,7 @@ export function parseIncomingTonTransfers(
     const recipient = msg.destination;
     const amount = BigInt(valueNum);
 
-    // For incoming TON transfers, if funds were credited (credit_ph exists and has credit),
+    // For incoming GRAM transfers, if funds were credited (credit_ph exists and has credit),
     // consider it successful even if compute phase failed (no_gas, etc.)
     const incomingStatus = computeIncomingTonTransferStatus(tx, status);
 
@@ -91,9 +91,9 @@ export function parseIncomingTonTransfers(
             ...(comment !== undefined ? { comment } : {}),
         },
         simplePreview: {
-            name: 'Ton Transfer',
-            description: `Transferring ${fromNano(String(amount))} TON`,
-            value: `${fromNano(String(amount))} TON`,
+            name: 'Gram Transfer',
+            description: `Transferring ${fromNano(String(amount))} GRAM`,
+            value: `${fromNano(String(amount))} GRAM`,
             accounts: [toAccount(sender, addressBook), recipientAccount],
         },
         baseTransactions: [Base64ToHex(tx.hash)],
@@ -109,7 +109,7 @@ export function computeStatus(tx: ToncenterTransaction): StatusAction {
 }
 
 /**
- * Compute status specifically for incoming TON transfers.
+ * Compute status specifically for incoming GRAM transfers.
  * For incoming transfers, if funds were credited (credit_ph has credit > 0),
  * it's considered successful even if compute phase failed.
  */

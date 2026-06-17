@@ -12,8 +12,8 @@ import { formatUnits } from '@ton/appkit';
 import type { Network } from '@ton/appkit';
 import type { GetSwapQuoteData } from '@ton/appkit/queries';
 import type { SwapProvider } from '@ton/appkit';
-import { getTonShortfall } from '@ton/appkit';
-import type { TonShortfall } from '@ton/appkit';
+import { checkTransferBalance } from '@ton/appkit';
+import type { TransferShortfall } from '@ton/appkit';
 import { calcMaxSpendable } from '@ton/appkit';
 
 import { useSwapQuote } from '../../hooks/use-swap-quote';
@@ -25,6 +25,7 @@ import { useBalance } from '../../../balances/hooks/use-balance';
 import { useNetwork } from '../../../network';
 import { useSendTransaction } from '../../../transaction/hooks/use-send-transaction';
 import { useDebounceValue } from '../../../../hooks/use-debounce-value';
+import type { LowBalanceMode } from '../../../../components/shared/low-balance-modal/low-balance-modal';
 import type { AppkitUIToken } from '../../../../types/appkit-ui-token';
 import { mapSwapWidgetTokens } from '../../utils/map-swap-widget-tokens';
 import { useSwapTokenState } from './use-swap-token-state';
@@ -90,13 +91,13 @@ export interface SwapContextType {
     sendSwapTransaction: () => Promise<void>;
     /** True while a transaction is being built or sent */
     isSendingTransaction: boolean;
-    /** True when the built transaction outflow exceeds the user's TON balance */
+    /** True when the built transaction outflow exceeds the user's GRAM balance */
     isLowBalanceWarningOpen: boolean;
-    /** `reduce` when the outgoing token is TON (user can fix by changing amount), `topup` otherwise. */
-    lowBalanceMode: 'reduce' | 'topup';
-    /** Required TON amount for the pending operation, formatted as a decimal string. Empty when no pending op. */
+    /** `reduce` when the outgoing token is GRAM (user can fix by changing amount), `topup` otherwise. */
+    lowBalanceMode: LowBalanceMode;
+    /** Required GRAM amount for the pending operation, formatted as a decimal string. Empty when no pending op. */
     lowBalanceRequiredTon: string;
-    /** Replace the input with a value that fits into the current TON balance and close the warning */
+    /** Replace the input with a value that fits into the current GRAM balance and close the warning */
     onLowBalanceChange: () => void;
     /** Dismiss the low-balance warning without changing the input */
     onLowBalanceCancel: () => void;
@@ -191,7 +192,7 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
     });
     const [slippage, setSlippage] = useState(defaultSlippage);
     const [fromAmountDebounced] = useDebounceValue(fromAmount, 500);
-    const [pendingSwap, setPendingSwap] = useState<TonShortfall | undefined>(undefined);
+    const [pendingSwap, setPendingSwap] = useState<TransferShortfall | undefined>(undefined);
     const address = useAddress();
     const [swapProvider, setSwapProviderId] = useSwapProvider();
     const swapProviders = useSwapProviders();
@@ -284,7 +285,7 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
         isNetworkSupported,
     });
     const isLowBalanceWarningOpen = pendingSwap !== undefined;
-    const lowBalanceMode: 'reduce' | 'topup' = pendingSwap?.mode ?? 'reduce';
+    const lowBalanceMode: LowBalanceMode = pendingSwap?.mode ?? 'reduce';
     const lowBalanceRequiredTon = useMemo(() => {
         if (!pendingSwap) return '';
         return formatUnits(pendingSwap.requiredNanos, 9);
@@ -315,9 +316,10 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
 
         const tx = await buildTransaction({ quote, userAddress: address });
 
-        const shortfall = getTonShortfall({
+        const shortfall = checkTransferBalance({
             messages: tx.messages,
             tonBalance,
+            gasBufferNanos: 100_000_000n,
             fromToken,
             fromAmount,
         });

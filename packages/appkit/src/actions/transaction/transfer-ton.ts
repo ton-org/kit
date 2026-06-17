@@ -20,7 +20,7 @@ export type TransferTonReturnType = SendTransactionResponse;
 export type TransferTonErrorType = Error;
 
 /**
- * Transfer TON - creates and sends a TON transfer transaction
+ * Transfer GRAM - creates and sends a GRAM transfer transaction
  */
 export const transferTon = async (
     appKit: AppKit,

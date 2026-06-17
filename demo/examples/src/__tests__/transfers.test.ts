@@ -22,7 +22,7 @@ describe('transfers', () => {
         resetKitCache();
     });
 
-    it('should send TON', async () => {
+    it('should send GRAM', async () => {
         await expect(sendTon()).resolves.not.toThrow();
     });
 

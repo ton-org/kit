@@ -11,7 +11,7 @@ import { calcFiatValue, formatLargeValue } from '@ton/appkit';
 import clsx from 'clsx';
 
 import { Logo } from '../../ui/logo';
-import { TonIconCircle } from '../../ui/icons';
+import { GramIconCircle } from '../../ui/icons';
 import type { AppkitUIToken } from '../../../types/appkit-ui-token';
 import { getDisplayAmount } from '../../../features/swap/utils/get-display-amount';
 import styles from './amount-preview.module.css';
@@ -53,7 +53,7 @@ export const AmountPreview: FC<AmountPreviewProps> = ({
                 {token && (
                     <span className={styles.tokenTag}>
                         {token.address === 'ton' ? (
-                            <TonIconCircle size={24} />
+                            <GramIconCircle size={24} />
                         ) : (
                             <Logo size={24} src={token.logo} fallback={token.symbol?.[0] ?? '?'} alt={token.symbol} />
                         )}

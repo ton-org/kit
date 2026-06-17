@@ -40,7 +40,7 @@ export const WithSymbol: Story = {
 };
 
 export const WithTicker: Story = {
-    render: () => <Template ticker="TON" />,
+    render: () => <Template ticker="GRAM" />,
 };
 
 export const WithSymbolAndTicker: Story = {

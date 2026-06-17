@@ -8,7 +8,7 @@
 
 import { allowWindowMessaging } from '@truecarry/webext-bridge/content-script';
 
-import { JS_BRIDGE_NAMESPACE } from '@/lib/constants';
+import { JS_BRIDGE_NAMESPACE } from '@/core/lib/constants';
 
 async function startContentScript() {
     allowWindowMessaging(JS_BRIDGE_NAMESPACE);

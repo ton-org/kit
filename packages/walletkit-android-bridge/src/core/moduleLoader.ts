@@ -16,7 +16,7 @@ const walletKitModulePromise = import('@ton/walletkit');
 type TonWalletKitConstructor = new (options: Record<string, unknown>) => WalletKitInstance;
 
 type SignerFactory = {
-    fromMnemonic: (mnemonic: string[], options: { type: string }) => Promise<WalletKitSigner>;
+    fromMnemonic: (mnemonic: string[], options?: { type?: string }) => Promise<WalletKitSigner>;
     fromPrivateKey: (secretKey: string) => Promise<WalletKitSigner>;
 };
 
@@ -29,7 +29,7 @@ type WalletKitModule = {
     CreateTonMnemonic?: () => Promise<string[]>;
     MnemonicToKeyPair?: (
         mnemonic: string[],
-        type: string,
+        type?: string,
     ) => Promise<{
         publicKey: Uint8Array;
         secretKey: Uint8Array;
@@ -43,7 +43,7 @@ type WalletKitModule = {
 export let TonWalletKit: TonWalletKitConstructor | null = null;
 export let CreateTonMnemonic: (() => Promise<string[]>) | null = null;
 export let MnemonicToKeyPair:
-    | ((mnemonic: string[], type: string) => Promise<{ publicKey: Uint8Array; secretKey: Uint8Array }>)
+    | ((mnemonic: string[], type?: string) => Promise<{ publicKey: Uint8Array; secretKey: Uint8Array }>)
     | null = null;
 export let Signer: SignerFactory | null = null;
 export let DefaultSignature: ((data: Uint8Array, secretKey: Uint8Array) => string) | null = null;

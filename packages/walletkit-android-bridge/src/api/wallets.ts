@@ -69,7 +69,7 @@ class ProxyWalletAdapter implements WalletAdapter {
         const result = await bridgeRequest('adapterSignTransaction', {
             adapterId: this.adapterId,
             input: JSON.stringify(input),
-            fakeSignature: options?.fakeSignature ?? false,
+            fakeSignature: options?.fakeSignature,
         });
         if (!result) throw new Error('adapterSignTransaction: no result from native');
         return result as Base64String;
@@ -83,7 +83,7 @@ class ProxyWalletAdapter implements WalletAdapter {
         const result = await bridgeRequest('adapterSignData', {
             adapterId: this.adapterId,
             input: JSON.stringify(input),
-            fakeSignature: options?.fakeSignature ?? false,
+            fakeSignature: options?.fakeSignature,
         });
         if (!result) throw new Error('adapterSignData: no result from native');
         return result as Hex;
@@ -93,7 +93,7 @@ class ProxyWalletAdapter implements WalletAdapter {
         const result = await bridgeRequest('adapterSignTonProof', {
             adapterId: this.adapterId,
             input: JSON.stringify(input),
-            fakeSignature: options?.fakeSignature ?? false,
+            fakeSignature: options?.fakeSignature,
         });
         if (!result) throw new Error('adapterSignTonProof: no result from native');
         return result as Hex;
@@ -132,6 +132,40 @@ export async function getWalletNetwork(args: { walletId: string }) {
     return wallet(args.walletId, 'getNetwork');
 }
 
+export async function getWalletPublicKey(args: { walletId: string }) {
+    return wallet(args.walletId, 'getPublicKey');
+}
+
+export async function getSignedSignMessage(args: { walletId: string; request: TransactionRequest }) {
+    return wallet(args.walletId, 'getSignedSignMessage', args.request);
+}
+
+export async function getWalletStateInit(args: { walletId: string }) {
+    return wallet(args.walletId, 'getStateInit');
+}
+
+export async function getSignedSendTransaction(args: {
+    walletId: string;
+    input: TransactionRequest;
+    fakeSignature?: boolean;
+}) {
+    return wallet(args.walletId, 'getSignedSendTransaction', args.input, {
+        fakeSignature: args.fakeSignature,
+    });
+}
+
+export async function getSignedSignData(args: { walletId: string; input: PreparedSignData; fakeSignature?: boolean }) {
+    return wallet(args.walletId, 'getSignedSignData', args.input, {
+        fakeSignature: args.fakeSignature,
+    });
+}
+
+export async function getSignedTonProof(args: { walletId: string; input: ProofMessage; fakeSignature?: boolean }) {
+    return wallet(args.walletId, 'getSignedTonProof', args.input, {
+        fakeSignature: args.fakeSignature,
+    });
+}
+
 export async function removeWallet(args: { walletId: string }) {
     return kit('removeWallet', args.walletId);
 }
@@ -142,7 +176,7 @@ export async function getBalance(args: { walletId: string }) {
 
 export async function createSignerFromMnemonic(args: { mnemonic: string[]; mnemonicType?: string }) {
     if (!Signer) throw new Error('Signer module not loaded');
-    const signer = await Signer.fromMnemonic(args.mnemonic, { type: args.mnemonicType ?? 'ton' });
+    const signer = await Signer.fromMnemonic(args.mnemonic, { type: args.mnemonicType });
     const signerId = retain('signer', signer);
     return { signerId, publicKey: signer.publicKey };
 }
@@ -187,7 +221,7 @@ export async function createV5R1WalletAdapter(args: {
     const adapter = await WalletV5R1Adapter.create(signer, {
         client: instance.getApiClient(network),
         network,
-        workchain: args.workchain ?? 0,
+        workchain: args.workchain,
         walletId: args.walletId,
         domain: args.domain,
     });
@@ -212,7 +246,7 @@ export async function createV4R2WalletAdapter(args: {
     const adapter = await WalletV4R2Adapter.create(signer, {
         client: instance.getApiClient(network),
         network,
-        workchain: args.workchain ?? 0,
+        workchain: args.workchain,
         walletId: args.walletId,
         domain: args.domain,
     });

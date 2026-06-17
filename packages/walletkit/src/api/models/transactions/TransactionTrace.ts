@@ -243,7 +243,7 @@ export interface TransactionTraceActionTONTransferDetails {
     destination?: UserFriendlyAddress;
 
     /**
-     * Amount of TON transferred (in nanotons).
+     * Amount of GRAM transferred (in nano units).
      */
     value?: TokenAmount;
 

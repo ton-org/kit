@@ -1,0 +1,167 @@
+{
+  "skill_name": "kit-dev",
+  "evals": [
+    {
+      "id": 1,
+      "name": "add-get-action-and-hook",
+      "prompt": "Add a new `getDelegations` action that returns staking delegations for the selected wallet, plus a `useDelegations` hook.",
+      "assertions": [
+        {"text": "action_in_correct_dir", "description": "Creates action at packages/appkit/src/actions/staking/get-delegations.ts"},
+        {"text": "query_in_correct_dir", "description": "Creates query at packages/appkit/src/queries/staking/get-delegations.ts"},
+        {"text": "hook_in_correct_dir", "description": "Creates hook at packages/appkit-react/src/features/staking/hooks/use-delegations.ts"},
+        {"text": "action_naming_get_prefix", "description": "Read action uses 'get' prefix (getDelegations, not fetchDelegations or loadDelegations)"},
+        {"text": "query_options_factory_pattern", "description": "Query exports getDelegationsQueryOptions factory with queryKey and queryFn"},
+        {"text": "hook_uses_useQuery", "description": "Hook calls useQuery with the query options factory, not duplicating logic"},
+        {"text": "exports_in_barrels", "description": "Adds exports to packages/appkit/src/actions/index.ts, queries/index.ts, and features/staking/index.ts"}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "tests-for-hook",
+      "prompt": "Write tests for the `useSwapQuote` hook in the @ton/appkit-react package.",
+      "assertions": [
+        {"text": "uses_createWrapper", "description": "Uses createWrapper from demo/examples/src/__tests__/test-utils.tsx for provider context"},
+        {"text": "mocks_appkit_or_swap_manager", "description": "Mocks AppKit and swapManager (or its getQuote method) instead of hitting real DEX"},
+        {"text": "covers_loading_state", "description": "Tests loading state (isLoading or pending state from useQuery)"},
+        {"text": "covers_success_state", "description": "Tests success path with returned quote data"},
+        {"text": "covers_error_state", "description": "Tests error path (mocked error from manager)"},
+        {"text": "uses_vitest_and_testing_library", "description": "Uses vitest (describe/it/expect) and @testing-library/react renderHook"}
+      ]
+    },
+    {
+      "id": 5,
+      "name": "tests-for-balance",
+      "prompt": "Write tests for the balance feature in the @ton/appkit package — covering the actions, queries, and the watch-balance cache update path.",
+      "assertions": [
+        {"text": "finds_relevant_balance_files", "description": "Identifies balance-related files (use-balance, get-balance-by-address, etc.) before writing tests"},
+        {"text": "mocks_networkManager_and_streamingManager", "description": "Mocks networkManager and streamingManager on AppKit"},
+        {"text": "tests_handleBalanceUpdate_cache_writes", "description": "Tests how watch hooks write streaming updates into the useBalance cache"},
+        {"text": "uses_existing_domain_test_file", "description": "Adds tests to the existing balances test file (not a new isolated one)"}
+      ]
+    },
+    {
+      "id": 6,
+      "name": "orientation",
+      "prompt": "I just joined the project, how is everything organized here?",
+      "assertions": [
+        {"text": "three_package_architecture", "description": "Names three packages: walletkit (lowest), appkit (middle), appkit-react (top)"},
+        {"text": "feature_domains_concept", "description": "Explains action / query / hook layering OR domain folders (balances, staking, swap, jettons, nft, signing, network, connectors, transaction)"},
+        {"text": "tooling_and_quality", "description": "Mentions `pnpm quality` (or equivalent: tests + lint + typecheck) as the verification command"},
+        {"text": "named_exports_convention", "description": "Mentions named exports only (no default exports)"}
+      ]
+    },
+    {
+      "id": 7,
+      "name": "debug-balance-stale-after-send",
+      "prompt": "I'm triaging a bug report on the AppKit SDK: a consumer says their `useBalance()` doesn't update after `useTransferTon` succeeds. Walk me through every cause I should check in the AppKit source and integration patterns, so I can tell the reporter what to fix or so I can fix it in the SDK.",
+      "assertions": [
+        {"text": "mentions_cache_invalidation", "description": "Identifies missing invalidateQueries on transfer success as the most common cause"},
+        {"text": "mentions_streaming_provider", "description": "Mentions registering a streaming provider for real-time updates"},
+        {"text": "mentions_useWatchBalance", "description": "Mentions mounting useWatchBalance alongside useBalance"},
+        {"text": "mentions_network_mismatch", "description": "Mentions network mismatch (mainnet/testnet) as a possible cause"}
+      ]
+    },
+    {
+      "id": 9,
+      "name": "debug-disconnect-stale-data",
+      "prompt": "Bug report on the AppKit SDK: after a consumer disconnects a wallet and connects a different one, the previous wallet's balance and NFTs stay in the cache briefly. Fix the bug in the AppKit source (`use-disconnect` and friends) and update the matching tests.",
+      "assertions": [
+        {"text": "identifies_use_disconnect_file", "description": "Identifies appkit-react/src/features/wallets/hooks/use-disconnect.ts as the file to edit"},
+        {"text": "adds_removeQueries_in_onSuccess", "description": "Adds queryClient.removeQueries calls inside the onSuccess of useDisconnect"},
+        {"text": "uses_removeQueries_not_invalidateQueries", "description": "Uses removeQueries (not invalidateQueries) because no wallet to refetch for"},
+        {"text": "covers_multiple_query_key_prefixes", "description": "Removes multiple keys: ['balance'], ['nfts'], ['jettons'], ['jetton-balance'], ['stakedBalance'] (note: jetton keys are kebab-case)"},
+        {"text": "preserves_callback_composition", "description": "Preserves any existing onSuccess callback the consumer may pass (calls user's onSuccess too)"},
+        {"text": "mentions_tests", "description": "Mentions adding/updating tests in the existing wallets domain test file (demo/examples/src/appkit/hooks/wallets/wallets.test.tsx) — NOT a new colocated use-disconnect.test.ts"}
+      ]
+    },
+    {
+      "id": 11,
+      "name": "watch-action-and-hook",
+      "prompt": "Add a `watchStakingQuote` action and a `useWatchStakingQuote` hook that subscribes to staking quote changes in real-time.",
+      "assertions": [
+        {"text": "action_in_correct_dir", "description": "Creates watch action at packages/appkit/src/actions/staking/watch-staking-quote.ts"},
+        {"text": "action_uses_emitter_pattern", "description": "Action uses appKit.emitter.on(EVENT, ...) and returns unsubscribe function"},
+        {"text": "no_query_file_for_watch", "description": "Does NOT create a query file (watch actions skip the query layer)"},
+        {"text": "hook_uses_non_query_watch_pattern", "description": "Hook uses one of the two valid watch patterns: (a) useSyncExternalStore with subscribe+getSnapshot (like use-networks), OR (b) useEffect that calls the watch action and keeps a TanStack Query cache fresh (like use-watch-balance-by-address). Does NOT use useQuery."},
+        {"text": "action_naming_watch_prefix", "description": "Watch action uses 'watch' prefix (watchStakingQuote, not subscribeXxx or observeXxx)"},
+        {"text": "exports_in_barrels", "description": "Adds exports to actions/index.ts and features/staking/index.ts"}
+      ]
+    },
+    {
+      "id": 12,
+      "name": "add-mutation-and-hook",
+      "prompt": "Add a `revokeStake` mutation action that revokes a user's stake at a given provider, plus a `useRevokeStake` hook.",
+      "assertions": [
+        {"text": "action_in_correct_dir", "description": "Creates action at packages/appkit/src/actions/staking/revoke-stake.ts"},
+        {"text": "mutation_in_queries_dir", "description": "Creates mutation file at packages/appkit/src/queries/staking/revoke-stake.ts (mutation options, not query options)"},
+        {"text": "hook_uses_useMutation", "description": "Hook uses useMutation, not useQuery"},
+        {"text": "hook_returns_mutate_isPending", "description": "Hook returns the mutation result shape: mutate/mutateAsync, isPending, error, reset"},
+        {"text": "action_naming_write_prefix", "description": "Write action uses an imperative verb (revokeStake, not getRevoke or watchRevoke)"},
+        {"text": "exports_in_barrels", "description": "Adds exports to actions/index.ts, queries/index.ts, and features/staking/index.ts"}
+      ]
+    },
+    {
+      "id": 13,
+      "name": "walletkit-barrel-boundary",
+      "prompt": "I'm adding a `getProtocolInfo` action that returns protocol metadata from the walletkit staking manager. The walletkit method returns a new `ProtocolMetadata` type that's not yet re-exported anywhere in appkit. Walk me through the changes.",
+      "assertions": [
+        {"text": "adds_type_to_local_barrel", "description": "Re-exports ProtocolMetadata in the appkit staking barrel: packages/appkit/src/staking/index.ts"},
+        {"text": "no_direct_walletkit_import_in_action", "description": "Action imports ProtocolMetadata from the local barrel (../../staking), NOT from @ton/walletkit directly"},
+        {"text": "explains_boundary_rule", "description": "Explains the rule: never import @ton/walletkit directly in packages/appkit source"},
+        {"text": "creates_three_layers", "description": "Creates action + query + hook (the standard 3-layer pattern)"},
+        {"text": "exports_in_barrels", "description": "Adds exports to actions/index.ts, queries/index.ts, features/staking/index.ts"}
+      ]
+    },
+    {
+      "id": 14,
+      "name": "incremental-action-exists",
+      "prompt": "I already added the `getStakingHistory` action at `packages/appkit/src/actions/staking/get-staking-history.ts`. Now create the query and the `useStakingHistory` hook for it.",
+      "assertions": [
+        {"text": "does_not_recreate_action", "description": "Does NOT recreate or rewrite the existing action file"},
+        {"text": "creates_query_file", "description": "Creates packages/appkit/src/queries/staking/get-staking-history.ts"},
+        {"text": "creates_hook_file", "description": "Creates packages/appkit-react/src/features/staking/hooks/use-staking-history.ts"},
+        {"text": "query_uses_options_factory", "description": "Query exports getStakingHistoryQueryOptions factory with queryKey & queryFn"},
+        {"text": "hook_uses_query_options", "description": "Hook calls useQuery(getStakingHistoryQueryOptions(appKit, parameters))"},
+        {"text": "exports_query_and_hook_only", "description": "Adds barrel exports for query and hook (not action — already exported)"}
+      ]
+    },
+    {
+      "id": 15,
+      "name": "ui-reusable-component",
+      "prompt": "Add a reusable `<Spinner size='sm' | 'md' | 'lg' />` component to AppKit React.",
+      "assertions": [
+        {"text": "location_in_components_dir", "description": "Component lives in packages/appkit-react/src/components/ui/spinner/ (or components/shared/ if it mixes business logic). Not feature-specific (features/<feature>/components/), not at the top level of components/."},
+        {"text": "four_files_present", "description": "Creates index.ts, spinner.tsx, spinner.module.css, spinner.stories.tsx (all four)"},
+        {"text": "named_export_with_FC", "description": "export const Spinner: FC<SpinnerProps> with named export (not default)"},
+        {"text": "uses_clsx_for_size_variants", "description": "Uses clsx to switch CSS Module class based on size prop"},
+        {"text": "uses_design_tokens", "description": "Uses --ta-* design tokens (without px fallbacks) for colors, border-radius, and border-width. Component-internal dimensions (e.g. width/height for the three sizes) MAY use literal px — same pattern as existing components like button (which uses `width: 18px` for icon slots)."},
+        {"text": "has_storybook_story", "description": "Storybook story shows all size variants (sm, md, lg)"}
+      ]
+    },
+    {
+      "id": 16,
+      "name": "ui-feature-component",
+      "prompt": "Create a `<DelegationListItem delegation={...} />` component that renders one delegation in a list, used inside the staking feature.",
+      "assertions": [
+        {"text": "location_in_features_dir", "description": "Lives at packages/appkit-react/src/features/staking/components/delegation-list-item/ (feature-specific, not shared components/)"},
+        {"text": "four_files_present", "description": "Creates index.ts, delegation-list-item.tsx, delegation-list-item.module.css, delegation-list-item.stories.tsx"},
+        {"text": "uses_design_tokens", "description": "Uses real --ta-* tokens (`--ta-color-*`, `--ta-border-radius-*`, `--ta-border-width-*`) without px fallbacks. Does NOT invent non-existent tokens (e.g. `--ta-spacing-*` does not exist in src/styles/index.css). Literal px is OK for padding/gap/margin and component-internal sizes."},
+        {"text": "typography_via_composes", "description": "Typography classes use `composes` from src/styles/typography.module.css (not duplicated font styles)"},
+        {"text": "i18n_for_user_facing_strings", "description": "User-facing text uses useI18n hook (const { t } = useI18n()), not hardcoded strings"}
+      ]
+    },
+    {
+      "id": 17,
+      "name": "ui-component-using-hook",
+      "prompt": "Build a `<StakingHistoryList />` feature component that uses the `useStakingHistory` hook and displays a list of past staking operations.",
+      "assertions": [
+        {"text": "location_in_features_dir", "description": "Lives at packages/appkit-react/src/features/staking/components/staking-history-list/"},
+        {"text": "imports_useStakingHistory", "description": "Imports and uses useStakingHistory hook"},
+        {"text": "handles_loading_state", "description": "Renders a loading state when isLoading or data is undefined"},
+        {"text": "handles_error_state", "description": "Renders an error state when isError or error is present"},
+        {"text": "handles_empty_state", "description": "Renders an empty state when list is empty"},
+        {"text": "uses_design_tokens", "description": "Uses real --ta-* tokens (`--ta-color-*`, `--ta-border-radius-*`, `--ta-border-width-*`) without px fallbacks. Does NOT invent non-existent tokens (e.g. `--ta-spacing-*` does not exist). Literal px is OK for padding/gap/margin."}
+      ]
+    }
+  ]
+}

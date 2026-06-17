@@ -19,6 +19,7 @@ import * as staking from './staking';
 import * as browser from './browser';
 import * as streaming from './streaming';
 import * as swap from './swap';
+import * as gasless from './gasless';
 import * as walletClient from './walletClient';
 import { eventListeners } from './eventListeners';
 
@@ -45,6 +46,12 @@ export const api = {
     getWallet: wallets.getWalletById,
     getWalletAddress: wallets.getWalletAddress,
     getWalletNetwork: wallets.getWalletNetwork,
+    getWalletPublicKey: wallets.getWalletPublicKey,
+    getWalletStateInit: wallets.getWalletStateInit,
+    getSignedSignMessage: wallets.getSignedSignMessage,
+    getSignedSendTransaction: wallets.getSignedSendTransaction,
+    getSignedSignData: wallets.getSignedSignData,
+    getSignedTonProof: wallets.getSignedTonProof,
     removeWallet: wallets.removeWallet,
     getBalance: wallets.getBalance,
 
@@ -127,6 +134,17 @@ export const api = {
     buildSwapTransaction: swap.buildSwapTransaction,
     registerKotlinSwapProvider: swap.registerKotlinSwapProvider,
 
+    createTonApiGaslessProvider: gasless.createTonApiGaslessProvider,
+    registerGaslessProvider: gasless.registerGaslessProvider,
+    removeGaslessProvider: gasless.removeGaslessProvider,
+    setDefaultGaslessProvider: gasless.setDefaultGaslessProvider,
+    getRegisteredGaslessProviders: gasless.getRegisteredGaslessProviders,
+    hasGaslessProvider: gasless.hasGaslessProvider,
+    getGaslessProviderSupportedNetworks: gasless.getGaslessProviderSupportedNetworks,
+    getGaslessMetadata: gasless.getGaslessMetadata,
+    getGaslessConfig: gasless.getGaslessConfig,
+    getGaslessQuote: gasless.getGaslessQuote,
+    gaslessSendTransaction: gasless.gaslessSendTransaction,
     walletClientSendBoc: walletClient.walletClientSendBoc,
     walletClientRunGetMethod: walletClient.walletClientRunGetMethod,
     walletClientGetBalance: walletClient.walletClientGetBalance,

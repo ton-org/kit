@@ -220,6 +220,23 @@ export const useJettons = () => {
 };
 
 /**
+ * Hook for Rates (USD prices and 24h change per asset key)
+ */
+export const useRates = () => {
+    return useWalletStore(
+        useShallow((state) => ({
+            entries: state.rates.entries,
+            isLoading: state.rates.isLoading,
+            error: state.rates.error,
+            lastUpdated: state.rates.lastUpdated,
+            loadRates: state.loadRates,
+            clearRates: state.clearRates,
+            getRate: state.getRate,
+        })),
+    );
+};
+
+/**
  * Hook for Swap
  */
 export const useSwap = () => {
@@ -235,17 +252,44 @@ export const useSwap = () => {
             error: state.swap.error,
             slippageBps: state.swap.slippageBps,
             isReverseSwap: state.swap.isReverseSwap,
+            providerId: state.swap.providerId,
             setFromToken: state.setFromToken,
             setToToken: state.setToToken,
             setSwapAmount: state.setSwapAmount,
             setDestinationAddress: state.setDestinationAddress,
             setSlippageBps: state.setSlippageBps,
+            setSwapProviderId: state.setSwapProviderId,
             setIsReverseSwap: state.setIsReverseSwap,
             swapTokens: state.swapTokens,
             getSwapQuote: state.getSwapQuote,
             executeSwap: state.executeSwap,
             clearSwap: state.clearSwap,
             validateSwapInputs: state.validateSwapInputs,
+        })),
+    );
+};
+/**
+ * Hook for Gasless transfers
+ */
+export const useGasless = () => {
+    return useWalletStore(
+        useShallow((state) => ({
+            enabled: state.gasless.enabled,
+            feeAsset: state.gasless.feeAsset,
+            supportedAssets: state.gasless.supportedAssets,
+            relayAddress: state.gasless.relayAddress,
+            currentQuote: state.gasless.currentQuote,
+            isLoadingConfig: state.gasless.isLoadingConfig,
+            isLoadingQuote: state.gasless.isLoadingQuote,
+            isSending: state.gasless.isSending,
+            error: state.gasless.error,
+            setGaslessEnabled: state.setGaslessEnabled,
+            setGaslessFeeAsset: state.setGaslessFeeAsset,
+            clearGaslessQuote: state.clearGaslessQuote,
+            loadGaslessConfig: state.loadGaslessConfig,
+            getGaslessQuote: state.getGaslessQuote,
+            sendGasless: state.sendGasless,
+            clearGasless: state.clearGasless,
         })),
     );
 };

@@ -147,7 +147,7 @@ export async function validateWalletMethods(wallet: Wallet): Promise<ValidationR
         if (!balance || typeof balance !== 'string') {
             errors.push('getBalance() must return a non-empty string');
         } else if (!/^\d+$/.test(balance)) {
-            errors.push('getBalance() must return a numeric string (nanotons)');
+            errors.push('getBalance() must return a numeric string (nano units)');
         }
     } catch (error) {
         errors.push(`getBalance() failed: ${error instanceof Error ? error.message : String(error)}`);

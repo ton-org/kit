@@ -10,7 +10,7 @@ import type { UserFriendlyAddress } from '../core/Primitives';
 import type { StakingQuote } from './StakingQuote';
 
 /**
- * Parameters for staking TON
+ * Parameters for staking GRAM
  */
 export interface StakeParams<TProviderOptions = unknown> {
     /**

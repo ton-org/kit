@@ -1,5 +1,6 @@
 *node_modules*
 .env
+.env.integration.local
 .DS_Store
 *dist
 dist-android

@@ -357,7 +357,7 @@ describe('TonStakersStakingProvider', () => {
 
         it('should return provider metadata with token info', () => {
             const metadata = provider.getStakingProviderMetadata(Network.mainnet());
-            expect(metadata.stakeToken.ticker).toBe('TON');
+            expect(metadata.stakeToken.ticker).toBe('GRAM');
             expect(metadata.stakeToken.decimals).toBe(9);
             expect(metadata.receiveToken?.ticker).toBe('tsTON');
             expect(metadata.receiveToken?.decimals).toBe(9);
@@ -443,7 +443,7 @@ describe('TonStakersStakingProvider', () => {
                 [customNetwork.chainId]: {
                     metadata: {
                         name: 'Custom',
-                        stakeToken: { ticker: 'TON', decimals: 9, address: 'ton' },
+                        stakeToken: { ticker: 'GRAM', decimals: 9, address: 'ton' },
                         contractAddress: 'EQSomeContract' as UserFriendlyAddress,
                         supportedUnstakeModes: [UnstakeMode.INSTANT],
                         supportsReversedQuote: false,
@@ -452,7 +452,7 @@ describe('TonStakersStakingProvider', () => {
             })({ networkManager: customNetworkManager } as ProviderFactoryContext);
 
             const metadata = customProvider.getStakingProviderMetadata(customNetwork);
-            expect(metadata.stakeToken.ticker).toBe('TON');
+            expect(metadata.stakeToken.ticker).toBe('GRAM');
             expect(metadata.receiveToken).toBeUndefined();
         });
     });
