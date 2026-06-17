@@ -37,7 +37,7 @@ test.describe('Gasless jetton transfer', () => {
 
         await test.step('Connect wallet', () => connectWallet({ widget, wallet }));
         await test.step('Open USDT transfer and enable Gasless', async () => {
-            await minter.openTransfer('Tether USD');
+            await minter.openTransfer(USDT_MASTER);
             await minter.enableGasless();
         });
         await test.step('Fill recipient and amount', () => minter.fillTransfer(DEFAULT_RECIPIENT, TRANSFER_AMOUNT));
@@ -56,7 +56,7 @@ test.describe('Gasless jetton transfer', () => {
 
         await test.step('Connect wallet and fill the gasless transfer', async () => {
             await connectWallet({ widget, wallet });
-            await minter.openTransfer('Tether USD');
+            await minter.openTransfer(USDT_MASTER);
             await minter.enableGasless();
             await minter.fillTransfer(DEFAULT_RECIPIENT, TRANSFER_AMOUNT);
             await expect(minter.sendButton).toHaveText(/Send Gasless/i);
@@ -79,7 +79,7 @@ test.describe('Gasless jetton transfer', () => {
 
         await test.step('Connect wallet and fill the gasless transfer', async () => {
             await connectWallet({ widget, wallet });
-            await minter.openTransfer('Tether USD');
+            await minter.openTransfer(USDT_MASTER);
             await minter.enableGasless();
             await minter.fillTransfer(DEFAULT_RECIPIENT, TRANSFER_AMOUNT);
             await expect(minter.sendButton).toHaveText(/Send Gasless/i);
@@ -103,7 +103,7 @@ test.describe('Gasless jetton transfer (real send) @real-send', () => {
         await gaslessMeta('Transfer');
         await test.step('Connect wallet and fill the gasless transfer', async () => {
             await connectWallet({ widget, wallet });
-            await minter.openTransfer('Tether USD');
+            await minter.openTransfer(USDT_MASTER);
             await minter.enableGasless();
             await minter.fillTransfer(DEFAULT_RECIPIENT, TRANSFER_AMOUNT);
             await expect(minter.sendButton).toHaveText(/Send Gasless/i);

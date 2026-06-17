@@ -120,8 +120,8 @@ export class DemoWallet extends WalletApp {
     /**
      * Approve or reject a SignMessage request. Gasless flows (jetton transfer / NFT mint
      * in appkit-minter) ask the wallet to sign an internal message without broadcasting it;
-     * the modal is rendered by the demo wallet as "Sign Message Request"
-     * (testids `sign-message-approve` / `sign-message-reject`).
+     * the demo wallet renders it as "Sign message for {dApp}" (modal testid
+     * `sign-message-request`; actions `sign-message-approve` / `sign-message-reject`).
      *
      * @param confirm - true to sign, false to reject
      * @param waitBeforeApprove - delay before approving (lets the dApp settle into its
@@ -129,7 +129,7 @@ export class DemoWallet extends WalletApp {
      */
     async signMessage(confirm: boolean = true, waitBeforeApprove: number = 0): Promise<void> {
         const app = await this.open();
-        const modal = app.getByTestId('request').filter({ hasText: 'Sign Message Request' });
+        const modal = app.getByTestId('sign-message-request');
         await modal.waitFor({ state: 'visible' });
         if (waitBeforeApprove > 0) {
             await delay(waitBeforeApprove);

@@ -40,7 +40,7 @@ test.describe('Gasless transfer races (two-tab wallet, mocked relayer)', () => {
             await mockGaslessSendOk(app, { capture });
 
             await connectWallet({ widget, wallet });
-            await minter.openTransfer('Tether USD');
+            await minter.openTransfer(USDT_MASTER);
             await minter.enableGasless();
             await minter.fillTransfer(DEFAULT_RECIPIENT, TRANSFER_AMOUNT);
             await expect(minter.sendButton).toHaveText(/Send Gasless/i);
@@ -75,7 +75,7 @@ test.describe('Gasless transfer races (two-tab wallet, mocked relayer)', () => {
             await mockGaslessEstimateOk(app, { capture: estimates });
 
             await connectWallet({ widget, wallet });
-            await minter.openTransfer('Tether USD');
+            await minter.openTransfer(USDT_MASTER);
             await minter.enableGasless();
             await minter.fillTransfer(DEFAULT_RECIPIENT, TRANSFER_AMOUNT);
             await expect(minter.sendButton).toHaveText(/Send Gasless/i);
