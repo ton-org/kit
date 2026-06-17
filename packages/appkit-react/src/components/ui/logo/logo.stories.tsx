@@ -28,8 +28,8 @@ type Story = StoryObj<typeof Logo>;
 export const WithImage: Story = {
     args: {
         size: 48,
-        src: 'https://ton.org/download/ton_symbol.png',
-        alt: 'TON',
+        src: './tokens/gram.svg',
+        alt: 'GRAM',
     },
 };
 
@@ -37,7 +37,7 @@ export const WithFallback: Story = {
     args: {
         size: 48,
         fallback: 'T',
-        alt: 'TON',
+        alt: 'GRAM',
     },
 };
 
@@ -53,15 +53,15 @@ export const WithInvalidImage: Story = {
 export const SmallSize: Story = {
     args: {
         size: 24,
-        src: 'https://ton.org/download/ton_symbol.png',
-        alt: 'TON',
+        src: './tokens/gram.svg',
+        alt: 'GRAM',
     },
 };
 
 export const LargeSize: Story = {
     args: {
         size: 80,
-        src: 'https://ton.org/download/ton_symbol.png',
-        alt: 'TON',
+        src: './tokens/gram.svg',
+        alt: 'GRAM',
     },
 };

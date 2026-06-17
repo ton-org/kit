@@ -34,7 +34,7 @@
     "@demo/v4ledger-adapter": "workspace:*",
     "@ton/core": "catalog:",
     "@ton/walletkit": "workspace:*",
-    "buffer": "^6.0.3"
+    "buffer": "catalog:"
   },
   "peerDependencies": {
     "@ton/core": "catalog:",
@@ -46,7 +46,7 @@
   "devDependencies": {
     "@ledgerhq/hw-transport": "6.32.0",
     "@types/react": "catalog:",
-    "rimraf": "^6.1.2",
-    "typescript": "~5.9.3"
+    "rimraf": "catalog:",
+    "typescript": "catalog:"
   }
 }

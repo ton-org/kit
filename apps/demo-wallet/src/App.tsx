@@ -10,9 +10,8 @@ import TransportWebHID from '@ledgerhq/hw-transport-webhid';
 import { WalletProvider } from '@demo/wallet-core';
 import type { WalletKitConfig } from '@demo/wallet-core';
 
-import { AppRouter } from './components';
-
-import { Toaster } from '@/components/ui/sonner';
+import { AppRouter } from '@/core/routing';
+import { Toaster } from '@/core/components/ui/sonner';
 import {
     DISABLE_AUTO_EMULATION,
     DISABLE_HTTP_BRIDGE,
@@ -23,9 +22,9 @@ import {
     ENV_TON_API_KEY_TESTNET,
     ENV_TON_API_KEY_TETRA,
     ENV_TON_API_PROVIDER,
-} from '@/lib/env';
-import { isExtension } from '@/utils/isExtension';
-import type { SendMessageToExtensionContent, CreateExtensionStorageAdapter } from '@/lib/extensionPopup';
+} from '@/core/lib/env';
+import { isExtension } from '@/core/lib/is-extension';
+import type { SendMessageToExtensionContent, CreateExtensionStorageAdapter } from '@/core/lib/extensionPopup';
 
 import './App.css';
 import './storePatch';
@@ -34,7 +33,7 @@ let jsBridgeTransport: typeof SendMessageToExtensionContent | undefined;
 let storage: ReturnType<typeof CreateExtensionStorageAdapter> | undefined;
 
 if (isExtension()) {
-    const { SendMessageToExtensionContent, CreateExtensionStorageAdapter } = await import('@/lib/extensionPopup');
+    const { SendMessageToExtensionContent, CreateExtensionStorageAdapter } = await import('@/core/lib/extensionPopup');
     jsBridgeTransport = SendMessageToExtensionContent;
     storage = CreateExtensionStorageAdapter();
 }

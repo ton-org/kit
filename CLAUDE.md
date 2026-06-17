@@ -15,6 +15,11 @@ Monorepo for TON blockchain integration libraries: `@ton/walletkit` (core wallet
 - Prefer keeping files under 200–250 lines. Extract utility functions to a nearby `utils` file and types to a `types` file when it helps.
 - Use named exports only. No default exports.
 
+## Agent skills
+
+- **Monorepo development** (actions, hooks, tests, UI): `.claude/skills/kit-dev/`
+- **AppKit consumer integration** (setup, TonConnect, swaps, etc.): `packages/appkit/skills/ton-appkit/`
+
 ## TypeScript
 
 - Avoid `any` and `unknown`. Use proper types whenever possible.

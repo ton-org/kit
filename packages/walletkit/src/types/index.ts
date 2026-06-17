@@ -9,7 +9,6 @@
 // Type definitions module exports
 
 // Transaction types (from validation module)
-export type { HumanReadableTx } from '../validation/transaction';
 export type { ValidationResult } from '../validation/types';
 
 // Configuration types
@@ -32,8 +31,6 @@ export { DEFAULT_DURABLE_EVENTS_CONFIG } from './durableEvents';
 
 // Jettons types
 export type {
-    JettonInfo,
-    JettonVerification,
     AddressJetton,
     JettonBalance,
     JettonTransferParams,

@@ -17,6 +17,7 @@ export type { OnrampAPI, OnrampProviderInterface } from './OnrampAPI';
 export type { CryptoOnrampAPI, CryptoOnrampProviderInterface } from './CryptoOnrampAPI';
 export type { DefiProvider } from './DefiProvider';
 export type { StakingAPI, StakingProviderInterface } from './StakingAPI';
+export type { GaslessAPI, GaslessProviderInterface } from './GaslessAPI';
 
 export type { TONConnectSessionManager } from './TONConnectSessionManager';
 

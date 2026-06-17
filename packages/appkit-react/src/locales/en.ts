@@ -28,8 +28,8 @@ export default {
 
     // Balances
     balances: {
-        sendTon: 'Send {{ amount }} TON',
-        sendJetton: 'Send {{ amount }} TON',
+        sendTon: 'Send {{ amount }} GRAM',
+        sendJetton: 'Send {{ symbol }}',
         sendJettonWithAmount: 'Send {{ amount }} {{ symbol }}',
     },
 
@@ -80,16 +80,23 @@ export default {
         provider: 'Provider',
         save: 'Save',
         minReceived: 'Min Received',
+        confirmTitle: 'Confirm swap transaction',
+        confirm: 'Confirm',
+        sendFailed: 'Transaction failed',
+        loading: 'Loading...',
     },
 
     // Low balance modal (shared between swap, staking, etc.)
     lowBalance: {
-        title: 'Not enough TON',
+        title: 'Not enough GRAM',
         messageReduce:
-            'This operation requires ~{{ amount }} TON which exceeds your TON balance. Reduce the amount to continue.',
+            'This operation requires ~{{ amount }} GRAM which exceeds your GRAM balance. Reduce the amount to continue.',
         messageTopup:
-            'This operation needs ~{{ amount }} TON to cover network fees. Top up your TON balance to continue.',
+            'This operation needs ~{{ amount }} GRAM to cover network fees. Top up your GRAM balance to continue.',
+        messageGasless:
+            'This operation needs ~{{ amount }} GRAM which exceeds your GRAM balance. Switch to gasless to pay the fee in a jetton instead.',
         change: 'Change amount',
+        switchToGasless: 'Switch to gasless',
         cancel: 'Cancel',
         close: 'Close',
     },
@@ -188,5 +195,10 @@ export default {
         provider: 'Provider',
         settings: 'Settings',
         save: 'Save',
+        confirmStakingTitle: 'Confirm staking',
+        confirmUnstakingTitle: 'Confirm unstaking',
+        confirm: 'Confirm',
+        sendFailed: 'Transaction failed',
+        loading: 'Loading...',
     },
 } as const;

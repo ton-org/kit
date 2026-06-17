@@ -720,6 +720,129 @@ const balance = await getStakedBalance(appKit, {
 console.log('Staked Balance:', balance);
 ```
 
+## Gasless
+
+Gasless lets a dApp submit on-chain transactions without the user holding TON for gas: a relayer co-signs and broadcasts the transaction, charging the user a fee in a relayer-accepted asset (e.g. USDT). The connected wallet must support the `SignMessage` TonConnect feature. See the [gasless guide](./gasless.md) for a regular-send → gasless-send migration.
+
+The high-level flow is:
+1. `getGaslessConfig` – discover the relay address and assets the relayer accepts as fee payment.
+2. `getGaslessQuote` – ask the relayer for fee + wrapped messages (with a `validUntil`).
+3. `sendGaslessTransaction` – sign the wrapped messages via the wallet and submit the signed BoC.
+
+### `getGaslessManager`
+
+Get the `GaslessManager` instance to interact with gasless providers directly.
+
+```ts
+const gaslessManager = getGaslessManager(appKit);
+```
+
+### `getGaslessProvider`
+
+Get a specific gasless provider by its ID. Uses the default provider when no `id` is supplied.
+
+```ts
+const provider = getGaslessProvider(appKit, { id: 'tonapi' });
+```
+
+### `getGaslessProviders`
+
+Get all registered gasless providers.
+
+```ts
+const providers = getGaslessProviders(appKit);
+console.log(
+    'Registered gasless providers:',
+    providers.map((p) => p.providerId),
+);
+```
+
+### `setDefaultGaslessProvider`
+
+Set the default gasless provider. Subsequent quote and send calls will use this provider when none is specified.
+
+```ts
+setDefaultGaslessProvider(appKit, { providerId: 'tonapi' });
+```
+
+### `watchGaslessProviders`
+
+Watch for new gasless provider registrations and default-provider changes.
+
+```ts
+const unsubscribe = watchGaslessProviders(appKit, {
+    onChange: () => console.log('Gasless providers updated'),
+});
+unsubscribe();
+```
+
+### `getGaslessProviderMetadata`
+
+Fetch static metadata (display name, logo, url) for a gasless provider.
+
+```ts
+const metadata = await getGaslessProviderMetadata(appKit);
+console.log('Gasless provider:', metadata.name, metadata.url);
+```
+
+### `getGaslessConfig`
+
+Fetch the relayer's configuration on a network — the relay address (e.g. for jetton-transfer `responseDestination`) and the assets it accepts as fee payment.
+
+```ts
+const config = await getGaslessConfig(appKit);
+const feeAsset = config.supportedAssets[0].address;
+console.log('Relay address:', config.relayAddress, '— supported fee assets:', config.supportedAssets.length);
+```
+
+### `getGaslessQuote`
+
+Ask the relayer for a gasless transaction quote. Returns relayer-wrapped messages, the fee charged in the chosen `feeAsset`, and the bundle validity window (`validUntil`). Omit `feeAsset` for free / sponsored providers — jetton-fee providers (like TonAPI) throw `GaslessError(UNSUPPORTED_OPERATION)` in that case. Quotes are typically valid for ~2 minutes.
+
+```ts
+const quote = await getGaslessQuote(appKit, {
+    feeAsset,
+    messages: [
+        {
+            address: 'EQ...jetton_wallet_address',
+            amount: '60000000', // 0.06 TON gas budget
+            payload: 'te6cckEBAQEAAgAAAA==' as never,
+        },
+    ],
+});
+console.log('Relayer fee:', quote.fee, 'valid until:', quote.validUntil);
+```
+
+### `getGaslessJettonTransferQuote`
+
+Convenience wrapper that builds a jetton transfer's messages (resolving the jetton wallet address, decimals and payload) and quotes them in one call. Takes semantic params (`jettonAddress`, `recipientAddress`, `amount`, `feeAsset`) instead of pre-built `messages`. Returns a `GaslessQuote` to pass to `sendGaslessTransaction`.
+
+```ts
+// Convenience wrapper: builds the jetton transfer messages for you, then quotes.
+const jettonQuote = await getGaslessJettonTransferQuote(appKit, {
+    jettonAddress: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs',
+    recipientAddress: 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c',
+    amount: '100',
+    feeAsset, // pay the relayer fee in this jetton (here: USDT)
+});
+await sendGaslessTransaction(appKit, { quote: jettonQuote });
+```
+
+### `sendGaslessTransaction`
+
+Sign a previously computed gasless quote and submit the resulting BoC to the relayer. Returns a `GaslessSendResponse` — a strict superset of `SendTransactionResponse` (`{ boc, normalizedBoc, normalizedHash, internalBoc }`).
+
+Throws:
+- `GaslessError(QUOTE_EXPIRED)` if the quote's `validUntil` window has passed (checked before signing).
+- `GaslessError(WALLET_MISMATCH)` if the quote was issued for a different address than the selected wallet.
+- `GaslessError(SIGN_MESSAGE_NOT_SUPPORTED)` if the connected wallet does not advertise the `SignMessage` feature.
+- `GaslessError(TOO_MANY_MESSAGES)` if the quote carries more messages than the wallet's `maxMessages` cap.
+
+```ts
+const result = await sendGaslessTransaction(appKit, { quote });
+console.log('Submitted gasless transaction. Hash:', result.normalizedHash, 'BoC:', result.internalBoc);
+```
+
 ## Transaction
 
 ### `createTransferTonTransaction`
@@ -751,6 +874,25 @@ const result = await sendTransaction(appKit, {
 });
 
 console.log('Transaction Result:', result);
+```
+
+### `signMessage`
+
+Ask the connected wallet to sign a transaction-shaped request without broadcasting it. Returns a signed internal-message BoC that can be relayed on-chain by a third party (e.g. a gasless relayer). Requires wallet support for the `SignMessage` feature.
+
+```ts
+const result = await signMessage(appKit, {
+    messages: [
+        {
+            address: 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c',
+            amount: '100000000', // 0.1 TON in nanotons
+        },
+    ],
+});
+
+// result.internalBoc is a signed internal message BoC (base64)
+// that can be relayed on-chain by a third party (e.g. a gasless relayer).
+console.log('Signed Message:', result);
 ```
  
 ### `transferTon`
@@ -828,6 +970,30 @@ const unsubscribe = watchSelectedWallet(appKit, {
         } else {
             console.log('Wallet deselected');
         }
+    },
+});
+
+// Later: unsubscribe();
+```
+
+### `getSignMessageSupport`
+
+Whether the selected wallet advertises the `SignMessage` feature (required for gasless). Fail-closed: returns `false` when no wallet is selected or features aren't advertised.
+
+```ts
+const supported = getSignMessageSupport(appKit);
+
+console.log(supported ? 'Wallet supports SignMessage (gasless available)' : 'SignMessage not supported');
+```
+
+### `watchSignMessageSupport`
+
+Watch whether the selected wallet supports `SignMessage`, re-evaluated on every selection change.
+
+```ts
+const unsubscribe = watchSignMessageSupport(appKit, {
+    onChange: (supported) => {
+        console.log('SignMessage support changed:', supported);
     },
 });
 

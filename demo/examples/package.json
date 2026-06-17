@@ -22,14 +22,14 @@
     "dotenv": "^17.4.2",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "tsx": "^4.22.3",
-    "typescript": "^5.9.3"
+    "tsx": "^4.22.4",
+    "typescript": "catalog:"
   },
   "devDependencies": {
     "@testing-library/dom": "^10.4.1",
     "@testing-library/react": "^16.3.2",
-    "@vitest/coverage-v8": "^4.1.7",
-    "happy-dom": "^20.8.9",
-    "vitest": "^4.1.4"
+    "@vitest/coverage-v8": "^4.1.8",
+    "happy-dom": "^20.10.3",
+    "vitest": "^4.1.8"
   }
 }

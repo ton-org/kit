@@ -42,7 +42,7 @@ const SwapWidgetContent: FC<
  * A high-level component that provides a complete swap interface.
  *
  * It manages the token selection, quote fetching, and transaction building
- * for swaps between TON and Jettons. It can be used as a standalone widget
+ * for swaps between GRAM and Jettons. It can be used as a standalone widget
  * with default UI or customized using a render function.
  */
 export const SwapWidget: FC<SwapWidgetProps> = ({

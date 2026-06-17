@@ -22,7 +22,7 @@ export async function main() {
 
     const tonTransfer: TONTransferRequest = {
         recipientAddress: 'EQC...recipient...',
-        transferAmount: (1n * 10n ** 9n).toString(), // 1 TON in nanotons
+        transferAmount: (1n * 10n ** 9n).toString(), // 1 GRAM in nano units
         // Optional comment OR body (base64 BOC), not both
         comment: 'Thanks!',
     };

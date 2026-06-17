@@ -9,8 +9,8 @@
 import { formatUnits, parseUnits } from '@ton/walletkit';
 
 /**
- * Default TON reserve subtracted from balance when computing the max spendable amount
- * for a native TON operation — leaves room for network fees. 0.1 TON.
+ * Default GRAM reserve subtracted from balance when computing the max spendable amount
+ * for a native GRAM operation — leaves room for network fees. 0.1 GRAM.
  */
 export const DEFAULT_TON_FEE_RESERVE_NANOS = 100_000_000n;
 
@@ -20,7 +20,7 @@ export interface CalcMaxSpendableParams {
     /** The token the user is going to spend. */
     token: { address: string; decimals: number };
     /**
-     * TON reserve (in nanos) subtracted from balance when the token is native TON.
+     * GRAM reserve (in nanos) subtracted from balance when the token is native GRAM.
      * Ignored for jettons. Defaults to {@link DEFAULT_TON_FEE_RESERVE_NANOS}.
      */
     feeReserveNanos?: bigint;
@@ -28,8 +28,8 @@ export interface CalcMaxSpendableParams {
 
 /**
  * Compute the max spendable amount a user can place into an input when they click MAX.
- * For native TON — subtracts a fixed reserve so the user still has room for network fees.
- * For jettons — returns the full balance (gas is paid from TON separately).
+ * For native GRAM — subtracts a fixed reserve so the user still has room for network fees.
+ * For jettons — returns the full balance (gas is paid from GRAM separately).
  */
 export const calcMaxSpendable = ({
     balance,

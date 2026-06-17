@@ -18,7 +18,7 @@ import { SwapError, SwapErrorCode } from '../errors';
 import { globalLogger } from '../../../core/Logger';
 import { tokenToAddress, toOmnistonAddress, isOmnistonQuoteMetadata } from './utils';
 import type { TransactionRequest } from '../../../api/models';
-import { asBase64, getUnixtime } from '../../../utils';
+import { asBase64, getUnixtime, withTimeout } from '../../../utils';
 import { formatUnits, parseUnits } from '../../../utils/units';
 import type { ProviderFactoryContext } from '../../../types/factory';
 
@@ -49,6 +49,7 @@ export class OmnistonSwapProvider extends SwapProvider<OmnistonProviderOptions> 
     private readonly apiUrl: string;
     private readonly defaultSlippageBps: number;
     private readonly quoteTimeoutMs: number;
+    private readonly buildTimeoutMs: number;
     private readonly referrerAddress?: string;
     private readonly referrerFeeBps?: number;
     private readonly flexibleReferrerFee: boolean;
@@ -66,6 +67,7 @@ export class OmnistonSwapProvider extends SwapProvider<OmnistonProviderOptions> 
         this.apiUrl = config?.apiUrl ?? 'wss://omni-ws.ston.fi';
         this.defaultSlippageBps = config?.defaultSlippageBps ?? 100; // 1% default
         this.quoteTimeoutMs = config?.quoteTimeoutMs ?? 10000; // 10 seconds
+        this.buildTimeoutMs = config?.buildTimeoutMs ?? 10000; // 10 seconds
         this.referrerAddress = config?.referrerAddress
             ? Address.parse(config?.referrerAddress).toString({ bounceable: true })
             : undefined;
@@ -258,7 +260,7 @@ export class OmnistonSwapProvider extends SwapProvider<OmnistonProviderOptions> 
                 useRecommendedSlippage: true,
             };
 
-            const buildResult = await this.omniston.buildTransfer(transactionRequest);
+            const buildResult = await withTimeout(this.omniston.buildTransfer(transactionRequest), this.buildTimeoutMs);
             const messages = buildResult?.ton?.messages;
 
             if (!messages || messages.length === 0) {

@@ -11,3 +11,10 @@ export const ENV_TON_API_KEY_MAINNET =
 export const ENV_TON_API_KEY_TESTNET =
     import.meta.env.VITE_TON_API_TESTNET_KEY ?? 'd852b54d062f631565761042cccea87fa6337c41eb19b075e6c7fb88898a3992';
 export const ENV_DECENT_API_KEY = import.meta.env.VITE_DECENT_API_KEY ?? '1be323b5c83198191ba640f07f8815b0';
+
+const DEV_TONCONNECT_MANIFEST_URL = 'https://tonconnect-sdk-demo-dapp.vercel.app/tonconnect-manifest.json';
+const PROD_TONCONNECT_MANIFEST_URL = import.meta.env.VITE_TONCONNECT_MANIFEST_URL ?? DEV_TONCONNECT_MANIFEST_URL;
+
+export const ENV_TONCONNECT_MANIFEST_URL = import.meta.env.DEV
+    ? DEV_TONCONNECT_MANIFEST_URL
+    : PROD_TONCONNECT_MANIFEST_URL;

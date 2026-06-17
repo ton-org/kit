@@ -41,6 +41,8 @@ import type {
     StakingProviderInterface,
     StakingAPI,
     EmbeddedRequestEvent,
+    GaslessAPI,
+    GaslessProviderInterface,
 } from '@ton/walletkit';
 import {
     CreateTonMnemonic,
@@ -61,6 +63,8 @@ import { DeDustSwapProvider } from '@ton/walletkit/swap/dedust';
 import type { DeDustSwapProviderConfig } from '@ton/walletkit/swap/dedust';
 import { TonStakersStakingProvider } from '@ton/walletkit/staking/tonstakers';
 import type { TonStakersProviderConfig } from '@ton/walletkit/staking/tonstakers';
+import { TonApiGaslessProvider } from '@ton/walletkit/gasless/tonapi';
+import type { TonApiGaslessProviderConfig } from '@ton/walletkit/gasless/tonapi';
 
 import { SwiftStorageAdapter } from './SwiftStorageAdapter';
 import { SwiftWalletAdapter } from './SwiftWalletAdapter';
@@ -195,7 +199,7 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, sessionMa
             return initialized && !!walletKit;
         },
 
-        jettonsManager(): JettonsAPI {
+        jettons(): JettonsAPI {
             return walletKit.jettons;
         },
 
@@ -609,6 +613,10 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, sessionMa
             return TonStakersStakingProvider.createFromContext(walletKit.createFactoryContext(), config ?? {});
         },
 
+        createTonApiGaslessProvider(config?: TonApiGaslessProviderConfig): GaslessProviderInterface {
+            return TonApiGaslessProvider.createFromContext(walletKit.createFactoryContext(), config ?? {});
+        },
+
         swap(): SwapAPI {
             return walletKit.swap;
         },
@@ -619,6 +627,10 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, sessionMa
 
         staking(): StakingAPI {
             return walletKit.staking;
+        },
+
+        gasless(): GaslessAPI {
+            return walletKit.gasless;
         },
     };
 };

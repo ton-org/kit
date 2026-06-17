@@ -876,6 +876,179 @@ return (
 );
 ```
 
+## Gasless
+
+Gasless lets a dApp submit on-chain transactions without the user holding TON for gas: a relayer co-signs and broadcasts the transaction, charging the user a fee in a relayer-accepted asset (e.g. USDT). The connected wallet must support the `SignMessage` TonConnect feature. See the [gasless guide](https://github.com/ton-connect/kit/blob/main/packages/appkit/docs/gasless.md) for a regular-send → gasless-send migration.
+
+### `useGaslessProviders`
+
+Hook to get all registered gasless providers.
+
+```tsx
+const providers = useGaslessProviders();
+return (
+    <ul>
+        {providers.map((p) => (
+            <li key={p.providerId}>{p.providerId}</li>
+        ))}
+    </ul>
+);
+```
+
+### `useGaslessProvider`
+
+Hook to get the current default gasless provider and a setter to switch the default.
+
+```tsx
+const [provider, setProviderId] = useGaslessProvider();
+return (
+    <div>
+        <div>Current: {provider?.providerId ?? 'none'}</div>
+        <button onClick={() => setProviderId('tonapi')}>Use TonApi</button>
+    </div>
+);
+```
+
+### `useGaslessProviderMetadata`
+
+Hook to fetch static metadata (display name, logo, url) for a gasless provider.
+
+```tsx
+const { data: metadata, isLoading } = useGaslessProviderMetadata();
+
+if (isLoading) return <div>Loading provider...</div>;
+if (!metadata) return null;
+
+return (
+    <a href={metadata.url} target="_blank" rel="noreferrer">
+        {metadata.logo && <img src={metadata.logo} alt="" width={16} height={16} />}
+        {metadata.name}
+    </a>
+);
+```
+
+### `useGaslessConfig`
+
+Hook to fetch the gasless relayer's configuration — relay address (e.g. for jetton-transfer `responseDestination`) and accepted fee assets.
+
+```tsx
+const { data: config, isLoading } = useGaslessConfig();
+
+if (isLoading) return <div>Loading gasless config...</div>;
+
+return (
+    <div>
+        <p>Relay: {config?.relayAddress}</p>
+        <select>
+            {config?.supportedAssets.map((asset) => (
+                <option key={asset.address} value={asset.address}>
+                    {asset.address}
+                </option>
+            ))}
+        </select>
+    </div>
+);
+```
+
+### `useGaslessQuote`
+
+Hook to fetch a gasless quote. Auto-refetches as inputs change; cached results become stale after ~2 minutes (matches the relayer `validUntil` window). Omit `feeAsset` for free / sponsored providers — jetton-fee providers throw `GaslessError(UNSUPPORTED_OPERATION)` in that case.
+
+```tsx
+const { data: quote, isFetching } = useGaslessQuote({
+    feeAsset: asAddressFriendly('EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs'), // USDT
+    messages: [
+        {
+            address: 'EQ...jetton_wallet_address',
+            amount: '60000000', // 0.06 TON gas budget
+            payload: 'te6cckEBAQEAAgAAAA==' as Base64String,
+        },
+    ],
+});
+
+return (
+    <div>
+        {isFetching && <span>Quoting...</span>}
+        {quote && (
+            <>
+                <div>Fee: {quote.fee}</div>
+                <div>Valid until: {new Date(quote.validUntil * 1000).toISOString()}</div>
+            </>
+        )}
+    </div>
+);
+```
+
+### `useGaslessJettonTransferQuote`
+
+Hook to fetch a gasless quote for a jetton transfer from semantic params (`jettonAddress`, `recipientAddress`, `amount`, `feeAsset`) — no manual message building. Auto-refetches as inputs change and on wallet/network switch.
+
+```tsx
+// No manual message building — pass the transfer intent, get a quote back.
+const { data: quote, isFetching } = useGaslessJettonTransferQuote({
+    jettonAddress: USDT_MASTER,
+    recipientAddress: 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c',
+    amount: '100',
+    feeAsset: asAddressFriendly(USDT_MASTER),
+});
+
+const { mutateAsync: sendGasless, isPending } = useSendGaslessTransaction();
+
+return (
+    <div>
+        {isFetching && <span>Quoting...</span>}
+        {quote && (
+            <>
+                <div>Fee: {quote.fee}</div>
+                <button disabled={isPending} onClick={() => sendGasless({ quote })}>
+                    Send
+                </button>
+            </>
+        )}
+    </div>
+);
+```
+
+### `useSendGaslessTransaction`
+
+Hook to sign a previously computed quote and submit the resulting BoC to the relayer. Returns a `GaslessSendResponse` (`{ boc, normalizedBoc, normalizedHash, internalBoc }`).
+
+Throws:
+- `GaslessError(QUOTE_EXPIRED)` if the quote's `validUntil` window has passed (checked before signing).
+- `GaslessError(WALLET_MISMATCH)` if the quote was issued for a different address than the selected wallet.
+- `GaslessError(SIGN_MESSAGE_NOT_SUPPORTED)` if the wallet does not advertise `SignMessage`.
+- `GaslessError(TOO_MANY_MESSAGES)` if the quote carries more messages than the wallet's `maxMessages` cap.
+
+```tsx
+const { data: quote } = useGaslessQuote({
+    feeAsset: asAddressFriendly('EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs'),
+    messages: [
+        {
+            address: 'EQ...jetton_wallet_address',
+            amount: '60000000',
+            payload: 'te6cckEBAQEAAgAAAA==' as Base64String,
+        },
+    ],
+});
+const { mutateAsync: sendGasless, isPending } = useSendGaslessTransaction();
+
+const handleSend = async () => {
+    if (!quote) return;
+    try {
+        const { internalBoc, normalizedHash } = await sendGasless({ quote });
+        console.log('Submitted. Hash:', normalizedHash, 'BoC:', internalBoc);
+    } catch (e) {
+        console.error(e);
+    }
+};
+
+return (
+    <button onClick={handleSend} disabled={!quote || isPending}>
+        {isPending ? 'Sending...' : 'Send Gasless'}
+    </button>
+);
+```
+
 ## Transaction
 
 ### `useSendTransaction`
@@ -909,6 +1082,41 @@ return (
             <div>
                 <h4>Transaction Sent!</h4>
                 <p>BOC: {data.boc}</p>
+            </div>
+        )}
+    </div>
+);
+```
+
+### `useSignMessage`
+
+Hook to sign a transaction-shaped request without broadcasting it. Returns a signed internal-message BoC that can be relayed on-chain by a third party (e.g. a gasless relayer). Requires wallet support for the `SignMessage` feature.
+
+```tsx
+const { mutate: signMessage, isPending, error, data } = useSignMessage();
+
+const handleSign = () => {
+    signMessage({
+        validUntil: Math.floor(Date.now() / 1000) + 600, // 10 minutes
+        messages: [
+            {
+                address: 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c',
+                amount: '100000000', // 0.1 TON in nanotons
+            },
+        ],
+    });
+};
+
+return (
+    <div>
+        <button onClick={handleSign} disabled={isPending}>
+            {isPending ? 'Signing...' : 'Sign Message'}
+        </button>
+        {error && <div>Error: {error.message}</div>}
+        {data && (
+            <div>
+                <h4>Message Signed!</h4>
+                <p>Internal BOC: {data.internalBoc}</p>
             </div>
         )}
     </div>
@@ -1164,6 +1372,16 @@ return (
         )}
     </div>
 );
+```
+
+### `useSignMessageSupport`
+
+Hook to check whether the selected wallet advertises the `SignMessage` feature (required for gasless). Reactive to wallet selection changes; fail-closed (`false`) when no wallet is selected or features aren't advertised.
+
+```tsx
+const hasSignMessageSupport = useSignMessageSupport();
+
+return <p>{hasSignMessageSupport ? 'Wallet supports SignMessage' : 'SignMessage not supported'}</p>;
 ```
 
 <!--

@@ -23,10 +23,10 @@ const mockMetadata = {
     providerId: 'tonstakers',
     name: 'Tonstakers',
     description: 'Staking provider',
-    image: 'https://asset.ston.fi/img/EQC98_qAmNEptUtPc7W6xdHh_ZHrBUFpw5Ft_IzNU20QAJav/38f530facb209e4696b8aef17af51df94d16bd879926c517b07d25841da287b7',
+    logo: './tokens/tston.svg',
     stakeToken: {
-        symbol: 'TON',
-        ticker: 'TON',
+        symbol: 'GRAM',
+        ticker: 'GRAM',
         decimals: 9,
         address: 'ton',
     },
@@ -44,7 +44,7 @@ export const Stake: Story = {
     args: {
         direction: 'stake',
         providerMetadata: mockMetadata,
-        balance: '10000000000', // 10 TON
+        balance: '10000000000', // 10 GRAM
         isBalanceLoading: false,
     },
 };

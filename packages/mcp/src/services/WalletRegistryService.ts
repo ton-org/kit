@@ -56,6 +56,7 @@ import {
 } from '../utils/agentic.js';
 import type { AgenticImportCandidate } from '../utils/agentic.js';
 import { createApiClient } from '../utils/ton-client.js';
+import type { TonMcpFactoryConfig } from '../factory.js';
 
 function defaultWalletName(prefix: string, address: string): string {
     return `${prefix} ${address.slice(0, 6)}...${address.slice(-4)}`;
@@ -76,6 +77,7 @@ export interface CompleteAgenticKeyRotationResult {
 
 export class WalletRegistryService {
     constructor(
+        private readonly config: TonMcpFactoryConfig,
         private readonly contacts?: IContactResolver,
         private readonly networkOverrides?: {
             mainnet?: RuntimeNetworkConfig;
@@ -194,6 +196,7 @@ export class WalletRegistryService {
             contacts: this.contacts,
             toncenterApiKey,
             requiresSigning: options?.requiresSigning,
+            providers: this.config.providers,
         });
         return { ...context, wallet };
     }

@@ -24,12 +24,12 @@ export default meta;
 
 type Story = StoryObj<typeof CurrencyItem>;
 
-export const TON: Story = {
+export const GRAM: Story = {
     args: {
-        ticker: 'TON',
-        name: 'Toncoin',
+        ticker: 'GRAM',
+        name: 'Gram',
         balance: '55',
-        icon: 'https://ton.org/download/ton_symbol.png',
+        icon: './tokens/gram.svg',
         isVerified: true,
     },
 };
@@ -54,19 +54,19 @@ export const Unverified: Story = {
 
 export const ZeroBalance: Story = {
     args: {
-        ticker: 'TON',
-        name: 'Toncoin',
+        ticker: 'GRAM',
+        name: 'Gram',
         balance: '0',
-        icon: 'https://ton.org/download/ton_symbol.png',
+        icon: './tokens/gram.svg',
         isVerified: true,
     },
 };
 
 export const NoBalance: Story = {
     args: {
-        ticker: 'TON',
-        name: 'Toncoin',
-        icon: 'https://ton.org/download/ton_symbol.png',
+        ticker: 'GRAM',
+        name: 'Gram',
+        icon: './tokens/gram.svg',
         isVerified: true,
     },
 };
@@ -86,10 +86,10 @@ export const CurrencyList: Story = {
     render: () => (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '320px' }}>
             <CurrencyItem
-                ticker="TON"
-                name="Toncoin"
+                ticker="GRAM"
+                name="Gram"
                 balance="55"
-                icon="https://ton.org/download/ton_symbol.png"
+                icon="./tokens/gram.svg"
                 isVerified={true}
                 onClick={fn()}
             />

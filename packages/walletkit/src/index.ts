@@ -30,6 +30,7 @@ export {
     CryptoOnrampErrorCode,
     Caip2ByNetwork,
 } from './defi/crypto-onramp';
+export { GaslessManager, GaslessProvider, GaslessError, GaslessErrorCode } from './defi/gasless';
 export { EventEmitter } from './core/EventEmitter';
 export type { EventListener, EventPayload, KitEvent } from './core/EventEmitter';
 export type { SharedKitEvents } from './types/emitter';
@@ -80,6 +81,7 @@ export {
 export type { ToncenterTransaction } from './types/toncenter/emulation';
 export { TonProofParsedMessage } from './utils/tonProof';
 export type { ITonWalletKit } from './types/kit';
+export type { ProviderInput } from './types/factory';
 export type {
     JSBridgeInjectOptions,
     JSBridgeTransportFunction,
@@ -107,9 +109,11 @@ export { DefaultSignature, FakeSignature } from './utils/sign';
 export { wrapWalletInterface } from './core/Initializer';
 export type { NftTransferParamsHuman, NftTransferParamsRaw } from './types/nfts';
 
-export { isValidAddress, compareAddress } from './utils/address';
+export { isValidAddress, compareAddress, asAddressFriendly } from './utils/address';
+export { withTimeout } from './utils/withTimeout';
 export { validateTransactionMessage } from './validation';
-export { createDeviceInfo, createWalletManifest, getMaxOutgoingMessages } from './utils/getDefaultWalletConfig';
+export { createDeviceInfo, createWalletManifest } from './utils/getDefaultWalletConfig';
+export { getMaxOutgoingMessages, hasSignMessageSupport } from './utils/features';
 export { Signer } from './utils/Signer';
 export { ParseStack, SerializeStack } from './utils/tvmStack';
 export { Transport } from './bridge/transport/Transport';
@@ -121,6 +125,7 @@ export type { AnalyticsAppInfo, AnalyticsManagerOptions } from './analytics';
 export type { AccountState, AccountStates, TransactionId } from './api/models';
 export type { ToncenterResponseJettonMasters } from './types/toncenter/emulation';
 export { asHex } from './utils/hex';
+export { asBase64 } from './utils/base64';
 export {
     // Message builders
     storeJettonTransferMessage,

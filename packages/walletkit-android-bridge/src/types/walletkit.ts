@@ -9,6 +9,15 @@
 import type { DeviceInfo, TonWalletKit, WalletAdapter, WalletInfo, WalletSigner } from '@ton/walletkit';
 
 /**
+ * Reference to a native (Kotlin) callback passed by value across the bridge. The function itself
+ * can't cross the boundary, so native sends this opaque handle; JS reconstructs a callable that
+ * round-trips through the `callByReference` reverse-RPC method.
+ */
+export interface WrappedFunctionRef {
+    __wrappedFn: string;
+}
+
+/**
  * Configuration and bridge-facing types for Ton WalletKit.
  */
 export interface WalletKitBridgeInitConfig {
@@ -19,6 +28,8 @@ export interface WalletKitBridgeInitConfig {
     deviceInfo?: DeviceInfo;
     disableNetworkSend?: boolean;
     disableTransactionEmulation?: boolean;
+    // Native fetchManifest callback, delivered as a wrapped-function reference (see WrappedFunctionRef).
+    fetchManifest?: WrappedFunctionRef;
     /**
      * Network configurations matching native SDK format.
      * Each entry has a network with chainId and optional apiClientConfiguration.
@@ -28,6 +39,7 @@ export interface WalletKitBridgeInitConfig {
         apiClientConfiguration?: {
             url?: string;
             key?: string;
+            timeout?: number;
         };
         apiClientType?: 'default' | 'toncenter' | 'tonapi' | 'custom';
     }>;

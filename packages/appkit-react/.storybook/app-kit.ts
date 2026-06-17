@@ -11,6 +11,7 @@ import { createOmnistonProvider } from '@ton/appkit/swap/omniston';
 import { createDeDustProvider } from '@ton/appkit/swap/dedust';
 import { createTonstakersProvider } from '@ton/appkit/staking/tonstakers';
 import { createLayerswapProvider } from '@ton/appkit/crypto-onramp/layerswap';
+import { createTonApiGaslessProvider } from '@ton/appkit/gasless/tonapi';
 
 export const appKit = new AppKit({
     networks: {
@@ -40,5 +41,6 @@ export const appKit = new AppKit({
         createDeDustProvider(),
         createTonstakersProvider(),
         createLayerswapProvider(),
+        createTonApiGaslessProvider(),
     ],
 });

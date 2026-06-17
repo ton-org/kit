@@ -26,6 +26,7 @@ export interface CreateTransferJettonTransactionParameters {
     amount: string;
     jettonDecimals?: number;
     comment?: string;
+    responseDestination?: string;
 }
 
 export type CreateTransferJettonTransactionReturnType = TransactionRequest;
@@ -37,7 +38,7 @@ export const createTransferJettonTransaction = async (
     appKit: AppKit,
     parameters: CreateTransferJettonTransactionParameters,
 ): Promise<CreateTransferJettonTransactionReturnType> => {
-    const { jettonAddress, recipientAddress, amount, jettonDecimals, comment } = parameters;
+    const { jettonAddress, recipientAddress, amount, jettonDecimals, comment, responseDestination } = parameters;
 
     const wallet = getSelectedWallet(appKit);
 
@@ -69,7 +70,7 @@ export const createTransferJettonTransaction = async (
     const jettonPayload = createJettonTransferPayload({
         amount: parseUnits(amount, decimals),
         destination: recipientAddress,
-        responseDestination: ownerAddress,
+        responseDestination: responseDestination ?? ownerAddress,
         comment,
     });
 

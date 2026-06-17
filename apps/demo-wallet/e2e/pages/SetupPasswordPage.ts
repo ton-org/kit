@@ -13,10 +13,6 @@ export class SetupPasswordPage {
 
     // Locators
 
-    get title() {
-        return this.page.getByTestId('title').filter({ hasText: 'Setup Password' });
-    }
-
     get subtitle() {
         return this.page.getByTestId('subtitle');
     }
@@ -34,17 +30,17 @@ export class SetupPasswordPage {
     }
 
     get helperText() {
-        return this.page.getByText('At least 4 characters');
+        return this.page.getByText('Make sure to remember', { exact: false });
     }
 
     get errorMessage() {
-        return this.page.locator('[data-testid="password-error"], .text-red-600');
+        return this.page.locator('[data-testid="password-error"], .text-red-500');
     }
 
     // Actions
 
     async waitForPage() {
-        await this.title.waitFor({ state: 'visible' });
+        await this.passwordInput.waitFor({ state: 'visible' });
     }
 
     async fillPassword(password: string) {

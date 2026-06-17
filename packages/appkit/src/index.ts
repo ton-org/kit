@@ -36,6 +36,7 @@ export * from './connectors/tonconnect';
 export * from './swap';
 export * from './staking';
 export * from './crypto-onramp';
+export * from './gasless';
 
 // Actions
 export * from './actions';

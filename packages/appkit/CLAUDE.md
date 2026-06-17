@@ -3,7 +3,7 @@
 ## Code conventions
 
 - All file names must be in kebab-case.
-- For creating new actions and hooks, use the `add-action-and-hook` skill.
+- For creating new actions and hooks, use the `kit-dev` skill.
 
 ## Imports from walletkit
 

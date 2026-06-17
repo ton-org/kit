@@ -14,13 +14,13 @@ import { CONTRACT } from './constants';
 import { asAddressFriendly, ReaderStack, SerializeStack } from '../../../utils';
 
 export interface PoolData {
-    /** Total TON balance in the pool (nanoTON) */
+    /** Total TON balance in the pool (nano units) */
     totalBalance: bigint;
-    /** Total tsTON supply (nanotsTON) */
+    /** Total tsTON supply (nano units) */
     supply: bigint;
-    /** Projected TON balance at round end (nanoTON) */
+    /** Projected TON balance at round end (nano units) */
     projectedBalance: bigint;
-    /** Projected tsTON supply at round end (nanotsTON) */
+    /** Projected tsTON supply at round end (nano units) */
     projectedSupply: bigint;
 }
 

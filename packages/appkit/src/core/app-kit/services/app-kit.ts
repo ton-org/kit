@@ -18,6 +18,8 @@ import type {
 import type { AppKitConfig } from '../types/config';
 import { CONNECTOR_EVENTS, WALLETS_EVENTS } from '../constants/events';
 import { StakingManager } from '../../../staking';
+import { GaslessManager } from '../../../gasless';
+import type { GaslessProviderInterface } from '../../../gasless';
 import type { Connector, ConnectorFactoryContext, ConnectorInput } from '../../../types/connector';
 import { EventEmitter } from '../../emitter';
 import type { AppKitEmitter, AppKitEvents } from '../types/events';
@@ -41,6 +43,7 @@ export class AppKit {
     readonly stakingManager: StakingManager;
     readonly onrampManager: OnrampManager;
     readonly cryptoOnrampManager: CryptoOnrampManager;
+    readonly gaslessManager: GaslessManager;
 
     readonly networkManager: AppKitNetworkManager;
     readonly streamingManager: StreamingManager;
@@ -66,6 +69,7 @@ export class AppKit {
         this.stakingManager = new StakingManager(() => this.createFactoryContext());
         this.onrampManager = new OnrampManager(() => this.createFactoryContext());
         this.cryptoOnrampManager = new CryptoOnrampManager(() => this.createFactoryContext());
+        this.gaslessManager = new GaslessManager(() => this.createFactoryContext());
         this.streamingManager = new StreamingManager(() => this.createFactoryContext());
 
         if (config.connectors) {
@@ -138,6 +142,9 @@ export class AppKit {
                 break;
             case 'streaming':
                 this.streamingManager.registerProvider(provider as StreamingProvider);
+                break;
+            case 'gasless':
+                this.gaslessManager.registerProvider(provider as GaslessProviderInterface);
                 break;
             default:
                 throw new Error('Unknown provider type');

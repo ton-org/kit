@@ -29,6 +29,9 @@ import type {
     StakingProviderInfo,
     StakeParams,
     UnstakeModes,
+    GaslessQuote,
+    GaslessSupportedAsset,
+    SendTransactionResponse,
 } from '@ton/walletkit';
 
 import type { PendingTransaction } from './streaming';
@@ -243,6 +246,26 @@ export interface NftsSlice {
     formatNftIndex: (index: string) => string;
 }
 
+// Rates slice interface
+export interface RateEntry {
+    rate: number;
+    change24h?: number;
+    currency: 'USD';
+}
+
+export interface RatesSlice {
+    rates: {
+        entries: Record<string, RateEntry>;
+        isLoading: boolean;
+        error: string | null;
+        lastUpdated: number;
+    };
+
+    loadRates: () => Promise<void>;
+    clearRates: () => void;
+    getRate: (key: string) => RateEntry | undefined;
+}
+
 // Swap slice interface
 export interface SwapState {
     fromToken: SwapToken;
@@ -255,6 +278,8 @@ export interface SwapState {
     error: string | null;
     slippageBps: number;
     isReverseSwap: boolean;
+    /** Selected swap provider id (e.g. 'omniston', 'dedust'); quotes are fetched from it. */
+    providerId: string;
 }
 
 // Staking slice interface
@@ -278,11 +303,43 @@ export interface StakingSlice {
     setStakingProviderId: (providerId: string) => void;
     setUnstakeMode: (mode: UnstakeModes) => void;
     getStakingQuote: (params: Omit<StakingQuoteParams, 'network'>) => Promise<void>;
-    stake: (params: Omit<StakeParams, 'userAddress'>) => Promise<void>;
-    unstake: (params: Omit<StakeParams, 'userAddress'>) => Promise<void>;
+    stake: (params: Omit<StakeParams, 'userAddress'>) => Promise<boolean>;
+    unstake: (params: Omit<StakeParams, 'userAddress'>) => Promise<boolean>;
     loadStakingData: (userAddress: string) => Promise<void>;
     clearStaking: () => void;
     validateStakingInputs: () => string | null;
+}
+
+export interface GaslessState {
+    enabled: boolean;
+    feeAsset: string | null;
+    supportedAssets: GaslessSupportedAsset[];
+    relayAddress: string | null;
+    currentQuote: GaslessQuote | null;
+    isLoadingConfig: boolean;
+    isLoadingQuote: boolean;
+    isSending: boolean;
+    error: string | null;
+}
+
+export interface GaslessQuoteRequest {
+    recipientAddress: string;
+    jettonAddress: string;
+    /** Amount to transfer in the jetton's smallest unit. */
+    transferAmount: string;
+    comment?: string;
+}
+
+export interface GaslessSlice {
+    gasless: GaslessState;
+
+    setGaslessEnabled: (enabled: boolean) => void;
+    setGaslessFeeAsset: (address: string) => void;
+    clearGaslessQuote: () => void;
+    loadGaslessConfig: () => Promise<void>;
+    getGaslessQuote: (params: GaslessQuoteRequest) => Promise<void>;
+    sendGasless: () => Promise<SendTransactionResponse>;
+    clearGasless: () => void;
 }
 
 export interface SwapSlice {
@@ -294,9 +351,10 @@ export interface SwapSlice {
     setDestinationAddress: (address: string) => void;
     setIsReverseSwap: (isReverseSwap: boolean) => void;
     setSlippageBps: (slippage: number) => void;
+    setSwapProviderId: (providerId: string) => void;
     swapTokens: () => void;
     getSwapQuote: () => Promise<void>;
-    executeSwap: () => Promise<void>;
+    executeSwap: () => Promise<boolean>;
     clearSwap: () => void;
     validateSwapInputs: () => string | null;
 }
@@ -310,8 +368,10 @@ export interface AppState
         TonConnectSlice,
         JettonsSlice,
         NftsSlice,
+        RatesSlice,
         SwapSlice,
-        StakingSlice {
+        StakingSlice,
+        GaslessSlice {
     isHydrated: boolean;
 }
 
@@ -333,9 +393,13 @@ export type JettonsSliceCreator = StateCreator<AppState, [], [], JettonsSlice>;
 
 export type NftsSliceCreator = StateCreator<AppState, [], [], NftsSlice>;
 
+export type RatesSliceCreator = StateCreator<AppState, [], [], RatesSlice>;
+
 export type SwapSliceCreator = StateCreator<AppState, [['zustand/immer', never]], [], SwapSlice>;
 
 export type StakingSliceCreator = StateCreator<AppState, [['zustand/immer', never]], [], StakingSlice>;
+
+export type GaslessSliceCreator = StateCreator<AppState, [['zustand/immer', never]], [], GaslessSlice>;
 
 // Migration types
 export interface MigrationState {

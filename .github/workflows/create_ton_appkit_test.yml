@@ -1,0 +1,125 @@
+name: create-ton-appkit test
+
+on:
+  push:
+    paths:
+      - 'packages/create-ton-appkit/**'
+      - '.github/workflows/create_ton_appkit_test.yml'
+  workflow_dispatch: {}
+
+jobs:
+  scaffold:
+    name: ${{ matrix.pm }} on ${{ matrix.os.name }}
+    runs-on: ${{ matrix.os.on }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - { on: ubuntu-latest, name: ubuntu }
+          - { on: macos-latest, name: macos }
+          - { on: windows-latest, name: windows }
+        pm:
+          - npm
+          - pnpm
+          - yarn
+          - bun
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Set up Yarn
+        if: matrix.pm == 'yarn'
+        run: npm install -g yarn
+
+      - name: Set up Bun
+        if: matrix.pm == 'bun'
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build and pack create-ton-appkit
+        shell: bash
+        run: |
+          pnpm --filter create-ton-appkit run build
+          cd packages/create-ton-appkit
+          npm pack
+          TARBALL="$(ls create-ton-appkit-*.tgz)"
+          echo "TARBALL=$(pwd)/$TARBALL" >> "$GITHUB_ENV"
+
+      - name: Install create-ton-appkit globally
+        shell: bash
+        run: npm install -g "$TARBALL"
+
+      - name: Scaffold a project
+        shell: bash
+        working-directory: ${{ runner.temp }}
+        run: create-ton-appkit my-app -y --template react --app-url https://example.com
+
+      - name: Install dependencies (${{ matrix.pm }})
+        shell: bash
+        working-directory: ${{ runner.temp }}/my-app
+        run: |
+          case "${{ matrix.pm }}" in
+            npm)  npm install ;;
+            pnpm) pnpm install ;;
+            yarn) yarn install ;;
+            bun)  bun install ;;
+          esac
+
+      - name: Build the scaffolded project (${{ matrix.pm }})
+        shell: bash
+        working-directory: ${{ runner.temp }}/my-app
+        run: |
+          case "${{ matrix.pm }}" in
+            npm)  npm run build ;;
+            pnpm) pnpm build ;;
+            yarn) yarn build ;;
+            bun)  bun run build ;;
+          esac
+
+      - name: Smoke test — serve the built app and curl it (${{ matrix.pm }})
+        shell: bash
+        working-directory: ${{ runner.temp }}/my-app
+        run: |
+          case "${{ matrix.pm }}" in
+            npm)  npm run preview -- --port 4173 > preview.log 2>&1 & ;;
+            pnpm) pnpm preview --port 4173 > preview.log 2>&1 & ;;
+            yarn) yarn preview --port 4173 > preview.log 2>&1 & ;;
+            bun)  bun run preview --port 4173 > preview.log 2>&1 & ;;
+          esac
+          SERVER_PID=$!
+
+          # Wait for the preview server to come up (max ~30s).
+          for _ in $(seq 1 30); do
+            curl -sSf http://localhost:4173 >/dev/null 2>&1 && break
+            sleep 1
+          done
+
+          STATUS=0
+          # 1) the SPA shell is served with HTTP 200
+          curl -sSf http://localhost:4173 | grep -q 'id="root"' || STATUS=1
+          # 2) the JS bundle the shell references is actually reachable
+          BUNDLE="$(curl -sSf http://localhost:4173 | grep -oE '/assets/[^"]+\.js' | head -1)"
+          if [ -n "$BUNDLE" ]; then
+            curl -sSf "http://localhost:4173$BUNDLE" >/dev/null || STATUS=1
+          else
+            STATUS=1
+          fi
+
+          kill "$SERVER_PID" 2>/dev/null || true
+          if [ "$STATUS" -ne 0 ]; then
+            echo "::error::Smoke test failed — preview server log:"
+            cat preview.log || true
+          fi
+          exit "$STATUS"

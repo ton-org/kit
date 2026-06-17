@@ -1,0 +1,403 @@
+{
+  "skill_name": "ton-appkit",
+  "evals": [
+    {
+      "id": 1,
+      "name": "setup",
+      "prompt": "I'm starting a new React app with Vite. I want to integrate @ton/appkit so users can connect their TON wallet, see their balance, and send TON to another address. Show me the complete setup.",
+      "assertions": [
+        {"text": "installs_required_packages", "description": "Mentions installing @ton/appkit, @ton/appkit-react, and @tanstack/react-query"},
+        {"text": "imports_styles_css", "description": "Imports '@ton/appkit-react/styles.css' once near the app root"},
+        {"text": "provider_order_correct", "description": "QueryClientProvider wraps AppKitProvider, not the other way around"},
+        {"text": "appkit_singleton_outside_component", "description": "AppKit instance created at module level, not inside a component"},
+        {"text": "uses_createTonConnectConnector", "description": "Sets up wallet connection via createTonConnectConnector with manifestUrl"},
+        {"text": "useBalance_used", "description": "Uses useBalance hook for displaying balance"},
+        {"text": "useTransferTon_used", "description": "Uses useTransferTon (directly or via <SendTonButton/>) for sending TON"},
+        {"text": "amount_as_string", "description": "Passes amount as human-readable string (e.g., '0.5'), not bigint"},
+        {"text": "vite_buffer_polyfill", "description": "Mentions polyfilling Node Buffer (and ideally process) for the browser — either vite-plugin-node-polyfills in vite.config.ts, or a manual import of buffer/process in main.tsx — because @ton/core needs Buffer at runtime"},
+        {"text": "configures_both_networks_or_testnet_note", "description": "Either configures both mainnet and testnet in AppKit `networks`, or explicitly tells the user to add testnet if their wallet is on testnet (otherwise the tx gets silently rejected)"},
+        {"text": "safe_test_recipient_pattern", "description": "Either uses `useAddress()` (or the connected wallet's address) as recipient for the first-touch send, or explicitly warns that the recipient must be a valid TON address (UQ.../EQ...) — not a made-up placeholder string"}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "streaming",
+      "prompt": "My app shows the balance using useBalance() but it doesn't update in real-time. How do I get WebSocket-based balance updates?",
+      "assertions": [
+        {"text": "explains_streaming_optin", "description": "Explains streaming is opt-in, useBalance alone is one-shot"},
+        {"text": "registers_streaming_provider", "description": "Shows registering a streaming provider (createTonCenterStreamingProvider or createTonApiStreamingProvider)"},
+        {"text": "uses_useWatchBalance", "description": "Shows useWatchBalance must be mounted alongside useBalance"},
+        {"text": "complete_setup_code", "description": "Provides complete working code from AppKit config to React component"}
+      ]
+    },
+    {
+      "id": 3,
+      "name": "jetton-send",
+      "prompt": "How do I send 10 USDT (jetton) to another address in my app?",
+      "assertions": [
+        {"text": "uses_useTransferJetton", "description": "Uses useTransferJetton hook"},
+        {"text": "cache_invalidation", "description": "Mentions invalidateQueries for jetton cache after success"}
+      ]
+    },
+    {
+      "id": 4,
+      "name": "disconnect-cleanup",
+      "prompt": "When a user disconnects their wallet and connects a different one, I see the old wallet's balance flash before the new one loads. How do I fix this?",
+      "assertions": [
+        {"text": "uses_useDisconnect_onSuccess", "description": "Uses useDisconnect with onSuccess callback"},
+        {"text": "explains_remove_vs_invalidate", "description": "Explains why removeQueries is correct (no wallet to refetch for)"},
+        {"text": "covers_multiple_keys", "description": "Removes multiple keys: ['balance'], ['nfts'], ['jettons'], ['jetton-balance'], ['stakedBalance'] (jetton keys are kebab-case)"}
+      ]
+    },
+    {
+      "id": 5,
+      "name": "swap-flow",
+      "prompt": "I want to add a token swap feature using AppKit. User selects two tokens, sees a quote, and confirms the swap. How?",
+      "assertions": [
+        {"text": "uses_useSwapQuote", "description": "Uses useSwapQuote for getting quotes"},
+        {"text": "uses_useBuildSwapTransaction", "description": "Uses useBuildSwapTransaction to build the tx"},
+        {"text": "uses_useSendTransaction", "description": "Uses useSendTransaction to send the built tx"}
+      ]
+    },
+    {
+      "id": 6,
+      "name": "ssr-nextjs",
+      "prompt": "I'm using Next.js 15 App Router. I keep getting hydration errors when I add AppKit. What do I do?",
+      "assertions": [
+        {"text": "use_client_directive", "description": "Recommends adding 'use client' to the providers (wallet-using) file."},
+        {"text": "mount_gate_or_dynamic_import", "description": "Recommends gating wallet-dependent UI on a useEffect-based mounted flag, or using next/dynamic(() => import(...), { ssr: false })."},
+        {"text": "does_not_recommend_ssr_true", "description": "Does NOT recommend `ssr: true` on the AppKit constructor — there is no such field on `AppKitConfig`. The fix is purely a React/Next concern."}
+      ]
+    },
+    {
+      "id": 7,
+      "name": "error-handling",
+      "prompt": "My users complain that sometimes the send button stays disabled forever after a failed transaction. The error doesn't show either. How should I handle transaction errors properly?",
+      "assertions": [
+        {"text": "uses_error_isError", "description": "Uses error and isError from mutation result"},
+        {"text": "user_rejection_detection", "description": "Distinguishes user rejection (reject/cancel/abort regex or similar) from other errors"},
+        {"text": "uses_reset", "description": "Uses reset() function for retry flows"},
+        {"text": "isPending_only_for_disable", "description": "isPending is used only for disabling during pending, not for error state"}
+      ]
+    },
+    {
+      "id": 9,
+      "name": "orientation",
+      "prompt": "I just installed @ton/appkit and @ton/appkit-react in my project. Give me an overview of what these packages provide and how the parts fit together.",
+      "assertions": [
+        {"text": "tanstack_query_peer_dep", "description": "Mentions @tanstack/react-query as required peer dependency"},
+        {"text": "describes_dropin_vs_hooks", "description": "Distinguishes drop-in components (e.g., SwapWidget) from hooks (custom UX) as the two main paths"}
+      ]
+    },
+    {
+      "id": 10,
+      "name": "wallet-picker",
+      "prompt": "My users have both Tonkeeper and MyTonWallet installed. How do I show a wallet picker so they can choose which one to connect?",
+      "assertions": [
+        {"text": "uses_useConnectors", "description": "Uses useConnectors to list available connectors"},
+        {"text": "uses_useConnect_with_id", "description": "Uses useConnect with connectorId parameter (not the connector object)"},
+        {"text": "disabled_during_pending", "description": "Disables button with isPending during connection"}
+      ]
+    },
+    {
+      "id": 11,
+      "name": "staking-flow",
+      "prompt": "I want to add a staking feature so users can stake TON and earn rewards. Show me how to fetch providers, get a quote, and execute the stake.",
+      "assertions": [
+        {"text": "uses_useStakingProviders", "description": "Uses useStakingProviders to list options"},
+        {"text": "uses_useStakingQuote", "description": "Uses useStakingQuote with amount and direction: 'stake'"},
+        {"text": "uses_useBuildStakeTransaction", "description": "Uses useBuildStakeTransaction to build tx"},
+        {"text": "mentions_unstake", "description": "Mentions direction: 'unstake' variant or unstaking flow"}
+      ]
+    },
+    {
+      "id": 12,
+      "name": "watch-transactions",
+      "prompt": "I want to show a live feed of incoming transactions for the connected wallet — like a real-time transaction log. How?",
+      "assertions": [
+        {"text": "uses_useWatchTransactions", "description": "Uses useWatchTransactions or useWatchTransactionsByAddress"},
+        {"text": "streaming_provider_required", "description": "Mentions that a streaming provider must be registered"},
+        {"text": "onchange_callback", "description": "Shows onChange callback to receive new transactions"}
+      ]
+    },
+    {
+      "id": 13,
+      "name": "testnet-mainnet-switch",
+      "prompt": "My app needs to support both mainnet and testnet — users should be able to switch between them. How do I configure AppKit and handle the switch?",
+      "assertions": [
+        {"text": "both_networks_in_config", "description": "Configures both mainnet and testnet in networks object"},
+        {"text": "default_network_or_useDefaultNetwork", "description": "Sets defaultNetwork or uses useDefaultNetwork/useNetwork"},
+        {"text": "chain_ids_correct", "description": "Mentions mainnet -239 and testnet -3 chain IDs"},
+        {"text": "network_aware_hooks", "description": "Shows network parameter on hooks (e.g., useBalanceByAddress({ address, network }))"}
+      ]
+    },
+    {
+      "id": 14,
+      "name": "consumer-vs-monorepo-routing",
+      "prompt": "I'm using @ton/appkit-react in my own Next.js app and want to fix stale NFT and balance data after switching wallets. Please don't talk about changing the AppKit repo internals; I just need app code.",
+      "assertions": [
+        {"text": "consumer_app_focus", "description": "Keeps the answer focused on application integration code, not monorepo source changes"},
+        {"text": "uses_removeQueries", "description": "Uses queryClient.removeQueries for wallet-scoped cache cleanup"},
+        {"text": "covers_balance_and_nft_keys", "description": "Removes at least balance and NFT-related query keys"},
+        {"text": "explains_no_wallet_refetch", "description": "Explains removeQueries is appropriate because there is no disconnected wallet to refetch for"}
+      ]
+    },
+    {
+      "id": 15,
+      "name": "custom-vs-dropin-decision",
+      "prompt": "We need swaps in our Telegram Mini App. The default UI might be enough, but product may later want a custom quote screen. What should I use first, and what should I watch out for?",
+      "assertions": [
+        {"text": "hook_path_for_custom_ux", "description": "Names useSwapQuote, useBuildSwapTransaction, and useSendTransaction as the custom UX path"},
+        {"text": "loading_error_states", "description": "Calls out loading/error/pending state handling for the hook-based path"}
+      ]
+    },
+    {
+      "id": 16,
+      "name": "ios-wallet-connect-click",
+      "prompt": "On iPhone, tapping my custom Connect Wallet button sometimes doesn't open Tonkeeper. I'm calling connect after an async analytics call. How should I wire this?",
+      "assertions": [
+        {"text": "uses_useConnect", "description": "Uses useConnect or recommends TonConnectButton for simpler integration"},
+        {"text": "pending_state", "description": "Disables the button only while the connection mutation is pending"}
+      ]
+    },
+    {
+      "id": 17,
+      "name": "signing-flows",
+      "prompt": "I need users to prove they own their wallet by signing a plain message before they can join my app's leaderboard. How do I do this with AppKit?",
+      "assertions": [
+        {"text": "uses_useSignText", "description": "Uses useSignText hook (not useSignCell or useSignBinary — plain message)"},
+        {"text": "mutate_with_message", "description": "Calls mutate with the text/message to sign"},
+        {"text": "handles_pending_error", "description": "Handles isPending and error states like other AppKit mutations"},
+        {"text": "proof_or_signature_to_backend", "description": "Extracts signature/proof from the result for backend verification"}
+      ]
+    },
+    {
+      "id": 18,
+      "name": "jetton-custom-decimals",
+      "prompt": "I need to send a jetton that has 18 decimals (not the standard 9). The user enters '1.5' tokens. Do I need to do anything special with the amount?",
+      "assertions": [
+        {"text": "amount_stays_string", "description": "Passes '1.5' directly as a string, no manual decimal conversion"},
+        {"text": "decimals_from_metadata", "description": "Explains AppKit reads decimals from jetton metadata (token info) automatically"},
+        {"text": "no_manual_parseUnits", "description": "Explicitly says don't do parseUnits/toUnits/multiply-by-10^decimals yourself"},
+        {"text": "uses_useTransferJetton", "description": "Uses useTransferJetton hook"}
+      ]
+    },
+    {
+      "id": 19,
+      "name": "pending-tx-during-address-change",
+      "prompt": "A user starts a send TON transaction, then disconnects their wallet and connects a different one before the first tx confirms. My UI shows the first tx's spinner forever and then a confusing error from the new wallet. How do I handle this cleanly?",
+      "assertions": [
+        {"text": "reset_or_cancel_on_disconnect", "description": "Calls mutation reset() or guards against state mismatch when wallet changes"},
+        {"text": "watches_useAddress_for_change", "description": "Watches useAddress() to detect wallet/address change"},
+        {"text": "removes_wallet_scoped_queries", "description": "Removes wallet-scoped TanStack caches (balance, nfts, etc.) on disconnect"},
+        {"text": "key_by_address_or_remount", "description": "Suggests keying the wallet-scoped subtree by address (key={address}) or remounting"}
+      ]
+    },
+    {
+      "id": 20,
+      "name": "manifest-troubleshoot",
+      "prompt": "When users tap Connect, Tonkeeper opens but shows 'Unknown app' instead of my app name and icon. What did I do wrong?",
+      "assertions": [
+        {"text": "manifest_url_publicly_reachable", "description": "Says manifestUrl must be publicly reachable (not localhost in prod, no auth wall)"},
+        {"text": "manifest_json_format", "description": "Shows the JSON shape: url, name, iconUrl (the required fields)"},
+        {"text": "https_required", "description": "HTTPS required for the manifest URL"},
+        {"text": "cors_or_content_type", "description": "Mentions correct content-type (application/json) or CORS so wallets can fetch it"}
+      ]
+    },
+    {
+      "id": 21,
+      "name": "multi-step-orchestration",
+      "prompt": "I want a flow: when user clicks Send, send 1 TON, then once confirmed refresh the balance display and show a success toast. How do I wire this in AppKit?",
+      "assertions": [
+        {"text": "uses_onSuccess_callback", "description": "Uses mutation onSuccess (or mutation: { onSuccess }) to chain after send"},
+        {"text": "invalidates_balance_key", "description": "Calls queryClient.invalidateQueries({ queryKey: ['balance'] }) on success"},
+        {"text": "tx_not_immediately_onchain", "description": "Explains tx isn't on-chain instantly — uses <TransactionProgress /> OR mentions wait/poll for confirmation"},
+        {"text": "disables_during_isPending", "description": "Disables the send button while isPending"},
+        {"text": "handles_error_branch", "description": "Covers onError or error state in the UI"}
+      ]
+    },
+    {
+      "id": 22,
+      "name": "vite-buffer-polyfill",
+      "prompt": "I just integrated @ton/appkit into my Vite + React app following the docs. The page loads but shows a white screen, and the console says 'ReferenceError: Buffer is not defined'. What did I miss?",
+      "assertions": [
+        {"text": "identifies_node_globals_in_browser", "description": "Explains the cause: @ton/core (transitive dep) uses Node's Buffer in the browser; Vite doesn't include Node polyfills by default"},
+        {"text": "recommends_polyfill_solution", "description": "Recommends either vite-plugin-node-polyfills in vite.config.ts OR a manual `import 'buffer'; globalThis.Buffer = Buffer` at the top of main.tsx"},
+        {"text": "mentions_process_too_or_full_polyfill", "description": "Mentions that `process` may also need polyfilling (covered by full nodePolyfills() or by adding `process` to the manual fallback)"},
+        {"text": "polyfill_imported_first", "description": "If using the manual approach, says the polyfill import must come BEFORE any AppKit/TON code (first line of main.tsx)"}
+      ]
+    },
+    {
+      "id": 23,
+      "name": "send-ton-recipient-test-pattern",
+      "prompt": "I integrated SendTonButton with a hardcoded recipient address. When I click Send, Tonkeeper opens but says 'Transaction canceled. There will be no changes to your account' before I even confirm. What's wrong with my setup?",
+      "assertions": [
+        {"text": "identifies_invalid_address", "description": "Identifies that 'no changes to your account' indicates the simulator failed — most likely an invalid recipient TON address (bad checksum or made-up string)"},
+        {"text": "explains_address_format", "description": "Mentions valid TON addresses are EQ.../UQ... base64 with checksums, not arbitrary strings"},
+        {"text": "suggests_self_transfer_test", "description": "Suggests using `useAddress()` (the connected user's own address) as the recipient for a safe end-to-end test — sending to yourself avoids invalid-address bugs and risk"}
+      ]
+    },
+    {
+      "id": 24,
+      "name": "nft-transfer",
+      "prompt": "How do I transfer one of the connected user's NFTs to another wallet address using AppKit? Show me the hook and a basic UI.",
+      "assertions": [
+        {"text": "uses_useTransferNft", "description": "Uses the useTransferNft hook from @ton/appkit-react"},
+        {"text": "passes_correct_nftAddress_param", "description": "Calls mutate with `nftAddress` (the actual API param — NOT `tokenAddress`, `nft`, `address`, or similar) AND `recipientAddress`. Hallucinating `tokenAddress` is the most common mistake and must FAIL this assertion."},
+        {"text": "uses_useNfts_to_list", "description": "Uses useNfts() (or useNftsByAddress) to let the user pick which NFT to transfer"},
+        {"text": "handles_pending_and_error", "description": "Disables submit during isPending and renders error state (same pattern as other mutations)"},
+        {"text": "cache_invalidation_after_transfer", "description": "Invalidates the ['nfts'] (and optionally ['nft']) cache prefix after successful transfer so the list updates"}
+      ]
+    },
+    {
+      "id": 25,
+      "name": "eq-vs-uq-address-format",
+      "prompt": "I have addresses in two formats: `EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c` and `UQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJKZ`. They look almost identical. When I send TON to a fresh user wallet using the EQ form, Tonkeeper sometimes warns about an uninitialized contract. Which form should I use for what, and are they interchangeable?",
+      "assertions": [
+        {"text": "explains_bounceable_vs_non_bounceable", "description": "Explains EQ-prefix is the bounceable form, UQ-prefix is the non-bounceable form"},
+        {"text": "same_underlying_account", "description": "Notes both forms refer to the same on-chain account/hash — only the bounce-flag and checksum differ"},
+        {"text": "uq_for_user_wallets", "description": "Recommends UQ (non-bounceable) when sending to a user's wallet address — avoids the 'uninitialized contract' bounce-back when the wallet hasn't been deployed yet"},
+        {"text": "eq_for_known_contracts", "description": "Recommends EQ (bounceable) for known-initialized smart contracts where you want refund-on-failure semantics"},
+        {"text": "appkit_accepts_either", "description": "Notes that AppKit's transfer hooks accept either format — but the form you pick controls bounce behavior, so it still matters which one you save/display"}
+      ]
+    },
+    {
+      "id": 26,
+      "name": "telegram-mini-app-return",
+      "prompt": "I'm building a Telegram Mini App with @ton/appkit-react. When the user taps Connect, Tonkeeper opens correctly, but after the user signs the connection in Tonkeeper they have to manually switch back to my Mini App in Telegram — it doesn't auto-return. Same problem after signing transactions. How do I fix this so the Mini App is brought back to focus automatically?",
+      "assertions": [
+        {"text": "configures_returnStrategy", "description": "Sets `tonConnectOptions.actionsConfiguration.returnStrategy` (typically `'back'` or a `tg://...` URL) on createTonConnectConnector"},
+        {"text": "mentions_twaReturnUrl_or_telegram_url", "description": "Mentions `twaReturnUrl` (preferred for Mini Apps) or a `https://t.me/<botname>/<appname>` deep link as the place to return to"},
+        {"text": "config_at_appkit_setup", "description": "Configures the option on the connector at AppKit construction (not at every call site)"},
+        {"text": "explains_why_it_works", "description": "Briefly explains that wallets read this config when handing control back, so without it they default to staying open"}
+      ]
+    },
+    {
+      "id": 27,
+      "name": "no-wallets-installed-fallback",
+      "prompt": "What happens to my Connect button if a user opens my app with no TON wallet installed (no Tonkeeper, no MyTonWallet)? I want to show a fallback like 'Install Tonkeeper to continue' instead of an empty/broken state. How do I detect this and what's the right UX with AppKit?",
+      "assertions": [
+        {"text": "checks_connectors_or_wallets_list", "description": "Checks the available connectors (or the TonConnect wallets list) for emptiness/availability"},
+        {"text": "recommends_fallback_ui", "description": "Recommends rendering a fallback CTA when no wallets are detected — e.g., 'Install Tonkeeper'"},
+        {"text": "deep_link_or_store_link", "description": "Mentions linking to wallet install (App Store / Google Play / browser extension / tonkeeper.com) as part of the fallback"},
+        {"text": "mentions_TonConnect_handles_universal", "description": "Notes that TonConnect's universal/QR flow can also work for desktop users without a local wallet — useful nuance"}
+      ]
+    },
+    {
+      "id": 28,
+      "name": "balance-return-type-no-double-format",
+      "prompt": "I want to render the connected wallet's TON balance with two decimals — e.g. '1.50 TON'. Here's my code: ```const { data: balance } = useBalance(); return <p>{formatUnits(balance, 9)} TON</p>;``` Is this right? What is `balance` actually?",
+      "assertions": [
+        {"text": "useBalance_is_string_not_bigint", "description": "States that `useBalance().data` is a STRING (not a `bigint`, not raw nano). MUST FAIL if the answer says bigint or nano."},
+        {"text": "already_formatted_as_ton", "description": "Explains the string is already in human-readable TON units (e.g. \"0.500000000\"), having been pre-formatted by `formatUnits(_, 9)` inside `getBalanceByAddress`."},
+        {"text": "warns_against_double_formatUnits", "description": "Explicitly warns that calling `formatUnits(balance, 9)` again re-slices the string on the decimal point and produces garbage like \"0..500000000\" (two dots)."},
+        {"text": "correct_render_pattern", "description": "Shows a correct render: either bare `{balance}` or `parseFloat(balance).toFixed(2)` / `Intl.NumberFormat(...).format(Number(balance))` — NOT a second formatUnits call."}
+      ]
+    },
+    {
+      "id": 29,
+      "name": "jettons-hook-return-shape",
+      "prompt": "I'm rendering a list of the user's jettons: `const { data: jettons } = useJettons(); return jettons?.map(j => <Row symbol={j.symbol} balance={j.balance} />);` But `jettons.map is not a function` at runtime, and the symbol shows undefined. What's wrong?",
+      "assertions": [
+        {"text": "data_is_object_not_array", "description": "Says `useJettons().data` is `{ jettons, addressBook }`, NOT an array. You need `data?.jettons.map(...)`."},
+        {"text": "symbol_nested_under_info", "description": "Says jetton fields like symbol/name live under `j.info.symbol`/`j.info.name`, not on `j` directly."},
+        {"text": "balance_already_formatted", "description": "Notes `j.balance` is already a formatted decimal string in the jetton's own units (via internal `formatUnits` using `j.decimalsNumber`) — don't reformat."},
+        {"text": "image_url_field_names", "description": "Mentions image URLs live under `j.info.image.smallUrl` / `j.info.image.url` (with the `Url` suffix), not `j.info.image.small`/`medium`."}
+      ]
+    },
+    {
+      "id": 30,
+      "name": "nfts-hook-return-shape",
+      "prompt": "Same idea but for NFTs: `const { data: nfts } = useNfts(); nfts?.map(n => <Card nft={n} />);` — `nfts.map is not a function`. How do I read the list?",
+      "assertions": [
+        {"text": "data_is_object_with_nfts", "description": "Says `useNfts().data` is `{ nfts, addressBook? }`, NOT an array. The list is at `data?.nfts`."},
+        {"text": "uses_NftItem_or_destructures", "description": "Either uses `<NftItem nft={n} />` drop-in or shows correct destructuring; doesn't pass the whole `data` object as if it were an array."}
+      ]
+    },
+    {
+      "id": 31,
+      "name": "tonconnect-connector-factory",
+      "prompt": "I'm setting up AppKit and I see two ways to wire TonConnect online: `new TonConnectConnector(...)` (constructor) and `createTonConnectConnector(...)` (factory). Which is the current/correct one?",
+      "assertions": [
+        {"text": "uses_factory_function", "description": "Recommends `createTonConnectConnector(...)` — the factory."},
+        {"text": "rejects_constructor", "description": "Notes that `TonConnectConnector` is type-only in the current API and the `new TonConnectConnector(...)` form is no longer valid. MUST FAIL if the answer recommends `new TonConnectConnector`."},
+        {"text": "options_shape_correct", "description": "Shows the factory takes `{ tonConnectOptions: { manifestUrl, ... } }`."}
+      ]
+    },
+    {
+      "id": 32,
+      "name": "swap-widget-silent-continue",
+      "prompt": "I'm using `<SwapWidget />` and when the user clicks Continue, nothing happens — no modal, no Tonkeeper prompt, no error in the UI. The button is enabled and labeled 'Continue'. What's going on and how do I see what failed?",
+      "assertions": [
+        {"text": "build_or_send_error_swallowed", "description": "Explains that `useBuildSwapTransaction` / `useSendTransaction` errors inside `SwapWidget` are NOT surfaced into `ctx.error` (which is validation-only) and become unhandled promise rejections."},
+        {"text": "check_devtools_console", "description": "Tells the user to look at DevTools Console for `Unhandled rejection: SwapError: ...` or similar — this is the first diagnostic step."},
+        {"text": "wrap_in_try_catch_or_hooks", "description": "Recommends either wrapping `ctx.sendSwapTransaction()` in try/catch via the render-prop, or composing the flow directly from `useSwapQuote` + `useBuildSwapTransaction` + `useSendTransaction` to get proper `error` fields per step."}
+      ]
+    },
+    {
+      "id": 33,
+      "name": "tonstakers-rate-limit-cascade",
+      "prompt": "I added `createTonstakersProvider()` to my AppKit config alongside a keyless TonCenter API (`apiClient: { url: 'https://toncenter.com' }` with no key). Now `useBalance`, `useJettons`, and `useNfts` are all painfully slow or returning HTTP 429 errors. The staking widget itself shows nothing. What's happening?",
+      "assertions": [
+        {"text": "explains_staking_widget_polling", "description": "Explains the traffic source: while `<StakingWidget />` is mounted, its internal queries poll with `refetchInterval: 5000` (several queries, each refresh hitting TonCenter endpoints like getPoolBalance/getPoolData/APY). MUST FAIL if the answer claims the Tonstakers provider polls on its own internal timer merely by being registered — the provider has no timer, only a 30s-TTL cache around on-demand reads."},
+        {"text": "burns_keyless_quota", "description": "Says this quickly exhausts the IP's keyless TonCenter quota and cascades HTTP 429s into unrelated reads (useBalance, useJettons, useNfts)."},
+        {"text": "fix_with_api_key_or_remove_provider", "description": "Recommends either adding a real TonCenter API key OR not mounting `<StakingWidget />` (or removing `createTonstakersProvider()` from `providers`) when no key is available."}
+      ]
+    },
+    {
+      "id": 34,
+      "name": "tonapi-streaming-requires-key",
+      "prompt": "I'm using `createTonApiStreamingProvider({ network: Network.mainnet() })` (no apiKey) and I'm seeing repeated WebSocket errors in the console — the WS to `wss://tonapi.io/streaming/v2/ws` keeps closing. Why?",
+      "assertions": [
+        {"text": "tonapi_ws_requires_token", "description": "Explains the TonAPI streaming WebSocket endpoint requires authentication — keyless connections are rejected with HTTP 401 during the WebSocket upgrade."},
+        {"text": "pass_apiKey", "description": "Says to pass `apiKey` to `createTonApiStreamingProvider({ network, apiKey })` — get a token from tonconsole.com."},
+        {"text": "alternative_toncenter_streaming", "description": "Notes that `createTonCenterStreamingProvider` is the alternative (TonCenter streaming also rate-limits but doesn't hard-fail without a key)."}
+      ]
+    },
+    {
+      "id": 35,
+      "name": "next-js-no-ssr-flag",
+      "prompt": "How do I configure AppKit for Next.js App Router so server-rendered pages don't crash on wallet hooks? Does `new AppKit({ ssr: true, ... })` work?",
+      "assertions": [
+        {"text": "no_ssr_field_on_AppKitConfig", "description": "Explicitly says there is NO `ssr` property on `AppKitConfig` — passing it does nothing. MUST FAIL if the answer recommends adding `ssr: true` to the AppKit constructor."},
+        {"text": "use_client_directive", "description": "Recommends adding `'use client'` to the providers file."},
+        {"text": "mount_gate_or_dynamic_import", "description": "Recommends either gating wallet-dependent UI behind a `useEffect`-based mount flag or using `dynamic(() => import(...), { ssr: false })`."}
+      ]
+    },
+    {
+      "id": 36,
+      "name": "omniston-build-error-handling",
+      "prompt": "My SwapWidget gets a valid quote, but when the user clicks Continue I see in the console: `Unhandled rejection: SwapError: Failed to build Omniston transaction: Internal server error: 5: [hash]`. The UI says nothing. What's happening, what should I do, and is this my code's bug?",
+      "assertions": [
+        {"text": "identifies_upstream_omniston", "description": "Identifies that this is an upstream STON.fi / Omniston server error (gRPC status 5 = NOT_FOUND on the build step), not a bug in the user's code or AppKit."},
+        {"text": "suggests_retry_or_different_route", "description": "Suggests retrying after a short wait, using a larger amount (close to a resolver's minimum quotes fail more often), or trying a different pair / a different swap provider."},
+        {"text": "fallback_provider", "description": "Mentions registering `createDeDustProvider()` as a fallback (it builds via the DeDust Router API, independent of Omniston's RFQ/resolver system — though the router itself aggregates several protocols including STON.fi pools) and notes the user can switch providers from the SwapWidget settings gear."},
+        {"text": "widget_swallows_error", "description": "Notes that `<SwapWidget />` itself swallows this error (doesn't propagate it into `ctx.error`) — this is a kit-side UX bug, not the user's fault, and the diagnostic path is DevTools Console for unhandled rejections."}
+      ]
+    },
+    {
+      "id": 37,
+      "name": "send-jetton-button-shape",
+      "prompt": "I want to drop in `<SendJettonButton />` for sending 5 USDT to an address. What props does it need? Is `jetton` just the jetton address?",
+      "assertions": [
+        {"text": "jetton_is_object_not_string", "description": "Says the `jetton` prop is an OBJECT, not a string. Required shape is `{ address, symbol, decimals }`. MUST FAIL if the answer passes a bare address string."},
+        {"text": "amount_human_readable", "description": "Shows `amount` as a human-readable string (e.g. `'5'` for 5 USDT), and notes the button uses `jetton.decimals` to scale internally — don't pass raw units."},
+        {"text": "recipient_address_prop", "description": "Includes the `recipientAddress` string prop."}
+      ]
+    },
+    {
+      "id": 38,
+      "name": "html-balance-render",
+      "prompt": "Write a React component file BalanceDisplay.tsx (named export `BalanceDisplay`) that renders the connected wallet TON balance with 2 decimal places, e.g. '0.50 TON'. Use useBalance() from @ton/appkit-react. Component takes no props.",
+      "assertions": [
+        {"text": "compiles_cleanly", "description": "tsc + vite build succeeds on the file"},
+        {"text": "no_runtime_errors", "description": "page loads without console/runtime errors (favicon 404 ignored)"},
+        {"text": "renders_balance_with_decimal", "description": "rendered DOM contains a number with at most 4 decimal places"},
+        {"text": "no_double_dot_in_rendered_dom", "description": "CRITICAL: rendered text does NOT contain '..' sequence (double-formatUnits bug — would render '0..500000000')"},
+        {"text": "no_NaN", "description": "rendered text does NOT contain NaN (signs of wrong type assumptions)"},
+        {"text": "no_full_precision_leak", "description": "rendered text does NOT contain raw 9-decimal value '0.500000000' (formatter was bypassed entirely)"},
+        {"text": "reasonable_magnitude", "description": "rendered text contains '0.5' — balance not over-divided. If executor assumes balance is nano-bigint and writes Number(balance)/1e9, the result becomes 5e-10 and toFixed(2) renders '0.00' — this assertion catches it."}
+      ]
+    }
+  ]
+}

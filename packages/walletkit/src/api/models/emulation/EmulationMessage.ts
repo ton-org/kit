@@ -35,7 +35,7 @@ export interface EmulationMessage {
     destination: UserFriendlyAddress;
 
     /**
-     * Amount of nanotons transferred, or undefined for external inbound messages
+     * Amount of nano units transferred, or undefined for external inbound messages
      */
     value?: TokenAmount;
 
@@ -45,12 +45,12 @@ export interface EmulationMessage {
     valueExtraCurrencies: ExtraCurrencies;
 
     /**
-     * Forwarding fee in nanotons, or undefined for external inbound messages
+     * Forwarding fee in nano units, or undefined for external inbound messages
      */
     fwdFee?: TokenAmount;
 
     /**
-     * IHR (Instant Hypercube Routing) fee in nanotons, or undefined for external inbound messages
+     * IHR (Instant Hypercube Routing) fee in nano units, or undefined for external inbound messages
      */
     ihrFee?: TokenAmount;
 

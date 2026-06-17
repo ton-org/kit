@@ -11,7 +11,7 @@
  */
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import type { WalletAdapter } from '@ton/walletkit';
+import type { BaseProvider, ProviderInput, WalletAdapter } from '@ton/walletkit';
 import { z } from 'zod';
 
 import type { IContactResolver } from './types/contacts.js';
@@ -71,6 +71,11 @@ export interface TonMcpFactoryConfig {
      * Optional shared session manager for agentic onboarding callback handling.
      */
     agenticSessionManager?: AgenticSetupSessionManager;
+
+    /**
+     * Optional additional providers to register on the wallet kit instance (e.g. custom swap or staking providers).
+     */
+    providers?: Array<ProviderInput<BaseProvider>>;
 }
 
 function extendWithWalletSelector<TSchema extends z.ZodTypeAny>(schema: TSchema) {
@@ -91,7 +96,7 @@ export async function createTonWalletMCP(config: TonMcpFactoryConfig): Promise<M
         version: SERVER_VERSION,
     });
 
-    const registry = new WalletRegistryService(config.contacts, config.networks);
+    const registry = new WalletRegistryService(config, config.contacts, config.networks);
     const knownJettonsTools = createMcpKnownJettonsTools();
 
     // Helper to register tools with type assertion (Zod version mismatch workaround)
@@ -107,6 +112,7 @@ export async function createTonWalletMCP(config: TonMcpFactoryConfig): Promise<M
             wallet: config.wallet,
             contacts: config.contacts,
             networks: config.networks,
+            providers: config.providers,
         });
 
         const balanceTools = createMcpBalanceTools(walletService);

@@ -9,6 +9,7 @@
 export * from './Signer';
 export * from './address';
 export * from './base64';
+export * from './withTimeout';
 export * from './cell';
 export * from './delay';
 export * from './getDefaultWalletConfig';
@@ -32,3 +33,4 @@ export * from './assetHelpers';
 export * from './toncenter';
 export * from './getNormalizedExtMessageHash';
 export * from './manifest';
+export * from './features';

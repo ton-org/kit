@@ -51,7 +51,7 @@ export class StakingManager extends DefiManager<StakingProviderInterface> implem
     }
 
     /**
-     * Stake TON using a provider
+     * Stake GRAM using a provider
      * @param params - Staking parameters
      * @param providerId - Optional provider id to use
      */

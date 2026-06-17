@@ -314,6 +314,7 @@ export class AgenticWalletAdapter implements WalletAdapter {
         authType: AgenticWalletAuthType,
     ): Promise<Cell> {
         const actions = packActionsList(input.messages.map((message) => this.createTransferAction(message)));
+        const outActions = extractOutActions(actions);
 
         let seqno = 0;
         try {
@@ -323,7 +324,7 @@ export class AgenticWalletAdapter implements WalletAdapter {
         }
 
         const walletNftIndex = await this.getWalletNftIndex();
-        return this.createSignedBody(seqno, walletNftIndex, actions, {
+        return this.createSignedBody(seqno, walletNftIndex, outActions, {
             ...options,
             authType,
             validUntil: this.resolveValidUntil(input.validUntil),
@@ -457,4 +458,9 @@ export class AgenticWalletAdapter implements WalletAdapter {
             },
         ] as Feature[];
     }
+}
+
+function extractOutActions(actionsList: Cell): Cell | null {
+    const slice = actionsList.beginParse();
+    return slice.loadMaybeRef();
 }

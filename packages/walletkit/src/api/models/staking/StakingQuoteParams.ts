@@ -41,7 +41,7 @@ export interface StakingQuoteParams<TProviderOptions = unknown> {
     unstakeMode?: UnstakeModes;
 
     /**
-     * If true, for unstake requests the amount is specified in the staking coin (e.g. TON)
+     * If true, for unstake requests the amount is specified in the staking coin (e.g. GRAM)
      * instead of the Liquid Staking Token (e.g. tsTON).
      */
     isReversed?: boolean;

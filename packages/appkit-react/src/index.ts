@@ -14,8 +14,10 @@ export * from '@ton/appkit';
 // UI primitives
 export * from './components/ui/block';
 export * from './components/ui/button';
+export * from './components/ui/switch';
 export * from './components/ui/centered-amount-input';
 export * from './components/ui/collapsible';
+export * from './components/shared/button-with-connect';
 export * from './components/ui/icons';
 export * from './components/ui/info-block';
 export * from './components/ui/input';
@@ -48,5 +50,6 @@ export * from './features/swap';
 export * from './features/signing';
 export * from './features/staking';
 export * from './features/onramp';
+export * from './features/gasless';
 
 export * from './types/appkit-ui-token';

@@ -37,10 +37,13 @@ import type {
     StakingAPI,
     ConnectionRequestEvent,
     EmbeddedRequestEvent,
+    GaslessAPI,
+    GaslessProviderInterface,
 } from '@ton/walletkit';
 import type { OmnistonSwapProviderConfig } from '@ton/walletkit/swap/omniston';
 import type { DeDustSwapProviderConfig } from '@ton/walletkit/swap/dedust';
 import type { TonStakersProviderConfig } from '@ton/walletkit/staking/tonstakers';
+import type { TonApiGaslessProviderConfig } from '@ton/walletkit/gasless/tonapi';
 
 export interface SwiftApiClient extends ApiClient {
     getNetwork: () => Network;
@@ -78,7 +81,7 @@ export type SwiftFetchManifest = (manifestUrl: string) => Promise<ManifestFetchR
 export interface SwiftWalletKit {
     isReady(): boolean;
 
-    jettonsManager(): JettonsAPI;
+    jettons(): JettonsAPI;
 
     setEventsListeners(callback: (type: string, event: unknown) => Promise<void>): void;
 
@@ -164,9 +167,13 @@ export interface SwiftWalletKit {
 
     createTonStakersStakingProvider(config?: TonStakersProviderConfig): StakingProviderInterface;
 
+    createTonApiGaslessProvider(config?: TonApiGaslessProviderConfig): GaslessProviderInterface;
+
     swap(): SwapAPI;
 
     streaming(): StreamingAPI;
 
     staking(): StakingAPI;
+
+    gasless(): GaslessAPI;
 }

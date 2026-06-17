@@ -18,6 +18,8 @@ interface UseStakingValidationOptions {
     balance: string | undefined;
     quote?: StakingQuote;
     quoteError: Error | null;
+    /** Error from the build/send mutation. Takes priority over input validation but does not block submit. */
+    sendError: Error | null;
     direction: StakingQuoteDirection;
     amountDecimals?: number;
     isReversed: boolean;
@@ -31,13 +33,16 @@ export const useStakingValidation = ({
     balance,
     quote,
     quoteError,
+    sendError,
     direction,
     amountDecimals,
     isReversed,
     stakedBalance,
     isNetworkSupported,
 }: UseStakingValidationOptions) => {
-    const error: string | null = useMemo(() => {
+    // Input-side validation that blocks submission. `sendError` is intentionally NOT considered
+    // here — a previous failed attempt shouldn't lock the button against a retry.
+    const blockingError: string | null = useMemo(() => {
         if (!isNetworkSupported) return 'defi.unsupportedNetwork';
 
         if ((parseFloat(amount) || 0) <= 0) return null;
@@ -49,7 +54,7 @@ export const useStakingValidation = ({
         }
 
         if (direction === 'unstake') {
-            // On reversed unstake the user types the TON they want to receive; compare the tsTON
+            // On reversed unstake the user types the GRAM they want to receive; compare the tsTON
             // spend (quote.amountIn) to the staked balance instead.
             const outgoingAmount = isReversed ? quote?.amountIn : amount;
             if (isAmountExceedingBalance(outgoingAmount, stakedBalance)) {
@@ -73,7 +78,14 @@ export const useStakingValidation = ({
         amountDecimals,
     ]);
 
-    const canSubmit = (parseFloat(amount) || 0) > 0 && error === null;
+    // The user-visible error: build/send failure (most recent user action) wins over background
+    // validation noise; falls back to validation when no send error is active.
+    const error = useMemo<string | null>(() => {
+        if (sendError) return mapStakingError(sendError, 'staking.sendFailed');
+        return blockingError;
+    }, [sendError, blockingError]);
+
+    const canSubmit = (parseFloat(amount) || 0) > 0 && blockingError === null && quote !== undefined;
 
     return { error, canSubmit };
 };

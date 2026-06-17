@@ -19,7 +19,7 @@ export interface NFTTransferRequest {
     nftAddress: UserFriendlyAddress;
 
     /**
-     * TON amount to attach for gas fees (default: 0.1 TON)
+     * GRAM amount to attach for gas fees (default: 0.1 GRAM)
      */
     transferAmount?: TokenAmount;
 

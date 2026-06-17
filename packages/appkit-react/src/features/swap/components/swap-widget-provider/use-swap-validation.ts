@@ -7,6 +7,7 @@
  */
 
 import { useMemo } from 'react';
+import type { SwapQuote } from '@ton/appkit';
 
 import type { AppkitUIToken } from '../../../../types/appkit-ui-token';
 import { hasTooManyDecimals, isAmountExceedingBalance } from '../../../../utils/validate-amount';
@@ -18,20 +19,24 @@ interface UseSwapValidationOptions {
     fromToken: AppkitUIToken | null;
     toToken: AppkitUIToken | null;
     fromBalance: string | undefined;
+    quote: SwapQuote | undefined;
     quoteError: Error | null;
+    sendError: Error | null;
     isNetworkSupported: boolean;
 }
 
-export const useSwapValidation = ({
+export function useSwapValidation({
     fromAmount,
     fromAmountDebounced,
     fromToken,
     toToken,
     fromBalance,
+    quote,
     quoteError,
+    sendError,
     isNetworkSupported,
-}: UseSwapValidationOptions) => {
-    const error: string | null = useMemo(() => {
+}: UseSwapValidationOptions) {
+    const blockingError: string | null = useMemo(() => {
         if (!isNetworkSupported) return 'defi.unsupportedNetwork';
 
         if ((parseFloat(fromAmount) || 0) <= 0) return null;
@@ -45,7 +50,17 @@ export const useSwapValidation = ({
         return null;
     }, [isNetworkSupported, fromAmount, fromToken, fromBalance, quoteError, fromAmountDebounced]);
 
-    const canSubmit = (parseFloat(fromAmount) || 0) > 0 && fromToken !== null && toToken !== null && error === null;
+    const error = useMemo<string | null>(() => {
+        if (sendError) return mapSwapError(sendError, 'swap.sendFailed');
+        return blockingError;
+    }, [sendError, blockingError]);
+
+    const canSubmit =
+        (parseFloat(fromAmount) || 0) > 0 &&
+        fromToken !== null &&
+        toToken !== null &&
+        blockingError === null &&
+        quote !== undefined;
 
     return { error, canSubmit };
-};
+}

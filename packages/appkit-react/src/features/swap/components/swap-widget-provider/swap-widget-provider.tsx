@@ -6,14 +6,14 @@
  *
  */
 
-import { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { FC, PropsWithChildren } from 'react';
 import { formatUnits } from '@ton/appkit';
 import type { Network } from '@ton/appkit';
 import type { GetSwapQuoteData } from '@ton/appkit/queries';
 import type { SwapProvider } from '@ton/appkit';
-import { getTonShortfall } from '@ton/appkit';
-import type { TonShortfall } from '@ton/appkit';
+import { checkTransferBalance } from '@ton/appkit';
+import type { TransferShortfall } from '@ton/appkit';
 import { calcMaxSpendable } from '@ton/appkit';
 
 import { useSwapQuote } from '../../hooks/use-swap-quote';
@@ -25,6 +25,7 @@ import { useBalance } from '../../../balances/hooks/use-balance';
 import { useNetwork } from '../../../network';
 import { useSendTransaction } from '../../../transaction/hooks/use-send-transaction';
 import { useDebounceValue } from '../../../../hooks/use-debounce-value';
+import type { LowBalanceMode } from '../../../../components/shared/low-balance-modal/low-balance-modal';
 import type { AppkitUIToken } from '../../../../types/appkit-ui-token';
 import type { TokenSectionConfig } from '../../../../components/shared/token-select-modal';
 import { mapSwapWidgetTokens } from '../../utils/map-swap-widget-tokens';
@@ -93,13 +94,13 @@ export interface SwapContextType {
     sendSwapTransaction: () => Promise<void>;
     /** True while a transaction is being built or sent */
     isSendingTransaction: boolean;
-    /** True when the built transaction outflow exceeds the user's TON balance */
+    /** True when the built transaction outflow exceeds the user's GRAM balance */
     isLowBalanceWarningOpen: boolean;
-    /** `reduce` when the outgoing token is TON (user can fix by changing amount), `topup` otherwise. */
-    lowBalanceMode: 'reduce' | 'topup';
-    /** Required TON amount for the pending operation, formatted as a decimal string. Empty when no pending op. */
+    /** `reduce` when the outgoing token is GRAM (user can fix by changing amount), `topup` otherwise. */
+    lowBalanceMode: LowBalanceMode;
+    /** Required GRAM amount for the pending operation, formatted as a decimal string. Empty when no pending op. */
     lowBalanceRequiredTon: string;
-    /** Replace the input with a value that fits into the current TON balance and close the warning */
+    /** Replace the input with a value that fits into the current GRAM balance and close the warning */
     onLowBalanceChange: () => void;
     /** Dismiss the low-balance warning without changing the input */
     onLowBalanceCancel: () => void;
@@ -199,7 +200,7 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
     });
     const [slippage, setSlippage] = useState(defaultSlippage);
     const [fromAmountDebounced] = useDebounceValue(fromAmount, 500);
-    const [pendingSwap, setPendingSwap] = useState<TonShortfall | undefined>(undefined);
+    const [pendingSwap, setPendingSwap] = useState<TransferShortfall | undefined>(undefined);
     const address = useAddress();
     const [provider, setProviderId] = useSwapProvider();
     const providers = useSwapProviders();
@@ -241,7 +242,7 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
         network,
         slippageBps: slippage,
         providerId: provider?.providerId,
-        query: { enabled: isNetworkSupported },
+        query: { enabled: isNetworkSupported, networkMode: 'always', retry: false, gcTime: 0 },
     });
     // Also show "loading" while the user is still typing (debounce in-flight) so the UI doesn't flash
     // the previous quote as if it were final.
@@ -254,6 +255,29 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
     });
     const { data: tonBalance } = useBalance({ network, query: { refetchInterval: 5000 } });
 
+    // 4. Mutations (hoisted above validation: the mutation `error` is one of its inputs)
+    const {
+        mutateAsync: buildTransaction,
+        isPending: isBuildingTransaction,
+        error: buildError,
+        reset: resetBuild,
+    } = useBuildSwapTransaction({ mutation: { networkMode: 'always' } });
+    const {
+        mutateAsync: sendTransaction,
+        isPending: isSendingPending,
+        error: sendMutationError,
+        reset: resetSend,
+    } = useSendTransaction({ mutation: { networkMode: 'always' } });
+    const isSendingTransaction = isBuildingTransaction || isSendingPending;
+    const sendError = sendMutationError ?? buildError;
+
+    // Drop the previous send error when the user changes anything that would invalidate it —
+    // the next attempt is conceptually a new swap, no need to keep the old message on screen.
+    const resetSendError = useCallback(() => {
+        resetBuild();
+        resetSend();
+    }, [resetBuild, resetSend]);
+
     // 3. Derivations
     const toAmount = quote?.toAmount ?? '';
     const { error, canSubmit } = useSwapValidation({
@@ -262,20 +286,31 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
         fromToken,
         toToken,
         fromBalance,
+        quote,
         quoteError,
+        sendError,
         isNetworkSupported,
     });
     const isLowBalanceWarningOpen = pendingSwap !== undefined;
-    const lowBalanceMode: 'reduce' | 'topup' = pendingSwap?.mode ?? 'reduce';
+    const lowBalanceMode: LowBalanceMode = pendingSwap?.mode ?? 'reduce';
     const lowBalanceRequiredTon = useMemo(() => {
         if (!pendingSwap) return '';
         return formatUnits(pendingSwap.requiredNanos, 9);
     }, [pendingSwap]);
 
-    // 4. Mutations
-    const { mutateAsync: buildTransaction, isPending: isBuildingTransaction } = useBuildSwapTransaction();
-    const { mutateAsync: sendTransaction, isPending: isSendingPending } = useSendTransaction();
-    const isSendingTransaction = isBuildingTransaction || isSendingPending;
+    // Drop the previous send error when the user changes anything that would invalidate it —
+    // the next attempt is conceptually a new swap, no need to keep the old message on screen.
+    useEffect(() => {
+        resetSendError();
+    }, [fromToken?.address, toToken?.address, fromAmount, resetSendError]);
+
+    // Auto-clear the send error after a short delay so a stale failure doesn't linger in the
+    // submit button — the user is expected to act on it within seconds or move on.
+    useEffect(() => {
+        if (!sendError) return;
+        const id = setTimeout(resetSendError, 5000);
+        return () => clearTimeout(id);
+    }, [sendError, resetSendError]);
 
     // 5. Callbacks
     const handleMaxClick = useCallback(() => {
@@ -288,9 +323,10 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
 
         const tx = await buildTransaction({ quote, userAddress: address });
 
-        const shortfall = getTonShortfall({
+        const shortfall = checkTransferBalance({
             messages: tx.messages,
             tonBalance,
+            gasBufferNanos: 100_000_000n,
             fromToken,
             fromAmount,
         });

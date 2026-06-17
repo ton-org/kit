@@ -9,6 +9,7 @@
 import { createCommentPayloadBase64, parseUnits } from '@ton/walletkit';
 
 import type { TransactionRequest, TransactionRequestMessage } from '../../types/transaction';
+import { asBase64 } from '../../utils';
 import type { AppKit } from '../../core/app-kit';
 import { getSelectedWallet } from '../wallets/get-selected-wallet';
 
@@ -28,7 +29,7 @@ export interface CreateTransferTonTransactionParameters {
 export type CreateTransferTonTransactionReturnType = TransactionRequest;
 
 /**
- * Create a TON transfer transaction request
+ * Create a GRAM transfer transaction request
  */
 export const createTransferTonTransaction = (
     appKit: AppKit,
@@ -45,12 +46,12 @@ export const createTransferTonTransaction = (
     const message: TransactionRequestMessage = {
         address: recipientAddress,
         amount: parseUnits(amount, 9).toString(),
-        stateInit,
+        stateInit: stateInit ? asBase64(stateInit) : undefined,
     };
 
     // Payload takes priority, otherwise use comment
     if (payload) {
-        message.payload = payload;
+        message.payload = asBase64(payload);
     } else if (comment) {
         message.payload = createCommentPayloadBase64(comment);
     }

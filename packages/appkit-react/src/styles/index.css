@@ -9,9 +9,9 @@
   --ta-display-large-weight: 800;
   --ta-display-large-line-height: 70px;
 
-  --ta-display-size: 40px;
+  --ta-display-size: 32px;
   --ta-display-weight: 800;
-  --ta-display-line-height: 44px;
+  --ta-display-line-height: 40px;
 
   /* headline */
   --ta-headline-size: 28px;
@@ -97,6 +97,7 @@
   --ta-color-white: #ffffff;
   --ta-color-black: #000000;
   --ta-color-ton: #0098EB;
+  --ta-color-gram: #30A1F5;
 
   /* Border Radius */
   --ta-border-radius-s: 4px;

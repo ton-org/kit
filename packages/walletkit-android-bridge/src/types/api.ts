@@ -33,6 +33,7 @@ import type {
 } from '@ton/walletkit';
 import type { DeDustSwapProviderConfig } from '@ton/walletkit/swap/dedust';
 import type { OmnistonSwapProviderConfig } from '@ton/walletkit/swap/omniston';
+import type { TonApiGaslessProviderConfig } from '@ton/walletkit/gasless/tonapi';
 
 import type { TONBase64, TONHex, TONUserFriendlyAddress } from './brands';
 import type { WalletKitBridgeEventCallback } from './events';
@@ -429,6 +430,41 @@ export interface BuildSwapTransactionArgs {
     params: Record<string, unknown>;
 }
 
+export interface CreateTonApiGaslessProviderArgs {
+    config?: TonApiGaslessProviderConfig;
+}
+
+export interface RegisterGaslessProviderArgs {
+    providerId: string;
+}
+
+export interface SetDefaultGaslessProviderArgs {
+    providerId: string;
+}
+
+export interface HasGaslessProviderArgs {
+    providerId: string;
+}
+
+export interface GetGaslessMetadataArgs {
+    providerId?: string;
+}
+
+export interface GetGaslessConfigArgs {
+    network?: Record<string, unknown>;
+    providerId?: string;
+}
+
+export interface GetGaslessQuoteArgs {
+    params: Record<string, unknown>;
+    providerId?: string;
+}
+
+export interface GaslessSendTransactionArgs {
+    params: Record<string, unknown>;
+    providerId?: string;
+}
+
 export interface WalletKitBridgeApi {
     init(config?: WalletKitBridgeInitConfig): PromiseOrValue<{ ok: true }>;
     setEventsListeners(args?: SetEventsListenersArgs): PromiseOrValue<{ ok: true }>;
@@ -454,6 +490,24 @@ export interface WalletKitBridgeApi {
     getWallets(): PromiseOrValue<{ walletId: string | undefined; wallet: Wallet }[]>;
     getWallet(args: { walletId: string }): PromiseOrValue<{ walletId: string | undefined; wallet: Wallet } | null>;
     getWalletAddress(args: { walletId: string }): PromiseOrValue<TONUserFriendlyAddress | null>;
+    getWalletPublicKey(args: { walletId: string }): PromiseOrValue<TONHex>;
+    getWalletStateInit(args: { walletId: string }): PromiseOrValue<unknown>;
+    getSignedSignMessage(args: { walletId: string; request: Record<string, unknown> }): PromiseOrValue<unknown>;
+    getSignedSendTransaction(args: {
+        walletId: string;
+        input: Record<string, unknown>;
+        fakeSignature?: boolean;
+    }): PromiseOrValue<unknown>;
+    getSignedSignData(args: {
+        walletId: string;
+        input: Record<string, unknown>;
+        fakeSignature?: boolean;
+    }): PromiseOrValue<unknown>;
+    getSignedTonProof(args: {
+        walletId: string;
+        input: Record<string, unknown>;
+        fakeSignature?: boolean;
+    }): PromiseOrValue<unknown>;
     removeWallet(args: RemoveWalletArgs): PromiseOrValue<void>;
     getBalance(args: GetBalanceArgs): PromiseOrValue<string | undefined>;
     getRecentTransactions(args: GetRecentTransactionsArgs): PromiseOrValue<Transaction[]>;
@@ -531,4 +585,45 @@ export interface WalletKitBridgeApi {
     getSwapQuote(args: GetSwapQuoteArgs): PromiseOrValue<unknown>;
     buildSwapTransaction(args: BuildSwapTransactionArgs): PromiseOrValue<unknown>;
     registerKotlinSwapProvider(args: RegisterKotlinSwapProviderArgs): PromiseOrValue<void>;
+    createTonApiGaslessProvider(args?: CreateTonApiGaslessProviderArgs): PromiseOrValue<{ providerId: string }>;
+    registerGaslessProvider(args: RegisterGaslessProviderArgs): PromiseOrValue<void>;
+    setDefaultGaslessProvider(args: SetDefaultGaslessProviderArgs): PromiseOrValue<void>;
+    getRegisteredGaslessProviders(): PromiseOrValue<{ providerIds: string[] }>;
+    hasGaslessProvider(args: HasGaslessProviderArgs): PromiseOrValue<{ result: boolean }>;
+    getGaslessMetadata(args: GetGaslessMetadataArgs): PromiseOrValue<unknown>;
+    getGaslessConfig(args: GetGaslessConfigArgs): PromiseOrValue<unknown>;
+    getGaslessQuote(args: GetGaslessQuoteArgs): PromiseOrValue<unknown>;
+    gaslessSendTransaction(args: GaslessSendTransactionArgs): PromiseOrValue<unknown>;
+
+    // Per-wallet ApiClient proxy: Android `BridgedJSAPIClient` round-trips
+    // `wallet.client.<method>` through these so the underlying JS `ApiClient`
+    // (built-in or user-supplied) handles the call. Mirrors iOS JSTONAPIClient.
+    walletClientSendBoc(args: { walletId: string; boc: string }): PromiseOrValue<{ result: string }>;
+    walletClientRunGetMethod(args: {
+        walletId: string;
+        address: string;
+        method: string;
+        stack?: unknown[];
+        seqno?: number;
+    }): PromiseOrValue<unknown>;
+    walletClientGetBalance(args: {
+        walletId: string;
+        address: string;
+        seqno?: number;
+    }): PromiseOrValue<{ result: string }>;
+    walletClientGetMasterchainInfo(args: { walletId: string }): PromiseOrValue<unknown>;
+    walletClientNftItemsByAddress(args: { walletId: string; request: unknown }): PromiseOrValue<unknown>;
+    walletClientNftItemsByOwner(args: { walletId: string; request: unknown }): PromiseOrValue<unknown>;
+    walletClientFetchEmulation(args: {
+        walletId: string;
+        messageBoc: string;
+        ignoreSignature?: boolean;
+    }): PromiseOrValue<unknown>;
+    walletClientAccountState(args: { walletId: string; address: string; seqno?: number }): PromiseOrValue<unknown>;
+    walletClientAccountStates(args: { walletId: string; addresses: string[] }): PromiseOrValue<unknown>;
+    walletClientResolveDnsWallet(args: { walletId: string; domain: string }): PromiseOrValue<{ result: string | null }>;
+    walletClientBackResolveDnsWallet(args: {
+        walletId: string;
+        address: string;
+    }): PromiseOrValue<{ result: string | null }>;
 }

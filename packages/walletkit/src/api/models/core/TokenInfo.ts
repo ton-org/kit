@@ -10,7 +10,7 @@ import type { TokenImage } from './TokenImage';
 import type { TokenAnimation } from './TokenAnimation';
 
 /**
- * Display information for a token (TON, Jetton, or NFT).
+ * Display information for a token (GRAM, Jetton, or NFT).
  */
 export interface TokenInfo {
     /**
@@ -34,7 +34,7 @@ export interface TokenInfo {
     animation?: TokenAnimation;
 
     /**
-     * Ticker symbol of the token (e.g., "TON", "USDT")
+     * Ticker symbol of the token (e.g., "GRAM", "USDT")
      */
     symbol?: string;
 }

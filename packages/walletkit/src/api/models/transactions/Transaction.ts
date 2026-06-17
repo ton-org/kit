@@ -127,7 +127,7 @@ export interface TransactionAccountState {
     hash?: string;
 
     /**
-     * The account's balance in nanotons
+     * The account's balance in nano units
      */
     balance: TokenAmount;
 
@@ -255,7 +255,7 @@ export interface TransactionMessage {
     isBounced?: boolean;
 
     /**
-     * Import fee for the message (NanoTONs amount)
+     * Import fee for the message (nano units amount)
      */
     importFee?: TokenAmount;
 
@@ -535,5 +535,5 @@ export type TransactionPreviewMode = 'send' | 'sign';
 export interface TransactionPreviewOptions {
     // 'send' emulates the external message as-is; 'sign' emulates the internal body
     mode?: TransactionPreviewMode;
-    relayGas?: bigint; // gas amount to inject for gasless relaying, by default 2 TON
+    relayGas?: bigint; // gas amount to inject for gasless relaying, by default 2 GRAM
 }

@@ -258,6 +258,58 @@ Hook to build a stake transaction from a previously fetched quote.
 
 %%demo/examples/src/appkit/hooks/staking#USE_BUILD_STAKE_TRANSACTION%%
 
+## Gasless
+
+Gasless lets a dApp submit on-chain transactions without the user holding TON for gas: a relayer co-signs and broadcasts the transaction, charging the user a fee in a relayer-accepted asset (e.g. USDT). The connected wallet must support the `SignMessage` TonConnect feature. See the [gasless guide](https://github.com/ton-connect/kit/blob/main/packages/appkit/docs/gasless.md) for a regular-send → gasless-send migration.
+
+### `useGaslessProviders`
+
+Hook to get all registered gasless providers.
+
+%%demo/examples/src/appkit/hooks/gasless#USE_GASLESS_PROVIDERS%%
+
+### `useGaslessProvider`
+
+Hook to get the current default gasless provider and a setter to switch the default.
+
+%%demo/examples/src/appkit/hooks/gasless#USE_GASLESS_PROVIDER%%
+
+### `useGaslessProviderMetadata`
+
+Hook to fetch static metadata (display name, logo, url) for a gasless provider.
+
+%%demo/examples/src/appkit/hooks/gasless#USE_GASLESS_PROVIDER_METADATA%%
+
+### `useGaslessConfig`
+
+Hook to fetch the gasless relayer's configuration — relay address (e.g. for jetton-transfer `responseDestination`) and accepted fee assets.
+
+%%demo/examples/src/appkit/hooks/gasless#USE_GASLESS_CONFIG%%
+
+### `useGaslessQuote`
+
+Hook to fetch a gasless quote. Auto-refetches as inputs change; cached results become stale after ~2 minutes (matches the relayer `validUntil` window). Omit `feeAsset` for free / sponsored providers — jetton-fee providers throw `GaslessError(UNSUPPORTED_OPERATION)` in that case.
+
+%%demo/examples/src/appkit/hooks/gasless#USE_GASLESS_QUOTE%%
+
+### `useGaslessJettonTransferQuote`
+
+Hook to fetch a gasless quote for a jetton transfer from semantic params (`jettonAddress`, `recipientAddress`, `amount`, `feeAsset`) — no manual message building. Auto-refetches as inputs change and on wallet/network switch.
+
+%%demo/examples/src/appkit/hooks/gasless#USE_GASLESS_JETTON_TRANSFER_QUOTE%%
+
+### `useSendGaslessTransaction`
+
+Hook to sign a previously computed quote and submit the resulting BoC to the relayer. Returns a `GaslessSendResponse` (`{ boc, normalizedBoc, normalizedHash, internalBoc }`).
+
+Throws:
+- `GaslessError(QUOTE_EXPIRED)` if the quote's `validUntil` window has passed (checked before signing).
+- `GaslessError(WALLET_MISMATCH)` if the quote was issued for a different address than the selected wallet.
+- `GaslessError(SIGN_MESSAGE_NOT_SUPPORTED)` if the wallet does not advertise `SignMessage`.
+- `GaslessError(TOO_MANY_MESSAGES)` if the quote carries more messages than the wallet's `maxMessages` cap.
+
+%%demo/examples/src/appkit/hooks/gasless#USE_SEND_GASLESS_TRANSACTION%%
+
 ## Transaction
 
 ### `useSendTransaction`
@@ -265,6 +317,12 @@ Hook to build a stake transaction from a previously fetched quote.
 Hook to send a transaction to the blockchain.
 
 %%demo/examples/src/appkit/hooks/transaction#USE_SEND_TRANSACTION%%
+
+### `useSignMessage`
+
+Hook to sign a transaction-shaped request without broadcasting it. Returns a signed internal-message BoC that can be relayed on-chain by a third party (e.g. a gasless relayer). Requires wallet support for the `SignMessage` feature.
+
+%%demo/examples/src/appkit/hooks/transaction#USE_SIGN_MESSAGE%%
 
 ### `useTransferTon`
 
@@ -327,5 +385,11 @@ Hook to disconnect a wallet.
 Hook to get and set the currently selected wallet.
 
 %%demo/examples/src/appkit/hooks/wallets#USE_SELECTED_WALLET%%
+
+### `useSignMessageSupport`
+
+Hook to check whether the selected wallet advertises the `SignMessage` feature (required for gasless). Reactive to wallet selection changes; fail-closed (`false`) when no wallet is selected or features aren't advertised.
+
+%%demo/examples/src/appkit/hooks/wallets#USE_SIGN_MESSAGE_SUPPORT%%
 
 

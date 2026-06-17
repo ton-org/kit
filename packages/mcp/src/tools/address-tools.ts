@@ -46,7 +46,7 @@ export function createMcpAddressTools(service: McpWalletService) {
     return {
         get_balance_by_address: {
             description:
-                'Get TON balance for any wallet address. Returns both human-readable and raw (nanoTON) values.',
+                'Get GRAM balance for any wallet address. Returns both human-readable and raw (nano units) values.',
             inputSchema: getBalanceByAddressSchema,
             handler: async (args: z.infer<typeof getBalanceByAddressSchema>): Promise<ToolResponse> => {
                 try {
