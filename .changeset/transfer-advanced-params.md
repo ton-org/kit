@@ -1,6 +1,6 @@
 ---
-"@ton/appkit": major
-"@ton/appkit-react": major
+"@ton/appkit": patch
+"@ton/appkit-react": patch
 ---
 
 Expose advanced transfer parameters on the jetton, NFT and TON transfer actions (and their hooks `useTransferJetton` / `useTransferNft`).
