@@ -30,6 +30,8 @@ import { Network } from '../../../types/network';
 import type { AppKitCache } from '../../cache';
 import { LruAppKitCache } from '../../cache';
 import type { AppKitProvider } from '../../../types/provider';
+import { CustomProvidersManager } from '../../../providers';
+import type { CustomProvider } from '../../../providers';
 
 /**
  * Central hub for wallet management.
@@ -43,6 +45,7 @@ export class AppKit {
     readonly stakingManager: StakingManager;
     readonly cryptoOnrampManager: CryptoOnrampManager;
     readonly gaslessManager: GaslessManager;
+    readonly customProvidersManager: CustomProvidersManager;
 
     readonly networkManager: AppKitNetworkManager;
     readonly streamingManager: StreamingManager;
@@ -68,6 +71,7 @@ export class AppKit {
         this.stakingManager = new StakingManager(() => this.createFactoryContext());
         this.cryptoOnrampManager = new CryptoOnrampManager(() => this.createFactoryContext());
         this.gaslessManager = new GaslessManager(() => this.createFactoryContext());
+        this.customProvidersManager = new CustomProvidersManager(() => this.createFactoryContext());
         this.streamingManager = new StreamingManager(() => this.createFactoryContext());
 
         if (config.connectors) {
@@ -143,6 +147,9 @@ export class AppKit {
                 break;
             case 'gasless':
                 this.gaslessManager.registerProvider(provider as GaslessProviderInterface);
+                break;
+            case 'custom':
+                this.customProvidersManager.registerProvider(provider as CustomProvider);
                 break;
             default:
                 throw new Error('Unknown provider type');

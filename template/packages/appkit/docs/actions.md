@@ -516,3 +516,9 @@ Whether the selected wallet advertises the `SignMessage` feature (required for g
 Watch whether the selected wallet supports `SignMessage`, re-evaluated on every selection change.
 
 %%demo/examples/src/appkit/actions/wallets#WATCH_SIGN_MESSAGE_SUPPORT%%
+
+### `getCustomProvider`
+
+Get a registered custom provider by id.
+
+%%demo/examples/src/appkit/actions/providers#GET_CUSTOM_PROVIDER%%

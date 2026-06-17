@@ -37,10 +37,15 @@ export class MinterPage {
 
     // ---- transfer modal ----
 
-    /** Opens the transfer modal for a jetton (by visible name) or Gram. */
-    async openTransfer(asset: 'Gram' | 'Tether USD' | string): Promise<void> {
+    /**
+     * Opens the transfer modal for a token by its id — `'ton'` for the native Gram,
+     * or the jetton master address (e.g. `USDT_MASTER`). Targets the `token-row-<id>`
+     * testid that {@link JettonCard} sets on each asset row, so it never collides with
+     * the sidebar balance / ticker text the way a visible-name match would.
+     */
+    async openTransfer(tokenId: 'ton' | string): Promise<void> {
         await this.gotoJettons();
-        await this.page.getByText(new RegExp(asset, 'i')).first().click();
+        await this.page.getByTestId(`token-row-${tokenId}`).click();
         await this.transferModalTitle.waitFor({ state: 'visible' });
     }
 

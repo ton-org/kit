@@ -35,7 +35,7 @@ test.describe('Transfer-form input edge cases (two-tab wallet, mocked relayer)',
         });
         await test.step('Connect wallet, enable Gasless and enter an invalid address', async () => {
             await connectWallet({ widget, wallet });
-            await minter.openTransfer('Tether USD');
+            await minter.openTransfer(USDT_MASTER);
             await minter.enableGasless();
             // build/parse of the message fails client-side before any request goes out
             await minter.fillTransfer('this-is-not-a-ton-address', TRANSFER_AMOUNT);
@@ -60,7 +60,7 @@ test.describe('Transfer-form input edge cases (two-tab wallet, mocked relayer)',
 
         await test.step('Connect wallet, enable Gasless, set recipient and a special-character comment', async () => {
             await connectWallet({ widget, wallet });
-            await minter.openTransfer('Tether USD');
+            await minter.openTransfer(USDT_MASTER);
             await minter.enableGasless();
             await minter.recipientInput.fill(DEFAULT_RECIPIENT);
             await minter.commentInput.fill('<img src=x onerror=1> & "quotes" \'апостроф\'');

@@ -173,3 +173,5 @@ export { StreamingManager } from './streaming';
 export type { StreamingProvider, StreamingProviderFactory } from './api/interfaces/StreamingProvider';
 export type { StreamingAPI } from './api/interfaces/StreamingAPI';
 export type { ProviderFactoryContext } from './types/factory';
+export { CustomProvidersManager } from './providers';
+export type { CustomProvider } from './providers';

@@ -10,6 +10,7 @@ import { test as base, expect } from '../qa/test-base';
 import { testWithGaslessFixture, connectWallet } from '../fixtures/gaslessFixture';
 import { MinterPage } from '../pages/MinterPage';
 import { gaslessMeta } from '../qa/allure-meta';
+import { USDT_MASTER } from '../mocks/gaslessRelayer';
 
 /**
  * Gasless availability.
@@ -49,7 +50,7 @@ test.describe('Availability (two-tab wallet)', () => {
         await gaslessMeta('Availability');
         await test.step('Connect wallet and open GRAM transfer', async () => {
             await connectWallet({ widget, wallet });
-            await minter.openTransfer('Gram');
+            await minter.openTransfer('ton');
         });
         await test.step('Gasless block is absent', async () => {
             await expect(minter.gaslessLabel).toHaveCount(0);
@@ -60,7 +61,7 @@ test.describe('Availability (two-tab wallet)', () => {
         await gaslessMeta('Availability');
         await test.step('Connect wallet and open USDT transfer', async () => {
             await connectWallet({ widget, wallet });
-            await minter.openTransfer('Tether USD');
+            await minter.openTransfer(USDT_MASTER);
         });
         await test.step('Gasless block is visible, checkbox enabled, no missing-SignMessage hint', async () => {
             await expect(minter.gaslessLabel).toBeVisible();

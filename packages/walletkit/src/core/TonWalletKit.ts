@@ -46,6 +46,8 @@ import type { BridgeManager } from './BridgeManager';
 import type { BridgeEventMessageInfo, InjectedToExtensionBridgeRequestPayload } from '../types/jsBridge';
 import type { ApiClient, StakingProviderInterface, StreamingProvider, SwapProviderInterface } from '../api/interfaces';
 import { StreamingManager } from '../streaming/StreamingManager';
+import { CustomProvidersManager } from '../providers';
+import type { CustomProvider } from '../providers';
 import type { WalletKitEvents, WalletKitEventEmitter } from '../types/emitter';
 import { AnalyticsManager } from '../analytics';
 import { getDeviceInfoForWallet } from '../utils/getDefaultWalletConfig';
@@ -103,6 +105,7 @@ export class TonWalletKit implements ITonWalletKit {
     private streamingManager: StreamingManager;
     private stakingManager: StakingManager;
     private gaslessManager: GaslessManager;
+    private customProvidersManager: CustomProvidersManager;
     private initializer: Initializer;
     private eventProcessor!: StorageEventProcessor;
     private bridgeManager!: BridgeManager;
@@ -149,6 +152,8 @@ export class TonWalletKit implements ITonWalletKit {
         this.stakingManager = new StakingManager(() => this.createFactoryContext());
         // Initialize GaslessManager
         this.gaslessManager = new GaslessManager(() => this.createFactoryContext());
+        // Initialize CustomProvidersManager
+        this.customProvidersManager = new CustomProvidersManager(() => this.createFactoryContext());
 
         this.eventEmitter.on('restoreConnection', async ({ payload: event }) => {
             if (!event.domain) {
@@ -881,6 +886,9 @@ export class TonWalletKit implements ITonWalletKit {
             case 'gasless':
                 this.gaslessManager.registerProvider(provider as GaslessProvider);
                 break;
+            case 'custom':
+                this.customProvidersManager.registerProvider(provider as CustomProvider);
+                break;
             default:
                 throw new Error('Unknown provider type');
         }
@@ -928,6 +936,13 @@ export class TonWalletKit implements ITonWalletKit {
      */
     get gasless(): GaslessManager {
         return this.gaslessManager;
+    }
+
+    /**
+     * Custom providers API access
+     */
+    get customProviders(): CustomProvidersManager {
+        return this.customProvidersManager;
     }
 
     /**

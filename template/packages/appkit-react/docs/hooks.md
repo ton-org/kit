@@ -392,4 +392,10 @@ Hook to check whether the selected wallet advertises the `SignMessage` feature (
 
 %%demo/examples/src/appkit/hooks/wallets#USE_SIGN_MESSAGE_SUPPORT%%
 
+### `useCustomProvider`
+
+Hook to get a registered custom provider by id.
+
+%%demo/examples/src/appkit/hooks/providers#USE_CUSTOM_PROVIDER%%
+
 

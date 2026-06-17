@@ -37,7 +37,7 @@ const test = testWithGaslessFixture({
 });
 
 async function openGaslessTransfer(minter: MinterPage) {
-    await minter.openTransfer('Tether USD');
+    await minter.openTransfer(USDT_MASTER);
     await minter.enableGasless();
     await minter.fillTransfer(DEFAULT_RECIPIENT, TRANSFER_AMOUNT);
 }

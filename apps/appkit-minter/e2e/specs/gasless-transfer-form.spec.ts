@@ -27,7 +27,7 @@ test.describe('Gasless transfer form — states', () => {
         await mockGaslessConfig(app, { assets: [USDT_MASTER] });
         await test.step('Connect Wallet and open USDT transfer (Gasless off)', async () => {
             await connectWallet({ widget, wallet });
-            await minter.openTransfer('Tether USD');
+            await minter.openTransfer(USDT_MASTER);
         });
         await test.step('Gasless checkbox is unchecked, no Fee asset selector', async () => {
             await expect(minter.gaslessCheckbox).not.toBeChecked();
@@ -40,7 +40,7 @@ test.describe('Gasless transfer form — states', () => {
         await mockGaslessConfig(app, { assets: [USDT_MASTER] });
         await test.step('Connect Wallet, open USDT transfer and enable Gasless', async () => {
             await connectWallet({ widget, wallet });
-            await minter.openTransfer('Tether USD');
+            await minter.openTransfer(USDT_MASTER);
             await minter.enableGasless();
         });
         await test.step('Fee asset selector appeared', async () => {
@@ -58,7 +58,7 @@ test.describe('Gasless transfer form — states', () => {
         await mockGaslessConfig(app, { assets: [USDT_MASTER] });
         await test.step('Connect Wallet, open USDT transfer and fill the fields', async () => {
             await connectWallet({ widget, wallet });
-            await minter.openTransfer('Tether USD');
+            await minter.openTransfer(USDT_MASTER);
             await minter.fillTransfer(DEFAULT_RECIPIENT, TRANSFER_AMOUNT);
         });
         await test.step('Send button is the regular "Send …", without "Gasless"', async () => {
@@ -73,7 +73,7 @@ test.describe('Gasless transfer form — states', () => {
         await mockGaslessEstimateOk(app);
         await test.step('Connect Wallet, open USDT transfer and fill the fields', async () => {
             await connectWallet({ widget, wallet });
-            await minter.openTransfer('Tether USD');
+            await minter.openTransfer(USDT_MASTER);
             await minter.fillTransfer(DEFAULT_RECIPIENT, TRANSFER_AMOUNT);
         });
         await test.step('Enable Gasless — field values are not reset', async () => {
@@ -89,7 +89,7 @@ test.describe('Gasless transfer form — states', () => {
         await mockGaslessEstimateOk(app);
         await test.step('Connect Wallet, open USDT transfer and fill the fields', async () => {
             await connectWallet({ widget, wallet });
-            await minter.openTransfer('Tether USD');
+            await minter.openTransfer(USDT_MASTER);
             await minter.fillTransfer(DEFAULT_RECIPIENT, TRANSFER_AMOUNT);
         });
         await test.step('Enable → disable → enable Gasless', async () => {
@@ -111,12 +111,12 @@ test.describe('Gasless transfer form — states', () => {
         await mockGaslessConfig(app, { assets: [USDT_MASTER] });
         await test.step('Connect Wallet, open USDT transfer and fill the recipient', async () => {
             await connectWallet({ widget, wallet });
-            await minter.openTransfer('Tether USD');
+            await minter.openTransfer(USDT_MASTER);
             await minter.fillTransfer(DEFAULT_RECIPIENT, TRANSFER_AMOUNT);
         });
         await test.step('Click "Cancel"', () => app.getByRole('button', { name: /^Cancel$/ }).click());
         await test.step('Reopen the transfer — fields are empty', async () => {
-            await minter.openTransfer('Tether USD');
+            await minter.openTransfer(USDT_MASTER);
             await expect(minter.recipientInput).toHaveValue('');
             await expect(minter.amountInput).toHaveValue('');
         });
@@ -134,7 +134,7 @@ test.describe('Gasless transfer form — states', () => {
         await mockGaslessEstimateOk(app, { capture: estimates });
         await test.step('Connect Wallet, open USDT transfer, enable Gasless, fill recipient only', async () => {
             await connectWallet({ widget, wallet });
-            await minter.openTransfer('Tether USD');
+            await minter.openTransfer(USDT_MASTER);
             await minter.enableGasless();
             await minter.recipientInput.fill(DEFAULT_RECIPIENT); // amount intentionally left empty
         });
@@ -156,7 +156,7 @@ test.describe('Gasless transfer form — states', () => {
         await mockGaslessEstimateOk(app, { delayMs: 4000 }); // slow quote → observable "Quoting…"
         await test.step('Connect Wallet, open USDT transfer, enable Gasless and fill the fields', async () => {
             await connectWallet({ widget, wallet });
-            await minter.openTransfer('Tether USD');
+            await minter.openTransfer(USDT_MASTER);
             await minter.enableGasless();
             await minter.fillTransfer(DEFAULT_RECIPIENT, TRANSFER_AMOUNT);
         });
@@ -176,7 +176,7 @@ test.describe('Gasless transfer form — states', () => {
         await mockGaslessEstimateOk(app, { capture: estimates });
         await test.step('Connect Wallet, open USDT transfer, enable Gasless and fill the fields', async () => {
             await connectWallet({ widget, wallet });
-            await minter.openTransfer('Tether USD');
+            await minter.openTransfer(USDT_MASTER);
             await minter.enableGasless();
             await minter.fillTransfer(DEFAULT_RECIPIENT, TRANSFER_AMOUNT);
             await expect(minter.sendButton).toHaveText(/Send Gasless/i);
@@ -196,7 +196,7 @@ test.describe('Gasless transfer form — states', () => {
         await mockGaslessEstimateOk(app, { capture: estimates });
         await test.step('Connect Wallet, open USDT transfer, enable Gasless and fill the fields', async () => {
             await connectWallet({ widget, wallet });
-            await minter.openTransfer('Tether USD');
+            await minter.openTransfer(USDT_MASTER);
             await minter.enableGasless();
             await minter.fillTransfer(DEFAULT_RECIPIENT, TRANSFER_AMOUNT);
             await expect(minter.sendButton).toHaveText(/Send Gasless/i);
@@ -215,12 +215,12 @@ test.describe('Gasless transfer form — states', () => {
         await mockGaslessConfig(app, { assets: [USDT_MASTER] });
         await test.step('Connect Wallet, open USDT transfer and fill the fields', async () => {
             await connectWallet({ widget, wallet });
-            await minter.openTransfer('Tether USD');
+            await minter.openTransfer(USDT_MASTER);
             await minter.fillTransfer(DEFAULT_RECIPIENT, TRANSFER_AMOUNT);
         });
         await test.step('Press Escape to close the modal', () => app.keyboard.press('Escape'));
         await test.step('Reopen the transfer — fields are empty', async () => {
-            await minter.openTransfer('Tether USD');
+            await minter.openTransfer(USDT_MASTER);
             await expect(minter.recipientInput).toHaveValue('');
             await expect(minter.amountInput).toHaveValue('');
         });

@@ -153,6 +153,16 @@ export { transferNft, type TransferNftParameters, type TransferNftReturnType } f
 
 // Providers
 export { registerProvider, type RegisterProviderOptions } from './providers/register-provider';
+export {
+    getCustomProvider,
+    type GetCustomProviderOptions,
+    type GetCustomProviderReturnType,
+} from './providers/get-custom-provider';
+export {
+    watchCustomProviders,
+    type WatchCustomProvidersParameters,
+    type WatchCustomProvidersReturnType,
+} from './providers/watch-custom-providers';
 
 // Gasless
 export { getGaslessManager, type GetGaslessManagerReturnType } from './gasless/get-gasless-manager';

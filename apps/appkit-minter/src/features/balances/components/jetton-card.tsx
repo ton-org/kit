@@ -36,6 +36,7 @@ export const JettonCard: FC<JettonCardProps> = ({
     return (
         <button
             type="button"
+            data-testid={`token-row-${address}`}
             onClick={onClick}
             className={cn(
                 'flex items-center justify-between gap-3 px-2 py-4 text-center transition-colors hover:bg-secondary/30',
