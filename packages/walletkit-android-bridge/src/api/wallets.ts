@@ -176,7 +176,7 @@ export async function getBalance(args: { walletId: string }) {
 
 export async function createSignerFromMnemonic(args: { mnemonic: string[]; mnemonicType?: string }) {
     if (!Signer) throw new Error('Signer module not loaded');
-    const signer = await Signer.fromMnemonic(args.mnemonic, { type: args.mnemonicType ?? 'ton' });
+    const signer = await Signer.fromMnemonic(args.mnemonic, { type: args.mnemonicType });
     const signerId = retain('signer', signer);
     return { signerId, publicKey: signer.publicKey };
 }
@@ -221,7 +221,7 @@ export async function createV5R1WalletAdapter(args: {
     const adapter = await WalletV5R1Adapter.create(signer, {
         client: instance.getApiClient(network),
         network,
-        workchain: args.workchain ?? 0,
+        workchain: args.workchain,
         walletId: args.walletId,
         domain: args.domain,
     });
@@ -246,7 +246,7 @@ export async function createV4R2WalletAdapter(args: {
     const adapter = await WalletV4R2Adapter.create(signer, {
         client: instance.getApiClient(network),
         network,
-        workchain: args.workchain ?? 0,
+        workchain: args.workchain,
         walletId: args.walletId,
         domain: args.domain,
     });

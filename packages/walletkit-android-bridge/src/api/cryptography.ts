@@ -16,7 +16,7 @@ export async function mnemonicToKeyPair(args: { mnemonic: string[]; mnemonicType
     if (!MnemonicToKeyPair) {
         throw new Error('MnemonicToKeyPair module not loaded');
     }
-    return MnemonicToKeyPair(args.mnemonic, args.mnemonicType ?? 'ton');
+    return MnemonicToKeyPair(args.mnemonic, args.mnemonicType);
 }
 
 export async function sign(args: { data: number[]; secretKey: number[] }) {
