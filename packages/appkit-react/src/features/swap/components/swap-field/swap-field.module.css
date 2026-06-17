@@ -1,10 +1,14 @@
 .container {
-  composes: block from "../../../../components/block/block.module.css";
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
 
   width: 100%;
-  border: var(--ta-border-width-m) solid transparent;
-  transition: border-color 0.2s;
   gap: 8px;
+}
+
+.header > .title {
+  color: var(--ta-color-text);
 }
 
 .container .header,
@@ -24,6 +28,7 @@
   justify-content: space-between;
   align-items: center;
   width: 100%;
+  height: var(--ta-body-regular-line-height);
 }
 
 .maxButton {
@@ -42,6 +47,11 @@
   align-items: center;
   gap: 4px;
   height: 1lh;
+}
+
+.max {
+  composes: bodySemibold from "../../../../styles/typography.module.css";
+  color: var(--ta-color-text);
 }
 
 .skeletonText {

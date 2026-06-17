@@ -1,0 +1,102 @@
+/**
+ * Copyright (c) TonTech.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
+import { memo } from 'react';
+import type { Address } from '@ton/core';
+import type { TransactionTraceMoneyFlowItem } from '@ton/walletkit';
+
+import { resolveTokenAddress, GRAM_INFO, useJettonInfo } from '../../hooks/use-jetton-info';
+
+import { formatUnits } from '@/core/utils/units';
+
+export const JettonNameDisplay = memo(function JettonNameDisplay({
+    jettonAddress,
+}: {
+    jettonAddress: Address | string | undefined;
+}) {
+    const jettonInfo = useJettonInfo(resolveTokenAddress(jettonAddress));
+    const name = jettonInfo?.name;
+    return <div>{name ?? jettonAddress?.toString() ?? 'UNKNOWN'}</div>;
+});
+
+export const JettonAmountDisplay = memo(function JettonAmountDisplay({
+    amount,
+    jettonAddress,
+}: {
+    amount: bigint;
+    jettonAddress: Address | string | undefined;
+}) {
+    const jettonInfo = useJettonInfo(resolveTokenAddress(jettonAddress));
+    const decimals = jettonInfo?.decimals ?? 9;
+    const symbol = jettonInfo?.symbol ?? 'UNKWN';
+    return (
+        <div>
+            {formatUnits(amount, decimals)} {symbol}
+        </div>
+    );
+});
+
+export const JettonImage = memo(function JettonImage({
+    jettonAddress,
+}: {
+    jettonAddress: Address | string | undefined;
+}) {
+    const jettonInfo = useJettonInfo(resolveTokenAddress(jettonAddress));
+    if (!jettonInfo?.images?.[0]) {
+        return <img src={GRAM_INFO.images?.[0]} alt={GRAM_INFO.name} className="w-8 h-8 rounded-full" />;
+    }
+    return <img src={jettonInfo.images[0]} alt={jettonInfo.name} className="w-8 h-8 rounded-full" />;
+});
+
+const JettonFlowItem = memo(function JettonFlowItem({
+    jettonAddress,
+    amount,
+}: {
+    jettonAddress: Address | string | undefined;
+    amount: string;
+}) {
+    return (
+        <div className="flex items-center justify-between">
+            <span className="truncate max-w-[200px] flex items-center gap-2">
+                <JettonImage jettonAddress={jettonAddress} />
+                <JettonNameDisplay jettonAddress={jettonAddress} />
+            </span>
+            <div className={`flex ml-2 font-medium ${BigInt(amount) >= 0n ? 'text-green-600' : 'text-red-600'}`}>
+                {BigInt(amount) >= 0n ? '+' : ''}
+                <JettonAmountDisplay amount={BigInt(amount)} jettonAddress={jettonAddress} />
+            </div>
+        </div>
+    );
+});
+
+export const JettonFlow = memo(function JettonFlow({ transfers }: { transfers: TransactionTraceMoneyFlowItem[] }) {
+    return (
+        <div className="rounded-2xl bg-gray-100 p-4">
+            <p className="text-xs font-medium uppercase tracking-wide text-gray-400">Money flow</p>
+            <div className="mt-3 flex flex-col gap-3">
+                {transfers?.length > 0
+                    ? transfers.map((transfer) =>
+                          transfer.assetType === 'jetton' ? (
+                              <JettonFlowItem
+                                  key={transfer.tokenAddress}
+                                  jettonAddress={transfer.tokenAddress}
+                                  amount={transfer.amount}
+                              />
+                          ) : (
+                              <JettonFlowItem
+                                  key={`${transfer.assetType.toString()}-${transfer.tokenAddress}`}
+                                  jettonAddress={transfer.assetType.toLocaleUpperCase()}
+                                  amount={transfer.amount}
+                              />
+                          ),
+                      )
+                    : null}
+            </div>
+        </div>
+    );
+});

@@ -9,3 +9,5 @@
 export * from './errors';
 export * from './CryptoOnrampManager';
 export * from './CryptoOnrampProvider';
+export { Caip2ByNetwork } from './caip2';
+export type { Caip2 } from './caip2';

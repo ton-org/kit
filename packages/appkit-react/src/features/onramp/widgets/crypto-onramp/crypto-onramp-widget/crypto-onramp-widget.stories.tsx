@@ -7,79 +7,81 @@
  */
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { Caip2ByNetwork } from '@ton/appkit';
 
-import type { CryptoOnrampToken, CryptoPaymentMethod } from '../../../types';
+import type { CryptoOnrampDestinationRef, CryptoOnrampSourceRef } from '../crypto-onramp-widget-provider';
 import { CryptoOnrampWidget } from './crypto-onramp-widget';
 
-const TOKENS: CryptoOnrampToken[] = [
-    {
-        id: 'ton',
-        symbol: 'TON',
-        name: 'Toncoin',
-        decimals: 9,
-        address: '0x0000000000000000000000000000000000000000',
-        logo: 'https://asset.ston.fi/img/EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c/c8d21a3d93f9b574381e0a8d8f16d48b325dd8f54ce172f599c1e9d6c62f03f7',
-    },
-    {
-        id: 'usdt-ton',
-        symbol: 'USDT',
-        name: 'Tether USD',
-        decimals: 6,
-        address: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs',
-        logo: 'https://asset.ston.fi/img/EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs/1a87edfee9a28b05578853952e5effb8cc30af1e0fb90043aa2ce19dce490849',
-    },
-];
+const USDT_ON_TON: CryptoOnrampDestinationRef = {
+    address: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs',
+};
 
-const PAYMENT_METHODS: CryptoPaymentMethod[] = [
-    {
-        id: 'usdc-base',
-        symbol: 'USDC',
-        name: 'USD Coin',
-        network: 'Base',
-        networkId: '8453',
-        decimals: 6,
-        address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
-        logo: 'https://assets.coingecko.com/coins/images/6319/standard/USDC.png?1769615602',
-        networkLogo: 'https://avatars.githubusercontent.com/u/108554348?s=280&v=4',
-    },
-    {
-        id: 'usdt-bsc',
-        symbol: 'USDT',
-        name: 'Tether',
-        network: 'BSC',
-        networkId: '56',
-        decimals: 18,
-        address: '0x55d398326f99059fF775485246999027B3197955',
-        logo: 'https://asset.ston.fi/img/EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs/1a87edfee9a28b05578853952e5effb8cc30af1e0fb90043aa2ce19dce490849',
-        networkLogo: 'https://assets.coingecko.com/coins/images/825/standard/bnb-icon2_2x.png',
-    },
-];
+const NATIVE_TON: CryptoOnrampDestinationRef = {
+    address: 'ton',
+};
+
+const USDT0_ON_ARBITRUM: CryptoOnrampSourceRef = {
+    chain: Caip2ByNetwork.ArbitrumMainnet,
+    address: '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9',
+};
+
+const NATIVE_ON_ARBITRUM: CryptoOnrampSourceRef = {
+    chain: Caip2ByNetwork.ArbitrumMainnet,
+    address: 'native',
+};
 
 const meta: Meta<typeof CryptoOnrampWidget> = {
-    title: 'Public/Features/Onramp/CryptoOnrampWidget',
+    title: 'Features/Onramp/CryptoOnrampWidget',
     component: CryptoOnrampWidget,
     tags: ['autodocs'],
+    argTypes: {
+        defaultDestination: {
+            control: 'object',
+            description:
+                'Optional default destination reference (`{ address }`), resolved against the loaded currency list. ' +
+                "Use `{ address: 'ton' }` for native Toncoin.",
+        },
+        defaultSource: {
+            control: 'object',
+            description:
+                'Optional default source reference (`{ address, chain? }`), resolved against the loaded currency list. ' +
+                "Use `{ address: 'native', chain }` for a chain's native coin.",
+        },
+    },
 };
 
 export default meta;
 type Story = StoryObj<typeof CryptoOnrampWidget>;
 
+/**
+ * No defaults — while `/supportedCurrencies` is loading the pills show skeletons and the
+ * amount caption reads "Loading..."; once data arrives the first available token/method
+ * is auto-picked. The "Select token" empty state only shows when the lists come back empty.
+ */
 export const Default: Story = {
+    args: {},
+};
+
+/**
+ * Consumer-supplied default references — once the currency list loads, the matching
+ * entries are selected instead of the first ones. Unmatched references fall back to
+ * the first entry. Use the controls panel to tweak the references.
+ */
+export const WithPresetCurrencies: Story = {
     args: {
-        tokens: TOKENS,
-        defaultTokenId: 'usdt-ton',
-        paymentMethods: PAYMENT_METHODS,
-        defaultMethodId: 'usdc-base',
+        defaultDestination: USDT_ON_TON,
+        defaultSource: USDT0_ON_ARBITRUM,
     },
 };
 
-export const WithSections: Story = {
+/**
+ * Native coins as defaults via aliases: `'ton'` for the destination (Toncoin) and `'native'` for
+ * the source (the selected chain's coin). Both are resolved against the loaded currency list,
+ * regardless of the raw markers the active provider uses.
+ */
+export const WithNativeDefaults: Story = {
     args: {
-        tokens: TOKENS,
-        defaultTokenId: 'ton',
-        tokenSections: [{ title: 'Popular', ids: ['ton', 'usdt-ton'] }],
-        paymentMethods: PAYMENT_METHODS,
-        defaultMethodId: 'usdc-base',
-        methodSections: [{ title: 'EVM Networks', ids: ['usdc-base', 'usdt-bsc'] }],
+        defaultDestination: NATIVE_TON,
+        defaultSource: NATIVE_ON_ARBITRUM,
     },
 };

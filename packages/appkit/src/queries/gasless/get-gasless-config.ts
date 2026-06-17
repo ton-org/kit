@@ -15,7 +15,7 @@ import type {
 import type { AppKit } from '../../core/app-kit';
 import type { QueryOptions, QueryParameter } from '../../types/query';
 import type { Compute, ExactPartial } from '../../types/utils';
-import { filterQueryOptions } from '../../utils';
+import { filterQueryOptions, resolveNetwork } from '../../utils';
 
 export type { GetGaslessConfigErrorType };
 
@@ -28,13 +28,15 @@ export const getGaslessConfigQueryOptions = <selectData = GetGaslessConfigData>(
     appKit: AppKit,
     options: GetGaslessConfigQueryConfig<selectData> = {},
 ): GetGaslessConfigQueryOptions<selectData> => {
+    const resolvedOptions = { ...options, network: resolveNetwork(appKit, options.network) };
+
     return {
         ...options.query,
         queryFn: async (context) => {
             const [, parameters] = context.queryKey as [string, GetGaslessConfigOptions];
             return getGaslessConfig(appKit, parameters);
         },
-        queryKey: getGaslessConfigQueryKey(options),
+        queryKey: getGaslessConfigQueryKey(resolvedOptions),
     };
 };
 

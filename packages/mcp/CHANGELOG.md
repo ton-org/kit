@@ -1,5 +1,76 @@
 # @ton/mcp
 
+## 0.1.15-alpha.20
+
+### Patch Changes
+
+- Updated dependencies [4a060fb]
+    - @ton/walletkit@1.0.0
+
+## 0.1.15-alpha.20
+
+### Patch Changes
+
+- Updated dependencies [912e0a2]
+    - @ton/walletkit@1.0.0-alpha.4
+
+## 0.1.15-alpha.19
+
+### Patch Changes
+
+- Fixed a transaction creation bug caused by an incorrect input cell format. Thanks @trypartyhard for the report.
+
+## 0.1.15-alpha.18
+
+### Patch Changes
+
+- Updated dependencies
+    - @ton/walletkit@1.0.0-alpha.3
+
+## 0.1.15-alpha.17
+
+### Patch Changes
+
+- Updated dependencies [c1f0edf]
+- Updated dependencies [864636c]
+    - @ton/walletkit@1.0.0-alpha.2
+
+## 0.1.15-alpha.16
+
+### Patch Changes
+
+- 8704846: Added `ApiClient.getAccountStates(addresses)` — batched fetch for up to 100 accounts, uniform `non-existing` for missing addresses across providers.
+
+    Breaking changes to `AccountState` (was `FullAccountState`):
+    - Renamed and moved to `api/models/blockchain/`.
+    - New required `address` field, `balance` split into `rawBalance` (nanotons) + `balance` (formatted TON).
+    - `code`, `data`, `lastTransaction` are now optional instead of `| null`.
+    - `status` uses the unified `AccountStatus` string union (`'active' | 'uninitialized' | 'frozen' | 'non-existing'`); the discriminated `TransactionAccountStatus` and `EmulationAccountStatus` have been removed.
+
+    Also fixed a bug in `BaseApiClient.buildUrl` where array query params were silently truncated to their last value.
+
+- Updated dependencies [f301c66]
+- Updated dependencies [8704846]
+    - @ton/walletkit@1.0.0-alpha.1
+
+## 0.1.15-alpha.15
+
+### Patch Changes
+
+- Updated dependencies [0042cc9]
+    - @ton/walletkit@0.0.12-alpha.3
+
+## 0.1.15-alpha.14
+
+### Patch Changes
+
+- 4e73308: Encrypt local TON config files on first read when an existing plaintext config is detected.
+- d8e7aa5: Added option to generate TON Proof
+- Updated dependencies [74e0b78]
+- Updated dependencies [1f552f7]
+- Updated dependencies [4a060fb]
+    - @ton/walletkit@0.0.12-alpha.2
+
 ## 0.1.15-alpha.13
 
 ### Patch Changes

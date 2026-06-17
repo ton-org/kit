@@ -6,16 +6,27 @@
  *
  */
 
-import { DefiManagerError } from '../errors';
+import { DefiError } from '../errors';
 
-export class GaslessError extends DefiManagerError {
-    static readonly UNSUPPORTED_FEE_JETTON = 'UNSUPPORTED_FEE_JETTON';
-    static readonly ESTIMATE_FAILED = 'ESTIMATE_FAILED';
-    static readonly SEND_FAILED = 'SEND_FAILED';
-    static readonly CONFIG_FAILED = 'CONFIG_FAILED';
+export enum GaslessErrorCode {
+    UnsupportedFeeAsset = 'UNSUPPORTED_FEE_ASSET',
+    UnsupportedOperation = 'UNSUPPORTED_OPERATION',
+    QuoteFailed = 'QUOTE_FAILED',
+    SendFailed = 'SEND_FAILED',
+    ConfigFailed = 'CONFIG_FAILED',
+    SignMessageNotSupported = 'SIGN_MESSAGE_NOT_SUPPORTED',
+    TooManyMessages = 'TOO_MANY_MESSAGES',
+    QuoteExpired = 'QUOTE_EXPIRED',
+    WalletMismatch = 'WALLET_MISMATCH',
+    FeeAssetNotOwned = 'FEE_ASSET_NOT_OWNED',
+}
 
-    constructor(message: string, code: string, details?: unknown) {
+export class GaslessError extends DefiError {
+    public readonly code: GaslessErrorCode;
+
+    constructor(message: string, code: GaslessErrorCode, details?: unknown) {
         super(message, code, details);
         this.name = 'GaslessError';
+        this.code = code;
     }
 }

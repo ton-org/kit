@@ -6,23 +6,79 @@
  *
  */
 
-import type { CryptoOnrampStatus } from '../../../api/models';
+import type { CryptoOnrampDestinationCurrency, CryptoOnrampStatus } from '../../../api/models';
+import { Caip2ByNetwork } from '../caip2';
+import { CryptoOnrampErrorCode } from '../errors';
 import type { LayerswapErrorResponse, LayerswapSwapStatus } from './types';
 
-const EVM_ADDRESS_REGEX = /^(0x)?[0-9a-fA-F]{40}$/;
-
-export const ARBITRUM_CHAIN_ID = '42161';
-export const ARBITRUM_USDT0_ADDRESS = '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9';
-export const TON_USDT_ADDRESS = 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs';
-
-export const LAYERSWAP_SOURCE_NETWORK = 'ARBITRUM_MAINNET';
-export const LAYERSWAP_SOURCE_TOKEN = 'USDT0';
 export const LAYERSWAP_DESTINATION_NETWORK = 'TON_MAINNET';
-export const LAYERSWAP_DESTINATION_TOKEN = 'USDT';
 
-export const isEvmAddress = (address: string): boolean => {
-    return EVM_ADDRESS_REGEX.test(address);
+/**
+ * Per-source-chain configuration for Layerswap.
+ */
+export interface LayerswapChainConfig {
+    /** Layerswap network slug, e.g. `'ETHEREUM_MAINNET'`. */
+    slug: string;
+    /**
+     * Source-format regex (string form) used to validate the optional `refundAddress`
+     * supplied for this chain. Stored as a string so overrides stay easy to serialize.
+     * Format-only — checksums are not verified here; Layerswap's API does that.
+     */
+    addressRegex: string;
+}
+
+const EVM_ADDRESS_REGEX = '^0x[0-9a-fA-F]{40}$';
+const SOLANA_ADDRESS_REGEX = '^[1-9A-HJ-NP-Za-km-z]{32,44}$';
+const BITCOIN_ADDRESS_REGEX = '^([13][1-9A-HJ-NP-Za-km-z]{25,34}|bc1[02-9ac-hj-np-z]{6,87})$';
+const TRON_ADDRESS_REGEX = '^T[1-9A-HJ-NP-Za-km-z]{33}$';
+
+/**
+ * Default mapping of CAIP-2 source chains to Layerswap network configs.
+ * Used by `LayerswapCryptoOnrampProvider` when no override is passed via config.
+ * Exported so consumers can spread/extend it rather than redefining from scratch.
+ */
+export const DEFAULT_LAYERSWAP_SUPPORTED_CHAINS: Record<string, LayerswapChainConfig> = {
+    [Caip2ByNetwork.EthereumMainnet]: { slug: 'ETHEREUM_MAINNET', addressRegex: EVM_ADDRESS_REGEX },
+    [Caip2ByNetwork.OptimismMainnet]: { slug: 'OPTIMISM_MAINNET', addressRegex: EVM_ADDRESS_REGEX },
+    [Caip2ByNetwork.BscMainnet]: { slug: 'BSC_MAINNET', addressRegex: EVM_ADDRESS_REGEX },
+    [Caip2ByNetwork.PolygonMainnet]: { slug: 'POLYGON_MAINNET', addressRegex: EVM_ADDRESS_REGEX },
+    [Caip2ByNetwork.BaseMainnet]: { slug: 'BASE_MAINNET', addressRegex: EVM_ADDRESS_REGEX },
+    [Caip2ByNetwork.ArbitrumMainnet]: { slug: 'ARBITRUM_MAINNET', addressRegex: EVM_ADDRESS_REGEX },
+    [Caip2ByNetwork.AvalancheMainnet]: { slug: 'AVALANCHE_MAINNET', addressRegex: EVM_ADDRESS_REGEX },
+    [Caip2ByNetwork.SolanaMainnet]: { slug: 'SOLANA_MAINNET', addressRegex: SOLANA_ADDRESS_REGEX },
+    [Caip2ByNetwork.BitcoinMainnet]: { slug: 'BITCOIN_MAINNET', addressRegex: BITCOIN_ADDRESS_REGEX },
+    [Caip2ByNetwork.TronMainnet]: { slug: 'TRON_MAINNET', addressRegex: TRON_ADDRESS_REGEX },
 };
+
+/**
+ * Default set of TON-side destination tokens queried via `/sources`. Drives which
+ * source (chain, token) pairs the provider discovers — Layerswap is asked for each
+ * destination token in turn, and the union is returned from `getSupportedCurrencies`.
+ * Exported so consumers can spread/extend it.
+ */
+export const LAYERSWAP_DESTINATION_TOKENS: CryptoOnrampDestinationCurrency[] = [
+    {
+        address: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs',
+        symbol: 'USDT',
+        name: 'Tether',
+        decimals: 6,
+        logo: 'https://cdn.layerswap.io/layerswap/currencies/usdt.png',
+    },
+    {
+        address: 'ton',
+        symbol: 'GRAM',
+        name: 'Gram',
+        decimals: 9,
+        logo: 'https://s2.coinmarketcap.com/static/img/coins/200x200/11419.png',
+    },
+];
+
+/**
+ * The SDK surfaces native Toncoin as `'GRAM'`, but Layerswap identifies it by the `'TON'` token
+ * symbol in its API. Map the destination symbol back before sending it (`destination_token`,
+ * `/sources` discovery); any other symbol is returned unchanged.
+ */
+export const toLayerswapDestinationToken = (symbol: string): string => (symbol === 'GRAM' ? 'TON' : symbol);
 
 export const isErrorResponse = (body: unknown): body is LayerswapErrorResponse => {
     return (
@@ -31,6 +87,38 @@ export const isErrorResponse = (body: unknown): body is LayerswapErrorResponse =
         typeof (body as { error?: unknown }).error === 'object' &&
         (body as { error: { message?: unknown } }).error !== null
     );
+};
+
+/**
+ * Translate a Layerswap-specific API error into a provider-agnostic CryptoOnrampError code.
+ *
+ * Layerswap reuses `VALIDATION_ERROR` for unsupported source/destination tokens — the only
+ * differentiator is the network name in the message. Source/destination is disambiguated by
+ * checking whether the message references {@link LAYERSWAP_DESTINATION_NETWORK} (TON). When
+ * the message shape changes, the parser falls back to the caller's fallback code.
+ */
+export const mapLayerswapErrorCode = (
+    apiCode: string | undefined,
+    apiMessage: string | undefined,
+    fallback: CryptoOnrampErrorCode,
+): CryptoOnrampErrorCode => {
+    switch (apiCode) {
+        case 'ROUTE_NOT_FOUND_ERROR':
+            return CryptoOnrampErrorCode.RouteNotFound;
+        case 'GREATER_THAN_MAX_ERROR':
+            return CryptoOnrampErrorCode.AmountTooLarge;
+        case 'LESS_THAN_MIN_ERROR':
+            return CryptoOnrampErrorCode.AmountTooSmall;
+        case 'VALIDATION_ERROR':
+            if (apiMessage && /is not supported on/.test(apiMessage)) {
+                return apiMessage.includes(`'${LAYERSWAP_DESTINATION_NETWORK}'`)
+                    ? CryptoOnrampErrorCode.UnsupportedDestinationToken
+                    : CryptoOnrampErrorCode.UnsupportedSourceToken;
+            }
+            return fallback;
+        default:
+            return fallback;
+    }
 };
 
 export const mapStatus = (status: LayerswapSwapStatus | string): CryptoOnrampStatus => {
@@ -52,7 +140,7 @@ export const mapStatus = (status: LayerswapSwapStatus | string): CryptoOnrampSta
         case 'requires_refund':
             return 'failed';
         default:
-            throw new Error(`Unknown Layerswap status: ${status}`);
+            return 'pending';
     }
 };
 

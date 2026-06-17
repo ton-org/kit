@@ -46,7 +46,7 @@ export interface TransactionTraceMoneyFlowItem {
     assetType: AssetType;
 
     /**
-     * Amount being transferred (for TON/Jetton)
+     * Amount being transferred (for GRAM/Jetton)
      */
     amount: TokenAmount;
 

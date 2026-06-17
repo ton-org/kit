@@ -6,32 +6,32 @@
  *
  */
 
+import type { CryptoOnrampDestinationCurrency, CryptoOnrampSourceCurrency } from './CryptoOnrampCurrency';
+
 /**
- * Crypto onramp quote response with pricing information
+ * Crypto onramp quote response with pricing information.
  */
 export interface CryptoOnrampQuote<TMetadata = unknown> {
     /**
-     * Source crypto currency address (contract address or 0x0... for native)
+     * Source currency that will be spent. Mirrors the `sourceCurrency` from quote params,
+     * possibly normalised by the provider.
      */
-    sourceCurrencyAddress: string;
+    sourceCurrency: CryptoOnrampSourceCurrency;
 
     /**
-     * Source network identifier (e.g. 'solana')
+     * Target currency on TON the user receives.
      */
-    sourceNetwork: string;
+    targetCurrency: CryptoOnrampDestinationCurrency;
 
     /**
-     * Target crypto currency address on TON (contract address or 0x0... for native)
-     */
-    targetCurrencyAddress: string;
-
-    /**
-     * Amount of source crypto to send
+     * Amount of source crypto to send (in base units of `sourceCurrency.decimals`).
+     * @format int
      */
     sourceAmount: string;
 
     /**
-     * Amount of target crypto to receive
+     * Amount of target crypto to receive (in base units of `targetCurrency.decimals`).
+     * @format int
      */
     targetAmount: string;
 
@@ -39,6 +39,11 @@ export interface CryptoOnrampQuote<TMetadata = unknown> {
      * Exchange rate (amount of target per 1 unit of source)
      */
     rate: string;
+
+    /**
+     * TON address that will receive the target crypto
+     */
+    recipientAddress: string;
 
     /**
      * Identifier of the crypto onramp provider

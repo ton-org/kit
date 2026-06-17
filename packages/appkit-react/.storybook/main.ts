@@ -17,7 +17,10 @@ import { dirname } from 'node:path';
  */
 
 import type { StorybookConfig } from '@storybook/react-vite';
-import { nodePolyfills } from 'vite-plugin-node-polyfills';
+
+const getAbsolutePath = (value: string): string => {
+    return dirname(fileURLToPath(import.meta.resolve(`${value}/package.json`)));
+};
 
 const config: StorybookConfig = {
     stories: ['../src/**/*.stories.@(ts|tsx)'],
@@ -33,7 +36,6 @@ const config: StorybookConfig = {
     viteFinal: async (viteConfig) => {
         return {
             ...viteConfig,
-            plugins: [...(viteConfig.plugins ?? []), nodePolyfills()],
             resolve: {
                 ...viteConfig.resolve,
                 alias: {
@@ -66,7 +68,3 @@ const config: StorybookConfig = {
 };
 
 export default config;
-
-function getAbsolutePath(value: string) {
-    return dirname(fileURLToPath(import.meta.resolve(`${value}/package.json`)));
-}

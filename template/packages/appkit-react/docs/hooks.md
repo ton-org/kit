@@ -184,48 +184,131 @@ Hook to build a transaction for a swap operation based on a quote.
 
 ### `useSwapProvider`
 
-Hook to get a specific swap provider. Returns the provider instance directly or `null` if not found.
+Hook to read and change the currently selected swap provider. Returns a tuple `[provider, setProviderId]` — mirrors `useSelectedWallet`.
 
 %%demo/examples/src/appkit/hooks/swap#USE_SWAP_PROVIDER%%
 
-## Onramp
+### `useSwapProviders`
 
-### `useOnrampQuote`
+Hook to get all registered swap providers. The returned array keeps a stable reference until the provider list changes, so it is safe to use with `useSyncExternalStore`.
 
-Hook to get an onramp quote for a specific fiat/crypto pair.
+%%demo/examples/src/appkit/hooks/swap#USE_SWAP_PROVIDERS%%
 
-%%demo/examples/src/appkit/hooks/onramp#USE_ONRAMP_QUOTE%%
+## Crypto Onramp
 
-### `useOnrampProvider`
+### `useCryptoOnrampProvider`
 
-Hook to get a specific onramp provider.
+Hook to get a registered crypto-onramp provider by id, or the default one when no id is given.
 
-%%demo/examples/src/appkit/hooks/onramp#USE_ONRAMP_PROVIDER%%
+%%demo/examples/src/appkit/hooks/onramp#USE_CRYPTO_ONRAMP_PROVIDER%%
 
-### `useOnrampProviders`
+### `useCryptoOnrampProviders`
 
-Hook to get all registered onramp providers.
+Hook to get all registered crypto-onramp providers.
 
-### `useBuildOnrampUrl`
+%%demo/examples/src/appkit/hooks/onramp#USE_CRYPTO_ONRAMP_PROVIDERS%%
 
-Hook to build an onramp URL for redirecting the user to the provider.
+### `useCryptoOnrampProviderMetadata`
+
+Hook to get static metadata for a crypto-onramp provider (display name, logo, url).
+
+%%demo/examples/src/appkit/hooks/onramp#USE_CRYPTO_ONRAMP_PROVIDER_METADATA%%
 
 ## Staking
 
-### Staking Hooks
+### `useStakingProviders`
 
-These hooks allow you to interact with staking providers directly.
+Hook to get all registered staking providers. The returned array keeps a stable reference until the provider list changes.
 
-#### `useStakingQuote`
-Get a quote for staking or unstaking.
+%%demo/examples/src/appkit/hooks/staking#USE_STAKING_PROVIDERS%%
 
-#### `useStakedBalance`
-Get the user's staked balance.
+### `useStakingProvider`
 
-#### `useStakingProviderMetadata`
-Get static metadata about a specific staking provider.
+Hook to get a specific staking provider by id (or the default when no id is passed).
 
-%%demo/examples/src/appkit/hooks/staking#USE_STAKING%%
+%%demo/examples/src/appkit/hooks/staking#USE_STAKING_PROVIDER%%
+
+### `useStakingQuote`
+
+Hook to get a quote for staking or unstaking a given amount.
+
+%%demo/examples/src/appkit/hooks/staking#USE_STAKING_QUOTE%%
+
+### `useStakedBalance`
+
+Hook to get the user's currently staked balance.
+
+%%demo/examples/src/appkit/hooks/staking#USE_STAKED_BALANCE%%
+
+### `useStakingProviderInfo`
+
+Hook to get live info about a staking provider (APY, limits, etc.).
+
+%%demo/examples/src/appkit/hooks/staking#USE_STAKING_PROVIDER_INFO%%
+
+### `useStakingProviderMetadata`
+
+Hook to get static metadata about a staking provider (name, receive token, etc.).
+
+%%demo/examples/src/appkit/hooks/staking#USE_STAKING_PROVIDER_METADATA%%
+
+### `useBuildStakeTransaction`
+
+Hook to build a stake transaction from a previously fetched quote.
+
+%%demo/examples/src/appkit/hooks/staking#USE_BUILD_STAKE_TRANSACTION%%
+
+## Gasless
+
+Gasless lets a dApp submit on-chain transactions without the user holding TON for gas: a relayer co-signs and broadcasts the transaction, charging the user a fee in a relayer-accepted asset (e.g. USDT). The connected wallet must support the `SignMessage` TonConnect feature. See the [gasless guide](https://github.com/ton-connect/kit/blob/main/packages/appkit/docs/gasless.md) for a regular-send → gasless-send migration.
+
+### `useGaslessProviders`
+
+Hook to get all registered gasless providers.
+
+%%demo/examples/src/appkit/hooks/gasless#USE_GASLESS_PROVIDERS%%
+
+### `useGaslessProvider`
+
+Hook to get the current default gasless provider and a setter to switch the default.
+
+%%demo/examples/src/appkit/hooks/gasless#USE_GASLESS_PROVIDER%%
+
+### `useGaslessProviderMetadata`
+
+Hook to fetch static metadata (display name, logo, url) for a gasless provider.
+
+%%demo/examples/src/appkit/hooks/gasless#USE_GASLESS_PROVIDER_METADATA%%
+
+### `useGaslessConfig`
+
+Hook to fetch the gasless relayer's configuration — relay address (e.g. for jetton-transfer `responseDestination`) and accepted fee assets.
+
+%%demo/examples/src/appkit/hooks/gasless#USE_GASLESS_CONFIG%%
+
+### `useGaslessQuote`
+
+Hook to fetch a gasless quote. Auto-refetches as inputs change; cached results become stale after ~2 minutes (matches the relayer `validUntil` window). Omit `feeAsset` for free / sponsored providers — jetton-fee providers throw `GaslessError(UNSUPPORTED_OPERATION)` in that case.
+
+%%demo/examples/src/appkit/hooks/gasless#USE_GASLESS_QUOTE%%
+
+### `useGaslessJettonTransferQuote`
+
+Hook to fetch a gasless quote for a jetton transfer from semantic params (`jettonAddress`, `recipientAddress`, `amount`, `feeAsset`) — no manual message building. Auto-refetches as inputs change and on wallet/network switch.
+
+%%demo/examples/src/appkit/hooks/gasless#USE_GASLESS_JETTON_TRANSFER_QUOTE%%
+
+### `useSendGaslessTransaction`
+
+Hook to sign a previously computed quote and submit the resulting BoC to the relayer. Returns a `GaslessSendResponse` (`{ boc, normalizedBoc, normalizedHash, internalBoc }`).
+
+Throws:
+- `GaslessError(QUOTE_EXPIRED)` if the quote's `validUntil` window has passed (checked before signing).
+- `GaslessError(WALLET_MISMATCH)` if the quote was issued for a different address than the selected wallet.
+- `GaslessError(SIGN_MESSAGE_NOT_SUPPORTED)` if the wallet does not advertise `SignMessage`.
+- `GaslessError(TOO_MANY_MESSAGES)` if the quote carries more messages than the wallet's `maxMessages` cap.
+
+%%demo/examples/src/appkit/hooks/gasless#USE_SEND_GASLESS_TRANSACTION%%
 
 ## Transaction
 
@@ -302,5 +385,17 @@ Hook to disconnect a wallet.
 Hook to get and set the currently selected wallet.
 
 %%demo/examples/src/appkit/hooks/wallets#USE_SELECTED_WALLET%%
+
+### `useSignMessageSupport`
+
+Hook to check whether the selected wallet advertises the `SignMessage` feature (required for gasless). Reactive to wallet selection changes; fail-closed (`false`) when no wallet is selected or features aren't advertised.
+
+%%demo/examples/src/appkit/hooks/wallets#USE_SIGN_MESSAGE_SUPPORT%%
+
+### `useCustomProvider`
+
+Hook to get a registered custom provider by id.
+
+%%demo/examples/src/appkit/hooks/providers#USE_CUSTOM_PROVIDER%%
 
 

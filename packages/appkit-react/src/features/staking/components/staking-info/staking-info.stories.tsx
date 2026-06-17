@@ -12,7 +12,7 @@ import { UnstakeMode, Network } from '@ton/appkit';
 import { StakingInfo } from './staking-info';
 
 const meta: Meta<typeof StakingInfo> = {
-    title: 'Public/Features/Staking/Internal/StakingInfo',
+    title: 'Features/Staking/Internal/StakingInfo',
     component: StakingInfo,
 };
 
@@ -23,10 +23,10 @@ const mockMetadata = {
     providerId: 'tonstakers',
     name: 'Tonstakers',
     description: 'Staking provider',
-    image: 'https://asset.ston.fi/img/EQC98_qAmNEptUtPc7W6xdHh_ZHrBUFpw5Ft_IzNU20QAJav/38f530facb209e4696b8aef17af51df94d16bd879926c517b07d25841da287b7',
+    logo: './tokens/tston.svg',
     stakeToken: {
-        symbol: 'TON',
-        ticker: 'TON',
+        symbol: 'GRAM',
+        ticker: 'GRAM',
         decimals: 9,
         address: 'ton',
     },
@@ -34,7 +34,7 @@ const mockMetadata = {
         symbol: 'tsTON',
         ticker: 'tsTON',
         decimals: 9,
-        address: 'UQC98_qAmNEptUtPc7W6xdHh_ZHrBUFpw5Ft_IzNU20QAMtq',
+        address: 'EQC98_qAmNEptUtPc7W6xdHh_ZHrBUFpw5Ft_IzNU20QAJav',
     },
     supportedUnstakeModes: [UnstakeMode.INSTANT, UnstakeMode.ROUND_END],
     supportsReversedQuote: false,
@@ -42,7 +42,7 @@ const mockMetadata = {
 
 const mockProviderInfo = {
     apy: 4.5,
-    exchangeRate: '1.05',
+    exchangeRate: '0.909090909',
     instantUnstakeAvailable: '10000000000',
 };
 

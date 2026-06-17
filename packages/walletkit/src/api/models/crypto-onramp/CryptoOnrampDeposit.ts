@@ -6,12 +6,13 @@
  *
  */
 
+import type { CryptoOnrampSourceCurrency } from './CryptoOnrampCurrency';
+
 /**
  * Deposit details returned by a crypto onramp provider.
  *
- * The user must send `amount` of `sourceCurrencyAddress` to `address` on `sourceNetwork`
- * to complete the onramp; the provider then delivers the target crypto to the
- * user's TON address.
+ * The user must send `amount` of `sourceCurrency` to `address` to complete the onramp;
+ * the provider then delivers the target crypto to the user's TON address.
  */
 export interface CryptoOnrampDeposit {
     /**
@@ -25,19 +26,14 @@ export interface CryptoOnrampDeposit {
     address: string;
 
     /**
-     * Exact amount of source crypto the user must send
+     * Exact amount of source crypto the user must send (in base units of `sourceCurrency.decimals`).
      */
     amount: string;
 
     /**
-     * Source crypto currency address (contract address or 0x0... for native)
+     * Source currency the user is sending. Mirrors the `sourceCurrency` from the originating quote.
      */
-    sourceCurrencyAddress: string;
-
-    /**
-     * Source network identifier (e.g. 'solana')
-     */
-    sourceNetwork: string;
+    sourceCurrency: CryptoOnrampSourceCurrency;
 
     /**
      * Optional memo / tag required by some chains (e.g. XRP, TON comment)
@@ -48,11 +44,6 @@ export interface CryptoOnrampDeposit {
      * Unix timestamp (ms) after which the deposit offer is no longer valid
      */
     expiresAt?: number;
-
-    /**
-     * Network-specific warning to show the user (e.g. "send only on Solana")
-     */
-    networkWarning?: string;
 
     /**
      * Identifier of the provider that issued this deposit

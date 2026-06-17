@@ -10,3 +10,8 @@
     line-height: 20px;
     color: var(--ta-color-text-secondary);
 }
+
+.buttons {
+    display: flex;
+    gap: 8px;
+}

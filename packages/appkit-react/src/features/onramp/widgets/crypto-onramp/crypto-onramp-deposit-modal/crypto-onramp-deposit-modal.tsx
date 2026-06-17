@@ -10,16 +10,23 @@ import { useState } from 'react';
 import type { FC } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import type { CryptoOnrampStatus } from '@ton/appkit';
-import { formatLargeValue, truncateDecimals } from '@ton/appkit';
 
-import { Modal } from '../../../../../components/modal';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../../../components/tabs';
-import { Skeleton } from '../../../../../components/skeleton';
+import { Button } from '../../../../../components/ui/button';
+import { CopyButton } from '../../../../../components/shared/copy-button';
+import { Modal } from '../../../../../components/ui/modal';
+import { Skeleton } from '../../../../../components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../../../components/ui/tabs';
 import { useI18n } from '../../../../settings/hooks/use-i18n';
+import { formatOnrampAmount } from '../utils/format-onramp-amount';
+import { truncateAddress } from '../utils/truncate-address';
 import styles from './crypto-onramp-deposit-modal.module.css';
-import { Button } from '../../../../../components/button';
 
 type QrTab = 'address' | 'memo';
+
+const QR_SIZE = 200;
+const QR_LOGO_SIZE = 40;
+const BALANCE_SKELETON_WIDTH = 80;
+const BALANCE_SKELETON_HEIGHT = 16;
 
 export interface CryptoOnrampDepositModalProps {
     open: boolean;
@@ -34,10 +41,12 @@ export interface CryptoOnrampDepositModalProps {
     depositStatus: CryptoOnrampStatus | null;
     /** Optional memo / tag / comment */
     memo?: string;
+    /** Optional refund address the user provided on the source network */
+    refundAddress?: string;
     /** URL of the token logo to embed in the QR code center */
     tokenLogo?: string;
-    /** Optional network-specific warning message */
-    networkWarning?: string;
+    /** Display name of the source network. When provided (with `symbol`), the standard chain warning is shown. */
+    networkName?: string;
     /** Symbol of the target token the user is buying */
     targetSymbol?: string;
     /** User's formatted balance of the target token */
@@ -47,30 +56,6 @@ export interface CryptoOnrampDepositModalProps {
     /** Whether the target balance is loading */
     isLoadingTargetBalance?: boolean;
 }
-
-const CopyIcon: FC = () => (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect x="5.5" y="5.5" width="8" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.2" />
-        <path
-            d="M3.5 10.5H3a1.5 1.5 0 0 1-1.5-1.5V3A1.5 1.5 0 0 1 3 1.5h6A1.5 1.5 0 0 1 10.5 3v.5"
-            stroke="currentColor"
-            strokeWidth="1.2"
-            strokeLinecap="round"
-        />
-    </svg>
-);
-
-const CheckIcon: FC = () => (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path
-            d="M3 8l3.5 3.5L13 4.5"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        />
-    </svg>
-);
 
 const WarningIcon: FC = () => (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -83,29 +68,6 @@ const WarningIcon: FC = () => (
     </svg>
 );
 
-const useCopy = (text: string): [boolean, () => void] => {
-    const [copied, setCopied] = useState(false);
-
-    const copy = () => {
-        navigator.clipboard.writeText(text).then(() => {
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-        });
-    };
-
-    return [copied, copy];
-};
-
-const truncateAddress = (address: string): string => {
-    if (address.length <= 20) return address;
-    return `${address.slice(0, 10)}...${address.slice(-8)}`;
-};
-
-const formatBalance = (amount?: string, decimals?: number) => {
-    const trimmed = truncateDecimals(amount || '0', Math.min(5, decimals || 9));
-    return formatLargeValue(trimmed, decimals);
-};
-
 export const CryptoOnrampDepositModal: FC<CryptoOnrampDepositModalProps> = ({
     open,
     onClose,
@@ -113,8 +75,9 @@ export const CryptoOnrampDepositModal: FC<CryptoOnrampDepositModalProps> = ({
     amount,
     symbol,
     memo,
+    refundAddress,
     tokenLogo,
-    networkWarning,
+    networkName,
     depositStatus,
     targetSymbol,
     targetBalance,
@@ -122,13 +85,11 @@ export const CryptoOnrampDepositModal: FC<CryptoOnrampDepositModalProps> = ({
     isLoadingTargetBalance,
 }) => {
     const { t } = useI18n();
-    const [amountCopied, copyAmount] = useCopy(`${amount} ${symbol}`);
-    const [addressCopied, copyAddress] = useCopy(address);
-    const [memoCopied, copyMemo] = useCopy(memo ?? '');
     const [qrTab, setQrTab] = useState<QrTab>('address');
 
-    const qrImageSettings = tokenLogo ? { src: tokenLogo, width: 40, height: 40, excavate: true } : undefined;
-
+    const qrImageSettings = tokenLogo
+        ? { src: tokenLogo, width: QR_LOGO_SIZE, height: QR_LOGO_SIZE, excavate: true }
+        : undefined;
     const qrValue = memo && qrTab === 'memo' ? memo : address;
 
     return (
@@ -144,7 +105,7 @@ export const CryptoOnrampDepositModal: FC<CryptoOnrampDepositModalProps> = ({
                             <div className={styles.qrWrapper}>
                                 <QRCodeSVG
                                     value={address}
-                                    size={200}
+                                    size={QR_SIZE}
                                     level="H"
                                     bgColor="transparent"
                                     fgColor="var(--ta-color-text)"
@@ -156,7 +117,7 @@ export const CryptoOnrampDepositModal: FC<CryptoOnrampDepositModalProps> = ({
                             <div className={styles.qrWrapper}>
                                 <QRCodeSVG
                                     value={memo}
-                                    size={200}
+                                    size={QR_SIZE}
                                     level="H"
                                     bgColor="transparent"
                                     fgColor="var(--ta-color-text)"
@@ -168,7 +129,7 @@ export const CryptoOnrampDepositModal: FC<CryptoOnrampDepositModalProps> = ({
                     <div className={styles.qrWrapper}>
                         <QRCodeSVG
                             value={qrValue}
-                            size={200}
+                            size={QR_SIZE}
                             level="H"
                             bgColor="transparent"
                             fgColor="var(--ta-color-text)"
@@ -177,7 +138,16 @@ export const CryptoOnrampDepositModal: FC<CryptoOnrampDepositModalProps> = ({
                     </div>
                 )}
 
-                <p className={styles.infoTitle}>{t('cryptoOnramp.sendExactAmount')}</p>
+                {networkName && symbol && (
+                    <div className={styles.warning}>
+                        <span className={styles.warningIcon}>
+                            <WarningIcon />
+                        </span>
+                        <p className={styles.warningText}>
+                            {t('cryptoOnramp.chainWarning', { symbol, network: networkName })}
+                        </p>
+                    </div>
+                )}
 
                 <div className={styles.infoCard}>
                     <div className={styles.infoRow}>
@@ -186,14 +156,7 @@ export const CryptoOnrampDepositModal: FC<CryptoOnrampDepositModalProps> = ({
                             <span className={styles.infoValue}>
                                 {amount} {symbol}
                             </span>
-                            <button
-                                type="button"
-                                className={styles.copyButton}
-                                onClick={copyAmount}
-                                aria-label="Copy amount"
-                            >
-                                {amountCopied ? <CheckIcon /> : <CopyIcon />}
-                            </button>
+                            <CopyButton value={amount} aria-label={t('cryptoOnramp.copyAmount')} />
                         </div>
                     </div>
 
@@ -203,16 +166,25 @@ export const CryptoOnrampDepositModal: FC<CryptoOnrampDepositModalProps> = ({
                         <span className={styles.infoLabel}>{t('cryptoOnramp.toThisAddress')}</span>
                         <div className={styles.infoValueRow}>
                             <span className={styles.infoValue}>{truncateAddress(address)}</span>
-                            <button
-                                type="button"
-                                className={styles.copyButton}
-                                onClick={copyAddress}
-                                aria-label="Copy address"
-                            >
-                                {addressCopied ? <CheckIcon /> : <CopyIcon />}
-                            </button>
+                            <CopyButton value={address} aria-label={t('cryptoOnramp.copyAddress')} />
                         </div>
                     </div>
+
+                    {refundAddress && (
+                        <>
+                            <div className={styles.divider} />
+                            <div className={styles.infoRow}>
+                                <span className={styles.infoLabel}>{t('cryptoOnramp.refundAddress')}</span>
+                                <div className={styles.infoValueRow}>
+                                    <span className={styles.infoValue}>{truncateAddress(refundAddress)}</span>
+                                    <CopyButton
+                                        value={refundAddress}
+                                        aria-label={t('cryptoOnramp.copyRefundAddress')}
+                                    />
+                                </div>
+                            </div>
+                        </>
+                    )}
 
                     {memo && (
                         <>
@@ -221,44 +193,32 @@ export const CryptoOnrampDepositModal: FC<CryptoOnrampDepositModalProps> = ({
                                 <span className={styles.infoLabel}>{t('cryptoOnramp.memoTag')}</span>
                                 <div className={styles.infoValueRow}>
                                     <span className={styles.infoValue}>{memo}</span>
-                                    <button
-                                        type="button"
-                                        className={styles.copyButton}
-                                        onClick={copyMemo}
-                                        aria-label="Copy memo"
-                                    >
-                                        {memoCopied ? <CheckIcon /> : <CopyIcon />}
-                                    </button>
+                                    <CopyButton value={memo} aria-label={t('cryptoOnramp.copyMemo')} />
                                 </div>
                             </div>
                         </>
                     )}
                 </div>
 
-                {networkWarning && (
-                    <div className={styles.warning}>
-                        <span className={styles.warningIcon}>
-                            <WarningIcon />
-                        </span>
-                        <p className={styles.warningText}>{networkWarning}</p>
-                    </div>
-                )}
-
                 {targetSymbol && (
-                    <div className={styles.balanceRow}>
-                        <span className={styles.balanceLabel}>{t('cryptoOnramp.yourBalance')}</span>
-                        {isLoadingTargetBalance ? (
-                            <Skeleton width={80} height={16} />
-                        ) : (
-                            <span className={styles.balanceValue}>
-                                {formatBalance(targetBalance || '0', targetDecimals)} {targetSymbol}
-                            </span>
-                        )}
+                    <div className={styles.infoCard}>
+                        <div className={styles.infoRow}>
+                            <span className={styles.infoLabel}>{t('cryptoOnramp.yourBalance')}</span>
+                            <div className={styles.infoValueRow}>
+                                {isLoadingTargetBalance ? (
+                                    <Skeleton width={BALANCE_SKELETON_WIDTH} height={BALANCE_SKELETON_HEIGHT} />
+                                ) : (
+                                    <span className={styles.infoValue}>
+                                        {formatOnrampAmount(targetBalance || '0', targetDecimals)} {targetSymbol}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
                     </div>
                 )}
 
                 <Button variant={depositStatus === 'success' ? 'fill' : 'gray'} size="l" fullWidth onClick={onClose}>
-                    {depositStatus === 'success' ? 'Done' : 'Close'}
+                    {depositStatus === 'success' ? t('cryptoOnramp.done') : t('cryptoOnramp.close')}
                 </Button>
 
                 {depositStatus && (

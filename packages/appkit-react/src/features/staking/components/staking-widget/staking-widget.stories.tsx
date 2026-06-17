@@ -12,7 +12,7 @@ import { Network } from '@ton/appkit';
 import { StakingWidget } from './staking-widget';
 
 const meta: Meta<typeof StakingWidget> = {
-    title: 'Public/Features/Staking/StakingWidget',
+    title: 'Features/Staking/StakingWidget',
     component: StakingWidget,
     tags: ['autodocs'],
 };
@@ -46,7 +46,7 @@ export const CustomUI: Story = {
                     }}
                 >
                     <div>
-                        <label>Stake (TON)</label>
+                        <label>Stake (GRAM)</label>
                         <input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" />
                     </div>
                     <div>

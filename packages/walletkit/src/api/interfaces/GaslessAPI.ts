@@ -6,41 +6,62 @@
  *
  */
 
-import type { GaslessConfig, GaslessEstimateParams, GaslessEstimateResult, GaslessSendParams } from '../models';
+import type {
+    GaslessConfig,
+    GaslessProviderMetadata,
+    GaslessQuote,
+    GaslessQuoteParams,
+    GaslessSendParams,
+    GaslessSendResponse,
+    Network,
+} from '../models';
 import type { DefiManagerAPI } from './DefiManagerAPI';
 import type { DefiProvider } from './DefiProvider';
 
 /**
  * Gasless API interface exposed by GaslessManager.
  *
- * Gasless lets a dApp submit on-chain transactions without the user paying TON
+ * Gasless lets a dApp submit on-chain transactions without the user paying GRAM
  * for gas: a relayer co-signs and covers the gas, taking a jetton fee in return.
  */
 export interface GaslessAPI extends DefiManagerAPI<GaslessProviderInterface> {
     /**
-     * Fetch relayer configuration (supported jettons and relay address).
+     * Get static metadata for a gasless provider (display name, logo, url).
      * @param providerId Provider identifier (optional, uses default if not specified)
      */
-    getConfig(providerId?: string): Promise<GaslessConfig>;
+    getMetadata(providerId?: string): Promise<GaslessProviderMetadata>;
 
     /**
-     * Estimate fees and obtain relayer-wrapped messages for signing.
-     *
-     * Pass the returned `messages` to `wallet.signMessage` to obtain a signed
-     * internal-message BoC, then submit it via `send`.
-     *
-     * @param params Estimation parameters (wallet identity, fee jetton, messages)
+     * Fetch the relayer's configuration on a given network — the relay address
+     * (e.g. for jetton-transfer `responseDestination`) and the assets it
+     * accepts as fee payment.
+     * @param network Network to query (optional, falls back to the provider's first supported network)
      * @param providerId Provider identifier (optional, uses default if not specified)
      */
-    estimate(params: GaslessEstimateParams, providerId?: string): Promise<GaslessEstimateResult>;
+    getConfig(network?: Network, providerId?: string): Promise<GaslessConfig>;
+
+    /**
+     * Quote fees and obtain relayer-wrapped messages for signing.
+     *
+     * Pass the returned `messages` to `wallet.signMessage` to obtain a signed
+     * internal-message BoC, then submit it via `sendTransaction`.
+     *
+     * @param params Quote parameters (network, wallet identity, fee jetton, messages)
+     * @param providerId Provider identifier (optional, uses default if not specified)
+     */
+    getQuote(params: GaslessQuoteParams, providerId?: string): Promise<GaslessQuote>;
 
     /**
      * Submit a signed transaction BoC to the relayer for on-chain execution.
      *
-     * @param params Signed message and wallet public key
+     * Returns `GaslessSendResponse` — a strict superset of `SendTransactionResponse`
+     * adding the signed `internalBoc` — so gasless and regular sends share the same
+     * `{ boc, normalizedBoc, normalizedHash }` triple for explorer / status lookup.
+     *
+     * @param params Signed message bundle (network, wallet public key, internal BoC)
      * @param providerId Provider identifier (optional, uses default if not specified)
      */
-    send(params: GaslessSendParams, providerId?: string): Promise<void>;
+    sendTransaction(params: GaslessSendParams, providerId?: string): Promise<GaslessSendResponse>;
 }
 
 /**
@@ -55,17 +76,23 @@ export interface GaslessProviderInterface extends DefiProvider {
     readonly providerId: string;
 
     /**
-     * Fetch relayer configuration (supported jettons and relay address).
+     * Get static metadata for the provider (display name, logo, url).
      */
-    getConfig(): Promise<GaslessConfig>;
+    getMetadata(): Promise<GaslessProviderMetadata>;
 
     /**
-     * Estimate fees and return relayer-wrapped messages for signing.
+     * Fetch the relayer's configuration (relay address + accepted fee assets)
+     * for the requested network.
      */
-    estimate(params: GaslessEstimateParams): Promise<GaslessEstimateResult>;
+    getConfig(network: Network): Promise<GaslessConfig>;
+
+    /**
+     * Quote fees and return relayer-wrapped messages for signing.
+     */
+    getQuote(params: GaslessQuoteParams): Promise<GaslessQuote>;
 
     /**
      * Submit a signed transaction BoC to the relayer.
      */
-    send(params: GaslessSendParams): Promise<void>;
+    sendTransaction(params: GaslessSendParams): Promise<GaslessSendResponse>;
 }

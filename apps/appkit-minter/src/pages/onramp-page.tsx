@@ -8,26 +8,26 @@
 
 import type React from 'react';
 import { CryptoOnrampWidget } from '@ton/appkit-react';
+import type { CryptoOnrampDestinationRef, CryptoOnrampSourceRef } from '@ton/appkit-react';
+import { Caip2ByNetwork } from '@ton/appkit-react';
 
-import { Card, Layout } from '@/core/components';
-import {
-    ONRAMP_DEFAULT_METHOD_ID,
-    ONRAMP_DEFAULT_TOKEN_ID,
-    ONRAMP_PAYMENT_METHODS,
-    ONRAMP_TOKENS,
-} from '@/core/configs/onramp';
+import { Layout } from '@/core/components';
 
-export const OnrampPage: React.FC = () => {
+const DEFAULT_DESTINATION: CryptoOnrampDestinationRef = {
+    address: 'ton',
+};
+
+const DEFAULT_SOURCE: CryptoOnrampSourceRef = {
+    chain: Caip2ByNetwork.ArbitrumMainnet,
+    address: '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9',
+};
+
+export const CryptoOnrampPage: React.FC = () => {
     return (
-        <Layout title="Buy">
-            <Card className="w-full max-w-[422px] mx-auto">
-                <CryptoOnrampWidget
-                    tokens={ONRAMP_TOKENS}
-                    defaultTokenId={ONRAMP_DEFAULT_TOKEN_ID}
-                    paymentMethods={ONRAMP_PAYMENT_METHODS}
-                    defaultMethodId={ONRAMP_DEFAULT_METHOD_ID}
-                />
-            </Card>
+        <Layout title="Crypto Onramp">
+            <div className="w-full max-w-[434px] mx-auto flex justify-center items-center">
+                <CryptoOnrampWidget defaultDestination={DEFAULT_DESTINATION} defaultSource={DEFAULT_SOURCE} />
+            </div>
         </Layout>
     );
 };

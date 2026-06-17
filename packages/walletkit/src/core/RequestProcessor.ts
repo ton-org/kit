@@ -16,6 +16,8 @@ import type {
     SendTransactionRpcResponseSuccess,
     SignDataRpcResponseError,
     SignDataRpcResponseSuccess,
+    SignMessageRpcResponseError,
+    SignMessageRpcResponseSuccess,
     SignDataPayload as TonConnectSignDataPayload,
     TonProofItemReply,
 } from '@tonconnect/protocol';
@@ -24,6 +26,7 @@ import {
     SEND_TRANSACTION_ERROR_CODES,
     SessionCrypto,
     SIGN_DATA_ERROR_CODES,
+    SIGN_MESSAGE_ERROR_CODES,
 } from '@tonconnect/protocol';
 import { getSecureRandomBytes } from '@ton/crypto';
 
@@ -37,7 +40,6 @@ import { getDeviceInfoForWallet } from '../utils/getDefaultWalletConfig';
 import type { WalletManager } from './WalletManager';
 import { WalletKitError, ERROR_CODES } from '../errors';
 import { HexToBase64 } from '../utils/base64';
-import { Result } from '../api/models';
 import type {
     TransactionRequest,
     SignDataPayload,
@@ -54,23 +56,31 @@ import type {
     TransactionEmulatedPreview,
     SignDataPreview,
     BridgeEvent,
-    IntentActionRequestEvent,
-    IntentActionSendTransactionRequestEvent,
-    IntentActionSignMessageRequestEvent,
-    IntentActionSignDataRequestEvent,
-    IntentConnectionResult,
     TONConnectSession,
+    EmbeddedConnectionResult,
+    EmbeddedRequestEvent,
+    EmbeddedSendTransactionRequestEvent,
+    EmbeddedSignDataRequestEvent,
+    EmbeddedSignMessageRequestEvent,
 } from '../api/models';
 import { PrepareSignData } from '../utils/signData/sign';
 import { validateBOC } from '../validation/transaction';
 import type { Wallet } from '../api/interfaces';
 import type { Analytics, AnalyticsManager } from '../analytics';
-import { createTransactionPreview } from '../utils';
-import { resolveItemsToMessages } from '../utils/itemsResolver';
+import { createTransactionPreviewIfPossible } from '../utils';
+import {
+    checkTransactionRequestItems,
+    getClientForWallet,
+    getWalletAddressFromEvent,
+    getWalletFromEvent,
+    validateTransactionRequestForWallet,
+} from '../utils/events';
 
 const log = globalLogger.createChild('RequestProcessor');
 
-function hasConnectionResult(event: BridgeEvent): event is BridgeEvent & { connectionResult: IntentConnectionResult } {
+function hasConnectionResult(
+    event: BridgeEvent,
+): event is BridgeEvent & { connectionResult: EmbeddedConnectionResult } {
     return 'connectionResult' in event;
 }
 
@@ -91,48 +101,25 @@ export class RequestProcessor {
     }
 
     /**
-     * Helper to get wallet from event, supporting both walletId and walletAddress
-     */
-    private getWalletFromEvent(event: { walletId?: string }): Wallet | undefined {
-        if (event.walletId) {
-            return this.walletManager.getWallet(event.walletId);
-        }
-        return undefined;
-    }
-
-    /**
-     * Helper to get wallet address from event
-     */
-    private getWalletAddressFromEvent(event: { walletId?: string; walletAddress?: string }): string | undefined {
-        if (event.walletAddress) {
-            return event.walletAddress;
-        }
-        if (event.walletId) {
-            return this.walletManager.getWallet(event.walletId)?.getAddress();
-        }
-        return undefined;
-    }
-
-    /**
      * Process connect request approval
      */
     async approveConnectRequest(
         event: ConnectionRequestEvent,
         response?: ConnectionApprovalResponse,
-    ): Promise<IntentActionRequestEvent | undefined> {
-        if (event.intentAction) {
-            switch (event.intentAction.method) {
+    ): Promise<EmbeddedRequestEvent | undefined> {
+        if (event.embeddedRequest) {
+            switch (event.embeddedRequest.method) {
                 case 'sendTransaction':
-                    return this.approveConnectRequestSendTransactionIntentAction(event, response);
+                    return this.approveConnectRequestSendTransactionEmbeddedRequest(event, response);
                 case 'signMessage':
-                    return this.approveConnectRequestSignMessageIntentAction(event, response);
+                    return this.approveConnectRequestSignMessageEmbeddedRequest(event, response);
                 case 'signData':
-                    return this.approveConnectRequestSignDataIntentAction(event, response);
+                    return this.approveConnectRequestSignDataEmbeddedRequest(event, response);
             }
         }
 
         try {
-            const wallet = this.validateWalletForIntent(event);
+            const wallet = this.validateWallet(event);
 
             // Create session for this connection'
             const newSession = await this.sessionManager.createSession(
@@ -192,41 +179,67 @@ export class RequestProcessor {
         }
     }
 
-    private async approveConnectRequestSendTransactionIntentAction(
+    private async getTransactionRequestAndPreview(
+        event: ConnectionRequestEvent,
+    ): Promise<{ request: TransactionRequest; preview: TransactionEmulatedPreview | undefined }> {
+        if (!event.embeddedRequest) {
+            throw new WalletKitError(
+                ERROR_CODES.INVALID_REQUEST_EVENT,
+                'Embedded request is required for send transaction',
+            );
+        }
+
+        if (event.embeddedRequest.method !== 'sendTransaction' && event.embeddedRequest.method !== 'signMessage') {
+            throw new WalletKitError(
+                ERROR_CODES.INVALID_REQUEST_EVENT,
+                'Incorrect embedded request method for send transaction or sign message',
+            );
+        }
+
+        const wallet = this.validateWallet(event);
+        const transactionRequest = event.embeddedRequest.transactionRequest;
+        const validation = validateTransactionRequestForWallet(transactionRequest, wallet, event.isLocal, false);
+        if (!validation.isValid) {
+            throw new WalletKitError(
+                ERROR_CODES.VALIDATION_ERROR,
+                `Invalid embedded transaction request: ${validation.errors.join(', ')}`,
+                undefined,
+                { errors: validation.errors },
+            );
+        }
+
+        const request = await checkTransactionRequestItems(transactionRequest, wallet);
+        const preview = await createTransactionPreviewIfPossible(
+            this.walletKitOptions,
+            wallet.client,
+            request,
+            wallet,
+            {
+                mode: event.embeddedRequest.method === 'signMessage' ? 'sign' : 'send',
+            },
+        );
+
+        return {
+            request,
+            preview,
+        };
+    }
+
+    private async approveConnectRequestSendTransactionEmbeddedRequest(
         event: ConnectionRequestEvent,
         response?: ConnectionApprovalResponse,
-    ): Promise<IntentActionSendTransactionRequestEvent> {
-        if (!event.intentAction || event.intentAction.method !== 'sendTransaction') {
-            throw new WalletKitError(ERROR_CODES.INVALID_REQUEST_EVENT, 'Incorrect intent method for send transaction');
+    ): Promise<EmbeddedSendTransactionRequestEvent> {
+        if (!event.embeddedRequest || event.embeddedRequest.method !== 'sendTransaction') {
+            throw new WalletKitError(
+                ERROR_CODES.INVALID_REQUEST_EVENT,
+                'Incorrect embedded request method for send transaction',
+            );
         }
 
-        const intentAction = event.intentAction;
-        const wallet = this.validateWalletForIntent(event);
-
-        let request = { ...intentAction.transactionRequest };
-        if (request.items && request.items.length > 0) {
-            request = { ...request, messages: await resolveItemsToMessages(request.items, wallet), items: undefined };
-        }
-
+        const { request, preview } = await this.getTransactionRequestAndPreview(event);
         const connectionResult = await this.createConnectApprovalResponse(event, response?.proof);
-        await this.createSessionForIntentAction(event);
+        await this.createSessionForEmbeddedRequest(event);
 
-        let preview: TransactionEmulatedPreview | undefined;
-
-        if (!this.walletKitOptions.eventProcessor?.disableTransactionEmulation) {
-            try {
-                preview = await CallForSuccess(() => createTransactionPreview(wallet.client, request, wallet));
-            } catch (error) {
-                log.error('Failed to create transaction preview', { error });
-                preview = {
-                    error: {
-                        code: ERROR_CODES.UNKNOWN_EMULATION_ERROR,
-                        message: 'Unknown emulation error',
-                    },
-                    result: Result.failure,
-                };
-            }
-        }
         return {
             ...event,
             type: 'sendTransaction',
@@ -234,76 +247,83 @@ export class RequestProcessor {
                 data: preview,
             },
             request,
-            connectionResult: connectionResult.result as unknown as IntentConnectionResult,
+            connectionResult: connectionResult.result as unknown as EmbeddedConnectionResult,
         };
     }
 
-    private async approveConnectRequestSignMessageIntentAction(
+    private async approveConnectRequestSignMessageEmbeddedRequest(
         event: ConnectionRequestEvent,
         response?: ConnectionApprovalResponse,
-    ): Promise<IntentActionSignMessageRequestEvent> {
-        if (!event.intentAction || event.intentAction.method !== 'signMessage') {
-            throw new WalletKitError(ERROR_CODES.INVALID_REQUEST_EVENT, 'Incorrect intent method for sign message');
+    ): Promise<EmbeddedSignMessageRequestEvent> {
+        if (!event.embeddedRequest || event.embeddedRequest.method !== 'signMessage') {
+            throw new WalletKitError(
+                ERROR_CODES.INVALID_REQUEST_EVENT,
+                'Incorrect embedded request method for sign message',
+            );
         }
 
-        const intentAction = event.intentAction;
-
-        let request = { ...intentAction.transactionRequest };
-        if (request.items && request.items.length > 0) {
-            const wallet = this.validateWalletForIntent(event);
-            request = { ...request, messages: await resolveItemsToMessages(request.items, wallet), items: undefined };
-        }
-
+        const { request, preview } = await this.getTransactionRequestAndPreview(event);
         const connectionResult = await this.createConnectApprovalResponse(event, response?.proof);
-        await this.createSessionForIntentAction(event);
+        await this.createSessionForEmbeddedRequest(event);
 
         return {
             ...event,
             type: 'signMessage',
+            preview: {
+                data: preview,
+            },
             request,
-            connectionResult: connectionResult.result as unknown as IntentConnectionResult,
+            connectionResult: connectionResult.result as unknown as EmbeddedConnectionResult,
         };
     }
 
-    private async approveConnectRequestSignDataIntentAction(
+    private async approveConnectRequestSignDataEmbeddedRequest(
         event: ConnectionRequestEvent,
         response?: ConnectionApprovalResponse,
-    ): Promise<IntentActionSignDataRequestEvent> {
-        if (!event.intentAction || event.intentAction.method !== 'signData') {
-            throw new WalletKitError(ERROR_CODES.INVALID_REQUEST_EVENT, 'Incorrect intent method for sign data');
+    ): Promise<EmbeddedSignDataRequestEvent> {
+        if (!event.embeddedRequest || event.embeddedRequest.method !== 'signData') {
+            throw new WalletKitError(
+                ERROR_CODES.INVALID_REQUEST_EVENT,
+                'Incorrect embedded request method for sign data',
+            );
         }
 
-        const intentAction = event.intentAction;
+        const embeddedRequest = event.embeddedRequest;
         const connectionResult = await this.createConnectApprovalResponse(event, response?.proof);
-        const session = await this.createSessionForIntentAction(event);
+        const session = await this.createSessionForEmbeddedRequest(event);
 
         return {
             ...event,
             domain: session.domain,
             type: 'signData',
-            payload: intentAction.payload,
+            payload: embeddedRequest.payload,
             preview: {
                 dAppInfo: event.dAppInfo ?? {},
-                data: this.createSignDataPreview(intentAction.payload),
+                data: this.createSignDataPreview(embeddedRequest.payload),
             },
-            connectionResult: connectionResult.result as unknown as IntentConnectionResult,
+            connectionResult: connectionResult.result as unknown as EmbeddedConnectionResult,
         };
     }
 
     /**
-     * Validate wallet exists for an intent action. Shared by all intent handlers.
+     * Validate wallet exists for an embedded request. Shared by all embedded request handlers.
      */
-    private validateWalletForIntent(event: ConnectionRequestEvent): Wallet {
+    private validateWallet(event: ConnectionRequestEvent): Wallet {
         const walletId = event.walletId;
         if (!walletId) {
-            throw new WalletKitError(ERROR_CODES.WALLET_REQUIRED, 'Wallet is required for intent approval', undefined, {
-                eventId: event.id,
-            });
+            throw new WalletKitError(
+                ERROR_CODES.WALLET_REQUIRED,
+                'Wallet is required for embedded request approval',
+                undefined,
+                {
+                    eventId: event.id,
+                },
+            );
         }
 
-        const wallet = this.getWalletFromEvent(event);
+        const wallet = getWalletFromEvent(this.walletManager, event);
         if (!wallet) {
-            throw new WalletKitError(ERROR_CODES.WALLET_NOT_FOUND, 'Wallet not found for intent', undefined, {
+            throw new WalletKitError(ERROR_CODES.WALLET_NOT_FOUND, 'Wallet not found for embedded request', undefined, {
                 walletId,
                 eventId: event.id,
             });
@@ -330,13 +350,16 @@ export class RequestProcessor {
     }
 
     /**
-     * Create session and bridge session for an intent action event before sending the combined response.
+     * Create session and bridge session for an embedded request event before sending the combined response.
      * Mirrors the session creation in approveConnectRequest.
      */
-    private async createSessionForIntentAction(event: BridgeEvent): Promise<TONConnectSession> {
-        const wallet = this.getWalletFromEvent(event);
+    private async createSessionForEmbeddedRequest(event: BridgeEvent): Promise<TONConnectSession> {
+        const wallet = getWalletFromEvent(this.walletManager, event);
         if (!wallet) {
-            throw new WalletKitError(ERROR_CODES.WALLET_NOT_FOUND, 'Wallet not found for intent session creation');
+            throw new WalletKitError(
+                ERROR_CODES.WALLET_NOT_FOUND,
+                'Wallet not found for embedded request session creation',
+            );
         }
 
         const newSession = await this.sessionManager.createSession(
@@ -354,28 +377,31 @@ export class RequestProcessor {
         return newSession;
     }
 
-    /**
-     * Send an intent action approval: creates session, attaches action result to ConnectEventSuccess, sends to bridge.
-     */
-    private async sendIntentApproval(
-        event: BridgeEvent & { connectionResult: IntentConnectionResult },
-        result: unknown,
-    ): Promise<void> {
-        const connResult = event.connectionResult as unknown as ConnectEventSuccess;
-        const response = { ...connResult, response: { result } as ConnectEventSuccess['response'] };
-        await this.bridgeManager.sendResponse(event, response);
-    }
+    private async sendBridgeMessage(
+        event: BridgeEvent,
+        result:
+            | SendTransactionRpcResponseSuccess
+            | SignMessageRpcResponseSuccess
+            | SignDataRpcResponseSuccess
+            | undefined,
+        error: SendTransactionRpcResponseError | SignMessageRpcResponseError | SignDataRpcResponseError | undefined,
+    ) {
+        if (!hasConnectionResult(event)) {
+            await this.bridgeManager.sendResponse(event, error ?? result);
+            return;
+        }
 
-    /**
-     * Send an intent action rejection: attaches error to ConnectEventSuccess, sends to bridge (no session created).
-     */
-    private async sendIntentRejection(
-        event: BridgeEvent & { connectionResult: IntentConnectionResult },
-        error: { code: number; message: string },
-    ): Promise<void> {
+        if (error) {
+            const connResult = event.connectionResult as unknown as ConnectEventSuccess;
+            const response = { ...connResult, response: { error: error.error } as ConnectEventSuccess['response'] };
+            await this.bridgeManager.sendResponse(event, response);
+            return;
+        }
+
         const connResult = event.connectionResult as unknown as ConnectEventSuccess;
-        const response = { ...connResult, response: { error } as ConnectEventSuccess['response'] };
+        const response = { ...connResult, response: { result: result?.result } as ConnectEventSuccess['response'] };
         await this.bridgeManager.sendResponse(event, response);
+        return;
     }
 
     /**
@@ -456,15 +482,12 @@ export class RequestProcessor {
     ): Promise<SendTransactionApprovalResponse> {
         try {
             if (response) {
-                if (hasConnectionResult(event)) {
-                    await this.sendIntentApproval(event, response.signedBoc);
-                } else {
-                    const tonConnectResponse: SendTransactionRpcResponseSuccess = {
-                        result: response.signedBoc,
-                        id: event.id || '',
-                    };
-                    await this.bridgeManager.sendResponse(event, tonConnectResponse);
-                }
+                const tonConnectResponse: SendTransactionRpcResponseSuccess = {
+                    result: response.signedBoc,
+                    id: event.id || '',
+                };
+                await this.sendBridgeMessage(event, tonConnectResponse, undefined);
+
                 this.sendTransactionAnalytics(event, response.signedBoc);
                 return response;
             } else {
@@ -472,7 +495,7 @@ export class RequestProcessor {
 
                 if (!this.walletKitOptions.dev?.disableNetworkSend) {
                     // Get the client for the wallet's network
-                    const client = this.getClientForWallet(event.walletId);
+                    const client = getClientForWallet(this.walletManager, event);
                     await CallForSuccess(() => client.sendBoc(signedBoc));
                 }
 
@@ -482,11 +505,7 @@ export class RequestProcessor {
                     id: event.id || '',
                 };
 
-                if (hasConnectionResult(event)) {
-                    await this.sendIntentApproval(event, signedBoc);
-                } else {
-                    await this.bridgeManager.sendResponse(event, transactionResponse);
-                }
+                await this.sendBridgeMessage(event, transactionResponse, undefined);
 
                 this.sendTransactionAnalytics(event, signedBoc);
                 return { signedBoc };
@@ -510,7 +529,7 @@ export class RequestProcessor {
     private sendTransactionAnalytics(event: SendTransactionRequestEvent, signedBoc: string): void {
         if (!this.analytics) return;
 
-        const wallet = this.getWalletFromEvent(event);
+        const wallet = getWalletFromEvent(this.walletManager, event);
 
         this.analytics.emitWalletTransactionSent({
             trace_id: event.traceId,
@@ -542,12 +561,9 @@ export class RequestProcessor {
                           id: event.id,
                       };
 
-            if (hasConnectionResult(event)) {
-                await this.sendIntentRejection(event, response.error);
-            } else {
-                await this.bridgeManager.sendResponse(event, response);
-            }
-            const wallet = this.getWalletFromEvent(event);
+            await this.sendBridgeMessage(event, undefined, response);
+
+            const wallet = getWalletFromEvent(this.walletManager, event);
 
             if (this.analytics) {
                 const sessionData = event.from ? await this.sessionManager.getSession(event.from) : undefined;
@@ -587,18 +603,16 @@ export class RequestProcessor {
                         `Invalid internalBoc: ${bocValidation.errors.join(', ')}`,
                     );
                 }
-                if (hasConnectionResult(event)) {
-                    await this.sendIntentApproval(event, { internalBoc: response.internalBoc });
-                } else {
-                    const tonConnectResponse = {
-                        result: { internalBoc: response.internalBoc },
-                        id: event.id || '',
-                    };
-                    await this.bridgeManager.sendResponse(event, tonConnectResponse);
-                }
+
+                const tonConnectResponse = {
+                    result: { internalBoc: response.internalBoc },
+                    id: event.id || '',
+                };
+                await this.sendBridgeMessage(event, tonConnectResponse, undefined);
+
                 return response;
             } else {
-                const wallet = this.getWalletFromEvent(event);
+                const wallet = getWalletFromEvent(this.walletManager, event);
                 if (!wallet) {
                     throw new WalletKitError(
                         ERROR_CODES.WALLET_NOT_FOUND,
@@ -607,18 +621,15 @@ export class RequestProcessor {
                         { eventId: event.id },
                     );
                 }
-                const internalBoc = await wallet.getSignedSendTransaction(event.request, { internal: true });
+                const internalBoc = await wallet.getSignedSignMessage(event.request);
                 const actionResult = { internalBoc: internalBoc };
 
-                if (hasConnectionResult(event)) {
-                    await this.sendIntentApproval(event, actionResult);
-                } else {
-                    const tonConnectResponse = {
-                        result: actionResult,
-                        id: event.id || '',
-                    };
-                    await this.bridgeManager.sendResponse(event, tonConnectResponse);
-                }
+                const tonConnectResponse = {
+                    result: actionResult,
+                    id: event.id || '',
+                };
+                await this.sendBridgeMessage(event, tonConnectResponse, undefined);
+
                 return { internalBoc };
             }
         } catch (error) {
@@ -634,16 +645,12 @@ export class RequestProcessor {
         try {
             const response = {
                 error: {
-                    code: SEND_TRANSACTION_ERROR_CODES.USER_REJECTS_ERROR,
+                    code: SIGN_MESSAGE_ERROR_CODES.USER_REJECTS_ERROR,
                     message: reason || 'User rejected sign message request',
                 },
                 id: event.id,
             };
-            if (hasConnectionResult(event)) {
-                await this.sendIntentRejection(event, response.error);
-            } else {
-                await this.bridgeManager.sendResponse(event, response);
-            }
+            await this.sendBridgeMessage(event, undefined, response);
         } catch (error) {
             log.error('Failed to reject sign message request', { error });
             throw error;
@@ -659,7 +666,7 @@ export class RequestProcessor {
     ): Promise<SignDataApprovalResponse> {
         try {
             if (response) {
-                const wallet = this.getWalletFromEvent(event);
+                const wallet = getWalletFromEvent(this.walletManager, event);
 
                 if (!wallet) {
                     const error = new WalletKitError(
@@ -679,15 +686,11 @@ export class RequestProcessor {
                     payload: toTonConnectSignDataPayload(event.payload),
                 };
 
-                if (hasConnectionResult(event)) {
-                    await this.sendIntentApproval(event, signDataResult);
-                } else {
-                    const tonConnectResponse: SignDataRpcResponseSuccess = {
-                        id: event.id || '',
-                        result: signDataResult,
-                    };
-                    await this.bridgeManager.sendResponse(event, tonConnectResponse);
-                }
+                const tonConnectResponse: SignDataRpcResponseSuccess = {
+                    id: event.id || '',
+                    result: signDataResult,
+                };
+                await this.sendBridgeMessage(event, tonConnectResponse, undefined);
 
                 if (this.analytics) {
                     const sessionData = event.from ? await this.sessionManager.getSession(event.from) : undefined;
@@ -695,13 +698,17 @@ export class RequestProcessor {
                     this.analytics.emitWalletSignDataAccepted({
                         wallet_id: sessionData?.publicKey,
                         trace_id: event.traceId,
-                        network_id: wallet?.getNetwork().chainId,
+                        dapp_name: event.dAppInfo?.name,
+                        origin_url: event.dAppInfo?.url,
+                        network_id: wallet.getNetwork().chainId,
                         client_id: event.from,
                     });
                     this.analytics.emitWalletSignDataSent({
                         wallet_id: sessionData?.publicKey,
                         trace_id: event.traceId,
-                        network_id: wallet?.getNetwork().chainId,
+                        dapp_name: event.dAppInfo?.name,
+                        origin_url: event.dAppInfo?.url,
+                        network_id: wallet.getNetwork().chainId,
                         client_id: event.from,
                     });
                 }
@@ -719,7 +726,7 @@ export class RequestProcessor {
                 }
 
                 const walletId = event.walletId;
-                const walletAddress = this.getWalletAddressFromEvent(event);
+                const walletAddress = getWalletAddressFromEvent(this.walletManager, event);
 
                 if (!walletId && !walletAddress) {
                     const error = new WalletKitError(
@@ -731,7 +738,7 @@ export class RequestProcessor {
                     throw error;
                 }
 
-                const wallet = this.getWalletFromEvent(event);
+                const wallet = getWalletFromEvent(this.walletManager, event);
                 if (!wallet) {
                     const error = new WalletKitError(
                         ERROR_CODES.WALLET_NOT_FOUND,
@@ -767,15 +774,11 @@ export class RequestProcessor {
                     payload: toTonConnectSignDataPayload(signData.payload),
                 };
 
-                if (hasConnectionResult(event)) {
-                    await this.sendIntentApproval(event, signDataResult);
-                } else {
-                    const response: SignDataRpcResponseSuccess = {
-                        id: event.id,
-                        result: signDataResult,
-                    };
-                    await this.bridgeManager.sendResponse(event, response);
-                }
+                const response: SignDataRpcResponseSuccess = {
+                    id: event.id,
+                    result: signDataResult,
+                };
+                await this.sendBridgeMessage(event, response, undefined);
 
                 if (this.analytics) {
                     const sessionData = event.from ? await this.sessionManager.getSession(event.from) : undefined;
@@ -835,12 +838,9 @@ export class RequestProcessor {
                           id: event.id,
                       };
 
-            if (hasConnectionResult(event)) {
-                await this.sendIntentRejection(event, response.error);
-            } else {
-                await this.bridgeManager.sendResponse(event, response);
-            }
-            const wallet = this.getWalletFromEvent(event);
+            await this.sendBridgeMessage(event, undefined, response);
+
+            const wallet = getWalletFromEvent(this.walletManager, event);
 
             if (this.analytics) {
                 const sessionData = event.from ? await this.sessionManager.getSession(event.from) : undefined;
@@ -870,7 +870,7 @@ export class RequestProcessor {
         proof?: ConnectionApprovalProof,
     ): Promise<{ result: ConnectEventSuccess }> {
         const walletId = event.walletId;
-        const walletAddress = this.getWalletAddressFromEvent(event);
+        const walletAddress = getWalletAddressFromEvent(this.walletManager, event);
 
         if (!walletId && !walletAddress) {
             throw new WalletKitError(
@@ -880,7 +880,7 @@ export class RequestProcessor {
                 { eventId: event.id },
             );
         }
-        const wallet = this.getWalletFromEvent(event);
+        const wallet = getWalletFromEvent(this.walletManager, event);
         if (!wallet) {
             throw new WalletKitError(
                 ERROR_CODES.WALLET_NOT_FOUND,
@@ -935,7 +935,7 @@ export class RequestProcessor {
      */
     private async signTransaction(event: SendTransactionRequestEvent): Promise<Base64String> {
         const walletId = event.walletId;
-        const walletAddress = this.getWalletAddressFromEvent(event);
+        const walletAddress = getWalletAddressFromEvent(this.walletManager, event);
 
         if (!walletId && !walletAddress) {
             throw new WalletKitError(
@@ -945,7 +945,7 @@ export class RequestProcessor {
                 { eventId: event.id },
             );
         }
-        const wallet = this.getWalletFromEvent(event);
+        const wallet = getWalletFromEvent(this.walletManager, event);
         if (!wallet) {
             throw new WalletKitError(
                 ERROR_CODES.WALLET_NOT_FOUND,
@@ -969,23 +969,6 @@ export class RequestProcessor {
         }
 
         return await signTransactionInternal(wallet, event.request);
-    }
-
-    /**
-     * Get API client for a wallet's network
-     * Uses the wallet's network to get the appropriate client from NetworkManager
-     */
-    private getClientForWallet(walletId: string | undefined) {
-        if (!walletId) {
-            throw new WalletKitError(ERROR_CODES.WALLET_REQUIRED, 'Wallet address is required to get API client');
-        }
-
-        const wallet = this.walletManager.getWallet(walletId);
-        if (!wallet) {
-            throw new WalletKitError(ERROR_CODES.WALLET_NOT_FOUND, `Wallet not found: ${walletId}`);
-        }
-
-        return wallet.getClient();
     }
 }
 

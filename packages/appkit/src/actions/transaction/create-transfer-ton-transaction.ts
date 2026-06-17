@@ -8,8 +8,8 @@
 
 import { createCommentPayloadBase64, parseUnits } from '@ton/walletkit';
 
-import type { TransactionRequest, TransactionRequestMessage } from '../../types/transaction';
-import type { Base64String } from '../../types/primitives';
+import type { TransactionRequest, TransactionRequestMessage, ExtraCurrencies } from '../../types/transaction';
+import { asBase64 } from '../../utils';
 import type { AppKit } from '../../core/app-kit';
 import { getSelectedWallet } from '../wallets/get-selected-wallet';
 
@@ -24,18 +24,20 @@ export interface CreateTransferTonTransactionParameters {
     payload?: string;
     /** Initial state for deploying a new contract, encoded in Base64 */
     stateInit?: string;
+    /** Additional currencies to include in the transfer */
+    extraCurrency?: ExtraCurrencies;
 }
 
 export type CreateTransferTonTransactionReturnType = TransactionRequest;
 
 /**
- * Create a TON transfer transaction request
+ * Create a GRAM transfer transaction request
  */
 export const createTransferTonTransaction = (
     appKit: AppKit,
     parameters: CreateTransferTonTransactionParameters,
 ): CreateTransferTonTransactionReturnType => {
-    const { recipientAddress, amount, comment, payload, stateInit } = parameters;
+    const { recipientAddress, amount, comment, payload, stateInit, extraCurrency } = parameters;
 
     const wallet = getSelectedWallet(appKit);
 
@@ -46,12 +48,13 @@ export const createTransferTonTransaction = (
     const message: TransactionRequestMessage = {
         address: recipientAddress,
         amount: parseUnits(amount, 9).toString(),
-        stateInit: stateInit as Base64String,
+        stateInit: stateInit ? asBase64(stateInit) : undefined,
+        extraCurrency,
     };
 
     // Payload takes priority, otherwise use comment
     if (payload) {
-        message.payload = payload as Base64String;
+        message.payload = asBase64(payload);
     } else if (comment) {
         message.payload = createCommentPayloadBase64(comment) as Base64String;
     }

@@ -6,20 +6,20 @@
  *
  */
 
+import { useEffect, useState } from 'react';
 import type { FC } from 'react';
 
-import { Modal } from '../../../../../components/modal';
+import { Modal } from '../../../../../components/ui/modal';
 import { useI18n } from '../../../../settings/hooks/use-i18n';
-import { Button } from '../../../../../components/button';
-import { Input } from '../../../../../components/input';
+import { Button } from '../../../../../components/ui/button';
+import { Input } from '../../../../../components/ui/input';
 import styles from './crypto-onramp-refund-address-modal.module.css';
 
 export interface CryptoOnrampRefundAddressModalProps {
     open: boolean;
     onClose: () => void;
-    value: string;
-    onChange: (value: string) => void;
-    onConfirm: () => void;
+    onConfirm: (address: string) => void;
+    onSkip?: () => void;
     isLoading: boolean;
     error?: string | null;
 }
@@ -27,13 +27,17 @@ export interface CryptoOnrampRefundAddressModalProps {
 export const CryptoOnrampRefundAddressModal: FC<CryptoOnrampRefundAddressModalProps> = ({
     open,
     onClose,
-    value,
-    onChange,
     onConfirm,
+    onSkip,
     error,
     isLoading,
 }) => {
     const { t } = useI18n();
+    const [address, setAddress] = useState('');
+
+    useEffect(() => {
+        if (open) setAddress('');
+    }, [open]);
 
     return (
         <Modal
@@ -47,8 +51,8 @@ export const CryptoOnrampRefundAddressModal: FC<CryptoOnrampRefundAddressModalPr
                 <Input.Container size="s" error={!!error}>
                     <Input.Field>
                         <Input.Input
-                            value={value}
-                            onChange={(e) => onChange(e.target.value)}
+                            value={address}
+                            onChange={(e) => setAddress(e.target.value)}
                             placeholder={t('cryptoOnramp.refundAddressPlaceholder')}
                             autoFocus
                         />
@@ -56,9 +60,23 @@ export const CryptoOnrampRefundAddressModal: FC<CryptoOnrampRefundAddressModalPr
                     {error && <Input.Caption>{error}</Input.Caption>}
                 </Input.Container>
 
-                <Button variant="fill" size="l" fullWidth onClick={onConfirm} disabled={!value.trim() || isLoading}>
-                    {t('cryptoOnramp.continue')}
-                </Button>
+                <div className={styles.buttons}>
+                    {onSkip && (
+                        <Button variant="secondary" size="l" fullWidth onClick={onSkip} disabled={isLoading}>
+                            {t('cryptoOnramp.skipRefundAddress')}
+                        </Button>
+                    )}
+
+                    <Button
+                        variant="fill"
+                        size="l"
+                        fullWidth
+                        onClick={() => onConfirm(address.trim())}
+                        disabled={!address.trim() || isLoading}
+                    >
+                        {t('cryptoOnramp.continue')}
+                    </Button>
+                </div>
             </div>
         </Modal>
     );

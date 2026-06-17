@@ -9,26 +9,27 @@
 import type { AppKit } from '@ton/appkit';
 import { Network, getSwapQuote } from '@ton/appkit';
 import type { DeDustProviderOptions } from '@ton/walletkit/swap/dedust';
-import { DeDustSwapProvider } from '@ton/appkit/swap/dedust';
+import { createDeDustProvider } from '@ton/appkit/swap/dedust';
 
 export const dedustQuickStartExample = (kit: AppKit) => {
     // SAMPLE_START: DEDUST_QUICK_START
-    const provider = new DeDustSwapProvider({
-        defaultSlippageBps: 100, // 1%
-        referralAddress: 'EQ...',
-        referralFeeBps: 50, // 0.5%
-    });
-    kit.registerProvider(provider);
+    kit.registerProvider(
+        createDeDustProvider({
+            defaultSlippageBps: 100, // 1%
+            referralAddress: 'EQ...',
+            referralFeeBps: 50, // 0.5%
+        }),
+    );
     // SAMPLE_END: DEDUST_QUICK_START
 };
 
 export const dedustProtocolRoutingExample = async (appKit: AppKit) => {
     // SAMPLE_START: DEDUST_PROTOCOL_ROUTING
-    const TON = { address: 'ton', decimals: 9 };
+    const GRAM = { address: 'ton', decimals: 9 };
     const USDT = { address: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs', decimals: 6 };
 
     const quote = await getSwapQuote(appKit, {
-        from: TON,
+        from: GRAM,
         to: USDT,
         amount: '1000000000',
         network: Network.mainnet(),
@@ -48,11 +49,11 @@ export const dedustProtocolRoutingExample = async (appKit: AppKit) => {
 
 export const dedustReferralFeesExample = async (appKit: AppKit) => {
     // SAMPLE_START: DEDUST_REFERRAL_FEES
-    const TON = { address: 'ton', decimals: 9 };
+    const GRAM = { address: 'ton', decimals: 9 };
     const USDT = { address: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs', decimals: 6 };
 
     const quote = await getSwapQuote(appKit, {
-        from: TON,
+        from: GRAM,
         to: USDT,
         amount: '1000000000',
         network: Network.mainnet(),
@@ -68,19 +69,20 @@ export const dedustReferralFeesExample = async (appKit: AppKit) => {
 
 export const dedustOverridingReferralExample = async (appKit: AppKit) => {
     // SAMPLE_START: DEDUST_OVERRIDING_REFERRAL
-    const TON = { address: 'ton', decimals: 9 };
+    const GRAM = { address: 'ton', decimals: 9 };
     const USDT = { address: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs', decimals: 6 };
 
     // Global referrer in config
-    const provider = new DeDustSwapProvider({
-        referralAddress: 'EQ...global',
-        referralFeeBps: 50,
-    });
-    appKit.registerProvider(provider);
+    appKit.registerProvider(
+        createDeDustProvider({
+            referralAddress: 'EQ...global',
+            referralFeeBps: 50,
+        }),
+    );
 
     // Override for specific quote
     const quote = await getSwapQuote(appKit, {
-        from: TON,
+        from: GRAM,
         to: USDT,
         amount: '1000000000',
         network: Network.mainnet(),
@@ -92,7 +94,7 @@ export const dedustOverridingReferralExample = async (appKit: AppKit) => {
 
     // Or use global settings by omitting providerOptions
     const quote2 = await getSwapQuote(appKit, {
-        from: TON,
+        from: GRAM,
         to: USDT,
         amount: '1000000000',
         network: Network.mainnet(),

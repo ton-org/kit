@@ -10,7 +10,7 @@ import { Address } from '@ton/core';
 import type { Wallet as TonConnectWallet } from '@tonconnect/sdk';
 import type { SignDataPayload as TonConnectSignDataPayload } from '@tonconnect/sdk';
 import type { Feature, SendTransactionResponse, UserFriendlyAddress, Hex } from '@ton/walletkit';
-import { asHex, createWalletId, getNormalizedExtMessageHash } from '@ton/walletkit';
+import { asBase64, asHex, createWalletId, getNormalizedExtMessageHash } from '@ton/walletkit';
 import type { TonConnectUI } from '@tonconnect/ui';
 
 import type { TransactionRequest } from '../../../types/transaction';
@@ -100,7 +100,7 @@ export class TonConnectWalletAdapter implements WalletInterface {
         const result = await this.tonConnectUI.signMessage(message);
 
         return {
-            internalBoc: result.internalBoc as Base64String,
+            internalBoc: asBase64(result.internalBoc),
         };
     }
 

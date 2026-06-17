@@ -12,9 +12,10 @@ import type { StorageAdapter, StorageConfig } from '../storage';
 import type { EventProcessorConfig } from '../core/EventProcessor';
 import type { DeviceInfo, WalletInfo } from './jsBridge';
 import type { BridgeConfig } from './internal';
-import type { ApiClient } from './toncenter/ApiClient';
+import type { ApiClient } from '../api/interfaces';
 import type { AnalyticsManagerOptions } from '../analytics';
 import type { TONConnectSessionManager } from '../api/interfaces';
+import type { ManifestFetchResult } from '../api/models/core/ManifestFetchResult';
 
 /**
  * API client configuration options
@@ -78,4 +79,6 @@ export interface TonWalletKitOptions {
         disableNetworkSend?: boolean;
         disableManifestDomainCheck?: boolean;
     };
+
+    fetchManifest?: (manifestUrl: string) => Promise<ManifestFetchResult>;
 }

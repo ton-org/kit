@@ -7,12 +7,20 @@
  */
 
 import type { GaslessProviderInterface } from '../../api/interfaces';
-import type { GaslessConfig, GaslessEstimateParams, GaslessEstimateResult, GaslessSendParams } from '../../api/models';
+import type {
+    GaslessConfig,
+    GaslessProviderMetadata,
+    GaslessQuote,
+    GaslessQuoteParams,
+    GaslessSendParams,
+    GaslessSendResponse,
+    Network,
+} from '../../api/models';
 
 /**
  * Abstract base class for gasless relay providers.
  *
- * Concrete providers (e.g. TonApiGaslessProvider) implement the three methods
+ * Concrete providers (e.g. TonApiGaslessProvider) implement the methods
  * below against a specific relayer backend.
  *
  * @example
@@ -20,9 +28,10 @@ import type { GaslessConfig, GaslessEstimateParams, GaslessEstimateResult, Gasle
  * class MyGaslessProvider extends GaslessProvider {
  *   readonly providerId = 'my-relayer';
  *
- *   async getConfig(): Promise<GaslessConfig> { ... }
- *   async estimate(params): Promise<GaslessEstimateResult> { ... }
- *   async send(params): Promise<void> { ... }
+ *   async getMetadata(): Promise<GaslessProviderMetadata> { ... }
+ *   async getConfig(network: Network): Promise<GaslessConfig> { ... }
+ *   async getQuote(params): Promise<GaslessQuote> { ... }
+ *   async sendTransaction(params): Promise<GaslessSendResponse> { ... }
  * }
  * ```
  */
@@ -30,7 +39,9 @@ export abstract class GaslessProvider implements GaslessProviderInterface {
     readonly type = 'gasless';
     abstract readonly providerId: string;
 
-    abstract getConfig(): Promise<GaslessConfig>;
-    abstract estimate(params: GaslessEstimateParams): Promise<GaslessEstimateResult>;
-    abstract send(params: GaslessSendParams): Promise<void>;
+    abstract getSupportedNetworks(): Network[];
+    abstract getMetadata(): Promise<GaslessProviderMetadata>;
+    abstract getConfig(network: Network): Promise<GaslessConfig>;
+    abstract getQuote(params: GaslessQuoteParams): Promise<GaslessQuote>;
+    abstract sendTransaction(params: GaslessSendParams): Promise<GaslessSendResponse>;
 }

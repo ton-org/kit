@@ -27,6 +27,7 @@
 
 // Core
 export * from './core/app-kit';
+export * from './core/cache';
 export * from './core/emitter';
 export * from './core/network';
 export * from './core/streaming';
@@ -37,6 +38,8 @@ export * from './swap';
 export * from './staking';
 export * from './gasless';
 export * from './crypto-onramp';
+export * from './gasless';
+export * from './providers';
 
 // Actions
 export * from './actions';

@@ -15,6 +15,10 @@
         "VITE_TON_API_KEY",
         "VITE_TON_API_TESTNET_KEY",
         "VITE_TON_API_PROVIDER",
+        "VERCEL_ENV",
+        "VERCEL_URL",
+        "VERCEL_BRANCH_URL",
+        "VERCEL_PROJECT_PRODUCTION_URL"
         "VITE_PRIVY_APP_ID",
         "VITE_GETGEMS_API_KEY"
       ]
@@ -78,9 +82,10 @@
       ]
     },
     "generate-openapi-spec": {
-      "dependsOn": [
-        "^generate-openapi-spec"
-      ]
+      "dependsOn": ["^generate-openapi-spec"]
+    },
+    "generate-openapi-spec-fixtures": {
+      "dependsOn": ["^generate-openapi-spec-fixtures"]
     }
   }
 }

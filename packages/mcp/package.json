@@ -1,6 +1,6 @@
 {
   "name": "@ton/mcp",
-  "version": "0.1.15-alpha.13",
+  "version": "0.1.15-alpha.21",
   "description": "TON MCP Server - Model Context Protocol server for TON blockchain wallet operations",
   "license": "MIT",
   "type": "module",
@@ -42,7 +42,7 @@
     "README.md"
   ],
   "scripts": {
-    "build": "pnpm build:clean && rolldown -c && pnpm build:types && pnpm build:chmod",
+    "build": "pnpm build:clean && rolldown -c && pnpm build:types",
     "build:clean": "rimraf dist",
     "build:types": "tsc -p tsconfig.json --emitDeclarationOnly",
     "build:chmod": "chmod +x dist/cli.js",
@@ -52,6 +52,9 @@
     "lint": "eslint src --max-warnings 0",
     "lint:fix": "eslint src --max-warnings 0 --fix",
     "test": "vitest run",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "quality": "pnpm test",
+    "clean": "git clean -xdf dist node_modules .turbo",
     "typecheck": "tsc --noEmit"
   },
   "keywords": [
@@ -64,14 +67,16 @@
   "author": "TON Tech",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ton-connect/kit"
+    "url": "https://github.com/ton-org/kit"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@ston-fi/omniston-sdk": "^0.7.9",
+    "@ton/core": "catalog:",
+    "@ton/crypto": "catalog:",
     "@ton/walletkit": "workspace:*",
-    "https-proxy-agent": "^9.0.0",
-    "undici": "^8.1.0",
+    "https-proxy-agent": "^9.1.0",
+    "undici": "8.0.2",
     "ws": "^8.20.0",
     "zod": "^3.25.76"
   },
@@ -79,12 +84,13 @@
     "@modelcontextprotocol/sdk": "^1.25.1"
   },
   "devDependencies": {
-    "@types/node": "^25.6.0",
-    "@vitest/coverage-v8": "^4.1.4",
-    "rimraf": "^6.1.0",
-    "rolldown": "1.0.0-rc.15",
-    "typescript": "~5.9.3",
-    "vitest": "^4.1.4"
+    "@types/node": "^25.9.3",
+    "@types/ws": "^8.18.1",
+    "@vitest/coverage-v8": "^4.1.8",
+    "rimraf": "catalog:",
+    "rolldown": "1.0.2",
+    "typescript": "catalog:",
+    "vitest": "^4.1.8"
   },
   "engines": {
     "node": ">=18.0.0"

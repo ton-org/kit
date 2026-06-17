@@ -14,15 +14,32 @@ import { LRUCache } from 'lru-cache';
 import type { EmulationTokenInfoMasters } from '../types/toncenter/emulation';
 import { globalLogger } from './Logger';
 import type { WalletKitEventEmitter } from '../types/emitter';
-import type { JettonInfo, JettonsAPI } from '../types/jettons';
+import type { JettonsAPI } from '../types/jettons';
 import { JettonError, JettonErrorCode } from '../types/jettons';
 import type { NetworkManager } from './NetworkManager';
-import type { Jetton } from '../api/models';
+import type { Jetton, JettonInfo } from '../api/models';
 import type { Network } from '../api/models';
 import { asMaybeAddressFriendly } from '../utils';
 
 const log = globalLogger.createChild('JettonsManager');
+const GRAM_ADDRESS = 'TON';
 
+function isTonAddress(address: string): boolean {
+    return address.toLowerCase() === 'ton';
+}
+
+const TON_INFO: JettonInfo = {
+    address: GRAM_ADDRESS,
+    name: 'Gram',
+    symbol: 'GRAM',
+    description: 'The Open Network native token',
+    decimals: 9,
+    totalSupply: '5000000000000000000',
+    verification: {
+        verified: true,
+        source: 'manual' as const,
+    },
+};
 /**
  * Creates a cache key that includes the network ID
  */
@@ -48,45 +65,20 @@ export class JettonsManager implements JettonsAPI {
             ttl: 1000 * 60 * 10, // 10 minutes TTL
         });
 
-        // Add TON for all configured networks
+        // Add GRAM for all configured networks
         for (const network of this.networkManager.getConfiguredNetworks()) {
             this.addTonToCache(network);
         }
 
         log.info('JettonsManager initialized', { cacheSize });
-
-        // Set up event listener for emulation results for jetton caching
-        // TODO Fix network in emulation result
-        // this.eventEmitter.on('emulationResult', ({ payload: emulationResult }) => {
-        //     if (emulationResult && emulationResult.metadata) {
-        //         const network = (emulationResult as { network: ChainId }).network;
-        //         this.addJettonsFromEmulationMetadata(
-        //             Network.custom(network),
-        //             (emulationResult as { metadata: Record<string, { is_indexed: boolean; token_info?: unknown[] }> })
-        //                 .metadata,
-        //         );
-        //     }
-        // });
     }
 
     /**
-     * Add TON native token to cache for a specific network
+     * Add GRAM native token to cache for a specific network
      */
     private addTonToCache(network: Network): void {
-        const cacheKey = createCacheKey(network, 'TON');
-        this.cache.set(cacheKey, {
-            address: 'TON',
-            name: 'TON',
-            symbol: 'TON',
-            description: 'The Open Network native token',
-            decimals: 9,
-            totalSupply: '5000000000000000000',
-            image: 'https://asset.ston.fi/img/EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c/ee9fb21d17bc8d75c2a5f7b5f5f62d2bacec6b128f58b63cb841e98f7b74c4fc',
-            verification: {
-                verified: true,
-                source: 'manual' as const,
-            },
-        });
+        const cacheKey = createCacheKey(network, GRAM_ADDRESS);
+        this.cache.set(cacheKey, TON_INFO);
     }
 
     /**
@@ -96,6 +88,10 @@ export class JettonsManager implements JettonsAPI {
      */
     async getJettonInfo(jettonAddress: string, network: Network): Promise<JettonInfo | null> {
         const targetNetwork = network;
+
+        if (isTonAddress(jettonAddress)) {
+            return TON_INFO;
+        }
 
         try {
             const cacheKey = this.normalizedCacheKey(targetNetwork, jettonAddress);
@@ -137,7 +133,7 @@ export class JettonsManager implements JettonsAPI {
                 }
 
                 const result: JettonInfo = {
-                    address: jetton.jetton,
+                    address: jetton.address,
                     name: tokenInfo?.name ?? '',
                     symbol: tokenInfo?.symbol ?? '',
                     description: tokenInfo?.description ?? '',
@@ -290,8 +286,8 @@ export class JettonsManager implements JettonsAPI {
      * Normalize jetton address for consistent caching
      */
     private normalizedCacheKey(network: Network, address: string): string {
-        if (address === 'TON') {
-            return createCacheKey(network, address);
+        if (isTonAddress(address)) {
+            return createCacheKey(network, GRAM_ADDRESS);
         }
         return createCacheKey(network, Address.parse(address).toString());
     }
@@ -311,7 +307,7 @@ export class JettonsManager implements JettonsAPI {
      */
     validateJettonAddress(address: string): boolean {
         try {
-            if (address === 'TON') {
+            if (isTonAddress(address)) {
                 return true;
             }
 
@@ -334,13 +330,13 @@ export class JettonsManager implements JettonsAPI {
                     this.cache.delete(key);
                 }
             }
-            // Re-add TON for this network
+            // Re-add GRAM for this network
             this.addTonToCache(network);
             log.info('Jetton cache cleared for network', { network });
         } else {
             // Clear all entries
             this.cache.clear();
-            // Re-add TON for all configured networks
+            // Re-add GRAM for all configured networks
             for (const net of this.networkManager.getConfiguredNetworks()) {
                 this.addTonToCache(net);
             }

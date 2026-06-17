@@ -14,7 +14,7 @@ import type { ToolResponse } from './types.js';
 
 export const sendTonSchema = z.object({
     toAddress: z.string().min(1).describe('Recipient TON address'),
-    amount: z.string().min(1).describe('Amount of TON to send (e.g., "1.5" for 1.5 TON)'),
+    amount: z.string().min(1).describe('Amount of GRAM to send (e.g., "1.5" for 1.5 GRAM)'),
     comment: z.string().optional().describe('Optional comment/memo for the transaction'),
 });
 
@@ -27,7 +27,7 @@ export const sendJettonSchema = z.object({
 
 const transactionMessageSchema = z.object({
     address: z.string().min(1).describe('Recipient wallet address'),
-    amount: z.string().min(1).describe('Amount to transfer in nanotons'),
+    amount: z.string().min(1).describe('Amount to transfer in nano units'),
     stateInit: z.string().optional().describe('Initial state for deploying a new contract (Base64)'),
     payload: z.string().optional().describe('Message payload data (Base64)'),
 });
@@ -47,7 +47,7 @@ export function createMcpTransferTools(service: McpWalletService) {
     return {
         send_ton: {
             description:
-                'Send TON from the wallet to an address. Amount is in TON (e.g., "1.5" means 1.5 TON). Returns normalizedHash. Default flow: poll get_transaction_status until completed or failed; user can skip.',
+                'Send GRAM from the wallet to an address. Amount is in GRAM (e.g., "1.5" means 1.5 GRAM). Returns normalizedHash. Default flow: poll get_transaction_status until completed or failed; user can skip.',
             inputSchema: sendTonSchema,
             handler: async (args: z.infer<typeof sendTonSchema>): Promise<ToolResponse> => {
                 const rawAmount = toRawAmount(args.amount, TON_DECIMALS);
@@ -80,7 +80,7 @@ export function createMcpTransferTools(service: McpWalletService) {
                                     normalizedHash: result.normalizedHash,
                                     details: {
                                         to: args.toAddress,
-                                        amount: `${args.amount} TON`,
+                                        amount: `${args.amount} GRAM`,
                                         comment: args.comment || null,
                                         normalizedHash: result.normalizedHash,
                                     },
@@ -187,7 +187,7 @@ export function createMcpTransferTools(service: McpWalletService) {
 
         send_raw_transaction: {
             description:
-                'Send a raw transaction with full control over messages. Amounts are in nanotons. Supports multiple messages. Returns normalizedHash. Default flow: poll get_transaction_status until completed or failed; user can skip.',
+                'Send a raw transaction with full control over messages. Amounts are in nano units. Supports multiple messages. Returns normalizedHash. Default flow: poll get_transaction_status until completed or failed; user can skip.',
             inputSchema: sendRawTransactionSchema,
             handler: async (args: z.infer<typeof sendRawTransactionSchema>): Promise<ToolResponse> => {
                 const result = await service.sendRawTransaction({
@@ -224,7 +224,7 @@ export function createMcpTransferTools(service: McpWalletService) {
                                         messageCount: args.messages.length,
                                         messages: args.messages.map((m) => ({
                                             to: m.address,
-                                            amount: `${m.amount} nanoTON`,
+                                            amount: `${m.amount} nano units`,
                                         })),
                                         normalizedHash: result.normalizedHash,
                                     },
@@ -239,7 +239,7 @@ export function createMcpTransferTools(service: McpWalletService) {
         },
         emulate_transaction: {
             description:
-                'Emulate a transaction without broadcasting it. Dry-run that returns the expected money flow (TON and jetton balance changes) so you can verify a transaction before sending. Accepts the same messages format as send_raw_transaction.',
+                'Emulate a transaction without broadcasting it. Dry-run that returns the expected money flow (GRAM and jetton balance changes) so you can verify a transaction before sending. Accepts the same messages format as send_raw_transaction.',
             inputSchema: emulateTransactionSchema,
             handler: async (args: z.infer<typeof emulateTransactionSchema>): Promise<ToolResponse> => {
                 try {

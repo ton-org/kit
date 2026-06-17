@@ -6,7 +6,7 @@
  *
  */
 
-import type { BaseProvider } from '../api/interfaces';
+import type { BaseProvider } from '../api/models';
 import type { NetworkManager } from '../core/NetworkManager';
 import type { EventEmitter } from '../core/EventEmitter';
 import type { SharedKitEvents } from './emitter';
@@ -17,7 +17,6 @@ import type { SharedKitEvents } from './emitter';
 export interface ProviderFactoryContext<Events extends SharedKitEvents = SharedKitEvents> {
     networkManager: NetworkManager;
     eventEmitter: EventEmitter<Events>;
-    ssr?: boolean;
 }
 
 /** Factory function that creates a provider from context */

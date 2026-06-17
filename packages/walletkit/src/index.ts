@@ -19,11 +19,17 @@ export { EventRouter } from './core/EventRouter';
 export { RequestProcessor } from './core/RequestProcessor';
 export { Initializer } from './core/Initializer';
 export { JettonsManager } from './core/JettonsManager';
-export { SwapManager, SwapProvider, SwapError } from './defi/swap';
-export { StakingManager, StakingProvider, StakingError } from './defi/staking';
-export { OnrampManager, OnrampProvider, OnrampError } from './defi/onramp';
-export { GaslessManager, GaslessProvider, GaslessError } from './defi/gasless';
-export { CryptoOnrampManager, CryptoOnrampProvider, CryptoOnrampError } from './defi/crypto-onramp';
+export { DefiError, DefiErrorCode } from './defi/errors';
+export { SwapManager, SwapProvider, SwapError, SwapErrorCode } from './defi/swap';
+export { StakingManager, StakingProvider, StakingError, StakingErrorCode } from './defi/staking';
+export {
+    CryptoOnrampManager,
+    CryptoOnrampProvider,
+    CryptoOnrampError,
+    CryptoOnrampErrorCode,
+    Caip2ByNetwork,
+} from './defi/crypto-onramp';
+export { GaslessManager, GaslessProvider, GaslessError, GaslessErrorCode } from './defi/gasless';
 export { EventEmitter } from './core/EventEmitter';
 export type { EventListener, EventPayload, KitEvent } from './core/EventEmitter';
 export type { SharedKitEvents } from './types/emitter';
@@ -53,7 +59,6 @@ export { LocalStorageAdapter } from './storage/adapters/local';
 export { MemoryStorageAdapter } from './storage/adapters/memory';
 export { ExtensionStorageAdapter } from './storage/adapters/extension';
 export { Storage } from './storage/Storage';
-export type { ApiClient } from './types/toncenter/ApiClient';
 export { formatWalletAddress } from './utils/address';
 export { CallForSuccess } from './utils/retry';
 export { createWalletId } from './utils/walletId';
@@ -76,6 +81,7 @@ export {
 export type { ToncenterTransaction } from './types/toncenter/emulation';
 export { TonProofParsedMessage } from './utils/tonProof';
 export type { ITonWalletKit } from './types/kit';
+export type { ProviderInput } from './types/factory';
 export type {
     JSBridgeInjectOptions,
     JSBridgeTransportFunction,
@@ -103,9 +109,11 @@ export { DefaultSignature, FakeSignature } from './utils/sign';
 export { wrapWalletInterface } from './core/Initializer';
 export type { NftTransferParamsHuman, NftTransferParamsRaw } from './types/nfts';
 
-export { isValidAddress, compareAddress } from './utils/address';
+export { isValidAddress, compareAddress, asAddressFriendly } from './utils/address';
+export { withTimeout } from './utils/withTimeout';
 export { validateTransactionMessage } from './validation';
-export { createDeviceInfo, createWalletManifest, getMaxOutgoingMessages } from './utils/getDefaultWalletConfig';
+export { createDeviceInfo, createWalletManifest } from './utils/getDefaultWalletConfig';
+export { getMaxOutgoingMessages, hasSignMessageSupport } from './utils/features';
 export { Signer } from './utils/Signer';
 export { ParseStack, SerializeStack } from './utils/tvmStack';
 export { Transport } from './bridge/transport/Transport';
@@ -114,22 +122,10 @@ export { RESTORE_CONNECTION_TIMEOUT, DEFAULT_REQUEST_TIMEOUT } from './bridge/ut
 export { CreateTonProofMessageBytes } from './utils/tonProof';
 export type { AnalyticsAppInfo, AnalyticsManagerOptions } from './analytics';
 
-// API Client types (ApiClient is exported above)
-export type {
-    TransactionsByAddressRequest,
-    GetTransactionByHashRequest,
-    GetPendingTransactionsRequest,
-    GetTraceRequest,
-    GetPendingTraceRequest,
-    GetJettonsByOwnerRequest,
-    GetJettonsByAddressRequest,
-    GetEventsRequest,
-    GetEventsResponse,
-} from './types/toncenter/ApiClient';
-export type { FullAccountState } from './types/toncenter/api';
-export type { ToncenterEmulationResult } from './utils/toncenterEmulation';
+export type { AccountState, AccountStates, TransactionId } from './api/models';
 export type { ToncenterResponseJettonMasters } from './types/toncenter/emulation';
 export { asHex } from './utils/hex';
+export { asBase64 } from './utils/base64';
 export {
     // Message builders
     storeJettonTransferMessage,
@@ -164,6 +160,7 @@ export {
 } from './utils/assetHelpers';
 
 export { formatUnits, parseUnits } from './utils/units';
+export { fetchManifest } from './utils/manifest';
 
 // API Interfaces
 export type * from './api/interfaces';
@@ -177,3 +174,5 @@ export { StreamingManager } from './streaming';
 export type { StreamingProvider, StreamingProviderFactory } from './api/interfaces/StreamingProvider';
 export type { StreamingAPI } from './api/interfaces/StreamingAPI';
 export type { ProviderFactoryContext } from './types/factory';
+export { CustomProvidersManager } from './providers';
+export type { CustomProvider } from './providers';

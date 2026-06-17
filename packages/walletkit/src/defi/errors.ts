@@ -6,19 +6,22 @@
  *
  */
 
-export class DefiManagerError extends Error {
-    static readonly PROVIDER_NOT_FOUND = 'PROVIDER_NOT_FOUND';
-    static readonly NO_DEFAULT_PROVIDER = 'NO_DEFAULT_PROVIDER';
-    static readonly NETWORK_ERROR = 'NETWORK_ERROR';
-    static readonly INVALID_PARAMS = 'INVALID_PARAMS';
-    static readonly INVALID_PROVIDER = 'INVALID_PROVIDER';
+export enum DefiErrorCode {
+    ProviderNotFound = 'PROVIDER_NOT_FOUND',
+    NoDefaultProvider = 'NO_DEFAULT_PROVIDER',
+    NetworkError = 'NETWORK_ERROR',
+    UnsupportedNetwork = 'UNSUPPORTED_NETWORK',
+    InvalidParams = 'INVALID_PARAMS',
+    InvalidProvider = 'INVALID_PROVIDER',
+}
 
+export class DefiError extends Error {
     public readonly code: string;
     public readonly details?: unknown;
 
     constructor(message: string, code: string, details?: unknown) {
         super(message);
-        this.name = 'DefiManagerError';
+        this.name = 'DefiError';
         this.code = code;
         this.details = details;
     }

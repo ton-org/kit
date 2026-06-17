@@ -6,6 +6,8 @@
  *
  */
 
+'use client';
+
 import type { MutateFunction, MutateOptions } from '@tanstack/react-query';
 import { sendGaslessTransactionMutationOptions } from '@ton/appkit/queries';
 import type {

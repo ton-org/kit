@@ -7,10 +7,19 @@
  */
 
 import type { GaslessAPI, GaslessProviderInterface } from '../../api/interfaces';
-import type { GaslessConfig, GaslessEstimateParams, GaslessEstimateResult, GaslessSendParams } from '../../api/models';
+import type {
+    GaslessConfig,
+    GaslessProviderMetadata,
+    GaslessQuote,
+    GaslessQuoteParams,
+    GaslessSendParams,
+    GaslessSendResponse,
+    Network,
+} from '../../api/models';
 import { globalLogger } from '../../core/Logger';
 import type { ProviderFactoryContext } from '../../types/factory';
 import { DefiManager } from '../DefiManager';
+import type { GaslessErrorCode } from './errors';
 import { GaslessError } from './errors';
 
 const log = globalLogger.createChild('GaslessManager');
@@ -27,13 +36,35 @@ export class GaslessManager extends DefiManager<GaslessProviderInterface> implem
     }
 
     /**
-     * Fetch relayer configuration (supported jettons and relay address).
+     * Get static metadata for a gasless provider (display name, logo, url).
      */
-    async getConfig(providerId?: string): Promise<GaslessConfig> {
-        log.debug('Getting gasless config', { providerId: providerId ?? this.defaultProviderId });
+    async getMetadata(providerId?: string): Promise<GaslessProviderMetadata> {
+        const selectedProviderId = providerId ?? this.defaultProviderId;
+        log.debug('Getting gasless provider metadata', { providerId: selectedProviderId });
 
         try {
-            return await this.getProvider(providerId ?? this.defaultProviderId).getConfig();
+            return await this.getProvider(selectedProviderId).getMetadata();
+        } catch (error) {
+            log.error('Failed to get gasless provider metadata', { error });
+            throw error;
+        }
+    }
+
+    /**
+     * Fetch the relayer's configuration (relay address + accepted fee assets).
+     *
+     * `network` defaults to the provider's first supported network.
+     */
+    async getConfig(network?: Network, providerId?: string): Promise<GaslessConfig> {
+        const provider = this.getProvider(providerId ?? this.defaultProviderId);
+        const targetNetwork = network ?? provider.getSupportedNetworks()[0];
+        log.debug('Getting gasless config', {
+            network: targetNetwork?.chainId,
+            providerId: providerId ?? this.defaultProviderId,
+        });
+
+        try {
+            return await provider.getConfig(targetNetwork);
         } catch (error) {
             log.error('Failed to get gasless config', { error });
             throw error;
@@ -41,20 +72,21 @@ export class GaslessManager extends DefiManager<GaslessProviderInterface> implem
     }
 
     /**
-     * Estimate fees and obtain relayer-wrapped messages for signing.
+     * Quote fees and obtain relayer-wrapped messages for signing.
      */
-    async estimate(params: GaslessEstimateParams, providerId?: string): Promise<GaslessEstimateResult> {
-        log.debug('Estimating gasless transaction', {
+    async getQuote(params: GaslessQuoteParams, providerId?: string): Promise<GaslessQuote> {
+        log.debug('Quoting gasless transaction', {
+            network: params.network.chainId,
             walletAddress: params.walletAddress,
-            feeJettonMaster: params.feeJettonMaster,
+            feeAsset: params.feeAsset,
             messagesCount: params.messages.length,
             providerId: providerId ?? this.defaultProviderId,
         });
 
         try {
-            return await this.getProvider(providerId ?? this.defaultProviderId).estimate(params);
+            return await this.getProvider(providerId ?? this.defaultProviderId).getQuote(params);
         } catch (error) {
-            log.error('Failed to estimate gasless transaction', { error, params });
+            log.error('Failed to quote gasless transaction', { error, params });
             throw error;
         }
     }
@@ -62,11 +94,14 @@ export class GaslessManager extends DefiManager<GaslessProviderInterface> implem
     /**
      * Submit a signed transaction BoC to the relayer.
      */
-    async send(params: GaslessSendParams, providerId?: string): Promise<void> {
-        log.debug('Sending gasless transaction', { providerId: providerId ?? this.defaultProviderId });
+    async sendTransaction(params: GaslessSendParams, providerId?: string): Promise<GaslessSendResponse> {
+        log.debug('Sending gasless transaction', {
+            network: params.network.chainId,
+            providerId: providerId ?? this.defaultProviderId,
+        });
 
         try {
-            await this.getProvider(providerId ?? this.defaultProviderId).send(params);
+            return await this.getProvider(providerId ?? this.defaultProviderId).sendTransaction(params);
         } catch (error) {
             log.error('Failed to send gasless transaction', { error });
             throw error;
@@ -74,6 +109,6 @@ export class GaslessManager extends DefiManager<GaslessProviderInterface> implem
     }
 
     protected createError(message: string, code: string, details?: unknown): GaslessError {
-        return new GaslessError(message, code, details);
+        return new GaslessError(message, code as GaslessErrorCode, details);
     }
 }

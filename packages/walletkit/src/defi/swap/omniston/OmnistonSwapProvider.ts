@@ -12,13 +12,15 @@ import { Address } from '@ton/core';
 
 import type { OmnistonQuoteMetadata, OmnistonSwapProviderConfig, OmnistonProviderOptions } from './models';
 import { SwapProvider } from '../SwapProvider';
-import type { SwapQuoteParams, SwapQuote, SwapParams, SwapFee, SwapProviderMetadata } from '../../../api/models';
-import { SwapError } from '../errors';
+import type { SwapQuoteParams, SwapQuote, SwapParams, SwapProviderMetadata } from '../../../api/models';
+import { Network } from '../../../api/models';
+import { SwapError, SwapErrorCode } from '../errors';
 import { globalLogger } from '../../../core/Logger';
 import { tokenToAddress, toOmnistonAddress, isOmnistonQuoteMetadata } from './utils';
 import type { TransactionRequest } from '../../../api/models';
-import { asBase64, getUnixtime } from '../../../utils';
+import { asBase64, getUnixtime, withTimeout } from '../../../utils';
 import { formatUnits, parseUnits } from '../../../utils/units';
+import type { ProviderFactoryContext } from '../../../types/factory';
 
 const log = globalLogger.createChild('OmnistonSwapProvider');
 
@@ -30,23 +32,24 @@ const log = globalLogger.createChild('OmnistonSwapProvider');
  *
  * @example
  * ```typescript
- * // Import from separate entry point to avoid bundling Omniston SDK
- * import { OmnistonSwapProvider } from '@ton/walletkit/swap/omniston';
+ * // Import from a separate entry point to avoid bundling the Omniston SDK
+ * import { createOmnistonProvider } from '@ton/walletkit/swap/omniston';
  *
- * const provider = new OmnistonSwapProvider({
- *     apiUrl: 'wss://omni-ws.ston.fi',
- *     defaultSlippageBps: 100, // 1%
- *     referrerAddress: 'EQ...',
- *     referrerFeeBps: 10, // 0.1%
- * });
- *
- * kit.swap.registerProvider(provider);
+ * kit.swap.registerProvider(
+ *     createOmnistonProvider({
+ *         apiUrl: 'wss://omni-ws.ston.fi',
+ *         defaultSlippageBps: 100, // 1%
+ *         referrerAddress: 'EQ...',
+ *         referrerFeeBps: 10, // 0.1%
+ *     }),
+ * );
  * ```
  */
 export class OmnistonSwapProvider extends SwapProvider<OmnistonProviderOptions> {
     private readonly apiUrl: string;
     private readonly defaultSlippageBps: number;
     private readonly quoteTimeoutMs: number;
+    private readonly buildTimeoutMs: number;
     private readonly referrerAddress?: string;
     private readonly referrerFeeBps?: number;
     private readonly flexibleReferrerFee: boolean;
@@ -64,6 +67,7 @@ export class OmnistonSwapProvider extends SwapProvider<OmnistonProviderOptions> 
         this.apiUrl = config?.apiUrl ?? 'wss://omni-ws.ston.fi';
         this.defaultSlippageBps = config?.defaultSlippageBps ?? 100; // 1% default
         this.quoteTimeoutMs = config?.quoteTimeoutMs ?? 10000; // 10 seconds
+        this.buildTimeoutMs = config?.buildTimeoutMs ?? 10000; // 10 seconds
         this.referrerAddress = config?.referrerAddress
             ? Address.parse(config?.referrerAddress).toString({ bounceable: true })
             : undefined;
@@ -81,6 +85,10 @@ export class OmnistonSwapProvider extends SwapProvider<OmnistonProviderOptions> 
             defaultSlippageBps: this.defaultSlippageBps,
             hasReferrer: !!this.referrerAddress,
         });
+    }
+
+    getSupportedNetworks(): Network[] {
+        return [Network.mainnet()];
     }
 
     getMetadata(): SwapProviderMetadata {
@@ -148,7 +156,7 @@ export class OmnistonSwapProvider extends SwapProvider<OmnistonProviderOptions> 
 
                     if (!isSettled) {
                         isSettled = true;
-                        reject(new SwapError('Quote request timed out', SwapError.NETWORK_ERROR));
+                        reject(new SwapError('Quote request timed out', SwapErrorCode.NetworkError));
                     }
 
                     unsubscribe.unsubscribe();
@@ -164,7 +172,9 @@ export class OmnistonSwapProvider extends SwapProvider<OmnistonProviderOptions> 
                             isSettled = true;
                             clearTimeout(timeoutId);
                             unsubscribe.unsubscribe();
-                            reject(new SwapError('No quote available for this swap', SwapError.INSUFFICIENT_LIQUIDITY));
+                            reject(
+                                new SwapError('No quote available for this swap', SwapErrorCode.InsufficientLiquidity),
+                            );
                             return;
                         }
 
@@ -187,7 +197,7 @@ export class OmnistonSwapProvider extends SwapProvider<OmnistonProviderOptions> 
             });
 
             if (quoteEvent.type !== 'quoteUpdated') {
-                throw new SwapError('Quote data is missing', SwapError.INVALID_QUOTE);
+                throw new SwapError('Quote data is missing', SwapErrorCode.InvalidQuote);
             }
 
             const quote = quoteEvent.quote;
@@ -209,7 +219,7 @@ export class OmnistonSwapProvider extends SwapProvider<OmnistonProviderOptions> 
 
             throw new SwapError(
                 `Omniston quote request failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-                SwapError.NETWORK_ERROR,
+                SwapErrorCode.NetworkError,
                 error,
             );
         }
@@ -221,7 +231,7 @@ export class OmnistonSwapProvider extends SwapProvider<OmnistonProviderOptions> 
         const metadata = params.quote.metadata;
 
         if (!metadata || !isOmnistonQuoteMetadata(metadata)) {
-            throw new SwapError('Invalid quote: missing Omniston quote data', SwapError.INVALID_QUOTE);
+            throw new SwapError('Invalid quote: missing Omniston quote data', SwapErrorCode.InvalidQuote);
         }
 
         try {
@@ -229,7 +239,7 @@ export class OmnistonSwapProvider extends SwapProvider<OmnistonProviderOptions> 
             const now = getUnixtime();
 
             if (omnistonQuote.tradeStartDeadline && omnistonQuote.tradeStartDeadline < now) {
-                throw new SwapError('Quote has expired, please request a new one', SwapError.QUOTE_EXPIRED);
+                throw new SwapError('Quote has expired, please request a new one', SwapErrorCode.QuoteExpired);
             }
 
             const userAddress = Address.parse(params.userAddress).toRawString();
@@ -250,11 +260,11 @@ export class OmnistonSwapProvider extends SwapProvider<OmnistonProviderOptions> 
                 useRecommendedSlippage: true,
             };
 
-            const buildResult = await this.omniston.buildTransfer(transactionRequest);
+            const buildResult = await withTimeout(this.omniston.buildTransfer(transactionRequest), this.buildTimeoutMs);
             const messages = buildResult?.ton?.messages;
 
             if (!messages || messages.length === 0) {
-                throw new SwapError('Failed to build transaction: no messages returned', SwapError.BUILD_TX_FAILED);
+                throw new SwapError('Failed to build transaction: no messages returned', SwapErrorCode.BuildTxFailed);
             }
 
             const transaction: TransactionRequest = {
@@ -283,7 +293,7 @@ export class OmnistonSwapProvider extends SwapProvider<OmnistonProviderOptions> 
 
             throw new SwapError(
                 `Failed to build Omniston transaction: ${error instanceof Error ? error.message : 'Unknown error'}`,
-                SwapError.NETWORK_ERROR,
+                SwapErrorCode.NetworkError,
                 error,
             );
         }
@@ -293,8 +303,6 @@ export class OmnistonSwapProvider extends SwapProvider<OmnistonProviderOptions> 
         const metadata: OmnistonQuoteMetadata = {
             omnistonQuote: quote,
         };
-
-        const fee: SwapFee[] = [];
 
         // if (quote.protocolFeeAsset) {
         //     fee.push({
@@ -326,7 +334,16 @@ export class OmnistonSwapProvider extends SwapProvider<OmnistonProviderOptions> 
 
             network: params.network,
             expiresAt: quote.tradeStartDeadline ? quote.tradeStartDeadline : undefined,
-            fee: fee?.length ? fee : undefined,
         };
     }
 }
+
+/**
+ * Returns an AppKit / `ProviderInput` factory for {@link OmnistonSwapProvider}:
+ * pass to `providers: [createOmnistonProvider(config)]`.
+ */
+export const createOmnistonProvider = (
+    config: OmnistonSwapProviderConfig = {},
+): ((ctx: ProviderFactoryContext) => OmnistonSwapProvider) => {
+    return () => new OmnistonSwapProvider(config);
+};

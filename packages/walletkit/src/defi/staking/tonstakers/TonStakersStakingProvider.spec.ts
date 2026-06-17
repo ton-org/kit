@@ -16,8 +16,8 @@ import { PoolContract } from './PoolContract';
 import { CONTRACT, DEFAULT_METADATA } from './constants';
 import { Network, UnstakeMode } from '../../../api/models';
 import type { Base64String, UserFriendlyAddress } from '../../../api/models';
-import type { ApiClient } from '../../../types/toncenter/ApiClient';
 import type { ProviderFactoryContext } from '../../../types/factory';
+import type { ApiClient } from '../../../api/interfaces';
 
 const mockApiClient = {
     runGetMethod: vi.fn(),
@@ -44,8 +44,8 @@ describe('TonStakersStakingProvider', () => {
             payload: 'mock-unstake-payload' as Base64String,
         });
         vi.spyOn(PoolContract.prototype, 'getPoolBalance').mockResolvedValue(500000000000n);
-        // totalBalance/supply = 1050/1000 = 1.05 (spot rate)
-        // projectedBalance/projectedSupply = 1100/1000 = 1.1 (projected rate)
+        // projectedSupply/projectedBalance = 1000/1100 ≈ 0.909090909 (projected rate, tsTON per TON — matches stake quote)
+        // totalBalance/supply = 1050/1000 = 1.05 (spot rate, used by unstake quote)
         vi.spyOn(PoolContract.prototype, 'getPoolData').mockResolvedValue({
             totalBalance: 1050000000000n,
             supply: 1000000000000n,
@@ -323,7 +323,7 @@ describe('TonStakersStakingProvider', () => {
             expect(info.apy).toBe(0.05);
             expect(info.rawInstantUnstakeAvailable).toBe('500000000000');
             expect(info.instantUnstakeAvailable).toBe('500');
-            expect(info.exchangeRate).toBe('1.05');
+            expect(info.exchangeRate).toBe('0.909090909');
             // Ensure exchange rates are NOT in the response
             expect(info).not.toHaveProperty('tsTONTON');
             expect(info).not.toHaveProperty('tsTONTONProjected');
@@ -357,7 +357,7 @@ describe('TonStakersStakingProvider', () => {
 
         it('should return provider metadata with token info', () => {
             const metadata = provider.getStakingProviderMetadata(Network.mainnet());
-            expect(metadata.stakeToken.ticker).toBe('TON');
+            expect(metadata.stakeToken.ticker).toBe('GRAM');
             expect(metadata.stakeToken.decimals).toBe(9);
             expect(metadata.receiveToken?.ticker).toBe('tsTON');
             expect(metadata.receiveToken?.decimals).toBe(9);
@@ -442,7 +442,8 @@ describe('TonStakersStakingProvider', () => {
             const customProvider = createTonstakersProvider({
                 [customNetwork.chainId]: {
                     metadata: {
-                        stakeToken: { ticker: 'TON', decimals: 9, address: 'ton' },
+                        name: 'Custom',
+                        stakeToken: { ticker: 'GRAM', decimals: 9, address: 'ton' },
                         contractAddress: 'EQSomeContract' as UserFriendlyAddress,
                         supportedUnstakeModes: [UnstakeMode.INSTANT],
                         supportsReversedQuote: false,
@@ -451,7 +452,7 @@ describe('TonStakersStakingProvider', () => {
             })({ networkManager: customNetworkManager } as ProviderFactoryContext);
 
             const metadata = customProvider.getStakingProviderMetadata(customNetwork);
-            expect(metadata.stakeToken.ticker).toBe('TON');
+            expect(metadata.stakeToken.ticker).toBe('GRAM');
             expect(metadata.receiveToken).toBeUndefined();
         });
     });

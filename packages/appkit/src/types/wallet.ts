@@ -8,6 +8,8 @@
 
 import type { Feature, SendTransactionResponse, Hex, UserFriendlyAddress } from '@ton/walletkit';
 
+export type { Feature } from '@ton/walletkit';
+
 import type { TransactionRequest } from './transaction';
 import type { SignDataRequest, SignDataResponse, SignMessageResponse } from './signing';
 import type { Network } from './network';

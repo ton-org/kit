@@ -8,4 +8,4 @@
 
 export { GaslessProvider } from './GaslessProvider';
 export { GaslessManager } from './GaslessManager';
-export { GaslessError } from './errors';
+export { GaslessError, GaslessErrorCode } from './errors';

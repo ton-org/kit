@@ -29,7 +29,6 @@ import type {
     SignDataRequestEvent,
     SignMessageRequestEvent,
     SignMessageApprovalResponse,
-    IntentActionRequestEvent,
     ApiClientConfig,
     ApiClient,
     SignatureDomain,
@@ -41,8 +40,12 @@ import type {
     StreamingAPI,
     StakingProviderInterface,
     StakingAPI,
+    EmbeddedRequestEvent,
+    GaslessAPI,
+    GaslessProviderInterface,
 } from '@ton/walletkit';
 import {
+    CreateTonMnemonic,
     MemoryStorageAdapter,
     Signer,
     WalletV4R2Adapter,
@@ -60,6 +63,8 @@ import { DeDustSwapProvider } from '@ton/walletkit/swap/dedust';
 import type { DeDustSwapProviderConfig } from '@ton/walletkit/swap/dedust';
 import { TonStakersStakingProvider } from '@ton/walletkit/staking/tonstakers';
 import type { TonStakersProviderConfig } from '@ton/walletkit/staking/tonstakers';
+import { TonApiGaslessProvider } from '@ton/walletkit/gasless/tonapi';
+import type { TonApiGaslessProviderConfig } from '@ton/walletkit/gasless/tonapi';
 
 import { SwiftStorageAdapter } from './SwiftStorageAdapter';
 import { SwiftWalletAdapter } from './SwiftWalletAdapter';
@@ -68,6 +73,7 @@ import { SwiftTONConnectSessionsManager } from './SwiftTONConnectSessionsManager
 import type {
     SwiftApiClient,
     SwiftBridgeTransport,
+    SwiftFetchManifest,
     SwiftWalletKit,
     SwiftWalletKitConfiguration,
     SwiftWalletSigner,
@@ -82,11 +88,12 @@ declare global {
             bridgeTransport?: SwiftBridgeTransport,
             sessionManager?: TONConnectSessionManager,
             apiClients?: SwiftApiClient[],
+            fetchManifest?: SwiftFetchManifest,
         ) => Promise<void>;
     }
 }
 
-window.initWalletKit = async (configuration, storage, bridgeTransport, sessionManager, apiClients) => {
+window.initWalletKit = async (configuration, storage, bridgeTransport, sessionManager, apiClients, fetchManifest) => {
     console.log('🚀 WalletKit iOS Bridge starting...');
 
     console.log('Creating WalletKit instance with configuration', configuration);
@@ -157,6 +164,8 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, sessionMa
         eventProcessor: configuration.eventsConfiguration,
         storage: storage ? new SwiftStorageAdapter(storage) : new MemoryStorageAdapter({}),
         dev: configuration.dev,
+        analytics: configuration.analytics,
+        fetchManifest: fetchManifest,
     });
 
     console.log('🚀 WalletKit iOS Bridge starting...');
@@ -190,7 +199,7 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, sessionMa
             return initialized && !!walletKit;
         },
 
-        jettonsManager(): JettonsAPI {
+        jettons(): JettonsAPI {
             return walletKit.jettons;
         },
 
@@ -213,6 +222,11 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, sessionMa
                 await callback('signDataRequest', event);
             });
 
+            walletKit.onSignMessageRequest(async (event) => {
+                console.log('📨 Sign message request received:', event);
+                await callback('signMessageRequest', event);
+            });
+
             walletKit.onDisconnect(async (event) => {
                 console.log('📨 Disconnect event received:', event);
                 await callback('disconnect', event);
@@ -226,9 +240,18 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, sessionMa
             walletKit.removeConnectRequestCallback();
             walletKit.removeTransactionRequestCallback();
             walletKit.removeSignDataRequestCallback();
+            walletKit.removeSignMessageRequestCallback();
             walletKit.removeDisconnectCallback();
 
             console.log('🗑️ All event listeners removed');
+        },
+
+        async createMnemonic(): Promise<string[]> {
+            if (!initialized) throw new Error('WalletKit Bridge not initialized');
+
+            console.log('➕ Bridge: Creating mnemonic');
+
+            return await CreateTonMnemonic();
         },
 
         async createSignerFromMnemonic(mnemonic: string): Promise<WalletSigner> {
@@ -417,7 +440,7 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, sessionMa
         async approveConnectRequest(
             event: ConnectionRequestEvent,
             response?: ConnectionApprovalResponse,
-        ): Promise<IntentActionRequestEvent | undefined> {
+        ): Promise<EmbeddedRequestEvent | undefined> {
             if (!initialized) throw new Error('WalletKit Bridge not initialized');
             console.log('✅ Bridge: Approving connect request:', event, event.walletAddress);
 
@@ -590,6 +613,10 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, sessionMa
             return TonStakersStakingProvider.createFromContext(walletKit.createFactoryContext(), config ?? {});
         },
 
+        createTonApiGaslessProvider(config?: TonApiGaslessProviderConfig): GaslessProviderInterface {
+            return TonApiGaslessProvider.createFromContext(walletKit.createFactoryContext(), config ?? {});
+        },
+
         swap(): SwapAPI {
             return walletKit.swap;
         },
@@ -600,6 +627,10 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, sessionMa
 
         staking(): StakingAPI {
             return walletKit.staking;
+        },
+
+        gasless(): GaslessAPI {
+            return walletKit.gasless;
         },
     };
 };

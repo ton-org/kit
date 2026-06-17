@@ -6,26 +6,34 @@
  *
  */
 
+'use client';
+
 import { getGaslessConfigQueryOptions } from '@ton/appkit/queries';
 import type { GetGaslessConfigData, GetGaslessConfigErrorType, GetGaslessConfigQueryConfig } from '@ton/appkit/queries';
 
 import { useAppKit } from '../../settings';
 import { useQuery } from '../../../libs/query';
 import type { UseQueryReturnType } from '../../../libs/query';
+import { useNetwork } from '../../network';
 
 export type UseGaslessConfigParameters<selectData = GetGaslessConfigData> = GetGaslessConfigQueryConfig<selectData>;
+
 export type UseGaslessConfigReturnType<selectData = GetGaslessConfigData> = UseQueryReturnType<
     selectData,
     GetGaslessConfigErrorType
 >;
 
 /**
- * Hook to get gasless relayer configuration.
+ * Hook to fetch the gasless relayer's configuration — relay address and
+ * accepted fee assets.
  */
 export const useGaslessConfig = <selectData = GetGaslessConfigData>(
     parameters: UseGaslessConfigParameters<selectData> = {},
 ): UseGaslessConfigReturnType<selectData> => {
     const appKit = useAppKit();
+    const walletNetwork = useNetwork();
 
-    return useQuery(getGaslessConfigQueryOptions(appKit, parameters));
+    return useQuery(
+        getGaslessConfigQueryOptions(appKit, { ...parameters, network: parameters.network ?? walletNetwork }),
+    );
 };

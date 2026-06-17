@@ -8,7 +8,7 @@
 
 import { asAddressFriendly } from '../../../utils/address';
 import type { TonApiMessage, TonApiTransaction } from '../types/transactions';
-import type { Hex, Transaction, TransactionDescription, TransactionMessage } from '../../../api/models';
+import type { AccountStatus, Hex, Transaction, TransactionDescription, TransactionMessage } from '../../../api/models';
 import { Base64Normalize, Base64ToHex, isHex } from '../../../utils';
 
 export function toHex(value: string): Hex {
@@ -54,15 +54,13 @@ export function parseBlockRef(block: string | undefined): { workchain: number; s
     };
 }
 
-export function toAccountStatus(
-    status: string | undefined,
-): { type: 'active' } | { type: 'frozen' } | { type: 'uninit' } | { type: 'unknown'; value: string } | undefined {
+export function toAccountStatus(status: string | undefined): AccountStatus | undefined {
     if (!status) return undefined;
-    if (status === 'active') return { type: 'active' };
-    if (status === 'frozen') return { type: 'frozen' };
-    if (status === 'uninit') return { type: 'uninit' };
-    if (status === 'nonexist') return { type: 'unknown', value: 'nonexist' };
-    return { type: 'unknown', value: status };
+    if (status === 'active') return 'active';
+    if (status === 'frozen') return 'frozen';
+    if (status === 'uninit') return 'uninitialized';
+    if (status === 'nonexist') return 'non-existing';
+    return 'non-existing';
 }
 
 export function mapTonApiMessage(raw: TonApiMessage): TransactionMessage {
@@ -137,8 +135,8 @@ export function mapTonApiDescription(raw: TonApiTransaction): TransactionDescrip
             skippedActionsNumber: raw.action_phase?.skipped_actions ?? 0,
             messagesCreatedNumber: raw.out_msgs?.length ?? 0,
             totalMessagesSize: {
-                cells: '0',
-                bits: '0',
+                cells: 0,
+                bits: 0,
             },
         },
     };

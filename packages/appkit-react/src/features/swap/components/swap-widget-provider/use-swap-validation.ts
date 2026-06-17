@@ -7,9 +7,11 @@
  */
 
 import { useMemo } from 'react';
+import type { SwapQuote } from '@ton/appkit';
 
 import type { AppkitUIToken } from '../../../../types/appkit-ui-token';
-import type { SwapWidgetError } from './swap-widget-provider';
+import { hasTooManyDecimals, isAmountExceedingBalance } from '../../../../utils/validate-amount';
+import { mapSwapError } from '../../utils/map-swap-error';
 
 interface UseSwapValidationOptions {
     fromAmount: string;
@@ -17,38 +19,48 @@ interface UseSwapValidationOptions {
     fromToken: AppkitUIToken | null;
     toToken: AppkitUIToken | null;
     fromBalance: string | undefined;
+    quote: SwapQuote | undefined;
     quoteError: Error | null;
+    sendError: Error | null;
+    isNetworkSupported: boolean;
 }
 
-export function useSwapValidation({
+export const useSwapValidation = ({
     fromAmount,
     fromAmountDebounced,
     fromToken,
     toToken,
     fromBalance,
+    quote,
     quoteError,
-}: UseSwapValidationOptions) {
-    const error: SwapWidgetError = useMemo(() => {
-        const amount = parseFloat(fromAmount) || 0;
-        if (amount <= 0) return null;
+    sendError,
+    isNetworkSupported,
+}: UseSwapValidationOptions) => {
+    const blockingError: string | null = useMemo(() => {
+        if (!isNetworkSupported) return 'defi.unsupportedNetwork';
 
-        const fraction = fromAmount.split('.')[1];
-        if (fraction && fromToken && fraction.length > fromToken.decimals) {
-            return 'tooManyDecimals';
-        }
+        if ((parseFloat(fromAmount) || 0) <= 0) return null;
 
-        if (fromBalance !== undefined && amount > parseFloat(fromBalance)) {
-            return 'insufficientBalance';
-        }
+        if (hasTooManyDecimals(fromAmount, fromToken?.decimals)) return 'swap.tooManyDecimals';
 
-        if (quoteError && fromAmountDebounced) {
-            return 'quoteError';
-        }
+        if (isAmountExceedingBalance(fromAmount, fromBalance)) return 'swap.insufficientBalance';
+
+        if (quoteError && fromAmountDebounced) return mapSwapError(quoteError);
 
         return null;
-    }, [fromAmount, fromToken, fromBalance, quoteError, fromAmountDebounced]);
+    }, [isNetworkSupported, fromAmount, fromToken, fromBalance, quoteError, fromAmountDebounced]);
 
-    const canSubmit = (parseFloat(fromAmount) || 0) > 0 && fromToken !== null && toToken !== null && error === null;
+    const error = useMemo<string | null>(() => {
+        if (sendError) return mapSwapError(sendError, 'swap.sendFailed');
+        return blockingError;
+    }, [sendError, blockingError]);
+
+    const canSubmit =
+        (parseFloat(fromAmount) || 0) > 0 &&
+        fromToken !== null &&
+        toToken !== null &&
+        blockingError === null &&
+        quote !== undefined;
 
     return { error, canSubmit };
-}
+};

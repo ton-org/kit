@@ -1,9 +1,3 @@
-<!--
-This file is auto-generated. Do not edit manually.
-Changes will be overwritten when running the docs update script.
-Source template: template/packages/appkit/docs/actions.md
--->
-
 # Actions
 
 AppKit provides a set of actions to interact with the blockchain and wallets.
@@ -202,7 +196,6 @@ if (!selectedWallet) {
 const balance = await getJettonBalance(appKit, {
     jettonAddress: 'EQDBE420tTQIkoWcZ9pEOTKY63WVmwyIl3hH6yWl0r_h51Tl',
     ownerAddress: selectedWallet.getAddress(),
-    jettonDecimals: 6,
 });
 console.log('Jetton Balance:', balance.toString());
 ```
@@ -246,7 +239,6 @@ const tx = await createTransferJettonTransaction(appKit, {
     recipientAddress: 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c',
     amount: '100', // 100 USDT
     comment: 'Hello Jetton',
-    jettonDecimals: 6,
 });
 console.log('Transfer Transaction:', tx);
 ```
@@ -260,7 +252,6 @@ const result = await transferJetton(appKit, {
     jettonAddress: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs',
     recipientAddress: 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c',
     amount: '100',
-    jettonDecimals: 6,
 });
 console.log('Transfer Result:', result);
 ```
@@ -438,55 +429,43 @@ const result = await transferNft(appKit, {
 console.log('NFT Transfer Result:', result);
 ```
 
-## Onramp
+## Crypto Onramp
 
-### `getOnrampManager`
+### `getCryptoOnrampProvider`
 
-Get the `OnrampManager` instance.
-
-### `getOnrampProvider`
-
-Get a specific onramp provider by its ID.
-
-### `getOnrampProviders`
-
-Get all registered onramp providers.
-
-### `watchOnrampProviders`
-
-Watch for new onramp providers registration.
-
-### `getOnrampQuote`
-
-Get an onramp quote from registered providers.
+Get a registered crypto-onramp provider by id, or the default one when no id is given.
 
 ```ts
-const quote = await getOnrampQuote(appKit, {
-    fiatCurrency: 'USD',
-    cryptoCurrency: 'TON',
-    amount: '100',
-    isFiatAmount: true,
-});
-console.log('Onramp Quote:', quote);
+const provider = getCryptoOnrampProvider(appKit, { id: 'layerswap' });
+console.log('Crypto onramp provider:', provider.providerId);
 ```
 
-### `buildOnrampUrl`
+### `getCryptoOnrampProviders`
 
-Build an onramp URL for redirecting the user to the provider.
+Get all registered crypto-onramp providers.
 
 ```ts
-const quote = await getOnrampQuote(appKit, {
-    fiatCurrency: 'USD',
-    cryptoCurrency: 'TON',
-    amount: '100',
-});
-
-const url = await buildOnrampUrl(appKit, {
-    quote,
-    userAddress: 'UQ...wallet-address...',
-});
-console.log('Onramp URL:', url);
+const providers = getCryptoOnrampProviders(appKit);
+console.log(
+    'Registered crypto onramp providers:',
+    providers.map((p) => p.providerId),
+);
 ```
+
+### `getCryptoOnrampProviderMetadata`
+
+Get static metadata for a crypto-onramp provider (display name, logo, url).
+
+```ts
+const metadata = getCryptoOnrampProviderMetadata(appKit, {
+    providerId: 'layerswap',
+});
+console.log('Crypto onramp provider metadata:', metadata);
+```
+
+### `watchCryptoOnrampProviders`
+
+Watch for new crypto-onramp providers registration and default-provider changes.
 
 ## Providers
 
@@ -495,11 +474,12 @@ console.log('Onramp URL:', url);
 Register a custom provider in AppKit (e.g., Swap or Streaming).
 
 ```ts
-const omnistonProvider = new OmnistonSwapProvider({
-    defaultSlippageBps: 100, // 1%
-});
-
-registerProvider(appKit, omnistonProvider);
+registerProvider(
+    appKit,
+    createOmnistonProvider({
+        defaultSlippageBps: 100, // 1%
+    }),
+);
 ```
 
 ## Signing
@@ -558,6 +538,26 @@ Get a specific swap provider by its ID.
 
 ```ts
 const swapProvider = getSwapProvider(appKit, { id: 'stonfi' });
+```
+
+### `getSwapProviders`
+
+Get all registered swap providers. The returned array keeps a stable reference until the provider list changes.
+
+```ts
+const swapProviders = getSwapProviders(appKit);
+console.log(
+    'Registered providers:',
+    swapProviders.map((p) => p.providerId),
+);
+```
+
+### `setDefaultSwapProvider`
+
+Set the default swap provider. Subsequent quote and swap-transaction calls will use this provider when none is specified.
+
+```ts
+setDefaultSwapProvider(appKit, { providerId: 'stonfi' });
 ```
 
 ### `watchSwapProviders`
@@ -668,6 +668,129 @@ const balance = await getStakedBalance(appKit, {
     userAddress,
 });
 console.log('Staked Balance:', balance);
+```
+
+## Gasless
+
+Gasless lets a dApp submit on-chain transactions without the user holding TON for gas: a relayer co-signs and broadcasts the transaction, charging the user a fee in a relayer-accepted asset (e.g. USDT). The connected wallet must support the `SignMessage` TonConnect feature. See the [gasless guide](./gasless.md) for a regular-send → gasless-send migration.
+
+The high-level flow is:
+1. `getGaslessConfig` – discover the relay address and assets the relayer accepts as fee payment.
+2. `getGaslessQuote` – ask the relayer for fee + wrapped messages (with a `validUntil`).
+3. `sendGaslessTransaction` – sign the wrapped messages via the wallet and submit the signed BoC.
+
+### `getGaslessManager`
+
+Get the `GaslessManager` instance to interact with gasless providers directly.
+
+```ts
+const gaslessManager = getGaslessManager(appKit);
+```
+
+### `getGaslessProvider`
+
+Get a specific gasless provider by its ID. Uses the default provider when no `id` is supplied.
+
+```ts
+const provider = getGaslessProvider(appKit, { id: 'tonapi' });
+```
+
+### `getGaslessProviders`
+
+Get all registered gasless providers.
+
+```ts
+const providers = getGaslessProviders(appKit);
+console.log(
+    'Registered gasless providers:',
+    providers.map((p) => p.providerId),
+);
+```
+
+### `setDefaultGaslessProvider`
+
+Set the default gasless provider. Subsequent quote and send calls will use this provider when none is specified.
+
+```ts
+setDefaultGaslessProvider(appKit, { providerId: 'tonapi' });
+```
+
+### `watchGaslessProviders`
+
+Watch for new gasless provider registrations and default-provider changes.
+
+```ts
+const unsubscribe = watchGaslessProviders(appKit, {
+    onChange: () => console.log('Gasless providers updated'),
+});
+unsubscribe();
+```
+
+### `getGaslessProviderMetadata`
+
+Fetch static metadata (display name, logo, url) for a gasless provider.
+
+```ts
+const metadata = await getGaslessProviderMetadata(appKit);
+console.log('Gasless provider:', metadata.name, metadata.url);
+```
+
+### `getGaslessConfig`
+
+Fetch the relayer's configuration on a network — the relay address (e.g. for jetton-transfer `responseDestination`) and the assets it accepts as fee payment.
+
+```ts
+const config = await getGaslessConfig(appKit);
+const feeAsset = config.supportedAssets[0].address;
+console.log('Relay address:', config.relayAddress, '— supported fee assets:', config.supportedAssets.length);
+```
+
+### `getGaslessQuote`
+
+Ask the relayer for a gasless transaction quote. Returns relayer-wrapped messages, the fee charged in the chosen `feeAsset`, and the bundle validity window (`validUntil`). Omit `feeAsset` for free / sponsored providers — jetton-fee providers (like TonAPI) throw `GaslessError(UNSUPPORTED_OPERATION)` in that case. Quotes are typically valid for ~2 minutes.
+
+```ts
+const quote = await getGaslessQuote(appKit, {
+    feeAsset,
+    messages: [
+        {
+            address: 'EQ...jetton_wallet_address',
+            amount: '60000000', // 0.06 TON gas budget
+            payload: asBase64('te6cckEBAQEAAgAAAA=='),
+        },
+    ],
+});
+console.log('Relayer fee:', quote.fee, 'valid until:', quote.validUntil);
+```
+
+### `getGaslessJettonTransferQuote`
+
+Convenience wrapper that builds a jetton transfer's messages (resolving the jetton wallet address, decimals and payload) and quotes them in one call. Takes semantic params (`jettonAddress`, `recipientAddress`, `amount`, `feeAsset`) instead of pre-built `messages`. Returns a `GaslessQuote` to pass to `sendGaslessTransaction`.
+
+```ts
+// Convenience wrapper: builds the jetton transfer messages for you, then quotes.
+const jettonQuote = await getGaslessJettonTransferQuote(appKit, {
+    jettonAddress: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs',
+    recipientAddress: 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c',
+    amount: '100',
+    feeAsset, // pay the relayer fee in this jetton (here: USDT)
+});
+await sendGaslessTransaction(appKit, { quote: jettonQuote });
+```
+
+### `sendGaslessTransaction`
+
+Sign a previously computed gasless quote and submit the resulting BoC to the relayer. Returns a `GaslessSendResponse` — a strict superset of `SendTransactionResponse` (`{ boc, normalizedBoc, normalizedHash, internalBoc }`).
+
+Throws:
+- `GaslessError(QUOTE_EXPIRED)` if the quote's `validUntil` window has passed (checked before signing).
+- `GaslessError(WALLET_MISMATCH)` if the quote was issued for a different address than the selected wallet.
+- `GaslessError(SIGN_MESSAGE_NOT_SUPPORTED)` if the connected wallet does not advertise the `SignMessage` feature.
+- `GaslessError(TOO_MANY_MESSAGES)` if the quote carries more messages than the wallet's `maxMessages` cap.
+
+```ts
+const result = await sendGaslessTransaction(appKit, { quote });
+console.log('Submitted gasless transaction. Hash:', result.normalizedHash, 'BoC:', result.internalBoc);
 ```
 
 ## Transaction
@@ -802,3 +925,48 @@ const unsubscribe = watchSelectedWallet(appKit, {
 
 // Later: unsubscribe();
 ```
+
+### `getSignMessageSupport`
+
+Whether the selected wallet advertises the `SignMessage` feature (required for gasless). Fail-closed: returns `false` when no wallet is selected or features aren't advertised.
+
+```ts
+const supported = getSignMessageSupport(appKit);
+
+console.log(supported ? 'Wallet supports SignMessage (gasless available)' : 'SignMessage not supported');
+```
+
+### `watchSignMessageSupport`
+
+Watch whether the selected wallet supports `SignMessage`, re-evaluated on every selection change.
+
+```ts
+const unsubscribe = watchSignMessageSupport(appKit, {
+    onChange: (supported) => {
+        console.log('SignMessage support changed:', supported);
+    },
+});
+
+// Later: unsubscribe();
+```
+
+### `getCustomProvider`
+
+Get a registered custom provider by id.
+
+```tsx
+const provider = getCustomProvider<MyCustomProvider>(appKit, {
+    id: 'my-provider',
+});
+
+if (provider) {
+    console.log('Custom provider is available');
+}
+```
+
+<!--
+This file is auto-generated. Do not edit manually.
+Changes will be overwritten when running the docs update script.
+Source template: template/packages/appkit/docs/actions.md
+-->
+

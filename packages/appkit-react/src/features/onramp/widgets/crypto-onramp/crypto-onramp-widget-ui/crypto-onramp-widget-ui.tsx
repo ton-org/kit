@@ -6,47 +6,52 @@
  *
  */
 
-import { useCallback, useEffect, useState } from 'react';
-import type { FC } from 'react';
-import { formatLargeValue, truncateDecimals } from '@ton/appkit';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { ComponentProps, FC } from 'react';
+import clsx from 'clsx';
 
-import { ButtonWithConnect } from '../../../../../components/button-with-connect';
+import { ButtonWithConnect } from '../../../../../components/shared/button-with-connect';
+import { useConnect, useConnectors } from '../../../../wallets';
 import { OnrampTokenSelectors } from '../../../components/onramp-token-selectors';
-import { CenteredAmountInput } from '../../../../../components/centered-amount-input';
-import { AmountPresets } from '../../../../../components/amount-presets';
-import { OnrampTokenSelectModal } from '../../../components/onramp-token-select-modal';
-import { OnrampAmountReversed } from '../../../components/onramp-amount-reversed';
+import { CenteredAmountInput } from '../../../../../components/ui/centered-amount-input';
+import { AmountPresets } from '../../../../../components/shared/amount-presets';
+import { TokenSelectModal } from '../../../../../components/shared/token-select-modal';
+import { AmountReversed } from '../../../../../components/ui/amount-reversed';
+import { SettingsButton } from '../../../../../components/shared/settings-button';
 import { CryptoMethodSelectModal } from '../crypto-method-select-modal';
 import { CryptoOnrampDepositModal } from '../crypto-onramp-deposit-modal';
 import { CryptoOnrampRefundAddressModal } from '../crypto-onramp-refund-address-modal';
-import { InfoBlock } from '../../../../../components/info-block';
+import { CryptoOnrampSettingsModal } from '../crypto-onramp-settings-modal';
+import { InfoBlock } from '../../../../../components/ui/info-block';
 import type { CryptoOnrampContextType } from '../crypto-onramp-widget-provider';
+import { getChainInfo } from '../utils/chains';
+import { formatOnrampAmount } from '../utils/format-onramp-amount';
 import { useI18n } from '../../../../settings/hooks/use-i18n';
 import styles from './crypto-onramp-widget-ui.module.css';
 
-export type CryptoOnrampWidgetRenderProps = CryptoOnrampContextType;
-
-const formatAmount = (amount?: string, decimals?: number) => {
-    const trimmed = truncateDecimals(amount || '0', Math.min(5, decimals || 9));
-
-    return formatLargeValue(trimmed, decimals);
-};
+export type CryptoOnrampWidgetRenderProps = CryptoOnrampContextType &
+    Omit<ComponentProps<'div'>, keyof CryptoOnrampContextType>;
 
 export const CryptoOnrampWidgetUI: FC<CryptoOnrampWidgetRenderProps> = ({
     tokens,
-    tokenSections,
     selectedToken,
     setSelectedToken,
     paymentMethods,
-    methodSections,
     selectedMethod,
     setSelectedMethod,
+    isLoadingSupportedCurrencies,
+    chains,
     amount,
     setAmount,
     amountInputMode,
     setAmountInputMode,
     convertedAmount,
     presetAmounts,
+    provider,
+    providers,
+    providersMetadata,
+    isProvidersMetadataLoading,
+    setProviderId,
     quote,
     isLoadingQuote,
     createDeposit,
@@ -57,40 +62,64 @@ export const CryptoOnrampWidgetUI: FC<CryptoOnrampWidgetRenderProps> = ({
     canContinue,
     onReset,
     depositStatus,
-    refundAddress,
-    setRefundAddress,
+    refundAddressMode,
+    isReversedAmountSupported,
     quoteError,
     depositError,
     targetBalance,
     isLoadingTargetBalance,
+    className,
+    ...props
 }) => {
-    const { t } = useI18n();
     const [isTokenSelectOpen, setIsTokenSelectOpen] = useState(false);
     const [isMethodSelectOpen, setIsMethodSelectOpen] = useState(false);
     const [isRefundAddressOpen, setIsRefundAddressOpen] = useState(false);
     const [isDepositOpen, setIsDepositOpen] = useState(false);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [submittedRefundAddress, setSubmittedRefundAddress] = useState<string | undefined>(undefined);
 
-    useEffect(() => {
-        if (deposit) {
-            setIsDepositOpen(true);
-            setIsRefundAddressOpen(false);
-        }
-    }, [deposit]);
+    const { t } = useI18n();
+
+    const connectors = useConnectors();
+    const { mutate: connect } = useConnect();
+
+    // TokenSelectModal generic requires `id` + non-optional `name`; supplement with
+    // address-derived id and a name fallback so walletkit currencies satisfy the shared type.
+    const tokensForSelect = useMemo(
+        () => tokens.map((c) => ({ ...c, id: c.address, name: c.name ?? c.symbol })),
+        [tokens],
+    );
+
+    const providerName = provider ? providersMetadata[provider.providerId]?.name : undefined;
+
+    const handleConnect = useCallback(() => {
+        if (connectors[0]) connect({ connectorId: connectors[0].id });
+    }, [connectors, connect]);
 
     const handleContinue = useCallback(() => {
-        if (quote?.providerId === 'layerswap') {
+        if (refundAddressMode === 'off') {
             createDeposit();
             return;
         }
         setIsRefundAddressOpen(true);
-    }, [quote?.providerId, createDeposit]);
+    }, [refundAddressMode, createDeposit]);
 
-    const handleConfirmRefundAddress = useCallback(() => {
+    const handleConfirmRefundAddress = useCallback(
+        (address: string) => {
+            setSubmittedRefundAddress(address);
+            createDeposit(address);
+        },
+        [createDeposit],
+    );
+
+    const handleSkipRefundAddress = useCallback(() => {
+        setSubmittedRefundAddress(undefined);
         createDeposit();
     }, [createDeposit]);
 
     const handleDepositClose = useCallback(() => {
         setIsDepositOpen(false);
+        setSubmittedRefundAddress(undefined);
         onReset();
     }, [onReset]);
 
@@ -99,15 +128,31 @@ export const CryptoOnrampWidgetUI: FC<CryptoOnrampWidgetRenderProps> = ({
         onReset();
     }, [onReset]);
 
+    useEffect(() => {
+        if (deposit) {
+            setIsDepositOpen(true);
+            setIsRefundAddressOpen(false);
+        }
+    }, [deposit]);
+
+    const isSelectionIncomplete = !selectedToken || !selectedMethod;
+
     return (
-        <div className={styles.widget}>
+        <div className={clsx(styles.widget, className)} {...props}>
             <OnrampTokenSelectors
                 className={styles.selectors}
-                from={{ title: selectedToken?.symbol ?? '', logoSrc: selectedToken?.logo }}
+                from={{
+                    title: selectedToken?.symbol ?? '',
+                    logoSrc: selectedToken?.logo,
+                    loading: !selectedToken && isLoadingSupportedCurrencies,
+                    placeholder: t('cryptoOnramp.buyToken'),
+                }}
                 to={{
-                    title: selectedMethod.symbol,
-                    logoSrc: selectedMethod.logo,
-                    networkLogoSrc: selectedMethod.networkLogo,
+                    title: selectedMethod?.symbol ?? '',
+                    logoSrc: selectedMethod?.logo,
+                    networkLogoSrc: selectedMethod ? getChainInfo(selectedMethod.chain, chains).logo : undefined,
+                    loading: !selectedMethod && isLoadingSupportedCurrencies,
+                    placeholder: t('cryptoOnramp.forToken'),
                 }}
                 onFromClick={() => setIsTokenSelectOpen(true)}
                 onToClick={() => setIsMethodSelectOpen(true)}
@@ -118,40 +163,64 @@ export const CryptoOnrampWidgetUI: FC<CryptoOnrampWidgetRenderProps> = ({
                     className={styles.input}
                     value={amount}
                     onValueChange={setAmount}
-                    disabled={!isWalletConnected}
-                    ticker={amountInputMode === 'token' ? selectedToken?.symbol : selectedMethod.symbol}
+                    disabled={!isWalletConnected || isSelectionIncomplete}
+                    ticker={amountInputMode === 'token' ? selectedToken?.symbol : selectedMethod?.symbol}
+                    onClick={!isWalletConnected ? handleConnect : undefined}
                 />
 
-                <OnrampAmountReversed
-                    className={styles.converted}
-                    value={convertedAmount}
-                    onChangeDirection={() => setAmountInputMode(amountInputMode === 'token' ? 'method' : 'token')}
-                    ticker={amountInputMode === 'token' ? selectedMethod.symbol : selectedToken?.symbol}
-                />
+                {isSelectionIncomplete ? (
+                    <p className={styles.caption}>
+                        {isLoadingSupportedCurrencies ? t('cryptoOnramp.loading') : t('cryptoOnramp.selectToken')}
+                    </p>
+                ) : (
+                    <AmountReversed
+                        className={styles.converted}
+                        value={convertedAmount}
+                        onChangeDirection={
+                            isReversedAmountSupported
+                                ? () => setAmountInputMode(amountInputMode === 'token' ? 'method' : 'token')
+                                : undefined
+                        }
+                        ticker={amountInputMode === 'token' ? selectedMethod?.symbol : selectedToken?.symbol}
+                        decimals={
+                            amountInputMode === 'token'
+                                ? (selectedMethod?.decimals ?? 0)
+                                : (selectedToken?.decimals ?? 0)
+                        }
+                    />
+                )}
             </div>
 
-            <AmountPresets className={styles.presets} presets={presetAmounts} onPresetSelect={setAmount} />
+            <AmountPresets
+                className={styles.presets}
+                presets={presetAmounts}
+                onPresetSelect={setAmount}
+                disabled={isSelectionIncomplete}
+            />
 
-            <ButtonWithConnect
-                variant="fill"
-                size="l"
-                disabled={!canContinue || isCreatingDeposit}
-                loading={isCreatingDeposit}
-                onClick={handleContinue}
-                fullWidth
-            >
-                {quoteError ?? t('cryptoOnramp.continue')}
-            </ButtonWithConnect>
+            <div className={styles.actions}>
+                <ButtonWithConnect
+                    variant="fill"
+                    size="l"
+                    disabled={!canContinue || isCreatingDeposit}
+                    loading={isCreatingDeposit}
+                    onClick={handleContinue}
+                    fullWidth
+                >
+                    {quoteError ? t(quoteError) : t('cryptoOnramp.continue')}
+                </ButtonWithConnect>
+                <SettingsButton onClick={() => setIsSettingsOpen(true)} />
+            </div>
 
             <InfoBlock.Container className={styles.info}>
                 <InfoBlock.Row>
                     <InfoBlock.Label>{t('cryptoOnramp.youGet')}</InfoBlock.Label>
 
-                    {isLoadingQuote ? (
-                        <InfoBlock.ValueSkeleton />
-                    ) : (
+                    {isLoadingQuote && <InfoBlock.ValueSkeleton />}
+                    {!isLoadingQuote && isSelectionIncomplete && <InfoBlock.Value>—</InfoBlock.Value>}
+                    {!isLoadingQuote && !isSelectionIncomplete && (
                         <InfoBlock.Value>
-                            {formatAmount(
+                            {formatOnrampAmount(
                                 amountInputMode === 'token' ? amount : convertedAmount,
                                 selectedToken?.decimals,
                             )}{' '}
@@ -160,49 +229,48 @@ export const CryptoOnrampWidgetUI: FC<CryptoOnrampWidgetRenderProps> = ({
                     )}
                 </InfoBlock.Row>
 
-                <InfoBlock.Row>
-                    <InfoBlock.Label>{t('cryptoOnramp.exchangeRate')}</InfoBlock.Label>
-
-                    {isLoadingQuote ? (
-                        <InfoBlock.ValueSkeleton />
-                    ) : (
-                        <InfoBlock.Value>
-                            1 {selectedToken?.symbol} ={' '}
-                            {formatAmount(quote ? (1 / parseFloat(quote.rate)).toString() : '0', 2)}{' '}
-                            {selectedMethod.symbol}
-                        </InfoBlock.Value>
-                    )}
-                </InfoBlock.Row>
-
                 {isWalletConnected && (
                     <InfoBlock.Row>
                         <InfoBlock.Label>{t('cryptoOnramp.yourBalance')}</InfoBlock.Label>
 
-                        {isLoadingTargetBalance ? (
-                            <InfoBlock.ValueSkeleton />
-                        ) : (
+                        {isLoadingTargetBalance && <InfoBlock.ValueSkeleton />}
+                        {!isLoadingTargetBalance && !selectedToken && <InfoBlock.Value>—</InfoBlock.Value>}
+                        {!isLoadingTargetBalance && selectedToken && (
                             <InfoBlock.Value>
-                                {formatAmount(targetBalance || '0', selectedToken?.decimals)} {selectedToken?.symbol}
+                                {formatOnrampAmount(targetBalance || '0', selectedToken.decimals)}{' '}
+                                {selectedToken.symbol}
                             </InfoBlock.Value>
                         )}
                     </InfoBlock.Row>
                 )}
+
+                <InfoBlock.Row>
+                    <InfoBlock.Label>{t('cryptoOnramp.provider')}</InfoBlock.Label>
+                    {providerName === undefined && isProvidersMetadataLoading ? (
+                        <InfoBlock.ValueSkeleton />
+                    ) : (
+                        <InfoBlock.Value>{providerName ?? ''}</InfoBlock.Value>
+                    )}
+                </InfoBlock.Row>
             </InfoBlock.Container>
 
-            <OnrampTokenSelectModal
+            <TokenSelectModal
                 open={isTokenSelectOpen}
                 onClose={() => setIsTokenSelectOpen(false)}
-                tokens={tokens}
-                tokenSections={tokenSections}
+                tokens={tokensForSelect}
                 onSelect={setSelectedToken}
+                title={t('cryptoOnramp.tokenToBuy')}
+                searchPlaceholder={t('onramp.searchToken')}
+                isLoading={isLoadingSupportedCurrencies}
             />
 
             <CryptoMethodSelectModal
                 open={isMethodSelectOpen}
                 onClose={() => setIsMethodSelectOpen(false)}
                 methods={paymentMethods}
-                methodSections={methodSections}
+                chains={chains}
                 onSelect={setSelectedMethod}
+                isLoading={isLoadingSupportedCurrencies}
             />
 
             <CryptoOnrampDepositModal
@@ -210,10 +278,11 @@ export const CryptoOnrampWidgetUI: FC<CryptoOnrampWidgetRenderProps> = ({
                 onClose={handleDepositClose}
                 address={deposit?.address ?? ''}
                 amount={depositAmount}
-                symbol={selectedMethod.symbol}
+                symbol={selectedMethod?.symbol ?? ''}
                 memo={deposit?.memo}
-                tokenLogo={selectedMethod.logo}
-                networkWarning={deposit?.networkWarning}
+                refundAddress={submittedRefundAddress}
+                tokenLogo={selectedMethod?.logo}
+                networkName={selectedMethod ? getChainInfo(selectedMethod.chain, chains).name : undefined}
                 depositStatus={depositStatus}
                 targetSymbol={selectedToken?.symbol ?? ''}
                 targetBalance={targetBalance}
@@ -224,11 +293,20 @@ export const CryptoOnrampWidgetUI: FC<CryptoOnrampWidgetRenderProps> = ({
             <CryptoOnrampRefundAddressModal
                 open={isRefundAddressOpen}
                 onClose={handleRefundAddressClose}
-                value={refundAddress}
-                onChange={setRefundAddress}
                 onConfirm={handleConfirmRefundAddress}
+                onSkip={refundAddressMode === 'optional' ? handleSkipRefundAddress : undefined}
                 isLoading={isCreatingDeposit}
-                error={depositError}
+                error={depositError ? t(depositError) : null}
+            />
+
+            <CryptoOnrampSettingsModal
+                open={isSettingsOpen}
+                onClose={() => setIsSettingsOpen(false)}
+                provider={provider}
+                providers={providers}
+                providersMetadata={providersMetadata}
+                isProvidersMetadataLoading={isProvidersMetadataLoading}
+                onProviderChange={setProviderId}
             />
         </div>
     );

@@ -9,7 +9,8 @@
 import { useMemo } from 'react';
 import type { StakingQuoteDirection, StakingQuote } from '@ton/appkit';
 
-import type { StakingWidgetError } from './staking-widget-provider';
+import { hasTooManyDecimals, isAmountExceedingBalance } from '../../../../utils/validate-amount';
+import { mapStakingError } from '../../utils/map-staking-error';
 
 interface UseStakingValidationOptions {
     amount: string;
@@ -17,10 +18,13 @@ interface UseStakingValidationOptions {
     balance: string | undefined;
     quote?: StakingQuote;
     quoteError: Error | null;
+    /** Error from the build/send mutation. Takes priority over input validation but does not block submit. */
+    sendError: Error | null;
     direction: StakingQuoteDirection;
     amountDecimals?: number;
     isReversed: boolean;
     stakedBalance?: string;
+    isNetworkSupported: boolean;
 }
 
 export const useStakingValidation = ({
@@ -29,42 +33,59 @@ export const useStakingValidation = ({
     balance,
     quote,
     quoteError,
+    sendError,
     direction,
     amountDecimals,
     isReversed,
     stakedBalance,
+    isNetworkSupported,
 }: UseStakingValidationOptions) => {
-    const error: StakingWidgetError = useMemo(() => {
-        const parsed = parseFloat(amount) || 0;
-        if (parsed <= 0) return null;
+    // Input-side validation that blocks submission. `sendError` is intentionally NOT considered
+    // here — a previous failed attempt shouldn't lock the button against a retry.
+    const blockingError: string | null = useMemo(() => {
+        if (!isNetworkSupported) return 'defi.unsupportedNetwork';
 
-        const fraction = amount.split('.')[1];
-        if (fraction && amountDecimals && fraction.length > amountDecimals) {
-            return 'tooManyDecimals';
+        if ((parseFloat(amount) || 0) <= 0) return null;
+
+        if (hasTooManyDecimals(amount, amountDecimals)) return 'staking.tooManyDecimals';
+
+        if (direction === 'stake' && isAmountExceedingBalance(amount, balance)) {
+            return 'staking.insufficientBalance';
         }
 
-        if (direction === 'stake' && balance !== undefined && parsed > parseFloat(balance)) {
-            return 'insufficientBalance';
-        }
-
-        if (direction === 'unstake' && stakedBalance) {
-            if (!isReversed && parsed > parseFloat(stakedBalance)) {
-                return 'insufficientBalance';
+        if (direction === 'unstake') {
+            // On reversed unstake the user types the GRAM they want to receive; compare the tsTON
+            // spend (quote.amountIn) to the staked balance instead.
+            const outgoingAmount = isReversed ? quote?.amountIn : amount;
+            if (isAmountExceedingBalance(outgoingAmount, stakedBalance)) {
+                return 'staking.insufficientBalance';
             }
-
-            if (isReversed && quote && parseFloat(quote.amountIn) > parseFloat(stakedBalance)) {
-                return 'insufficientBalance';
-            }
         }
 
-        if (quoteError && amountDebounced) {
-            return 'quoteError';
-        }
+        if (quoteError && amountDebounced) return mapStakingError(quoteError);
 
         return null;
-    }, [amount, balance, quoteError, amountDebounced, direction, stakedBalance, isReversed, quote, amountDecimals]);
+    }, [
+        isNetworkSupported,
+        amount,
+        balance,
+        quoteError,
+        amountDebounced,
+        direction,
+        stakedBalance,
+        isReversed,
+        quote,
+        amountDecimals,
+    ]);
 
-    const canSubmit = (parseFloat(amount) || 0) > 0 && error === null;
+    // The user-visible error: build/send failure (most recent user action) wins over background
+    // validation noise; falls back to validation when no send error is active.
+    const error = useMemo<string | null>(() => {
+        if (sendError) return mapStakingError(sendError, 'staking.sendFailed');
+        return blockingError;
+    }, [sendError, blockingError]);
+
+    const canSubmit = (parseFloat(amount) || 0) > 0 && blockingError === null && quote !== undefined;
 
     return { error, canSubmit };
 };

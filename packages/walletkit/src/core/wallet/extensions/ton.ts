@@ -7,9 +7,9 @@
  */
 
 import { isValidAddress } from '../../../utils/address';
-import { isValidNanotonAmount, validateTransactionMessage } from '../../../validation';
+import { isValidNanoAmount, validateTransactionMessage } from '../../../validation';
 import { CallForSuccess } from '../../../utils/retry';
-import { createTransactionPreview as createTransactionPreviewHelper } from '../../../utils/toncenterEmulation';
+import { createTransactionPreview as createTransactionPreviewHelper } from '../../../utils/transactionPreview';
 import { createCommentPayloadBase64 } from '../../../utils/messageBuilders';
 import { getNormalizedExtMessageHash } from '../../../utils/getNormalizedExtMessageHash';
 import { ERROR_CODES, WalletKitError } from '../../../errors';
@@ -21,6 +21,7 @@ import type {
     TransactionRequestMessage,
     SendTransactionResponse,
     Base64String,
+    TransactionPreviewOptions,
 } from '../../../api/models';
 import type { Wallet, WalletTonInterface } from '../../../api/interfaces';
 
@@ -31,7 +32,7 @@ export class WalletTonClass implements WalletTonInterface {
         if (!isValidAddress(param.recipientAddress)) {
             throw new Error(`Invalid to address: ${param.recipientAddress}`);
         }
-        if (!isValidNanotonAmount(param.transferAmount)) {
+        if (!isValidNanoAmount(param.transferAmount)) {
             throw new Error(`Invalid amount: ${param.transferAmount}`);
         }
 
@@ -65,7 +66,7 @@ export class WalletTonClass implements WalletTonInterface {
             if (!isValidAddress(param.recipientAddress)) {
                 throw new Error(`Invalid to address: ${param.recipientAddress}`);
             }
-            if (!isValidNanotonAmount(param.transferAmount)) {
+            if (!isValidNanoAmount(param.transferAmount)) {
                 throw new Error(`Invalid amount: ${param.transferAmount}`);
             }
 
@@ -99,9 +100,12 @@ export class WalletTonClass implements WalletTonInterface {
     async getTransactionPreview(
         this: Wallet,
         param: TransactionRequest | Promise<TransactionRequest>,
+        options?: TransactionPreviewOptions,
     ): Promise<TransactionEmulatedPreview> {
         const transaction = await param;
-        const preview = await CallForSuccess(() => createTransactionPreviewHelper(this.client, transaction, this));
+        const preview = await CallForSuccess(() =>
+            createTransactionPreviewHelper(this.client, transaction, this, options),
+        );
         return preview;
     }
 

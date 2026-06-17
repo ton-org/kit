@@ -8,7 +8,7 @@
 
 import type {
     Transaction,
-    AccountState,
+    TransactionAccountState,
     AccountStatus,
     TransactionMessage,
     TransactionDescription,
@@ -17,18 +17,19 @@ import type {
 } from '../../../api/models';
 import { Base64ToHex } from '../../../utils/base64';
 import { asAddressFriendly, asMaybeAddressFriendly } from '../../../utils/address';
+import { parseMsgSizeCount } from '../../../clients/toncenter/utils';
 import type { StreamingV2AccountState, StreamingV2TransactionRaw, StreamingV2TransactionDescription } from '../types';
 import type { EmulationBlockRef, EmulationMessage } from '../../../types/toncenter/emulation';
 
 const toAccountStatus = (status: string | null | undefined): AccountStatus | undefined => {
     if (!status) return undefined;
-    if (status === 'active') return { type: 'active' };
-    if (status === 'frozen') return { type: 'frozen' };
-    if (status === 'uninit') return { type: 'uninit' };
-    return { type: 'unknown', value: status };
+    if (status === 'active') return 'active';
+    if (status === 'frozen') return 'frozen';
+    if (status === 'uninit') return 'uninitialized';
+    return 'non-existing';
 };
 
-const toAccountState = (state: StreamingV2AccountState): AccountState => {
+const toAccountState = (state: StreamingV2AccountState): TransactionAccountState => {
     return {
         hash: Base64ToHex(state.hash),
         balance: state.balance ?? '0',
@@ -131,7 +132,12 @@ const toTransactionDescription = (desc: StreamingV2TransactionDescription): Tran
                   skippedActionsNumber: action.skipped_actions,
                   messagesCreatedNumber: action.msgs_created,
                   actionListHash: action.action_list_hash ? Base64ToHex(action.action_list_hash) : undefined,
-                  totalMessagesSize: action.tot_msg_size,
+                  totalMessagesSize: action.tot_msg_size
+                      ? {
+                            cells: parseMsgSizeCount(action.tot_msg_size.cells),
+                            bits: parseMsgSizeCount(action.tot_msg_size.bits),
+                        }
+                      : undefined,
               }
             : undefined,
     };

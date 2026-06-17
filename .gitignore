@@ -1,10 +1,12 @@
 *node_modules*
 .env
+.env.integration.local
 .DS_Store
 *dist
 dist-android
 .idea
 .turbo
+.cache
 apps/demo-wallet/dist-extension.pem
 apps/demo-wallet/dist-extension.crx
 coverage
@@ -13,6 +15,7 @@ reports
 *-results
 *-report
 generated
+storybook-static
 .local/
 settings.local.json
 
@@ -36,3 +39,5 @@ packages/walletkit-android-bridge/*.sh
 release-artifacts
 *.tgz
 apps/appkit-minter/Caddyfile
+Caddyfile
+.superset

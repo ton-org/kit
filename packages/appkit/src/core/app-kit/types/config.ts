@@ -8,8 +8,10 @@
 
 import type { NetworkAdapters, ProviderInput } from '@ton/walletkit';
 
+import type { AppKitCache } from '../../cache';
 import type { ConnectorInput } from '../../../types/connector';
 import type { Network } from '../../../types/network';
+import type { AppKitProvider } from '../../../types/provider';
 
 /**
  * Configuration for AppKit
@@ -36,10 +38,11 @@ export interface AppKitConfig {
      */
     defaultNetwork?: Network;
 
-    providers?: ProviderInput[];
+    providers?: ProviderInput<AppKitProvider>[];
 
     /**
-     * Enable server-side rendering support
+     * Custom cache implementation.
+     * Defaults to an LRU cache with a 10-minute TTL and a maximum of 1000 entries.
      */
-    ssr?: boolean;
+    cache?: AppKitCache;
 }

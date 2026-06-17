@@ -6,19 +6,20 @@
  *
  */
 
-import { SwapManager, StreamingManager, OnrampManager, GaslessManager, CryptoOnrampManager } from '@ton/walletkit';
+import { SwapManager, StreamingManager, CryptoOnrampManager } from '@ton/walletkit';
 import type {
     ProviderInput,
     SwapProviderInterface,
     StakingProviderInterface,
-    OnrampProviderInterface,
-    GaslessProviderInterface,
     CryptoOnrampProviderInterface,
+    StreamingProvider,
 } from '@ton/walletkit';
 
 import type { AppKitConfig } from '../types/config';
 import { CONNECTOR_EVENTS, WALLETS_EVENTS } from '../constants/events';
 import { StakingManager } from '../../../staking';
+import { GaslessManager } from '../../../gasless';
+import type { GaslessProviderInterface } from '../../../gasless';
 import type { Connector, ConnectorFactoryContext, ConnectorInput } from '../../../types/connector';
 import { EventEmitter } from '../../emitter';
 import type { AppKitEmitter, AppKitEvents } from '../types/events';
@@ -26,6 +27,11 @@ import type { WalletInterface } from '../../../types/wallet';
 import { WalletsManager } from '../../wallets-manager';
 import { AppKitNetworkManager } from '../../network';
 import { Network } from '../../../types/network';
+import type { AppKitCache } from '../../cache';
+import { LruAppKitCache } from '../../cache';
+import type { AppKitProvider } from '../../../types/provider';
+import { CustomProvidersManager } from '../../../providers';
+import type { CustomProvider } from '../../../providers';
 
 /**
  * Central hub for wallet management.
@@ -37,20 +43,21 @@ export class AppKit {
     readonly walletsManager: WalletsManager;
     readonly swapManager: SwapManager;
     readonly stakingManager: StakingManager;
-    readonly onrampManager: OnrampManager;
-    readonly gaslessManager: GaslessManager;
     readonly cryptoOnrampManager: CryptoOnrampManager;
+    readonly gaslessManager: GaslessManager;
+    readonly customProvidersManager: CustomProvidersManager;
 
     readonly networkManager: AppKitNetworkManager;
     readonly streamingManager: StreamingManager;
     readonly config: AppKitConfig;
+    readonly cache: AppKitCache;
 
     constructor(config: AppKitConfig) {
         this.config = config;
+        this.cache = config.cache ?? new LruAppKitCache();
 
         this.emitter = new EventEmitter<AppKitEvents>();
-        this.emitter.on(CONNECTOR_EVENTS.CONNECTED, this.updateWalletsFromConnectors.bind(this));
-        this.emitter.on(CONNECTOR_EVENTS.DISCONNECTED, this.updateWalletsFromConnectors.bind(this));
+        this.emitter.on(CONNECTOR_EVENTS.WALLETS_UPDATED, this.updateWalletsFromConnectors.bind(this));
 
         // Use provided networks config or default to mainnet
         const networks = config.networks ?? {
@@ -58,16 +65,13 @@ export class AppKit {
         };
 
         this.networkManager = new AppKitNetworkManager({ networks }, this.emitter);
-        if (config.defaultNetwork) {
-            this.networkManager.setDefaultNetwork(config.defaultNetwork);
-        }
         this.walletsManager = new WalletsManager(this.emitter);
 
         this.swapManager = new SwapManager(() => this.createFactoryContext());
         this.stakingManager = new StakingManager(() => this.createFactoryContext());
-        this.onrampManager = new OnrampManager(() => this.createFactoryContext());
-        this.gaslessManager = new GaslessManager(() => this.createFactoryContext());
         this.cryptoOnrampManager = new CryptoOnrampManager(() => this.createFactoryContext());
+        this.gaslessManager = new GaslessManager(() => this.createFactoryContext());
+        this.customProvidersManager = new CustomProvidersManager(() => this.createFactoryContext());
         this.streamingManager = new StreamingManager(() => this.createFactoryContext());
 
         if (config.connectors) {
@@ -84,7 +88,7 @@ export class AppKit {
     }
 
     createFactoryContext(): ConnectorFactoryContext {
-        return { eventEmitter: this.emitter, networkManager: this.networkManager, ssr: this.config?.ssr };
+        return { eventEmitter: this.emitter, networkManager: this.networkManager };
     }
 
     /**
@@ -100,6 +104,8 @@ export class AppKit {
         }
 
         this.connectors.push(connector);
+        this.updateWalletsFromConnectors();
+        this.emitter.emit(CONNECTOR_EVENTS.ADDED, { connector }, 'appkit');
 
         return () => {
             this.removeConnector(connector);
@@ -116,13 +122,15 @@ export class AppKit {
         if (oldConnector) {
             oldConnector.destroy();
             this.connectors.splice(this.connectors.indexOf(oldConnector), 1);
+            this.updateWalletsFromConnectors();
+            this.emitter.emit(CONNECTOR_EVENTS.REMOVED, { connector: oldConnector }, 'appkit');
         }
     }
 
     /**
      * Add a provider
      */
-    registerProvider(input: ProviderInput): void {
+    registerProvider(input: ProviderInput<AppKitProvider>): void {
         const provider = typeof input === 'function' ? input(this.createFactoryContext()) : input;
         switch (provider.type) {
             case 'swap':
@@ -131,14 +139,17 @@ export class AppKit {
             case 'staking':
                 this.stakingManager.registerProvider(provider as StakingProviderInterface);
                 break;
-            case 'onramp':
-                this.onrampManager.registerProvider(provider as OnrampProviderInterface);
+            case 'crypto-onramp':
+                this.cryptoOnrampManager.registerProvider(provider as CryptoOnrampProviderInterface);
+                break;
+            case 'streaming':
+                this.streamingManager.registerProvider(provider as StreamingProvider);
                 break;
             case 'gasless':
                 this.gaslessManager.registerProvider(provider as GaslessProviderInterface);
                 break;
-            case 'crypto-onramp':
-                this.cryptoOnrampManager.registerProvider(provider as CryptoOnrampProviderInterface);
+            case 'custom':
+                this.customProvidersManager.registerProvider(provider as CustomProvider);
                 break;
             default:
                 throw new Error('Unknown provider type');

@@ -6,28 +6,11 @@
  *
  */
 
-import { getRandomRarity, getRandomName, getRandomDescription, getCardImageUrl } from '../../lib/card-data';
-import type { CardData } from '../../types/card';
+import { createRandomCard } from '../../lib/card-data';
 import { useMinterStore } from '../minter-store';
 
-import { generateId } from '@/core/lib/utils';
-
-export const generateCard = async (): Promise<void> => {
+export const generateCard = (): void => {
     useMinterStore.setState({ isGenerating: true, mintError: null });
 
-    const rarity = getRandomRarity();
-    const name = getRandomName(rarity);
-    const description = getRandomDescription(rarity);
-    const imageUrl = await getCardImageUrl(rarity, name);
-
-    const newCard: CardData = {
-        id: generateId(),
-        name,
-        rarity,
-        description,
-        imageUrl,
-        createdAt: Date.now(),
-    };
-
-    useMinterStore.setState({ currentCard: newCard, isGenerating: false });
+    useMinterStore.setState({ currentCard: createRandomCard(), isGenerating: false });
 };

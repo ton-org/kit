@@ -28,7 +28,7 @@ import { PoolContract } from './PoolContract';
 import { StakingCache } from './StakingCache';
 import { ApiClientTonApi } from '../../../clients/tonapi/ApiClientTonApi';
 import { formatUnits, parseUnits } from '../../../utils/units';
-import type { ApiClient } from '../../../types/toncenter/ApiClient';
+import type { ApiClient } from '../../../api/interfaces';
 
 const log = globalLogger.createChild('TonStakersStakingProvider');
 
@@ -36,8 +36,8 @@ const log = globalLogger.createChild('TonStakersStakingProvider');
  * TonStakersStakingProvider - Staking provider for the Tonstakers liquid staking protocol.
  *
  * This provider implements all staking operations. It supports:
- * - Stake: Deposit TON to receive tsTON liquid staking tokens
- * - Unstake: Burn tsTON to withdraw TON with {@link UnstakeMode} values:
+ * - Stake: Deposit GRAM to receive tsTON liquid staking tokens
+ * - Unstake: Burn tsTON to withdraw GRAM with {@link UnstakeMode} values:
  *   - `INSTANT` – immediate withdrawal if the pool has liquidity (`fillOrKill`)
  *   - `WHEN_AVAILABLE` – withdraw when liquidity is available (non–fill-or-kill)
  *   - `ROUND_END` – wait until round end for the projected rate
@@ -194,11 +194,11 @@ export class TonStakersStakingProvider extends StakingProvider {
     }
 
     /**
-     * Build a transaction for staking TON.
+     * Build a transaction for staking GRAM.
      *
-     * The stake operation sends TON to the Tonstakers pool contract
+     * The stake operation sends GRAM to the Tonstakers pool contract
      * and receives tsTON liquid staking tokens in return.
-     * A fee reserve of 1 TON is automatically added to the amount.
+     * A fee reserve of 1 GRAM is automatically added to the amount.
      *
      * @param params - Stake parameters including quote and user address
      * @returns Transaction request ready to be signed and sent
@@ -391,10 +391,14 @@ export class TonStakersStakingProvider extends StakingProvider {
             const apy = await this.getApyFromTonApi(targetNetwork);
             const poolData = await contract.getPoolData();
 
-            // Compute exchange rate with 9-digit precision via bigint: (totalBalance * 10^9) / supply
-            const PRECISION = 1_000_000_000n;
-            const exchangeRate =
-                poolData.supply > 0n ? formatUnits((poolData.totalBalance * PRECISION) / poolData.supply, 9) : '1';
+            // Exchange rate is tsTON-per-TON — the amountOut of a stake quote for 1 TON.
+            // Mirrors the stake math in getQuote: rawAmountOut = rawAmountIn * projectedSupply / projectedBalance.
+            const rawAmountIn = parseUnits('1', 9);
+            const rawAmountOut =
+                poolData.projectedBalance > 0n
+                    ? (rawAmountIn * poolData.projectedSupply) / poolData.projectedBalance
+                    : rawAmountIn;
+            const exchangeRate = formatUnits(rawAmountOut, 9);
 
             return {
                 apy,
@@ -402,6 +406,19 @@ export class TonStakersStakingProvider extends StakingProvider {
                 instantUnstakeAvailable: formatUnits(instantLiquidity, 9),
                 exchangeRate,
             };
+        });
+    }
+
+    getSupportedNetworks(): Network[] {
+        return Object.keys(this.chainConfig).map((chainId) => {
+            switch (chainId) {
+                case Network.mainnet().chainId:
+                    return Network.mainnet();
+                case Network.testnet().chainId:
+                    return Network.testnet();
+                default:
+                    return Network.custom(chainId);
+            }
         });
     }
 
@@ -486,6 +503,7 @@ export class TonStakersStakingProvider extends StakingProvider {
         const m = meta as Record<string, unknown>;
 
         return (
+            typeof m.name === 'string' &&
             TonStakersStakingProvider.isValidTokenInfo(m.stakeToken) &&
             Array.isArray(m.supportedUnstakeModes) &&
             typeof m.supportsReversedQuote === 'boolean'
@@ -497,8 +515,8 @@ export class TonStakersStakingProvider extends StakingProvider {
  * Returns an AppKit / `ProviderInput` factory: pass to `providers: [createTonstakersProvider(config)]`.
  * At kit init, the factory receives context and builds the provider using `ctx.networkManager` for RPC.
  */
-export function createTonstakersProvider(
+export const createTonstakersProvider = (
     config: TonStakersProviderConfig = {},
-): (ctx: ProviderFactoryContext) => TonStakersStakingProvider {
+): ((ctx: ProviderFactoryContext) => TonStakersStakingProvider) => {
     return (ctx: ProviderFactoryContext) => TonStakersStakingProvider.createFromContext(ctx, config);
-}
+};

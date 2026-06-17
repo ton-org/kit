@@ -39,6 +39,8 @@ import type {
     TransactionRequest,
     TransactionStatusResponse,
     ProofMessage,
+    BaseProvider,
+    ProviderInput,
 } from '@ton/walletkit';
 import type { OmnistonProviderOptions } from '@ton/walletkit/swap/omniston';
 import { OmnistonSwapProvider } from '@ton/walletkit/swap/omniston';
@@ -120,7 +122,7 @@ export interface TransactionInfo {
         | 'SmartContractExec'
         | 'Unknown';
     status: 'success' | 'failure';
-    // For TON transfers
+    // For GRAM transfers
     from?: string;
     to?: string;
     amount?: string;
@@ -217,6 +219,8 @@ export interface McpWalletServiceConfig {
         mainnet?: NetworkConfig;
         testnet?: NetworkConfig;
     };
+
+    providers?: Array<ProviderInput<BaseProvider>>;
 }
 
 interface McpWalletServiceInternalConfig {
@@ -227,6 +231,8 @@ interface McpWalletServiceInternalConfig {
         mainnet?: NetworkConfig;
         testnet?: NetworkConfig;
     };
+
+    providers?: Array<ProviderInput<BaseProvider>>;
 }
 
 interface DeployAgenticSubwalletParams {
@@ -426,7 +432,7 @@ export class McpWalletService {
         const network = this.wallet.getNetwork();
         return network.chainId === Network.mainnet().chainId
             ? 'mainnet'
-            : Network.tetra().chainId
+            : network.chainId === Network.tetra().chainId
               ? 'tetra'
               : 'testnet';
     }
@@ -454,19 +460,25 @@ export class McpWalletService {
                 defaultSlippageBps: 100,
             });
             this.kit.swap.registerProvider(omnistonProvider);
+
+            if (this.config.providers) {
+                for (const providerInput of this.config.providers) {
+                    this.kit.registerProvider(providerInput);
+                }
+            }
         }
         return this.kit;
     }
 
     /**
-     * Get TON balance
+     * Get GRAM balance
      */
     async getBalance(): Promise<string> {
         return this.wallet.getBalance();
     }
 
     /**
-     * Get TON balance for any address.
+     * Get GRAM balance for any address.
      */
     async getBalanceByAddress(address: string): Promise<AddressBalanceResult> {
         const normalizedAddress = Address.parse(address).toString();
@@ -676,7 +688,7 @@ export class McpWalletService {
     }
 
     /**
-     * Send TON
+     * Send GRAM
      */
     async sendTon(toAddress: string, amountNano: string, comment?: string): Promise<TransferResult> {
         try {
@@ -690,7 +702,7 @@ export class McpWalletService {
 
             return {
                 success: true,
-                message: `Successfully sent ${amountNano} nanoTON to ${toAddress}`,
+                message: `Successfully sent ${amountNano} nano units to ${toAddress}`,
                 normalizedHash: response.normalizedHash,
             };
         } catch (error) {
@@ -771,7 +783,7 @@ export class McpWalletService {
             this.assertAgenticWalletVersion();
 
             if (!/^\d+$/.test(params.amountNano) || BigInt(params.amountNano) <= 0n) {
-                throw new Error('amountNano must be a positive integer in nanotons');
+                throw new Error('amountNano must be a positive integer in nano units');
             }
 
             const operatorPublicKey = McpWalletService.parseUint256(params.operatorPublicKey, 'operatorPublicKey');
@@ -889,7 +901,7 @@ export class McpWalletService {
      * Get swap quote with transaction params ready to execute
      * @param fromToken Token to swap from ("TON" or jetton address)
      * @param toToken Token to swap to ("TON" or jetton address)
-     * @param amount Amount to swap in human-readable format (e.g., "1.5" for 1.5 TON)
+     * @param amount Amount to swap in human-readable format (e.g., "1.5" for 1.5 GRAM)
      * @param slippageBps Slippage tolerance in basis points (default 100 = 1%)
      */
     async getSwapQuote(
@@ -901,7 +913,7 @@ export class McpWalletService {
         const network = this.wallet.getNetwork();
         const kit = await this.getKit();
 
-        // Get decimals for tokens (TON has 9 decimals, jettons need to be fetched)
+        // Get decimals for tokens (GRAM has 9 decimals, jettons need to be fetched)
         const getDecimals = async (token: string): Promise<number> => {
             if (token === 'TON' || token === 'ton') {
                 return 9;
@@ -1104,7 +1116,8 @@ export class McpWalletService {
      */
     async resolveDns(domain: string): Promise<string | null> {
         const client = this.wallet.getClient();
-        return client.resolveDnsWallet(domain);
+        const address = await client.resolveDnsWallet(domain);
+        return address ?? null;
     }
 
     /**
@@ -1112,7 +1125,8 @@ export class McpWalletService {
      */
     async backResolveDns(address: string): Promise<string | null> {
         const client = this.wallet.getClient();
-        return client.backResolveDnsWallet(address);
+        const domain = await client.backResolveDnsWallet(address);
+        return domain ?? null;
     }
 
     /**
@@ -1126,9 +1140,10 @@ export class McpWalletService {
         const timestamp = Math.floor(Date.now() / 1000);
         const domainLengthBytes = Buffer.byteLength(domain, 'utf-8');
 
+        const addressHash = Uint8ArrayToHex(address.hash);
         const proofMessage: ProofMessage = {
             workchain: address.workChain,
-            addressHash: Uint8ArrayToHex(address.hash),
+            addressHash: addressHash,
             domain: { lengthBytes: domainLengthBytes, value: domain },
             payload,
             stateInit,
@@ -1139,7 +1154,7 @@ export class McpWalletService {
         const signatureBase64 = HexToBase64(signatureHex);
 
         return {
-            address: `${address.workChain}:${address.hash.toString('hex')}`,
+            address: address.toRawString(),
             chain: this.wallet.getNetwork().chainId === Network.mainnet().chainId ? '-239' : '-3',
             walletStateInit: stateInit,
             publicKey,

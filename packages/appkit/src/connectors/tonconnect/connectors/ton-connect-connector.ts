@@ -11,14 +11,13 @@ import type { TonConnectUiCreateOptions } from '@tonconnect/ui';
 
 import { TonConnectWalletAdapter } from '../adapters/ton-connect-wallet-adapter';
 import { CONNECTOR_EVENTS, NETWORKS_EVENTS } from '../../../core/app-kit';
-import type { Connector, ConnectorMetadata } from '../../../types/connector';
+import type { Connector } from '../../../types/connector';
 import type { WalletInterface } from '../../../types/wallet';
 import { TONCONNECT_DEFAULT_CONNECTOR_ID } from '../constants/id';
 import { createConnector } from '../../../types/connector';
 
 export interface TonConnectConnectorConfig {
     id?: string;
-    metadata?: ConnectorMetadata;
     tonConnectOptions?: TonConnectUiCreateOptions;
     tonConnectUI?: TonConnectUI;
 }
@@ -29,18 +28,24 @@ export type TonConnectConnector = Connector & {
 };
 
 export const createTonConnectConnector = (config: TonConnectConnectorConfig) => {
-    return createConnector(({ eventEmitter, networkManager, ssr }): TonConnectConnector => {
+    return createConnector(({ eventEmitter, networkManager }): TonConnectConnector => {
         let originalTonConnectUI: TonConnectUI | null = null;
         let unsubscribeTonConnect: (() => void) | null = null;
+        let unsubscribeDefaultNetwork: (() => void) | null = null;
+        let destroyed = false;
 
         const id = config.id ?? TONCONNECT_DEFAULT_CONNECTOR_ID;
 
-        function getTonConnectUI() {
+        const getTonConnectUI = (): TonConnectUI | null => {
+            if (destroyed) {
+                return null;
+            }
+
             if (originalTonConnectUI) {
                 return originalTonConnectUI;
             }
 
-            if (ssr && typeof window === 'undefined') {
+            if (typeof window === 'undefined') {
                 return null;
             }
 
@@ -59,9 +64,9 @@ export const createTonConnectConnector = (config: TonConnectConnectorConfig) => 
             }
 
             return originalTonConnectUI;
-        }
+        };
 
-        function getConnectedWallets(): WalletInterface[] {
+        const getConnectedWallets = (): WalletInterface[] => {
             const ui = getTonConnectUI();
 
             if (ui && ui.connected && ui.wallet) {
@@ -77,40 +82,33 @@ export const createTonConnectConnector = (config: TonConnectConnectorConfig) => 
             }
 
             return [];
-        }
+        };
 
-        function setupListeners() {
+        const setupListeners = (): void => {
             if (!originalTonConnectUI || unsubscribeTonConnect) {
                 return;
             }
 
-            unsubscribeTonConnect = originalTonConnectUI.onStatusChange((wallet) => {
-                const wallets = getConnectedWallets();
-
-                if (wallet) {
-                    eventEmitter.emit(CONNECTOR_EVENTS.CONNECTED, { wallets, connectorId: id }, id);
-                } else {
-                    eventEmitter.emit(CONNECTOR_EVENTS.DISCONNECTED, { connectorId: id }, id);
-                }
+            unsubscribeTonConnect = originalTonConnectUI.onStatusChange(() => {
+                eventEmitter.emit(
+                    CONNECTOR_EVENTS.WALLETS_UPDATED,
+                    { connectorId: id, wallets: getConnectedWallets() },
+                    id,
+                );
             });
 
             // Set default network and subscribe to changes
             originalTonConnectUI.setConnectionNetwork(networkManager.getDefaultNetwork()?.chainId);
-            eventEmitter.on(NETWORKS_EVENTS.DEFAULT_CHANGED, ({ payload }) => {
+            unsubscribeDefaultNetwork = eventEmitter.on(NETWORKS_EVENTS.DEFAULT_CHANGED, ({ payload }) => {
                 if (originalTonConnectUI) {
                     originalTonConnectUI.setConnectionNetwork(payload.network?.chainId);
                 }
             });
-        }
+        };
 
         return {
             id,
             type: 'tonconnect',
-            metadata: {
-                name: 'TonConnect',
-                iconUrl: 'https://avatars.githubusercontent.com/u/113980577',
-                ...config.metadata,
-            },
 
             get tonConnectUI() {
                 return getTonConnectUI();
@@ -135,7 +133,11 @@ export const createTonConnectConnector = (config: TonConnectConnectorConfig) => 
             },
 
             destroy() {
+                destroyed = true;
                 unsubscribeTonConnect?.();
+                unsubscribeDefaultNetwork?.();
+                unsubscribeTonConnect = null;
+                unsubscribeDefaultNetwork = null;
                 originalTonConnectUI = null;
             },
         };

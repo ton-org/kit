@@ -6,16 +6,29 @@
  *
  */
 
-import { DefiManagerError } from '../errors';
+import { DefiError } from '../errors';
 
-export class CryptoOnrampError extends DefiManagerError {
-    static readonly PROVIDER_ERROR = 'PROVIDER_ERROR';
-    static readonly QUOTE_FAILED = 'QUOTE_FAILED';
-    static readonly DEPOSIT_FAILED = 'DEPOSIT_FAILED';
-    static readonly INVALID_REFUND_ADDRESS = 'INVALID_REFUND_ADDRESS';
+export enum CryptoOnrampErrorCode {
+    ProviderError = 'PROVIDER_ERROR',
+    QuoteFailed = 'QUOTE_FAILED',
+    RefundAddressRequired = 'REFUND_ADDRESS_REQUIRED',
+    InvalidRefundAddress = 'INVALID_REFUND_ADDRESS',
+    ReversedAmountNotSupported = 'REVERSED_AMOUNT_NOT_SUPPORTED',
+    UnsupportedSourceChain = 'UNSUPPORTED_SOURCE_CHAIN',
+    UnsupportedSourceToken = 'UNSUPPORTED_SOURCE_TOKEN',
+    UnsupportedDestinationToken = 'UNSUPPORTED_DESTINATION_TOKEN',
+    RouteNotFound = 'ROUTE_NOT_FOUND',
+    AmountTooLarge = 'AMOUNT_TOO_LARGE',
+    AmountTooSmall = 'AMOUNT_TOO_SMALL',
+    InvalidParams = 'INVALID_PARAMS',
+}
 
-    constructor(message: string, code: string, details?: unknown) {
+export class CryptoOnrampError extends DefiError {
+    public readonly code: CryptoOnrampErrorCode;
+
+    constructor(message: string, code: CryptoOnrampErrorCode, details?: unknown) {
         super(message, code, details);
         this.name = 'CryptoOnrampError';
+        this.code = code;
     }
 }

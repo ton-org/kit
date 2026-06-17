@@ -15,10 +15,13 @@ import type {
     DAppInfo,
     DisconnectEvent,
     JettonsResponse,
+    Network,
     NFT,
     NFTsResponse,
     SendTransactionResponse,
+    StakingProviderMetadata,
     StreamingWatchType,
+    SwapProviderMetadata,
     TONConnectSession,
     TonApiStreamingProviderConfig,
     TonCenterStreamingProviderConfig,
@@ -28,13 +31,18 @@ import type {
     Wallet,
     WalletResponse,
 } from '@ton/walletkit';
+import type { DeDustSwapProviderConfig } from '@ton/walletkit/swap/dedust';
+import type { OmnistonSwapProviderConfig } from '@ton/walletkit/swap/omniston';
+import type { TonApiGaslessProviderConfig } from '@ton/walletkit/gasless/tonapi';
+
+import type { TONBase64, TONHex, TONUserFriendlyAddress } from './brands';
+import type { WalletKitBridgeEventCallback } from './events';
+import type { WalletKitBridgeInitConfig } from './walletkit';
 
 /**
  * TonConnect event payload types that can be returned from processInternalBrowserRequest.
  */
 export type TonConnectEventPayload = ConnectEvent | ConnectEventError | WalletResponse | DisconnectEvent;
-import type { WalletKitBridgeEventCallback } from './events';
-import type { WalletKitBridgeInitConfig } from './walletkit';
 
 export type PromiseOrValue<T> = T | Promise<T>;
 
@@ -62,12 +70,12 @@ export interface CreateSignerFromMnemonicArgs {
 }
 
 export interface CreateSignerFromPrivateKeyArgs {
-    secretKey: string;
+    secretKey: TONHex;
 }
 
 export interface CreateSignerFromCustomArgs {
     signerId: string;
-    publicKey: string;
+    publicKey: TONHex;
 }
 
 export interface CreateWalletAdapterArgs {
@@ -102,19 +110,19 @@ export interface GetRecentTransactionsArgs {
 
 export interface CreateTransferTonTransactionArgs {
     walletId: string;
-    recipientAddress: string;
+    recipientAddress: TONUserFriendlyAddress;
     transferAmount: string;
     comment?: string;
-    body?: string;
-    stateInit?: string;
+    body?: TONBase64;
+    stateInit?: TONBase64;
 }
 
 export interface MultiTransferMessage {
-    recipientAddress: string;
+    recipientAddress: TONUserFriendlyAddress;
     transferAmount: string;
     comment?: string;
-    body?: string;
-    stateInit?: string;
+    body?: TONBase64;
+    stateInit?: TONBase64;
 }
 
 export interface CreateTransferMultiTonTransactionArgs {
@@ -142,7 +150,7 @@ export interface ApproveConnectRequestArgs {
     event: TonConnectRequestEvent;
     response?: {
         proof: {
-            signature: string;
+            signature: TONBase64;
             timestamp: number;
             domain: {
                 lengthBytes: number;
@@ -162,7 +170,7 @@ export interface RejectConnectRequestArgs {
 export interface ApproveTransactionRequestArgs {
     event: TonConnectRequestEvent;
     response?: {
-        signedBoc: string;
+        signedBoc: TONBase64;
     };
 }
 
@@ -174,13 +182,25 @@ export interface RejectTransactionRequestArgs {
 export interface ApproveSignDataRequestArgs {
     event: TonConnectRequestEvent;
     response?: {
-        signature: string;
+        signature: TONBase64;
         timestamp: number;
         domain: string;
     };
 }
 
 export interface RejectSignDataRequestArgs {
+    event: TonConnectRequestEvent;
+    reason?: string;
+}
+
+export interface ApproveSignMessageRequestArgs {
+    event: TonConnectRequestEvent;
+    response?: {
+        internalBoc: string;
+    };
+}
+
+export interface RejectSignMessageRequestArgs {
     event: TonConnectRequestEvent;
     reason?: string;
 }
@@ -262,14 +282,6 @@ export interface EmitBrowserBridgeRequestArgs {
     request: string;
 }
 
-export interface CreateTonCenterStreamingProviderArgs {
-    config: TonCenterStreamingProviderConfig;
-}
-
-export interface CreateTonApiStreamingProviderArgs {
-    config: TonApiStreamingProviderConfig;
-}
-
 export interface RegisterStreamingProviderArgs {
     providerId: string;
 }
@@ -280,7 +292,7 @@ export interface StreamingHasProviderArgs {
 
 export interface StreamingWatchArgs {
     network: { chainId: string };
-    address: string;
+    address: TONUserFriendlyAddress;
     types: StreamingWatchType[];
 }
 
@@ -294,7 +306,7 @@ export interface StreamingWatchConnectionChangeArgs {
 
 export interface StreamingWatchAddressArgs {
     network: { chainId: string };
-    address: string;
+    address: TONUserFriendlyAddress;
 }
 
 export interface RegisterKotlinStreamingProviderArgs {
@@ -305,6 +317,12 @@ export interface RegisterKotlinStreamingProviderArgs {
 export interface KotlinProviderDispatchArgs {
     subId: string;
     updateJson: string;
+}
+
+export interface RegisterKotlinStakingProviderArgs {
+    providerId: string;
+    metadata: StakingProviderMetadata;
+    supportedNetworks: Network[];
 }
 
 export interface HandleTonConnectUrlArgs {
@@ -334,7 +352,7 @@ export interface SetDefaultStakingProviderArgs {
 export interface GetStakingQuoteArgs {
     direction: 'stake' | 'unstake';
     amount: string;
-    userAddress?: string;
+    userAddress?: TONUserFriendlyAddress;
     network?: { chainId: string };
     unstakeMode?: string;
     providerOptions?: unknown;
@@ -343,7 +361,7 @@ export interface GetStakingQuoteArgs {
 
 export interface BuildStakeTransactionArgs {
     quote: StakingQuoteResponse;
-    userAddress: string;
+    userAddress: TONUserFriendlyAddress;
     providerOptions?: unknown;
     providerId?: string;
 }
@@ -362,7 +380,7 @@ export interface StakingQuoteResponse {
 }
 
 export interface GetStakedBalanceArgs {
-    userAddress: string;
+    userAddress: TONUserFriendlyAddress;
     network?: { chainId: string };
     providerId?: string;
 }
@@ -372,20 +390,27 @@ export interface GetStakingProviderInfoArgs {
     providerId?: string;
 }
 
-export interface GetSupportedUnstakeModesArgs {
+export interface GetStakingProviderMetadataArgs {
+    network?: { chainId: string };
     providerId?: string;
 }
 
 export interface CreateOmnistonSwapProviderArgs {
-    config?: Record<string, unknown>;
+    config?: OmnistonSwapProviderConfig;
 }
 
 export interface CreateDeDustSwapProviderArgs {
-    config?: Record<string, unknown>;
+    config?: DeDustSwapProviderConfig;
 }
 
 export interface RegisterSwapProviderArgs {
     providerId: string;
+}
+
+export interface RegisterKotlinSwapProviderArgs {
+    providerId: string;
+    metadata: SwapProviderMetadata;
+    supportedNetworks: Network[];
 }
 
 export interface GetSwapQuoteArgs {
@@ -405,27 +430,84 @@ export interface BuildSwapTransactionArgs {
     params: Record<string, unknown>;
 }
 
+export interface CreateTonApiGaslessProviderArgs {
+    config?: TonApiGaslessProviderConfig;
+}
+
+export interface RegisterGaslessProviderArgs {
+    providerId: string;
+}
+
+export interface SetDefaultGaslessProviderArgs {
+    providerId: string;
+}
+
+export interface HasGaslessProviderArgs {
+    providerId: string;
+}
+
+export interface GetGaslessMetadataArgs {
+    providerId?: string;
+}
+
+export interface GetGaslessConfigArgs {
+    network?: Record<string, unknown>;
+    providerId?: string;
+}
+
+export interface GetGaslessQuoteArgs {
+    params: Record<string, unknown>;
+    providerId?: string;
+}
+
+export interface GaslessSendTransactionArgs {
+    params: Record<string, unknown>;
+    providerId?: string;
+}
+
 export interface WalletKitBridgeApi {
     init(config?: WalletKitBridgeInitConfig): PromiseOrValue<{ ok: true }>;
     setEventsListeners(args?: SetEventsListenersArgs): PromiseOrValue<{ ok: true }>;
     removeEventListeners(): PromiseOrValue<{ ok: true }>;
     mnemonicToKeyPair(args: MnemonicToKeyPairArgs): PromiseOrValue<{ publicKey: Uint8Array; secretKey: Uint8Array }>;
-    sign(args: SignArgs): PromiseOrValue<string>;
+    sign(args: SignArgs): PromiseOrValue<TONHex>;
     createTonMnemonic(args?: CreateTonMnemonicArgs): PromiseOrValue<string[]>;
     createSignerFromMnemonic(
         args: CreateSignerFromMnemonicArgs,
-    ): PromiseOrValue<{ signerId: string; publicKey: string }>;
+    ): PromiseOrValue<{ signerId: string; publicKey: TONHex }>;
     createSignerFromPrivateKey(
         args: CreateSignerFromPrivateKeyArgs,
-    ): PromiseOrValue<{ signerId: string; publicKey: string }>;
-    createSignerFromCustom(args: CreateSignerFromCustomArgs): PromiseOrValue<{ signerId: string; publicKey: string }>;
-    createV5R1WalletAdapter(args: CreateWalletAdapterArgs): PromiseOrValue<{ adapterId: string; address: string }>;
-    createV4R2WalletAdapter(args: CreateWalletAdapterArgs): PromiseOrValue<{ adapterId: string; address: string }>;
+    ): PromiseOrValue<{ signerId: string; publicKey: TONHex }>;
+    createSignerFromCustom(args: CreateSignerFromCustomArgs): PromiseOrValue<{ signerId: string; publicKey: TONHex }>;
+    createV5R1WalletAdapter(
+        args: CreateWalletAdapterArgs,
+    ): PromiseOrValue<{ adapterId: string; address: TONUserFriendlyAddress }>;
+    createV4R2WalletAdapter(
+        args: CreateWalletAdapterArgs,
+    ): PromiseOrValue<{ adapterId: string; address: TONUserFriendlyAddress }>;
     addWallet(args: AddWalletArgs): PromiseOrValue<{ walletId: string | undefined; wallet: Wallet } | null>;
     releaseRef(args: ReleaseRefArgs): PromiseOrValue<{ ok: boolean }>;
     getWallets(): PromiseOrValue<{ walletId: string | undefined; wallet: Wallet }[]>;
     getWallet(args: { walletId: string }): PromiseOrValue<{ walletId: string | undefined; wallet: Wallet } | null>;
-    getWalletAddress(args: { walletId: string }): PromiseOrValue<string | null>;
+    getWalletAddress(args: { walletId: string }): PromiseOrValue<TONUserFriendlyAddress | null>;
+    getWalletPublicKey(args: { walletId: string }): PromiseOrValue<TONHex>;
+    getWalletStateInit(args: { walletId: string }): PromiseOrValue<unknown>;
+    getSignedSignMessage(args: { walletId: string; request: Record<string, unknown> }): PromiseOrValue<unknown>;
+    getSignedSendTransaction(args: {
+        walletId: string;
+        input: Record<string, unknown>;
+        fakeSignature?: boolean;
+    }): PromiseOrValue<unknown>;
+    getSignedSignData(args: {
+        walletId: string;
+        input: Record<string, unknown>;
+        fakeSignature?: boolean;
+    }): PromiseOrValue<unknown>;
+    getSignedTonProof(args: {
+        walletId: string;
+        input: Record<string, unknown>;
+        fakeSignature?: boolean;
+    }): PromiseOrValue<unknown>;
     removeWallet(args: RemoveWalletArgs): PromiseOrValue<void>;
     getBalance(args: GetBalanceArgs): PromiseOrValue<string | undefined>;
     getRecentTransactions(args: GetRecentTransactionsArgs): PromiseOrValue<Transaction[]>;
@@ -438,10 +520,14 @@ export interface WalletKitBridgeApi {
     sendTransaction(args: TransactionContentArgs): PromiseOrValue<SendTransactionResponse>;
     approveConnectRequest(args: ApproveConnectRequestArgs): PromiseOrValue<void>;
     rejectConnectRequest(args: RejectConnectRequestArgs): PromiseOrValue<{ success: boolean }>;
-    approveTransactionRequest(args: ApproveTransactionRequestArgs): PromiseOrValue<{ signedBoc: string }>;
+    approveTransactionRequest(args: ApproveTransactionRequestArgs): PromiseOrValue<{ signedBoc: TONBase64 }>;
     rejectTransactionRequest(args: RejectTransactionRequestArgs): PromiseOrValue<{ success: boolean }>;
-    approveSignDataRequest(args: ApproveSignDataRequestArgs): PromiseOrValue<{ signature: string; timestamp: number }>;
+    approveSignDataRequest(
+        args: ApproveSignDataRequestArgs,
+    ): PromiseOrValue<{ signature: TONBase64; timestamp: number }>;
     rejectSignDataRequest(args: RejectSignDataRequestArgs): PromiseOrValue<{ success: boolean }>;
+    approveSignMessageRequest(args: ApproveSignMessageRequestArgs): PromiseOrValue<{ internalBoc: string }>;
+    rejectSignMessageRequest(args: RejectSignMessageRequestArgs): PromiseOrValue<{ success: boolean }>;
     listSessions(): PromiseOrValue<{ items: TONConnectSession[] }>;
     disconnectSession(args?: DisconnectSessionArgs): PromiseOrValue<{ ok: boolean }>;
     getNfts(args: GetNftsArgs): PromiseOrValue<NFTsResponse>;
@@ -451,16 +537,14 @@ export interface WalletKitBridgeApi {
     getJettons(args: GetJettonsArgs): PromiseOrValue<JettonsResponse>;
     createTransferJettonTransaction(args: CreateTransferJettonTransactionArgs): PromiseOrValue<TransactionRequest>;
     getJettonBalance(args: GetJettonBalanceArgs): PromiseOrValue<string>;
-    getJettonWalletAddress(args: GetJettonWalletAddressArgs): PromiseOrValue<string>;
+    getJettonWalletAddress(args: GetJettonWalletAddressArgs): PromiseOrValue<TONUserFriendlyAddress>;
     processInternalBrowserRequest(args: ProcessInternalBrowserRequestArgs): PromiseOrValue<TonConnectEventPayload>;
     emitBrowserPageStarted(args: EmitBrowserPageArgs): PromiseOrValue<{ success: boolean }>;
     emitBrowserPageFinished(args: EmitBrowserPageArgs): PromiseOrValue<{ success: boolean }>;
     emitBrowserError(args: EmitBrowserErrorArgs): PromiseOrValue<{ success: boolean }>;
     emitBrowserBridgeRequest(args: EmitBrowserBridgeRequestArgs): PromiseOrValue<{ success: boolean }>;
-    createTonCenterStreamingProvider(
-        args: CreateTonCenterStreamingProviderArgs,
-    ): PromiseOrValue<{ providerId: string }>;
-    createTonApiStreamingProvider(args: CreateTonApiStreamingProviderArgs): PromiseOrValue<{ providerId: string }>;
+    createTonCenterStreamingProvider(config: TonCenterStreamingProviderConfig): PromiseOrValue<{ providerId: string }>;
+    createTonApiStreamingProvider(config: TonApiStreamingProviderConfig): PromiseOrValue<{ providerId: string }>;
     registerStreamingProvider(args: RegisterStreamingProviderArgs): PromiseOrValue<void>;
     streamingHasProvider(args: StreamingHasProviderArgs): PromiseOrValue<{ hasProvider: boolean }>;
     streamingWatch(args: StreamingWatchArgs): PromiseOrValue<{ subscriptionId: string }>;
@@ -490,7 +574,8 @@ export interface WalletKitBridgeApi {
         instantUnstakeAvailable?: string;
         providerId: string;
     }>;
-    getSupportedUnstakeModes(args: GetSupportedUnstakeModesArgs): PromiseOrValue<string[]>;
+    getStakingProviderMetadata(args: GetStakingProviderMetadataArgs): PromiseOrValue<StakingProviderMetadata>;
+    registerKotlinStakingProvider(args: RegisterKotlinStakingProviderArgs): PromiseOrValue<void>;
     createOmnistonSwapProvider(args: CreateOmnistonSwapProviderArgs): PromiseOrValue<{ providerId: string }>;
     createDeDustSwapProvider(args: CreateDeDustSwapProviderArgs): PromiseOrValue<{ providerId: string }>;
     registerSwapProvider(args: RegisterSwapProviderArgs): PromiseOrValue<void>;
@@ -499,4 +584,46 @@ export interface WalletKitBridgeApi {
     hasSwapProvider(args: HasSwapProviderArgs): PromiseOrValue<{ result: boolean }>;
     getSwapQuote(args: GetSwapQuoteArgs): PromiseOrValue<unknown>;
     buildSwapTransaction(args: BuildSwapTransactionArgs): PromiseOrValue<unknown>;
+    registerKotlinSwapProvider(args: RegisterKotlinSwapProviderArgs): PromiseOrValue<void>;
+    createTonApiGaslessProvider(args?: CreateTonApiGaslessProviderArgs): PromiseOrValue<{ providerId: string }>;
+    registerGaslessProvider(args: RegisterGaslessProviderArgs): PromiseOrValue<void>;
+    setDefaultGaslessProvider(args: SetDefaultGaslessProviderArgs): PromiseOrValue<void>;
+    getRegisteredGaslessProviders(): PromiseOrValue<{ providerIds: string[] }>;
+    hasGaslessProvider(args: HasGaslessProviderArgs): PromiseOrValue<{ result: boolean }>;
+    getGaslessMetadata(args: GetGaslessMetadataArgs): PromiseOrValue<unknown>;
+    getGaslessConfig(args: GetGaslessConfigArgs): PromiseOrValue<unknown>;
+    getGaslessQuote(args: GetGaslessQuoteArgs): PromiseOrValue<unknown>;
+    gaslessSendTransaction(args: GaslessSendTransactionArgs): PromiseOrValue<unknown>;
+
+    // Per-wallet ApiClient proxy: Android `BridgedJSAPIClient` round-trips
+    // `wallet.client.<method>` through these so the underlying JS `ApiClient`
+    // (built-in or user-supplied) handles the call. Mirrors iOS JSTONAPIClient.
+    walletClientSendBoc(args: { walletId: string; boc: string }): PromiseOrValue<{ result: string }>;
+    walletClientRunGetMethod(args: {
+        walletId: string;
+        address: string;
+        method: string;
+        stack?: unknown[];
+        seqno?: number;
+    }): PromiseOrValue<unknown>;
+    walletClientGetBalance(args: {
+        walletId: string;
+        address: string;
+        seqno?: number;
+    }): PromiseOrValue<{ result: string }>;
+    walletClientGetMasterchainInfo(args: { walletId: string }): PromiseOrValue<unknown>;
+    walletClientNftItemsByAddress(args: { walletId: string; request: unknown }): PromiseOrValue<unknown>;
+    walletClientNftItemsByOwner(args: { walletId: string; request: unknown }): PromiseOrValue<unknown>;
+    walletClientFetchEmulation(args: {
+        walletId: string;
+        messageBoc: string;
+        ignoreSignature?: boolean;
+    }): PromiseOrValue<unknown>;
+    walletClientAccountState(args: { walletId: string; address: string; seqno?: number }): PromiseOrValue<unknown>;
+    walletClientAccountStates(args: { walletId: string; addresses: string[] }): PromiseOrValue<unknown>;
+    walletClientResolveDnsWallet(args: { walletId: string; domain: string }): PromiseOrValue<{ result: string | null }>;
+    walletClientBackResolveDnsWallet(args: {
+        walletId: string;
+        address: string;
+    }): PromiseOrValue<{ result: string | null }>;
 }

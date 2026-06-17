@@ -456,12 +456,16 @@ class AnnotatedTypeFormatterWithIntegers extends tsj.AnnotatedTypeFormatter {
  * Synthetic type for primitive values in discriminated unions.
  */
 class SyntheticValueType extends tsj.BaseType {
-    constructor(name, innerType, caseName, rawValue) {
+    constructor(name, innerType, caseName, rawValue, isIndirect = false) {
         super();
         this.name = name;
         this.innerType = innerType;
         this.caseName = caseName;
         this.rawValue = rawValue;
+        // True when the synthetic value recursively references the parent
+        // union *directly* (not wrapped in an array). Carried as a vendor
+        // extension so Swift can emit `indirect case` on that arm.
+        this.isIndirect = isIndirect;
     }
 
     getId() {
@@ -482,6 +486,10 @@ class SyntheticValueType extends tsj.BaseType {
 
     getRawValue() {
         return this.rawValue;
+    }
+
+    getIsIndirect() {
+        return this.isIndirect;
     }
 }
 
@@ -620,12 +628,19 @@ class DiscriminatedUnionNodeParser {
 
             // Check if this is a recursive reference (e.g., RawStackItem[] in RawStackItem)
             const isRecursive = this.typeReferencesName(valuePropNode.type, typeName);
+            const isArrayRecursion = isRecursive && valuePropNode.type.kind === ts.SyntaxKind.ArrayType;
+            const isDirectRecursion = isRecursive && !isArrayRecursion;
 
             let valueType;
-            if (isRecursive) {
-                // For recursive types, create an array type with a reference
-                // This avoids infinite recursion during parsing
+            if (isArrayRecursion) {
+                // value: Parent[] — array of self. Swift array boxes the
+                // element so no `indirect` is needed.
                 valueType = new tsj.ArrayType(new tsj.DefinitionType(typeName, new tsj.AnyType()));
+            } else if (isDirectRecursion) {
+                // value: Parent — bare self-reference. Synthesize a $ref
+                // back to the parent; the case must be emitted as
+                // `indirect case` in Swift to permit the cycle.
+                valueType = new tsj.DefinitionType(typeName, new tsj.AnyType());
             } else {
                 valueType = this.childNodeParser.createType(valuePropNode.type, context);
             }
@@ -634,7 +649,13 @@ class DiscriminatedUnionNodeParser {
             const syntheticName = `${typeName}${capitalizedValue}Value`;
             const caseName = this.toCamelCase(String(rawValue));
 
-            const syntheticType = new SyntheticValueType(syntheticName, valueType, caseName, rawValue);
+            const syntheticType = new SyntheticValueType(
+                syntheticName,
+                valueType,
+                caseName,
+                rawValue,
+                isDirectRecursion,
+            );
             syntheticTypes.push({
                 definitionType: new tsj.DefinitionType(syntheticName, syntheticType),
                 rawValue,
@@ -743,28 +764,14 @@ class DiscriminatedUnionTypeFormatter {
     }
 
     supportsType(type) {
-        if (type instanceof DiscriminatedUnionType) {
-            return true;
-        }
-        if (!(type instanceof tsj.UnionType) || type.getTypes().length < 2) {
-            return false;
-        }
-        // If the union has a discriminator set (from @discriminator annotation),
-        // let the default UnionTypeFormatter handle it — it produces allOf/if/then
-        // which postProcessDiscriminatedUnions() transforms into x-interface-union.
-        if (type.getDiscriminator?.()) {
-            return false;
-        }
-        const isDiscriminated = type.getTypes().every((variant) => this.getDiscriminatorValue(variant) !== null);
-        if (!isDiscriminated) {
-            return false;
-        }
-        // Skip types with recursive references (e.g., RawStackItem with value: RawStackItem[])
-        // These cause issues with Swift code generators
-        if (this.hasRecursiveReference(type)) {
-            return false;
-        }
-        return true;
+        // Only claim DiscriminatedUnionType (the wrapped form we synthesise
+        // ourselves). Inline anonymous unions like
+        // `{type:'a'; ...} | {type:'b'; ...}` inside a property are deferred
+        // to the default UnionTypeFormatter, which produces the canonical
+        // `allOf + if/then` shape. `postProcessDiscriminatedUnions` then
+        // reshapes them while preserving every variant field instead of
+        // collapsing on `value`.
+        return type instanceof DiscriminatedUnionType;
     }
 
     /**
@@ -812,6 +819,7 @@ class DiscriminatedUnionTypeFormatter {
     getDefinition(type) {
         const union = type instanceof DiscriminatedUnionType ? type.getInnerUnion() : type;
         const caseValueRefs = type instanceof DiscriminatedUnionType ? type.getCaseValueRefs() : new Map();
+        const syntheticTypes = type instanceof DiscriminatedUnionType ? type.getSyntheticTypes() : [];
 
         const enumCases = [];
         const valueProperties = {};
@@ -836,11 +844,22 @@ class DiscriminatedUnionTypeFormatter {
                     ? { $ref: `#/components/schemas/${syntheticRef}` }
                     : this.childTypeFormatter.getDefinition(valueType);
 
-                valueProperties[propName] = {
+                const caseProp = {
                     allOf: [valueDef.$ref ? { $ref: valueDef.$ref } : valueDef],
                     'x-enum-case-name': camelCaseName,
                     'x-enum-case-raw-value': typeValue,
                 };
+
+                // Propagate `indirect` from the synthetic value type so the
+                // Swift template can emit `indirect case` for direct
+                // (non-array) self-references.
+                const synth = syntheticTypes.find((s) => s.rawValue === typeValue);
+                if (synth && synth.definitionType.getType().getIsIndirect?.()) {
+                    caseProp['x-indirect'] = true;
+                    caseInfo.indirect = true;
+                }
+
+                valueProperties[propName] = caseProp;
             }
 
             enumCases.push(caseInfo);
@@ -999,11 +1018,29 @@ class GenericInterfaceNodeParser {
                                   .trim();
                 }
 
+                // Extract @format JSDoc tag (e.g. `@format int32`, `@format frozen`).
+                // Without this the format never reaches the schema because
+                // childNodeParser.createType only sees `member.type` (a bare
+                // TypeNode) and not the surrounding JSDoc.
+                let format;
+                const jsDocTags = ts.getJSDocTags(member);
+                const formatTag = jsDocTags.find((tag) => tag.tagName.text === 'format');
+                if (formatTag && formatTag.comment) {
+                    format =
+                        typeof formatTag.comment === 'string'
+                            ? formatTag.comment.trim()
+                            : formatTag.comment
+                                  .map((c) => c.text)
+                                  .join('')
+                                  .trim();
+                }
+
                 properties.push({
                     name: propName,
                     type: propType,
                     required: !isOptional,
                     description,
+                    format,
                     genericTypeRef,
                 });
             }
@@ -1016,6 +1053,97 @@ class GenericInterfaceNodeParser {
         const genericType = new GenericInterfaceType(interfaceName, innerType, typeParameters);
 
         return new tsj.DefinitionType(interfaceName, genericType);
+    }
+}
+
+/**
+ * Custom NodeParser for inline `TypeLiteralNode` (the `{a: X; b: Y}` form
+ * used as anonymous object types in property positions and union variants).
+ *
+ * ts-json-schema-generator's default TypeLiteralNode parser does NOT extract
+ * JSDoc tags from inline-literal property declarations. We mirror what the
+ * default does, but additionally pull `@format` off each property's JSDoc
+ * and wrap the property's type in an AnnotatedType so the downstream
+ * AnnotatedTypeFormatterWithIntegers fires (number → integer promotion,
+ * frozen handling, format passthrough).
+ *
+ * Limited to TypeLiteralNodes inside union members (where the bug bites);
+ * applying it everywhere risks shadowing more-specific parsers.
+ */
+class InlineTypeLiteralAnnotationParser {
+    constructor(typeChecker, childNodeParser) {
+        this.typeChecker = typeChecker;
+        this.childNodeParser = childNodeParser;
+    }
+
+    supportsNode(node) {
+        if (node.kind !== ts.SyntaxKind.TypeLiteral) return false;
+        // Only apply when at least one property carries a @format JSDoc tag
+        // detected via leading-comment scanning. We can't use ts.getJSDocTags
+        // here because TypeScript only associates JSDoc with select named
+        // declarations — inline TypeLiteral PropertySignatures aren't one of
+        // them, so the standard API returns empty.
+        return node.members.some((m) => {
+            if (m.kind !== ts.SyntaxKind.PropertySignature) return false;
+            return !!this.extractFormat(m);
+        });
+    }
+
+    extractFormat(propertyNode) {
+        // TypeScript's `getJSDocTags` doesn't see JSDoc on inline TypeLiteral
+        // members, and `getLeadingCommentRanges` only returns comments that
+        // are physically before the node's leading-trivia start — which for
+        // TypeLiteral members points at the opening `{`. We scan the raw
+        // text between the property's pos and its name's start for a
+        // `/** @format X */` JSDoc block.
+        const sourceFile = propertyNode.getSourceFile();
+        if (!sourceFile) return null;
+        const text = sourceFile.getFullText();
+        const sliceStart = propertyNode.pos;
+        const sliceEnd = propertyNode.name?.getStart?.(sourceFile);
+        if (sliceEnd == null || sliceEnd <= sliceStart) return null;
+        const trivia = text.slice(sliceStart, sliceEnd);
+        const m = trivia.match(/\/\*\*[\s\S]*?@format\s+([A-Za-z0-9_-]+)[\s\S]*?\*\//);
+        return m ? m[1] : null;
+    }
+
+    createType(node, context) {
+        const properties = [];
+        for (const member of node.members) {
+            if (member.kind !== ts.SyntaxKind.PropertySignature) continue;
+            const propName = member.name.getText();
+            const isOptional = !!member.questionToken;
+
+            const rawType = this.childNodeParser.createType(member.type, context);
+
+            const format = this.extractFormat(member);
+            const propType = format ? new tsj.AnnotatedType(rawType, { format }, false) : rawType;
+            properties.push(new tsj.ObjectProperty(propName, propType, !isOptional));
+        }
+        return new tsj.ObjectType(`inline-literal-${node.pos}`, [], properties, false);
+    }
+}
+
+/**
+ * Apply a JSDoc-extracted `@format` tag to a property's schema definition.
+ * Mirrors AnnotatedTypeFormatterWithIntegers for non-generic types:
+ *   - integer formats promote `type: "number"` to `type: "integer"`
+ *   - `@format frozen` strips type info and marks the property opaque
+ *
+ * No-op for generic-type-ref properties (format on `T` is meaningless).
+ */
+function applyJSDocFormatToPropDef(propDef, prop) {
+    if (!prop.format || prop.genericTypeRef) return;
+    propDef.format = prop.format;
+    if (propDef.type === 'number' && INTEGER_FORMATS.includes(prop.format)) {
+        propDef.type = 'integer';
+    }
+    if (prop.format === 'frozen') {
+        for (const k of Object.keys(propDef)) {
+            if (k !== 'description') delete propDef[k];
+        }
+        propDef.type = 'object';
+        propDef['x-frozen'] = true;
     }
 }
 
@@ -1071,6 +1199,8 @@ class GenericInterfaceTypeFormatter {
                 const typeDef = this.childTypeFormatter.getDefinition(prop.type);
                 Object.assign(propDef, typeDef);
             }
+
+            applyJSDocFormatToPropDef(propDef, prop);
 
             if (prop.description) {
                 propDef.description = prop.description;
@@ -1143,6 +1273,8 @@ class GenericPropertiesObjectTypeFormatter {
                 const typeDef = this.childTypeFormatter.getDefinition(prop.type);
                 Object.assign(propDef, typeDef);
             }
+
+            applyJSDocFormatToPropDef(propDef, prop);
 
             if (prop.description) {
                 propDef.description = prop.description;
@@ -1349,6 +1481,17 @@ function typeNameFromRef(ref) {
 }
 
 /**
+ * True when `schema` is a bare `$ref` (no array wrapper) pointing at the
+ * definition named `parentName`. Used to detect direct (non-array) recursive
+ * references — Swift requires `indirect case` in that situation.
+ */
+function isDirectSelfRef(schema, parentName) {
+    if (!schema || typeof schema !== 'object') return false;
+    if (!schema.$ref || typeof schema.$ref !== 'string') return false;
+    return typeNameFromRef(schema.$ref) === parentName;
+}
+
+/**
  * Detect if a schema object is an interface discriminated union.
  * ts-json-schema-generator generates: allOf with if/then conditionals, properties with enum for discriminator.
  * Returns { discriminatorField, cases: [{rawValue, ref}] } or null.
@@ -1465,17 +1608,102 @@ function processDiscriminatorMemberTypes(cases, discriminatorField, definitions)
  * ts-json-schema-generator generates discriminated unions as:
  * { allOf: [{ if: { properties: { name: { const: "value" } } }, then: { $ref: "..." } }, ...] }
  */
+/**
+ * Pre-step before Case A/B run: hoist inline anonymous discriminated unions
+ * (`anyOf` of objects with a single-literal discriminator field) out of
+ * property positions into top-level synthesized definitions so the regular
+ * Case A pipeline can normalise them into `x-interface-union` form. The
+ * synthesized union is tagged `x-nested-under` / `x-nested-name` so it gets
+ * aggregated onto the parent as a nested type rather than emitting its own
+ * file.
+ */
+function hoistInlineDiscriminatedUnions(schema) {
+    const definitions = schema.definitions || {};
+
+    for (const [parentName, typeDef] of Object.entries(definitions)) {
+        if (!typeDef.properties) continue;
+        for (const [propName, propDef] of Object.entries(typeDef.properties)) {
+            if (!isAnyOfDiscriminatedUnion(propDef)) continue;
+
+            const nestedName = propName.charAt(0).toUpperCase() + propName.slice(1);
+            const unionName = `${parentName}${nestedName}`;
+
+            const variantRefs = [];
+            for (const variant of propDef.anyOf) {
+                const discriminator = getInlineVariantDiscriminator(variant);
+                if (!discriminator) continue;
+                const { field, value } = discriminator;
+                const variantPascal = String(value).charAt(0).toUpperCase() + String(value).slice(1);
+                const variantName = `${unionName}${variantPascal}`;
+                // Hoist variant inline schema to a top-level definition.
+                definitions[variantName] = JSON.parse(JSON.stringify(variant));
+                variantRefs.push({ field, value, ref: `#/components/schemas/${variantName}` });
+            }
+            if (variantRefs.length === 0) continue;
+
+            // Build the canonical `allOf + if/then` union shape so Case A
+            // detects it on its next pass.
+            const allOf = variantRefs.map(({ field, value, ref }) => ({
+                if: { properties: { [field]: { const: value } } },
+                then: { $ref: ref },
+            }));
+            definitions[unionName] = {
+                allOf,
+                'x-nested-under': parentName,
+                'x-nested-name': nestedName,
+                'x-skip-model': true,
+            };
+
+            // Rewrite the parent's property to reference the synthesized
+            // union by its nested local name (no TON prefix).
+            Object.keys(propDef).forEach((k) => delete propDef[k]);
+            propDef.type = 'object';
+            propDef['x-nested-type-ref'] = nestedName;
+        }
+    }
+}
+
+function isAnyOfDiscriminatedUnion(propDef) {
+    if (!propDef || !Array.isArray(propDef.anyOf) || propDef.anyOf.length < 2) return false;
+    return propDef.anyOf.every((variant) => getInlineVariantDiscriminator(variant) !== null);
+}
+
+function getInlineVariantDiscriminator(variant) {
+    if (!variant || variant.type !== 'object' || !variant.properties) return null;
+    for (const [fieldName, fieldSchema] of Object.entries(variant.properties)) {
+        if (fieldSchema && typeof fieldSchema === 'object') {
+            if (typeof fieldSchema.const === 'string') {
+                return { field: fieldName, value: fieldSchema.const };
+            }
+            if (
+                Array.isArray(fieldSchema.enum) &&
+                fieldSchema.enum.length === 1 &&
+                typeof fieldSchema.enum[0] === 'string'
+            ) {
+                return { field: fieldName, value: fieldSchema.enum[0] };
+            }
+        }
+    }
+    return null;
+}
+
 function postProcessDiscriminatedUnions(schema) {
     const definitions = schema.definitions || {};
 
-    for (const typeDef of Object.values(definitions)) {
+    for (const [parentName, typeDef] of Object.entries(definitions)) {
         // Case A: Top-level discriminated union
         const topLevel = detectDiscriminatedUnion(typeDef);
         if (topLevel) {
             const unionSchema = buildInterfaceUnionSchema(topLevel.discriminatorField, topLevel.cases);
-            // Replace definition in-place
+            // Replace definition in-place, preserving extensions that drive
+            // downstream behaviour outside Case A's reach (nested-type
+            // routing, x-skip-model from the inline-union hoist).
+            const preserved = {};
+            for (const k of ['x-nested-under', 'x-nested-name', 'x-skip-model']) {
+                if (k in typeDef) preserved[k] = typeDef[k];
+            }
             Object.keys(typeDef).forEach((k) => delete typeDef[k]);
-            Object.assign(typeDef, unionSchema);
+            Object.assign(typeDef, unionSchema, preserved);
             processDiscriminatorMemberTypes(topLevel.cases, topLevel.discriminatorField, definitions);
 
             // Detect empty and single-field variants
@@ -1522,6 +1750,14 @@ function postProcessDiscriminatedUnions(schema) {
                         caseProp['x-single-field-optional'] = true;
                     }
 
+                    // Detect direct (non-array) recursive reference back to the
+                    // parent union — Swift needs `indirect case` to permit a
+                    // value-type cycle. Array recursion (`Parent[]`) doesn't
+                    // need it because the array boxes the element.
+                    if (isDirectSelfRef(fieldSchema, parentName)) {
+                        caseProp['x-indirect'] = true;
+                    }
+
                     singleFieldCodingKeys.add(fieldName);
 
                     // Mark member for suppression
@@ -1536,73 +1772,122 @@ function postProcessDiscriminatedUnions(schema) {
             continue;
         }
 
-        // Case B: Inline discriminated union properties
-        // Instead of creating a synthetic top-level type, add vendor extensions
-        // to the property and parent type so the template renders a nested enum.
-        if (!typeDef.properties) continue;
-        for (const [propName, propDef] of Object.entries(typeDef.properties)) {
-            const inlineUnion = detectDiscriminatedUnion(propDef);
-            if (!inlineUnion) continue;
-
-            // Process member types first so we can detect empty variants
-            processDiscriminatorMemberTypes(inlineUnion.cases, inlineUnion.discriminatorField, definitions);
-
-            // Build case data with type names for template rendering
-            const inlineSingleFieldCodingKeys = new Set();
-            const cases = inlineUnion.cases.map(({ rawValue, ref }) => {
-                const memberName = typeNameFromRef(ref);
-                const memberDef = definitions[memberName];
-                const propKeys = memberDef?.properties ? Object.keys(memberDef.properties) : [];
-
-                if (propKeys.length === 0) {
-                    return {
-                        caseName: toCamelCase(rawValue),
-                        rawValue,
-                        typeName: typeNameFromRef(ref),
-                        emptyVariant: true,
-                    };
-                } else if (propKeys.length === 1) {
-                    const fieldName = propKeys[0];
-                    const isRequired = memberDef.required?.includes(fieldName) ?? false;
-                    inlineSingleFieldCodingKeys.add(fieldName);
-                    memberDef['x-skip-model'] = true;
-                    return {
-                        caseName: toCamelCase(rawValue),
-                        rawValue,
-                        typeName: typeNameFromRef(ref),
-                        singleFieldVariant: true,
-                        singleFieldName: fieldName,
-                        ...(!isRequired && { singleFieldOptional: true }),
-                    };
-                } else {
-                    return {
-                        caseName: toCamelCase(rawValue),
-                        rawValue,
-                        typeName: typeNameFromRef(ref),
-                    };
-                }
-            });
-
-            // Add inline union info to parent type for nested enum rendering
-            if (!typeDef['x-inline-interface-unions']) {
-                typeDef['x-inline-interface-unions'] = [];
-            }
-            typeDef['x-inline-interface-unions'].push({
-                propertyName: propName,
-                discriminatorField: inlineUnion.discriminatorField,
-                cases,
-                ...(inlineSingleFieldCodingKeys.size > 0 && {
-                    singleFieldCodingKeys: [...inlineSingleFieldCodingKeys].map((k) => ({ name: k })),
-                }),
-            });
-
-            // Replace property with simple object type + marker
-            // The template will override the type to use the nested enum name
-            Object.keys(propDef).forEach((k) => delete propDef[k]);
-            propDef.type = 'object';
-            propDef['x-interface-union'] = true;
-        }
+        // Inline (property-level) discriminated unions are pre-hoisted to
+        // top-level definitions by `hoistInlineDiscriminatedUnions`, which
+        // runs before this function. They're then picked up by Case A above
+        // (because the hoisted union has the canonical `allOf + if/then`
+        // shape). The `aggregateNestedTypes` post-step splices them into
+        // their parent as nested types.
     }
+}
+
+/**
+ * Walk the entire schema (definitions + nested) and, for every node with
+ * `type: "integer"` and a `format`, attach a boolean flag under
+ * `x-int-format-flags` keyed by the format name (e.g. `{int32: true}`).
+ *
+ * Language-neutral: the keys are the canonical OpenAPI format names. Each
+ * downstream language template uses these to dispatch on the format with
+ * plain mustache section gating (no string-equality support required).
+ */
+function postProcessIntegerFormatFlags(schema) {
+    const visit = (node) => {
+        if (!node || typeof node !== 'object') return;
+        if (Array.isArray(node)) {
+            node.forEach(visit);
+            return;
+        }
+        if (node.type === 'integer' && typeof node.format === 'string') {
+            node['x-int-format-flags'] = { [node.format]: true };
+        }
+        Object.values(node).forEach(visit);
+    };
+    visit(schema);
+}
+
+/**
+ * After `postProcessDiscriminatedUnions`, find every definition marked
+ * `x-nested-under: <ParentName>` and attach a flattened, mustache-friendly
+ * record to `<Parent>['x-nested-types']`. Each record carries an `x-cases`
+ * array of {name, rawValue, ...} so the template can iterate cases without
+ * needing map-iteration support.
+ */
+function aggregateNestedTypes(schema) {
+    const definitions = schema.definitions || {};
+
+    for (const [, def] of Object.entries(definitions)) {
+        if (!def['x-nested-under']) continue;
+        const parent = definitions[def['x-nested-under']];
+        if (!parent) continue;
+        if (!parent['x-nested-types']) parent['x-nested-types'] = [];
+
+        const cases = [];
+        for (const [, caseProp] of Object.entries(def.properties || {})) {
+            const caseName = caseProp['x-enum-case-name'];
+            if (!caseName) continue;
+            const record = {
+                name: caseName,
+                rawValue: caseProp['x-enum-case-raw-value'],
+                'x-empty-variant': !!caseProp['x-empty-variant'],
+                'x-single-field-variant': !!caseProp['x-single-field-variant'],
+                'x-single-field-name': caseProp['x-single-field-name'],
+                'x-single-field-optional': !!caseProp['x-single-field-optional'],
+                'x-indirect': !!caseProp['x-indirect'],
+            };
+            // Stash the value schema (single-field schema for inlining, or
+            // the multi-field member ref via allOf) so the template can
+            // resolve the case's Swift type. Both fields are language-neutral.
+            if (caseProp['x-single-field-variant']) {
+                Object.assign(record, valueSchemaShape(caseProp));
+            } else if (!caseProp['x-empty-variant'] && caseProp.allOf && caseProp.allOf[0] && caseProp.allOf[0].$ref) {
+                record['x-value-type-ref'] = true;
+                record['x-value-ref-name'] = typeNameFromRef(caseProp.allOf[0].$ref);
+            }
+            cases.push(record);
+        }
+
+        parent['x-nested-types'].push({
+            'nested-name': def['x-nested-name'],
+            'discriminator-field': def['x-discriminator-field'],
+            'x-cases': cases,
+            'x-single-field-coding-keys': def['x-single-field-coding-keys'] || [],
+        });
+    }
+}
+
+/**
+ * Reduce a case property's value schema to a set of `x-value-*` flags
+ * mustache can dispatch on. Mirrors the layout of `x-int-format-flags` so
+ * the same _swiftIntegerType partial can be reused for integer formats.
+ */
+function valueSchemaShape(caseProp) {
+    const shape = {};
+    if (caseProp.$ref) {
+        shape['x-value-type-ref'] = true;
+        shape['x-value-ref-name'] = typeNameFromRef(caseProp.$ref);
+        return shape;
+    }
+    if (caseProp.type === 'string') {
+        shape['x-value-type-string'] = true;
+    } else if (caseProp.type === 'integer') {
+        shape['x-value-type-integer'] = true;
+        if (caseProp.format) shape['x-value-format'] = caseProp.format;
+        // _swiftIntegerType.mustache reads
+        // `vendorExtensions.x-int-format-flags.<format>` regardless of the
+        // host scope. Wrap the flags in a synthetic `vendorExtensions` so
+        // the partial works when its scope is a nested-case record.
+        const flags = caseProp['x-int-format-flags'] || (caseProp.format ? { [caseProp.format]: true } : null);
+        if (flags) {
+            shape.vendorExtensions = { 'x-int-format-flags': flags };
+        }
+    } else if (caseProp.type === 'number') {
+        shape['x-value-type-number'] = true;
+    } else if (caseProp.type === 'boolean') {
+        shape['x-value-type-boolean'] = true;
+    } else if (caseProp.type === 'array') {
+        shape['x-value-type-array'] = true;
+    }
+    return shape;
 }
 
 /**
@@ -1770,8 +2055,10 @@ function postProcessStringLiteralUnions(schema) {
 
 function postProcessTypeAliases(schema) {
     const definitions = schema.definitions || {};
+    const PRIMITIVE_TYPES = new Set(['string', 'number', 'boolean']);
 
     for (const [, typeDef] of Object.entries(definitions)) {
+        // $ref-target alias: `type X = SomeModel`.
         if (typeDef.$ref && !typeDef.type && !typeDef.properties && !typeDef.allOf && !typeDef['x-enum-case-name']) {
             const targetName = typeNameFromRef(typeDef.$ref);
 
@@ -1780,6 +2067,31 @@ function postProcessTypeAliases(schema) {
             typeDef.properties = { _alias: { type: 'string' } };
             typeDef['x-type-alias'] = true;
             typeDef['x-alias-target'] = targetName;
+            continue;
+        }
+
+        // Primitive alias: `type X = string` (or number / boolean). The
+        // resulting schema has only a `type` field and no structural shape.
+        // Without this branch openapi-generator filters the definition out
+        // ("nothing to generate"), so any model referencing the alias by name
+        // ends up with a dangling type reference in the generated Swift.
+        if (
+            !typeDef.$ref &&
+            PRIMITIVE_TYPES.has(typeDef.type) &&
+            !typeDef.properties &&
+            !typeDef.enum &&
+            typeDef.const === undefined &&
+            !typeDef.allOf &&
+            !typeDef.anyOf &&
+            !typeDef.oneOf &&
+            !typeDef['x-enum-case-name']
+        ) {
+            const primitiveType = typeDef.type;
+            Object.keys(typeDef).forEach((k) => delete typeDef[k]);
+            typeDef.type = 'object';
+            typeDef.properties = { _alias: { type: 'string' } };
+            typeDef['x-type-alias'] = true;
+            typeDef[`x-primitive-${primitiveType}`] = true;
         }
     }
 }
@@ -1826,6 +2138,67 @@ function updateRefs(obj, refMap) {
     }
 }
 
+/**
+ * Convert SCREAMING_SNAKE_CASE / snake_case names to PascalCase.
+ * `FOO_BAR_BAZ` → `FooBarBaz`, `foo_bar` → `FooBar`. Names without an
+ * underscore are not snake_case — left as-is so acronyms like `NFT`, `URL`,
+ * `OK` keep their canonical form.
+ */
+function toPascalCase(str) {
+    if (typeof str !== 'string' || str.length === 0) return str;
+    if (str.includes('_')) {
+        return str
+            .toLowerCase()
+            .split('_')
+            .filter(Boolean)
+            .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+            .join('');
+    }
+    return str;
+}
+
+/**
+ * Rename schema definitions whose name is snake_case or SCREAMING_SNAKE_CASE
+ * to PascalCase, and update every `$ref` accordingly. Names without an
+ * underscore are not considered snake_case and are left alone (so acronyms
+ * like `NFT`, `URL` keep their canonical form).
+ *
+ * Runs early so the rest of the post-processing pipeline sees the final names
+ * when it materialises type references into vendor extensions.
+ */
+function postProcessTypeNameCasing(schema) {
+    const definitions = schema.definitions || {};
+    const renames = {};
+
+    for (const name of Object.keys(definitions)) {
+        if (!name.includes('_')) continue;
+
+        const newName = toPascalCase(name);
+        if (newName !== name) renames[name] = newName;
+    }
+
+    if (Object.keys(renames).length === 0) return;
+
+    for (const [oldName, newName] of Object.entries(renames)) {
+        if (newName !== oldName && newName in definitions) {
+            console.warn(
+                `[type-name-casing] cannot rename ${oldName} -> ${newName}: collides with existing definition`,
+            );
+            delete renames[oldName];
+            continue;
+        }
+        definitions[newName] = definitions[oldName];
+        delete definitions[oldName];
+    }
+
+    const refMap = {};
+    for (const [oldName, newName] of Object.entries(renames)) {
+        refMap[`#/definitions/${oldName}`] = `#/definitions/${newName}`;
+        refMap[`#/components/schemas/${oldName}`] = `#/components/schemas/${newName}`;
+    }
+    updateRefs(definitions, refMap);
+}
+
 // ============================================================================
 // Main
 // ============================================================================
@@ -1857,6 +2230,7 @@ try {
         prs.addNodeParser(new EnumNodeParserWithNames(typeChecker));
         prs.addNodeParser(new DiscriminatedUnionNodeParser(typeChecker, prs));
         prs.addNodeParser(new GenericInterfaceNodeParser(typeChecker, prs));
+        prs.addNodeParser(new InlineTypeLiteralAnnotationParser(typeChecker, prs));
     });
 
     const formatter = tsj.createFormatter(config, (fmt, circularReferenceTypeFormatter) => {
@@ -1876,8 +2250,29 @@ try {
     // Post-process: rename definitions with x-definition-name
     postProcessDefinitionNames(schema);
 
+    // Post-process: rewrite SCREAMING_SNAKE_CASE / snake_case definition names
+    // to PascalCase so the Swift generator produces ConnectEventErrorCodes,
+    // not CONNECTEVENTERRORCODES. Runs before any step that materialises type
+    // names into vendor extensions so those see the final name.
+    postProcessTypeNameCasing(schema);
+
+    // Post-process: hoist inline (property-level) discriminated unions into
+    // top-level synthesized definitions so the Case A pipeline can normalise
+    // them. The synthesized union carries x-nested-under so it's aggregated
+    // onto the parent as a nested type later.
+    hoistInlineDiscriminatedUnions(schema);
+
     // Post-process: transform @discriminator annotated unions into discriminated union schemas
     postProcessDiscriminatedUnions(schema);
+
+    // Post-process: aggregate nested-type metadata onto each parent so the
+    // Swift template can render the nested enum body inline.
+    aggregateNestedTypes(schema);
+
+    // Post-process: attach x-int-format-flags to every integer schema with a
+    // format, so language templates can dispatch on the format using plain
+    // mustache section gating.
+    postProcessIntegerFormatFlags(schema);
 
     // Post-process: convert single-literal properties to constant fields
     postProcessConstantFields(schema);

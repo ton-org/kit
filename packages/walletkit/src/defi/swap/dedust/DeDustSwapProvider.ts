@@ -17,19 +17,21 @@ import type {
 import type { DeDustSwapResponse } from './DeDustPrivateTypes';
 import { SwapProvider } from '../SwapProvider';
 import type { SwapQuoteParams, SwapQuote, SwapParams, SwapProviderMetadata } from '../../../api/models';
-import { SwapError } from '../errors';
+import { Network } from '../../../api/models';
+import { SwapError, SwapErrorCode } from '../errors';
 import { globalLogger } from '../../../core/Logger';
 import { tokenToMinter, validateNetwork, isDeDustQuoteMetadata } from './utils';
 import type { TransactionRequest } from '../../../api/models';
 import { asBase64 } from '../../../utils';
 import { formatUnits, parseUnits } from '../../../utils/units';
+import type { ProviderFactoryContext } from '../../../types/factory';
 
 const log = globalLogger.createChild('DeDustSwapProvider');
 
 /**
  * Default API URL for DeDust Router
  */
-const DEFAULT_API_URL = 'https://api-mainnet.dedust.io';
+const DEFAULT_API_URL = 'https://mainnet.api.dedust.io/v4/router';
 
 /**
  * Default protocols to use for routing
@@ -53,15 +55,15 @@ const DEFAULT_PROTOCOLS = [
  *
  * @example
  * ```typescript
- * import { DeDustSwapProvider } from '@ton/walletkit/swap/dedust';
+ * import { createDeDustProvider } from '@ton/walletkit/swap/dedust';
  *
- * const provider = new DeDustSwapProvider({
- *   defaultSlippageBps: 100, // 1%
- *   referralAddress: 'EQ...',
- *   referralFeeBps: 50 // 0.5%
- * });
- *
- * kit.swap.registerProvider(provider);
+ * kit.swap.registerProvider(
+ *     createDeDustProvider({
+ *         defaultSlippageBps: 100, // 1%
+ *         referralAddress: 'EQ...',
+ *         referralFeeBps: 50, // 0.5%
+ *     }),
+ * );
  * ```
  */
 export class DeDustSwapProvider extends SwapProvider<DeDustProviderOptions, DeDustProviderOptions> {
@@ -84,7 +86,7 @@ export class DeDustSwapProvider extends SwapProvider<DeDustProviderOptions, DeDu
     constructor(config?: DeDustSwapProviderConfig) {
         super();
         this.providerId = config?.providerId ?? 'dedust';
-        this.apiUrl = config?.apiUrl ?? DEFAULT_API_URL;
+        this.apiUrl = (config?.apiUrl ?? DEFAULT_API_URL).replace(/\/+$/, '');
         this.defaultSlippageBps = config?.defaultSlippageBps ?? 100; // 1% default
         this.referralAddress = config?.referralAddress;
         this.referralFeeBps = config?.referralFeeBps;
@@ -109,6 +111,10 @@ export class DeDustSwapProvider extends SwapProvider<DeDustProviderOptions, DeDu
 
     getMetadata(): SwapProviderMetadata {
         return this.metadata;
+    }
+
+    getSupportedNetworks(): Network[] {
+        return [Network.mainnet()];
     }
 
     async getQuote(params: SwapQuoteParams<DeDustProviderOptions>): Promise<SwapQuote> {
@@ -147,7 +153,7 @@ export class DeDustSwapProvider extends SwapProvider<DeDustProviderOptions, DeDu
                 exclude_volatile_pools: params.providerOptions?.excludeVolatilePools,
             };
 
-            const response = await fetch(`${this.apiUrl}/v1/router/quote`, {
+            const response = await fetch(`${this.apiUrl}/quote`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -161,20 +167,20 @@ export class DeDustSwapProvider extends SwapProvider<DeDustProviderOptions, DeDu
                 log.error('DeDust quote API error', { status: response.status, error: errorText });
 
                 if (response.status === 400) {
-                    throw new SwapError(`No route found for swap: ${errorText}`, SwapError.INSUFFICIENT_LIQUIDITY);
+                    throw new SwapError(`No route found for swap: ${errorText}`, SwapErrorCode.InsufficientLiquidity);
                 }
 
-                throw new SwapError(`DeDust API error: ${response.status} ${errorText}`, SwapError.NETWORK_ERROR);
+                throw new SwapError(`DeDust API error: ${response.status} ${errorText}`, SwapErrorCode.NetworkError);
             }
 
             const quoteResponse: DeDustQuoteResponse = await response.json();
 
             if (!quoteResponse.swap_is_possible) {
-                throw new SwapError('Swap is not possible for this pair', SwapError.INSUFFICIENT_LIQUIDITY);
+                throw new SwapError('Swap is not possible for this pair', SwapErrorCode.InsufficientLiquidity);
             }
 
             if (!quoteResponse.swap_data?.routes || quoteResponse.swap_data.routes.length === 0) {
-                throw new SwapError('No routes found for this swap', SwapError.INSUFFICIENT_LIQUIDITY);
+                throw new SwapError('No routes found for this swap', SwapErrorCode.InsufficientLiquidity);
             }
 
             // Calculate min received based on slippage
@@ -219,7 +225,7 @@ export class DeDustSwapProvider extends SwapProvider<DeDustProviderOptions, DeDu
 
             throw new SwapError(
                 `DeDust quote request failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-                SwapError.NETWORK_ERROR,
+                SwapErrorCode.NetworkError,
                 error,
             );
         }
@@ -231,7 +237,7 @@ export class DeDustSwapProvider extends SwapProvider<DeDustProviderOptions, DeDu
         const metadata = params.quote.metadata;
 
         if (!metadata || !isDeDustQuoteMetadata(metadata)) {
-            throw new SwapError('Invalid quote: missing DeDust quote data', SwapError.INVALID_QUOTE);
+            throw new SwapError('Invalid quote: missing DeDust quote data', SwapErrorCode.InvalidQuote);
         }
 
         try {
@@ -248,7 +254,7 @@ export class DeDustSwapProvider extends SwapProvider<DeDustProviderOptions, DeDu
                 referral_fee: referralFeeBps,
             };
 
-            const response = await fetch(`${this.apiUrl}/v1/router/swap`, {
+            const response = await fetch(`${this.apiUrl}/swap`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -262,14 +268,14 @@ export class DeDustSwapProvider extends SwapProvider<DeDustProviderOptions, DeDu
                 log.error('DeDust swap API error', { status: response.status, error: errorText });
                 throw new SwapError(
                     `DeDust swap API error: ${response.status} ${errorText}`,
-                    SwapError.BUILD_TX_FAILED,
+                    SwapErrorCode.BuildTxFailed,
                 );
             }
 
             const swapResponse: DeDustSwapResponse = await response.json();
 
             if (!swapResponse.transactions || swapResponse.transactions.length === 0) {
-                throw new SwapError('No transactions returned from swap API', SwapError.BUILD_TX_FAILED);
+                throw new SwapError('No transactions returned from swap API', SwapErrorCode.BuildTxFailed);
             }
 
             const transaction: TransactionRequest = {
@@ -297,9 +303,19 @@ export class DeDustSwapProvider extends SwapProvider<DeDustProviderOptions, DeDu
 
             throw new SwapError(
                 `Failed to build DeDust transaction: ${error instanceof Error ? error.message : 'Unknown error'}`,
-                SwapError.BUILD_TX_FAILED,
+                SwapErrorCode.BuildTxFailed,
                 error,
             );
         }
     }
 }
+
+/**
+ * Returns an AppKit / `ProviderInput` factory for {@link DeDustSwapProvider}:
+ * pass to `providers: [createDeDustProvider(config)]`.
+ */
+export const createDeDustProvider = (
+    config: DeDustSwapProviderConfig = {},
+): ((ctx: ProviderFactoryContext) => DeDustSwapProvider) => {
+    return () => new DeDustSwapProvider(config);
+};

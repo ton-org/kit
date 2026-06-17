@@ -6,13 +6,28 @@
  *
  */
 
-export { formatUnits, parseUnits, compareAddress, createJettonTransferPayload } from '@ton/walletkit';
+export {
+    formatUnits,
+    parseUnits,
+    compareAddress,
+    createJettonTransferPayload,
+    asAddressFriendly,
+    asBase64,
+    asHex,
+    hasSignMessageSupport,
+    getMaxOutgoingMessages,
+} from '@ton/walletkit';
 
-export * from './address/format';
+export * from './address/is-valid-address';
+export * from './address/to-bounceble-address';
+export * from './address/to-non-bounceble-address';
 export * from './amount/calc-fiat-value';
 export * from './amount/format-large-value';
 export * from './amount/truncate-decimals';
 export * from './amount/validate-numeric-string';
+export * from './balance/calc-max-spendable';
+export * from './balance/check-ton-balance';
+export * from './balance/check-transfer-balance';
 export * from './arrays/key-by';
 export * from './arrays/random-from-array';
 export * from './errors/get-error-message';
@@ -21,8 +36,9 @@ export * from './functions/noop';
 export * from './jetton/jetton-info';
 export * from './nft/nft-info';
 export * from './object/map-values';
+export * from './predicate/is-number';
 export * from './predicate/is-string';
-export * from './promise/cancel-promise';
+export * from './promise/with-timeout';
 export * from './promise/sleep';
 export * from './query/filter-query-options';
 export * from './network/resolve-network';

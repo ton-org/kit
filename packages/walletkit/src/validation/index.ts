@@ -33,8 +33,6 @@ export {
     validateMessageObject,
     validateTransactionRequest,
     validateBOC,
-    isValidNanotonAmount,
+    isValidNanoAmount,
     estimateTransactionFees,
 } from './transaction';
-
-export type { HumanReadableTx } from './transaction';

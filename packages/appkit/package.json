@@ -1,10 +1,10 @@
 {
   "name": "@ton/appkit",
-  "version": "0.0.5-alpha.1",
+  "version": "1.0.0",
   "description": "",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ton-connect/kit"
+    "url": "https://github.com/ton-org/kit"
   },
   "sideEffects": false,
   "main": "dist/cjs/index.js",
@@ -61,34 +61,14 @@
         "default": "./dist/cjs/staking/tonstakers/index.js"
       }
     },
-    "./onramp/ton-pay": {
+    "./crypto-onramp/decent": {
       "import": {
-        "types": "./dist/esm/onramp/ton-pay/index.d.ts",
-        "default": "./dist/esm/onramp/ton-pay/index.js"
+        "types": "./dist/esm/crypto-onramp/decent/index.d.ts",
+        "default": "./dist/esm/crypto-onramp/decent/index.js"
       },
       "require": {
-        "types": "./dist/cjs/onramp/ton-pay/index.d.ts",
-        "default": "./dist/cjs/onramp/ton-pay/index.js"
-      }
-    },
-    "./gasless/tonapi": {
-      "import": {
-        "types": "./dist/esm/gasless/tonapi/index.d.ts",
-        "default": "./dist/esm/gasless/tonapi/index.js"
-      },
-      "require": {
-        "types": "./dist/cjs/gasless/tonapi/index.d.ts",
-        "default": "./dist/cjs/gasless/tonapi/index.js"
-      }
-    },
-    "./crypto-onramp/swaps-xyz": {
-      "import": {
-        "types": "./dist/esm/crypto-onramp/swaps-xyz/index.d.ts",
-        "default": "./dist/esm/crypto-onramp/swaps-xyz/index.js"
-      },
-      "require": {
-        "types": "./dist/cjs/crypto-onramp/swaps-xyz/index.d.ts",
-        "default": "./dist/cjs/crypto-onramp/swaps-xyz/index.js"
+        "types": "./dist/cjs/crypto-onramp/decent/index.d.ts",
+        "default": "./dist/cjs/crypto-onramp/decent/index.js"
       }
     },
     "./crypto-onramp/layerswap": {
@@ -99,6 +79,16 @@
       "require": {
         "types": "./dist/cjs/crypto-onramp/layerswap/index.d.ts",
         "default": "./dist/cjs/crypto-onramp/layerswap/index.js"
+      }
+    },
+    "./gasless/tonapi": {
+      "import": {
+        "types": "./dist/esm/gasless/tonapi/index.d.ts",
+        "default": "./dist/esm/gasless/tonapi/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/gasless/tonapi/index.d.ts",
+        "default": "./dist/cjs/gasless/tonapi/index.js"
       }
     }
   },
@@ -116,17 +106,14 @@
       "staking/tonstakers": [
         "./dist/esm/staking/tonstakers/index.d.ts"
       ],
-      "onramp/ton-pay": [
-        "./dist/esm/onramp/ton-pay/index.d.ts"
-      ],
-      "gasless/tonapi": [
-        "./dist/esm/gasless/tonapi/index.d.ts"
-      ],
-      "crypto-onramp/swaps-xyz": [
-        "./dist/esm/crypto-onramp/swaps-xyz/index.d.ts"
+      "crypto-onramp/decent": [
+        "./dist/esm/crypto-onramp/decent/index.d.ts"
       ],
       "crypto-onramp/layerswap": [
         "./dist/esm/crypto-onramp/layerswap/index.d.ts"
+      ],
+      "gasless/tonapi": [
+        "./dist/esm/gasless/tonapi/index.d.ts"
       ]
     }
   },
@@ -142,13 +129,15 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@ton/walletkit": "workspace:*"
+    "@ton/walletkit": "workspace:*",
+    "lru-cache": "catalog:"
   },
   "peerDependencies": {
     "@tanstack/query-core": ">=5.0.0",
     "@ton/core": "^0.62.0 || ^0.63.0",
     "@ton/crypto": "^3.3.0",
-    "@tonconnect/ui": ">=2.4.1"
+    "@tonconnect/sdk": ">=4.0.0",
+    "@tonconnect/ui": ">=3.0.0"
   },
   "peerDependenciesMeta": {
     "@tonconnect/ui": {
@@ -169,10 +158,10 @@
   "license": "ISC",
   "packageManager": "pnpm@10.15.0",
   "devDependencies": {
-    "@tanstack/query-core": "catalog:",
+    "@tanstack/query-core": "^5.101.0",
     "@ton/core": "catalog:",
     "@tonconnect/ui": "catalog:",
-    "typescript": "~5.9.3",
-    "vitest": "^4.1.4"
+    "typescript": "catalog:",
+    "vitest": "^4.1.8"
   }
 }

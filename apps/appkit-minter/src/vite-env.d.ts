@@ -13,6 +13,7 @@ interface ImportMetaEnv {
     readonly VITE_TON_API_KEY?: string;
     readonly VITE_TON_API_TESTNET_KEY?: string;
     readonly VITE_PRIVY_APP_ID?: string;
+    readonly VITE_TONCONNECT_MANIFEST_URL: string;
 }
 
 interface ImportMeta {

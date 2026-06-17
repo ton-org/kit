@@ -16,12 +16,11 @@ import {
     storeNftTransferMessage,
     DEFAULT_JETTON_GAS_FEE,
     DEFAULT_NFT_GAS_FEE,
+    DEFAULT_FORWARD_AMOUNT,
 } from './messageBuilders';
 import { globalLogger } from '../core/Logger';
 
 const log = globalLogger.createChild('ItemsResolver');
-
-const DEFAULT_FORWARD_AMOUNT = 1n;
 
 /**
  * Resolve structured items (ton/jetton/nft) into raw TransactionRequestMessages.
@@ -77,7 +76,7 @@ async function resolveJettonItem(
     const payload = beginCell()
         .store(
             storeJettonTransferMessage({
-                queryId: 0n,
+                queryId: item.queryId ? BigInt(item.queryId) : 0n,
                 amount: BigInt(item.amount),
                 destination: Address.parse(item.destination),
                 responseDestination: item.responseDestination
@@ -105,7 +104,7 @@ function resolveNftItem(item: StructuredItem & { type: 'nft' }, wallet: Wallet):
     const payload = beginCell()
         .store(
             storeNftTransferMessage({
-                queryId: 0n,
+                queryId: item.queryId ? BigInt(item.queryId) : 0n,
                 newOwner: Address.parse(item.newOwner),
                 responseDestination: item.responseDestination
                     ? Address.parse(item.responseDestination)

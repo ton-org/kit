@@ -22,6 +22,8 @@ import type {
     ConnectionRequestEventRequestedItem,
 } from '../api/models';
 import type { TonWalletKitOptions } from '../types/config';
+import { fetchManifest } from '../utils/manifest';
+import type { ManifestFetchResult } from '../api/models/core/ManifestFetchResult';
 
 const log = globalLogger.createChild('ConnectHandler');
 
@@ -72,7 +74,7 @@ export class ConnectHandler
             isJsBridge: event.isJsBridge,
             tabId: event.tabId,
             returnStrategy: event.params.returnStrategy,
-            intentAction: event.intentPayload,
+            embeddedRequest: event.embeddedRequest,
         };
 
         // Send wallet-connect-request-received event
@@ -137,14 +139,12 @@ export class ConnectHandler
     private createPreview(
         event: RawBridgeEventConnect,
         manifestUrl: string,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        fetchedManifest?: any,
-        manifestFetchErrorCode?:
-            | CONNECT_EVENT_ERROR_CODES.MANIFEST_NOT_FOUND_ERROR
-            | CONNECT_EVENT_ERROR_CODES.MANIFEST_CONTENT_ERROR,
+        fetchedManifest?: unknown,
+        manifestFetchErrorCode?: CONNECT_EVENT_ERROR_CODES,
     ): ConnectionRequestEventPreview {
         const eventManifest = event.params?.manifest;
-        const manifest = fetchedManifest || eventManifest;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const manifest = (fetchedManifest || eventManifest) as any;
 
         const dAppUrl = (event?.domain || manifest?.url?.toString() || '').trim();
 
@@ -212,74 +212,17 @@ export class ConnectHandler
         };
     }
 
-    private static readonly MANIFEST_PROXY_URL = 'https://walletbot.me/tonconnect-proxy/';
+    // private static readonly MANIFEST_PROXY_URL = 'https://walletbot.me/tonconnect-proxy/';
 
     /**
      * Fetch manifest from URL
      */
 
-    private async fetchManifest(manifestUrl: string): Promise<{
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        manifest: any;
-        manifestFetchErrorCode?:
-            | CONNECT_EVENT_ERROR_CODES.MANIFEST_NOT_FOUND_ERROR
-            | CONNECT_EVENT_ERROR_CODES.MANIFEST_CONTENT_ERROR;
-    }> {
-        try {
-            // try to parse url
-            const parsedUrl = new URL(manifestUrl);
-            if (!isValidHost(parsedUrl.host)) {
-                return {
-                    manifest: null,
-                    manifestFetchErrorCode: CONNECT_EVENT_ERROR_CODES.MANIFEST_NOT_FOUND_ERROR,
-                };
-            }
-        } catch (_) {
-            return {
-                manifest: null,
-                manifestFetchErrorCode: CONNECT_EVENT_ERROR_CODES.MANIFEST_NOT_FOUND_ERROR,
-            };
+    private async fetchManifest(manifestUrl: string): Promise<ManifestFetchResult> {
+        if (this.config.fetchManifest && typeof this.config.fetchManifest === 'function') {
+            return this.config.fetchManifest(manifestUrl);
         }
 
-        // Try direct fetch first
-        const directResult = await this.tryFetchManifest(manifestUrl);
-        if (directResult.manifest) {
-            return directResult;
-        }
-
-        // If direct fetch failed, try via proxy
-        log.info('Direct manifest fetch failed, trying proxy', { manifestUrl });
-        const proxyUrl = `${ConnectHandler.MANIFEST_PROXY_URL}${manifestUrl}`;
-        return this.tryFetchManifest(proxyUrl);
-    }
-
-    private async tryFetchManifest(url: string): Promise<{
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        manifest: any;
-        manifestFetchErrorCode?:
-            | CONNECT_EVENT_ERROR_CODES.MANIFEST_NOT_FOUND_ERROR
-            | CONNECT_EVENT_ERROR_CODES.MANIFEST_CONTENT_ERROR;
-    }> {
-        try {
-            const response = await fetch(url);
-            if (!response.ok) {
-                log.error('Failed to fetch manifest not ok', { url, status: response.status });
-                return {
-                    manifest: null,
-                    manifestFetchErrorCode: CONNECT_EVENT_ERROR_CODES.MANIFEST_CONTENT_ERROR,
-                };
-            }
-            const result = await response.json();
-            return {
-                manifest: result,
-                manifestFetchErrorCode: undefined,
-            };
-        } catch (e) {
-            log.error('Failed to fetch manifest catched', { url, error: e });
-            return {
-                manifest: null,
-                manifestFetchErrorCode: CONNECT_EVENT_ERROR_CODES.MANIFEST_CONTENT_ERROR,
-            };
-        }
+        return fetchManifest(manifestUrl);
     }
 }

@@ -6,7 +6,7 @@
  *
  */
 
-import type { MutationOptions } from '@tanstack/query-core';
+import type { MutateOptions, MutationOptions } from '@tanstack/query-core';
 
 import { sendGaslessTransaction } from '../../actions/gasless/send-gasless-transaction';
 import type {
@@ -33,7 +33,9 @@ export const sendGaslessTransactionMutationOptions = <context = unknown>(
 ): SendGaslessTransactionMutationOptions<context> => {
     return {
         ...config.mutation,
-        mutationFn: (variables: SendGaslessTransactionVariables) => sendGaslessTransaction(appKit, variables),
+        mutationFn(variables) {
+            return sendGaslessTransaction(appKit, variables);
+        },
         mutationKey: ['sendGaslessTransaction'],
     };
 };
@@ -44,22 +46,30 @@ export type SendGaslessTransactionData = Compute<Awaited<SendGaslessTransactionR
 
 export type SendGaslessTransactionMutate<context = unknown> = (
     variables: SendGaslessTransactionVariables,
-    options?: MutationOptions<
-        SendGaslessTransactionData,
-        SendGaslessTransactionErrorType,
-        SendGaslessTransactionVariables,
-        context
-    >,
+    options?:
+        | Compute<
+              MutateOptions<
+                  SendGaslessTransactionData,
+                  SendGaslessTransactionErrorType,
+                  SendGaslessTransactionVariables,
+                  context
+              >
+          >
+        | undefined,
 ) => void;
 
 export type SendGaslessTransactionMutateAsync<context = unknown> = (
     variables: SendGaslessTransactionVariables,
-    options?: MutationOptions<
-        SendGaslessTransactionData,
-        SendGaslessTransactionErrorType,
-        SendGaslessTransactionVariables,
-        context
-    >,
+    options?:
+        | Compute<
+              MutateOptions<
+                  SendGaslessTransactionData,
+                  SendGaslessTransactionErrorType,
+                  SendGaslessTransactionVariables,
+                  context
+              >
+          >
+        | undefined,
 ) => Promise<SendGaslessTransactionData>;
 
 export type SendGaslessTransactionMutationOptions<context = unknown> = MutationOptions<

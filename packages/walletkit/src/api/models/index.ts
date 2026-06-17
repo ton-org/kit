@@ -7,11 +7,18 @@
  */
 
 // Blockchain models
+export type { AccountState } from './blockchain/AccountState';
+export type { AccountStates } from './blockchain/AccountStates';
+export type { AccountStatus } from './blockchain/AccountStatus';
 export type { MasterchainInfo } from './blockchain/MasterchainInfo';
+export type { TransactionId } from './blockchain/TransactionId';
 
 // Core models
 export type { AddressBook, AddressBookEntry } from './core/AddressBook';
+export type { ManifestFetchResult } from './core/ManifestFetchResult';
 export { AssetType } from './core/AssetType';
+export type { BaseProvider, BaseProviderEvents, BaseProviderUpdate } from './core/BaseProvider';
+export type { DefiProviderType } from './core/DefiProviderType';
 export type { DAppInfo } from './core/DAppInfo';
 export type { ExtraCurrencies } from './core/ExtraCurrencies';
 export { Network } from './core/Network';
@@ -55,20 +62,45 @@ export type { SignMessageApprovalResponse } from './bridge/SignMessageApprovalRe
 export type { SignMessageRequestEvent } from './bridge/SignMessageRequestEvent';
 export type { RequestErrorEvent } from './bridge/RequestErrorEvent';
 export type {
-    IntentAction,
-    SendTransactionIntentAction,
-    SignMessageIntentAction,
-    SignDataIntentAction,
-    IntentConnectionResult,
-    IntentActionRequestEvent,
-    IntentActionSendTransactionRequestEvent,
-    IntentActionSignMessageRequestEvent,
-    IntentActionSignDataRequestEvent,
-} from './bridge/Intents';
+    EmbeddedRequestEvent,
+    EmbeddedSendTransactionRequestEvent,
+    EmbeddedSignMessageRequestEvent,
+    EmbeddedSignDataRequestEvent,
+    EmbeddedRequest,
+    EmbeddedConnectionResult,
+    SendTransactionEmbeddedRequest,
+    SignDataEmbeddedRequest,
+    SignMessageEmbeddedRequest,
+} from './bridge/EmbeddedRequest';
 export type { TONConnectSession } from './sessions/TONConnectSession';
+
+// Emulation models
+export type { EmulationAction } from './emulation/EmulationAction';
+export type { EmulationAddressBookEntry } from './emulation/EmulationAddressBookEntry';
+export type { EmulationMessage, EmulationMessageContent } from './emulation/EmulationMessage';
+export type { EmulationResponse } from './emulation/EmulationResponse';
+export type {
+    EmulationResult,
+    EmulationResultSuccess,
+    EmulationResultError,
+    EmulationError,
+} from './emulation/EmulationResult';
+export type { EmulationTraceNode } from './emulation/EmulationTraceNode';
+export type {
+    EmulationTransaction,
+    EmulationAccountState,
+    EmulationBlockRef,
+    EmulationTransactionDescription,
+    EmulationStoragePhase,
+    EmulationCreditPhase,
+    EmulationComputePhase,
+    EmulationActionPhase,
+    EmulationActionMessageSize,
+} from './emulation/EmulationTransaction';
 
 // Jetton models
 export type { Jetton } from './jettons/Jetton';
+export type { JettonInfo, JettonVerification } from './jettons/JettonInfo';
 export type { JettonsRequest } from './jettons/JettonsRequest';
 export type { JettonsResponse } from './jettons/JettonsResponse';
 export type { JettonsTransferRequest } from './jettons/JettonsTransferRequest';
@@ -88,7 +120,6 @@ export type { TONTransferRequest } from './tons/TONTransferRequest';
 
 // Swap models
 export type { SwapToken } from './swaps/SwapToken';
-export type { SwapFee } from './swaps/SwapFee';
 export type { SwapProviderMetadata, SwapProviderMetadataOverride } from './swaps/SwapProviderMetadata';
 export type { SwapQuote } from './swaps/SwapQuote';
 export type { SwapQuoteParams } from './swaps/SwapQuoteParams';
@@ -109,20 +140,6 @@ export type { StakingQuoteParams } from './staking/StakingQuoteParams';
 export type { UnstakeModes } from './staking/UnstakeMode';
 export { UnstakeMode } from './staking/UnstakeMode';
 
-// Gasless models
-export type { GaslessConfig } from './gasless/GaslessConfig';
-export type { GaslessGasJetton } from './gasless/GaslessGasJetton';
-export type { GaslessEstimateParams } from './gasless/GaslessEstimateParams';
-export type { GaslessEstimateResult } from './gasless/GaslessEstimateResult';
-export type { GaslessSendParams } from './gasless/GaslessSendParams';
-
-// Onramp models
-export type { OnrampParams } from './onramp/OnrampParams';
-export type { OnrampQuote } from './onramp/OnrampQuote';
-export type { OnrampQuoteParams } from './onramp/OnrampQuoteParams';
-export type { OnrampLimits } from './onramp/OnrampLimits';
-export type { OnrampLimitParams } from './onramp/OnrampLimitParams';
-
 // Crypto onramp models
 export type { CryptoOnrampQuote } from './crypto-onramp/CryptoOnrampQuote';
 export type { CryptoOnrampQuoteParams } from './crypto-onramp/CryptoOnrampQuoteParams';
@@ -130,6 +147,24 @@ export type { CryptoOnrampDepositParams } from './crypto-onramp/CryptoOnrampDepo
 export type { CryptoOnrampDeposit } from './crypto-onramp/CryptoOnrampDeposit';
 export type { CryptoOnrampStatusParams } from './crypto-onramp/CryptoOnrampStatusParams';
 export type { CryptoOnrampStatus } from './crypto-onramp/CryptoOnrampStatus';
+export type {
+    CryptoOnrampProviderMetadata,
+    CryptoOnrampProviderMetadataOverride,
+} from './crypto-onramp/CryptoOnrampProviderMetadata';
+export type {
+    CryptoOnrampSourceCurrency,
+    CryptoOnrampDestinationCurrency,
+    CryptoOnrampSupportedCurrencies,
+} from './crypto-onramp/CryptoOnrampCurrency';
+
+// Gasless models
+export type { GaslessSupportedAsset } from './gasless/GaslessSupportedAsset';
+export type { GaslessConfig } from './gasless/GaslessConfig';
+export type { GaslessProviderMetadata, GaslessProviderMetadataOverride } from './gasless/GaslessProviderMetadata';
+export type { GaslessQuoteParams } from './gasless/GaslessQuoteParams';
+export type { GaslessQuote } from './gasless/GaslessQuote';
+export type { GaslessSendParams } from './gasless/GaslessSendParams';
+export type { GaslessSendResponse } from './gasless/GaslessSendResponse';
 
 // Transaction models
 export * from './transactions/Transaction';

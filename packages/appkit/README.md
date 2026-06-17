@@ -1,10 +1,4 @@
-<!--
-This file is auto-generated. Do not edit manually.
-Changes will be overwritten when running the docs update script.
-Source template: template/packages/appkit/README.md
--->
-
-# TonAppKit
+# @ton/appkit
 
 A dApp-side integration layer for TON Connect with a unified asset API for TON, Jettons, and NFTs
 
@@ -99,3 +93,10 @@ If you are using React, you can use `@ton/appkit-react` which provides hooks for
 If you are using another framework (Vue, Svelte, Angular, Solid, etc.), you can use `@ton/appkit/queries` with [TanStack Query](https://tanstack.com/query/latest) to create your own bindings.
  
 [Read more about Queries](https://github.com/ton-connect/kit/tree/main/packages/appkit/docs/query.md)
+
+<!--
+This file is auto-generated. Do not edit manually.
+Changes will be overwritten when running the docs update script.
+Source template: template/packages/appkit/README.md
+-->
+

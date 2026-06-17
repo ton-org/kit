@@ -15,10 +15,13 @@ import {
     createTonApiStreamingProvider,
     ApiClientToncenter,
     createTonCenterStreamingProvider,
+    fetchManifest,
 } from '@ton/walletkit';
 import type { ITonWalletKit } from '@ton/walletkit';
-import { OmnistonSwapProvider } from '@ton/walletkit/swap/omniston';
+import { createOmnistonProvider } from '@ton/walletkit/swap/omniston';
+import { createDeDustProvider } from '@ton/walletkit/swap/dedust';
 import { createTonstakersProvider } from '@ton/walletkit/staking/tonstakers';
+import { createTonApiGaslessProvider } from '@ton/walletkit/gasless/tonapi';
 
 import { createComponentLogger } from '../../utils/logger';
 import { isExtension } from '../../utils/isExtension';
@@ -29,6 +32,8 @@ import { getErrorMessage } from '../../utils/error';
 import type { NetworkType } from '../../utils';
 
 const log = createComponentLogger('WalletCoreSlice');
+
+const MANIFEST_PROXY_URL = 'https://walletbot.me/tonconnect-proxy/';
 
 /**
  * Creates a WalletKit instance with the specified network configuration
@@ -98,9 +103,14 @@ function createWalletKitInstance(walletKitConfig?: WalletKitConfig): ITonWalletK
             disableNetworkSend: walletKitConfig?.disableNetworkSend,
             disableManifestDomainCheck: walletKitConfig?.disableManifestDomainCheck,
         },
+
+        fetchManifest(manifestUrl: string) {
+            return fetchManifest(manifestUrl, MANIFEST_PROXY_URL);
+        },
     }) as ITonWalletKit;
 
-    walletKit.swap.registerProvider(new OmnistonSwapProvider());
+    walletKit.swap.registerProvider(createOmnistonProvider());
+    walletKit.swap.registerProvider(createDeDustProvider());
 
     const streamingProvider =
         walletKitConfig?.tonApiProvider === 'tonapi' ? createTonApiStreamingProvider : createTonCenterStreamingProvider;
@@ -111,6 +121,21 @@ function createWalletKitInstance(walletKitConfig?: WalletKitConfig): ITonWalletK
         streamingProvider({ network: Network.testnet(), apiKey: walletKitConfig?.tonApiKeyTestnet }),
     );
     walletKit.staking.registerProvider(createTonstakersProvider());
+
+    // Pass the TonAPI keys to the gasless relayer only when TonAPI is the
+    // configured provider — otherwise the keys are Toncenter keys and don't
+    // apply. Without a key it falls back to the public TonAPI endpoints.
+    const gaslessConfig =
+        walletKitConfig?.tonApiProvider === 'tonapi' &&
+        (walletKitConfig.tonApiKeyMainnet || walletKitConfig.tonApiKeyTestnet)
+            ? {
+                  chains: {
+                      [Network.mainnet().chainId]: { apiKey: walletKitConfig.tonApiKeyMainnet },
+                      [Network.testnet().chainId]: { apiKey: walletKitConfig.tonApiKeyTestnet },
+                  },
+              }
+            : undefined;
+    walletKit.gasless.registerProvider(createTonApiGaslessProvider(gaslessConfig));
 
     log.info(`WalletKit initialized with network: ${isExtension() ? 'extension' : 'web'}`);
     return walletKit;

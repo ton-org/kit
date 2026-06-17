@@ -44,10 +44,21 @@ export function getTonConnectFeatures(): Feature[] {
         {
             name: 'SendTransaction',
             maxMessages: 4,
+            itemTypes: ['ton', 'jetton', 'nft'],
+            extraCurrencySupported: true,
         },
         {
             name: 'SignData',
             types: ['text', 'binary', 'cell'],
+        },
+        {
+            name: 'SignMessage',
+            maxMessages: 4,
+            itemTypes: ['ton', 'jetton', 'nft'],
+            extraCurrencySupported: true,
+        },
+        {
+            name: 'EmbeddedRequest',
         },
     ];
 }

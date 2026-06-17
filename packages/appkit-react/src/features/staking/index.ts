@@ -28,6 +28,7 @@ export {
 export {
     useStakingProviderMetadata,
     type UseStakingProviderMetadataParameters,
+    type UseStakingProviderMetadataReturnType,
 } from './hooks/use-staking-provider-metadata';
 export { useBuildStakeTransaction, type UseBuildStakeTransactionReturnType } from './hooks/use-build-stake-transaction';
 
@@ -37,3 +38,4 @@ export * from './components/staking-widget-provider';
 export * from './components/staking-balance-block';
 export * from './components/staking-info';
 export * from './components/select-unstake-mode';
+export * from './components/staking-settings-modal';

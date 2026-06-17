@@ -1,9 +1,3 @@
-<!--
-This file is auto-generated. Do not edit manually.
-Changes will be overwritten when running the docs update script.
-Source template: template/packages/appkit/docs/staking.md
--->
-
 # Staking
 
 AppKit supports staking through various providers. Available providers:
@@ -56,3 +50,10 @@ registerProvider(appKit, createTonstakersProvider());
 ## Configuration
 
 - **Tonstakers**: [Tonstakers documentation](https://docs.tonstakers.com) and [provider README](https://github.com/ton-connect/kit/blob/main/packages/walletkit/src/defi/staking/tonstakers/README.md)
+
+<!--
+This file is auto-generated. Do not edit manually.
+Changes will be overwritten when running the docs update script.
+Source template: template/packages/appkit/docs/staking.md
+-->
+

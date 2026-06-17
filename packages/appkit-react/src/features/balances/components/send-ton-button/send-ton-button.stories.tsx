@@ -8,10 +8,10 @@
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { Button } from '../../../../components/button';
+import { Button } from '../../../../components/ui/button';
 
 const SendTonButtonPreview = ({
-    text = 'Send TON',
+    text = 'Send GRAM',
     isLoading = false,
     disabled = false,
 }: {
@@ -23,7 +23,7 @@ const SendTonButtonPreview = ({
 };
 
 const meta: Meta<typeof SendTonButtonPreview> = {
-    title: 'Public/Features/Balances/SendTonButton',
+    title: 'Features/Balances/SendTonButton',
     component: SendTonButtonPreview,
     tags: ['autodocs'],
 };
@@ -34,13 +34,13 @@ type Story = StoryObj<typeof SendTonButtonPreview>;
 
 export const Default: Story = {
     args: {
-        text: 'Send 1.5 TON',
+        text: 'Send 1.5 GRAM',
     },
 };
 
 export const LargeAmount: Story = {
     args: {
-        text: 'Send 999.99 TON',
+        text: 'Send 999.99 GRAM',
     },
 };
 
@@ -52,7 +52,7 @@ export const Loading: Story = {
 
 export const Disabled: Story = {
     args: {
-        text: 'Send 1.5 TON',
+        text: 'Send 1.5 GRAM',
         disabled: true,
     },
 };

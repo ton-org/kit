@@ -13,7 +13,7 @@ export interface StakingTokenInfo {
     ticker: string;
     /** @format int */
     decimals: number;
-    /** 'ton' for native TON, otherwise contract address in friendly format */
+    /** 'ton' for native GRAM, otherwise contract address in friendly format */
     address: string;
 }
 
@@ -21,13 +21,16 @@ export interface StakingTokenInfo {
  * Static metadata for a staking provider
  */
 export interface StakingProviderMetadata {
+    /** Human-readable provider name (e.g. "Tonstakers") */
+    name: string;
+
     /** Supported unstake modes for this provider */
     supportedUnstakeModes: UnstakeModes[];
 
-    /** Whether provider supports reversed quote format (e.g., passing TON instead of tsTON for unstake) */
+    /** Whether provider supports reversed quote format (e.g., passing GRAM instead of tsTON for unstake) */
     supportsReversedQuote: boolean;
 
-    /** Token that the user sends when staking (e.g. TON) */
+    /** Token that the user sends when staking (e.g. GRAM) */
     stakeToken: StakingTokenInfo;
 
     /** Token that the user receives when staking (e.g. tsTON for liquid staking). Absent for direct/custodial staking. */
@@ -41,6 +44,7 @@ export interface StakingProviderMetadata {
  * Used in provider configuration to override fields of the provider's metadata.
  */
 export interface StakingProviderMetadataOverride {
+    name?: string;
     stakeToken?: StakingTokenInfo;
     receiveToken?: StakingTokenInfo;
     contractAddress?: UserFriendlyAddress;

@@ -7,17 +7,20 @@
  */
 
 import type { UserFriendlyAddress } from '../core/Primitives';
-import type { GaslessGasJetton } from './GaslessGasJetton';
+import type { GaslessSupportedAsset } from './GaslessSupportedAsset';
 
 /**
- * Relayer configuration for gasless transactions.
+ * Provider-level configuration for a gasless relayer on a given network.
  *
- * Reports which jettons the relayer accepts as fee payment and the address
- * where the relayer fee is routed.
+ * Bundles every piece of provider state a consumer needs to drive a gasless
+ * transfer end-to-end:
+ *  - `relayAddress` — where the relayer wants residual GRAM (e.g. jetton-transfer
+ *    `responseDestination`) returned to.
+ *  - `supportedAssets` — what the relayer accepts as fee payment.
  */
 export interface GaslessConfig {
-    /** Address where the relayer expects to receive the fee */
+    /** Relayer address — for jetton-transfer `responseDestination` and similar. */
     relayAddress: UserFriendlyAddress;
-    /** Jettons supported by the relayer for paying the fee */
-    supportedGasJettons: GaslessGasJetton[];
+    /** Assets the relayer accepts as fee payment. */
+    supportedAssets: GaslessSupportedAsset[];
 }

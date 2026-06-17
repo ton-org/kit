@@ -7,12 +7,15 @@
  */
 
 import React, { useMemo, useState } from 'react';
-import type { Jetton } from '@ton/appkit';
-import { getFormattedJettonInfo, getErrorMessage } from '@ton/appkit';
-import { SendTonButton, SendJettonButton, Button, Input, Modal } from '@ton/appkit-react';
-import { Gem } from 'lucide-react';
+import type { Jetton, UserFriendlyAddress } from '@ton/appkit';
+import { getErrorMessage } from '@ton/appkit';
+import { Button, Input, Modal, useAddress, useTransferJetton, useTransferTon } from '@ton/appkit-react';
 
-import { TransactionStatus } from '@/features/transaction';
+import { GaslessControls } from './gasless-controls';
+import { useGaslessTransfer } from '../hooks/use-gasless-transfer';
+import { getTokenSummary } from '../utils/get-token-summary';
+import { TokenSummary } from './token-summary';
+import { TransferReceipt } from './transfer-receipt';
 
 interface TokenTransferModalProps {
     tokenType: 'TON' | 'JETTON';
@@ -34,34 +37,43 @@ export const TokenTransferModal: React.FC<TokenTransferModalProps> = ({
     const [comment, setComment] = useState('');
     const [transferError, setTransferError] = useState<string | null>(null);
     const [txBoc, setTxBoc] = useState<string | null>(null);
+    const [gaslessEnabled, setGaslessEnabled] = useState(false);
+    const [feeAsset, setFeeAsset] = useState<UserFriendlyAddress | null>(null);
 
-    const tokenInfo = useMemo(() => {
-        if (tokenType === 'TON') {
-            return {
-                name: 'Toncoin',
-                symbol: 'TON',
-                decimals: 9,
-                balance: tonBalance,
-                image: './ton.png',
-                address: null,
-            };
-        }
+    const address = useAddress();
 
-        if (!jetton) {
-            throw new Error('Jetton not found');
-        }
+    const tokenInfo = useMemo(() => getTokenSummary(tokenType, tonBalance, jetton), [tokenType, tonBalance, jetton]);
 
-        const jettonInfo = getFormattedJettonInfo(jetton);
+    const gasless = useGaslessTransfer({
+        enabled: gaslessEnabled,
+        jettonAddress: jetton?.address,
+        recipientAddress,
+        amount,
+        comment,
+        feeAsset,
+    });
 
-        return {
-            name: jettonInfo.name,
-            symbol: jettonInfo.symbol,
-            decimals: jettonInfo.decimals,
-            balance: jettonInfo.balance,
-            image: jettonInfo.image,
-            address: jettonInfo.address,
-        };
-    }, [tokenType, tonBalance, jetton]);
+    const { mutateAsync: transferTon, isPending: isTransferTonPending } = useTransferTon();
+    const { mutateAsync: transferJetton, isPending: isTransferJettonPending } = useTransferJetton();
+    const isRegularPending = tokenType === 'TON' ? isTransferTonPending : isTransferJettonPending;
+    const isPending = gaslessEnabled ? gasless.isSending : isRegularPending;
+
+    const submitDisabled =
+        isPending ||
+        !recipientAddress ||
+        !amount ||
+        (tokenType === 'JETTON' && !jetton?.address) ||
+        (gaslessEnabled && (!feeAsset || !gasless.quote || gasless.isQuoting));
+
+    const submitText = gaslessEnabled
+        ? gasless.isSending
+            ? 'Sending…'
+            : gasless.isQuoting
+              ? 'Quoting…'
+              : 'Send Gasless'
+        : isPending
+          ? 'Sending…'
+          : `Send ${tokenInfo.symbol ?? 'Jetton'}`;
 
     const handleClose = () => {
         setRecipientAddress('');
@@ -69,44 +81,67 @@ export const TokenTransferModal: React.FC<TokenTransferModalProps> = ({
         setComment('');
         setTransferError(null);
         setTxBoc(null);
+        setGaslessEnabled(false);
+        setFeeAsset(null);
         onClose();
+    };
+
+    const handleSubmit = async () => {
+        setTransferError(null);
+        try {
+            if (gaslessEnabled) {
+                const result = await gasless.send();
+                if (result) setTxBoc(result.boc);
+                return;
+            }
+
+            if (tokenType === 'TON') {
+                const { boc } = await transferTon({ recipientAddress, amount, comment });
+                setTxBoc(boc);
+                return;
+            }
+
+            if (jetton?.address) {
+                const { boc } = await transferJetton({
+                    jettonAddress: jetton.address,
+                    recipientAddress,
+                    amount,
+                    comment,
+                    jettonDecimals: tokenInfo.decimals,
+                });
+                setTxBoc(boc);
+                return;
+            }
+
+            throw new Error('Invalid token type or missing jetton address');
+        } catch (error) {
+            setTransferError(getErrorMessage(error));
+        }
     };
 
     if (!tokenInfo.decimals) return null;
 
     return (
         <Modal title={`Transfer ${tokenInfo.name}`} open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-            <div className="flex items-center space-x-3 mb-6">
-                <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center overflow-hidden">
-                    {tokenInfo.image ? (
-                        <img src={tokenInfo.image} alt={tokenInfo.name} className="w-full h-full object-cover" />
-                    ) : tokenType === 'TON' ? (
-                        <Gem className="w-6 h-6 text-primary" />
-                    ) : (
-                        <span className="text-sm font-bold text-muted-foreground">{tokenInfo.symbol?.slice(0, 2)}</span>
-                    )}
-                </div>
-                <div>
-                    <p className="text-sm font-medium text-foreground">Available Balance</p>
-                    <p className="text-xs text-muted-foreground">
-                        {tokenInfo.balance} {tokenInfo.symbol}
-                    </p>
-                </div>
-            </div>
+            <TokenSummary tokenType={tokenType} info={tokenInfo} />
 
             {txBoc ? (
-                <div className="space-y-6">
-                    <TransactionStatus boc={txBoc} />
-                    <Button fullWidth onClick={handleClose}>
-                        Close
-                    </Button>
-                </div>
+                <TransferReceipt boc={txBoc} onClose={handleClose} />
             ) : (
                 <>
                     <div className="space-y-4">
                         <Input size="s">
                             <Input.Header>
                                 <Input.Title>Recipient Address</Input.Title>
+                                {address && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setRecipientAddress(address)}
+                                        className="text-xs text-primary hover:underline"
+                                    >
+                                        Use my address
+                                    </button>
+                                )}
                             </Input.Header>
                             <Input.Field>
                                 <Input.Input
@@ -148,61 +183,28 @@ export const TokenTransferModal: React.FC<TokenTransferModalProps> = ({
                             </Input.Field>
                         </Input>
 
+                        {tokenType === 'JETTON' && (
+                            <GaslessControls
+                                enabled={gaslessEnabled}
+                                onEnabledChange={setGaslessEnabled}
+                                feeAsset={feeAsset}
+                                onFeeAssetChange={setFeeAsset}
+                                fee={gasless.fee}
+                                quoteError={gasless.quoteError}
+                            />
+                        )}
+
                         {transferError && (
-                            <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg">
-                                <p className="text-sm text-destructive">{transferError}</p>
+                            <div className="p-3 bg-error/10 border border-error/30 rounded-lg">
+                                <p className="text-sm text-error">{transferError}</p>
                             </div>
                         )}
                     </div>
 
                     <div className="flex mt-6 gap-3">
-                        {tokenType === 'TON' && (
-                            <SendTonButton
-                                recipientAddress={recipientAddress}
-                                amount={amount}
-                                comment={comment}
-                                onError={(error) => setTransferError(getErrorMessage(error))}
-                                onSuccess={(data) => setTxBoc(data.boc)}
-                            >
-                                {({ isLoading, onSubmit, disabled, text }) => (
-                                    <Button
-                                        loading={isLoading}
-                                        onClick={onSubmit}
-                                        disabled={disabled}
-                                        className="flex-1"
-                                    >
-                                        {text}
-                                    </Button>
-                                )}
-                            </SendTonButton>
-                        )}
-
-                        {tokenType === 'JETTON' && jetton?.address && (
-                            <SendJettonButton
-                                jetton={{
-                                    address: jetton.address,
-                                    symbol: jetton.info?.symbol || 'Jetton',
-                                    decimals: tokenInfo.decimals,
-                                }}
-                                recipientAddress={recipientAddress}
-                                amount={amount}
-                                comment={comment}
-                                onError={(error) => setTransferError(getErrorMessage(error))}
-                                onSuccess={(data) => setTxBoc(data.boc)}
-                            >
-                                {({ isLoading, onSubmit, disabled, text }) => (
-                                    <Button
-                                        loading={isLoading}
-                                        onClick={onSubmit}
-                                        disabled={disabled}
-                                        className="flex-1"
-                                    >
-                                        {text}
-                                    </Button>
-                                )}
-                            </SendJettonButton>
-                        )}
-
+                        <Button loading={isPending} onClick={handleSubmit} disabled={submitDisabled} className="flex-1">
+                            {submitText}
+                        </Button>
                         <Button variant="secondary" onClick={handleClose} className="flex-1">
                             Cancel
                         </Button>

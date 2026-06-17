@@ -12,11 +12,11 @@ import type { TokenAmount } from '../core/TokenAmount';
 import type { SendMode } from '../core/SendMode';
 
 /**
- * Request parameters for transferring TON to another address.
+ * Request parameters for transferring GRAM to another address.
  */
 export interface TONTransferRequest {
     /**
-     * Amount to transfer in nanotons
+     * Amount to transfer in nano units
      */
     transferAmount: TokenAmount;
 

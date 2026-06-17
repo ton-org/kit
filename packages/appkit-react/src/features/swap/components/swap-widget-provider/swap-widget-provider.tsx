@@ -6,27 +6,34 @@
  *
  */
 
-import { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { FC, PropsWithChildren } from 'react';
+import { formatUnits } from '@ton/appkit';
 import type { Network } from '@ton/appkit';
 import type { GetSwapQuoteData } from '@ton/appkit/queries';
+import type { SwapProvider } from '@ton/appkit';
+import { checkTransferBalance } from '@ton/appkit';
+import type { TransferShortfall } from '@ton/appkit';
+import { calcMaxSpendable } from '@ton/appkit';
 
 import { useSwapQuote } from '../../hooks/use-swap-quote';
+import { useSwapProvider } from '../../hooks/use-swap-provider';
+import { useSwapProviders } from '../../hooks/use-swap-providers';
 import { useBuildSwapTransaction } from '../../hooks/use-build-swap-transaction';
 import { useAddress } from '../../../wallets';
+import { useBalance } from '../../../balances/hooks/use-balance';
 import { useNetwork } from '../../../network';
 import { useSendTransaction } from '../../../transaction/hooks/use-send-transaction';
 import { useDebounceValue } from '../../../../hooks/use-debounce-value';
+import type { LowBalanceMode } from '../../../../components/shared/low-balance-modal/low-balance-modal';
 import type { AppkitUIToken } from '../../../../types/appkit-ui-token';
-import type { TokenSectionConfig } from '../../../../components/token-select-modal';
+import type { TokenSectionConfig } from '../../../../components/shared/token-select-modal';
 import { mapSwapWidgetTokens } from '../../utils/map-swap-widget-tokens';
 import { useSwapTokenState } from './use-swap-token-state';
 import { useSwapBalances } from './use-swap-balances';
 import { useSwapValidation } from './use-swap-validation';
 
 export type { AppkitUIToken };
-
-export type SwapWidgetError = 'insufficientBalance' | 'tooManyDecimals' | 'quoteError' | null;
 
 /**
  * Context type for the SwapWidget.
@@ -51,6 +58,10 @@ export interface SwapContextType {
     fromBalance: string | undefined;
     /** User's balance of the "to" token */
     toBalance: string | undefined;
+    /** True while the "from" balance is being fetched */
+    isFromBalanceLoading: boolean;
+    /** True while the "to" balance is being fetched */
+    isToBalanceLoading: boolean;
     /** Whether the user can proceed with the swap (checks balance, amount, quote) */
     canSubmit: boolean;
     /** Raw swap quote from the provider */
@@ -58,9 +69,15 @@ export interface SwapContextType {
     /** True while the quote is being fetched from the API */
     isQuoteLoading: boolean;
     /** Current validation or fetch error, null when everything is ok */
-    error: SwapWidgetError;
+    error: string | null;
     /** Slippage tolerance in basis points (100 = 1%) */
     slippage: number;
+    /** Currently selected swap provider (defaults to the first registered one) */
+    provider: SwapProvider | undefined;
+    /** All registered swap providers */
+    providers: SwapProvider[];
+    /** Updates the selected swap provider */
+    setProviderId: (providerId: string) => void;
     /** Updates the source token */
     setFromToken: (token: AppkitUIToken) => void;
     /** Updates the target token */
@@ -75,8 +92,18 @@ export interface SwapContextType {
     onMaxClick: () => void;
     /** Executes the swap transaction */
     sendSwapTransaction: () => Promise<void>;
-    /** True while a transaction is being sent or processed */
+    /** True while a transaction is being built or sent */
     isSendingTransaction: boolean;
+    /** True when the built transaction outflow exceeds the user's GRAM balance */
+    isLowBalanceWarningOpen: boolean;
+    /** `reduce` when the outgoing token is GRAM (user can fix by changing amount), `topup` otherwise. */
+    lowBalanceMode: LowBalanceMode;
+    /** Required GRAM amount for the pending operation, formatted as a decimal string. Empty when no pending op. */
+    lowBalanceRequiredTon: string;
+    /** Replace the input with a value that fits into the current GRAM balance and close the warning */
+    onLowBalanceChange: () => void;
+    /** Dismiss the low-balance warning without changing the input */
+    onLowBalanceCancel: () => void;
 }
 
 export const SwapContext = createContext<SwapContextType>({
@@ -89,11 +116,16 @@ export const SwapContext = createContext<SwapContextType>({
     fiatSymbol: '$',
     fromBalance: undefined,
     toBalance: undefined,
+    isFromBalanceLoading: false,
+    isToBalanceLoading: false,
     canSubmit: false,
     quote: undefined,
     isQuoteLoading: false,
     error: null,
     slippage: 50,
+    provider: undefined,
+    providers: [],
+    setProviderId: () => {},
     setFromToken: () => {},
     setToToken: () => {},
     setFromAmount: () => {},
@@ -102,15 +134,20 @@ export const SwapContext = createContext<SwapContextType>({
     onMaxClick: () => {},
     sendSwapTransaction: () => Promise.resolve(),
     isSendingTransaction: false,
+    isLowBalanceWarningOpen: false,
+    lowBalanceMode: 'reduce',
+    lowBalanceRequiredTon: '',
+    onLowBalanceChange: () => {},
+    onLowBalanceCancel: () => {},
 });
 
 /**
  * Hook to access the swap context.
  * Must be used within a SwapWidgetProvider (or SwapWidget).
  */
-export function useSwapContext() {
+export const useSwapContext = () => {
     return useContext(SwapContext);
-}
+};
 
 /**
  * Props for the SwapWidgetProvider.
@@ -120,10 +157,10 @@ export interface SwapProviderProps extends PropsWithChildren {
     tokens: AppkitUIToken[];
     /** Optional section configs for grouping tokens in the selector */
     tokenSections?: TokenSectionConfig[];
-    /** Id of the token pre-selected in the "from" field */
-    defaultFromId?: string;
-    /** Id of the token pre-selected in the "to" field */
-    defaultToId?: string;
+    /** Ticker of the token pre-selected for the source */
+    defaultFromSymbol?: string;
+    /** Ticker of the token pre-selected for the target */
+    defaultToSymbol?: string;
     /** Initial slippage in basis points (100 = 1%), defaults to 50 (0.5%) */
     /** Network to use for quote fetching. When omitted, uses the selected wallet's network. */
     network?: Network;
@@ -139,22 +176,36 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
     tokenSections,
     network: networkProp,
     fiatSymbol = '$',
-    defaultFromId,
-    defaultToId,
+    defaultFromSymbol,
+    defaultToSymbol,
     defaultSlippage = 100,
 }) => {
-    const walletNetwork = useNetwork();
-    const network = networkProp ?? walletNetwork;
+    // Input prep — derived from props, consumed by local-state hooks below.
     const mappedTokens = useMemo(() => mapSwapWidgetTokens(tokens), [tokens]);
 
+    // 2. Queries and external readers (hoisted: `network` gates token filtering for local state below)
+    const walletNetwork = useNetwork();
+    const network = networkProp ?? walletNetwork;
+
+    const networkFilteredTokens = useMemo(
+        () => (network ? mappedTokens.filter((t) => t.network.chainId === network.chainId) : mappedTokens),
+        [mappedTokens, network],
+    );
+
+    // 1. Local state
     const { fromToken, toToken, fromAmount, setFromToken, setToToken, setFromAmount, onFlip } = useSwapTokenState({
-        mappedTokens,
-        defaultFromId,
-        defaultToId,
+        mappedTokens: networkFilteredTokens,
+        defaultFromSymbol,
+        defaultToSymbol,
     });
-
     const [slippage, setSlippage] = useState(defaultSlippage);
+    const [fromAmountDebounced] = useDebounceValue(fromAmount, 500);
+    const [pendingSwap, setPendingSwap] = useState<TransferShortfall | undefined>(undefined);
+    const address = useAddress();
+    const [provider, setProviderId] = useSwapProvider();
+    const providers = useSwapProviders();
 
+    // Stabilized query inputs — kept next to the query that consumes them.
     const fromTokenParam = useMemo(
         () =>
             fromToken
@@ -167,7 +218,6 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
                 : undefined,
         [fromToken],
     );
-
     const toTokenParam = useMemo(
         () =>
             toToken
@@ -176,11 +226,14 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
         [toToken],
     );
 
-    const [fromAmountDebounced] = useDebounceValue(fromAmount, 500);
+    const isNetworkSupported = useMemo(
+        () => !provider || !network || provider.getSupportedNetworks().some((n) => n.chainId === network.chainId),
+        [provider, network],
+    );
 
     const {
         data: quote,
-        isFetching: isQuoteLoading,
+        isFetching: isQuoteFetching,
         error: quoteError,
     } = useSwapQuote({
         from: fromTokenParam,
@@ -188,47 +241,117 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
         amount: fromAmountDebounced,
         network,
         slippageBps: slippage,
+        providerId: provider?.providerId,
+        query: { enabled: isNetworkSupported, networkMode: 'always', retry: false, gcTime: 0 },
     });
-
-    const toAmount = quote?.toAmount ?? '';
-
-    const address = useAddress();
-
-    const { fromBalance, toBalance } = useSwapBalances({
+    // Also show "loading" while the user is still typing (debounce in-flight) so the UI doesn't flash
+    // the previous quote as if it were final.
+    const isQuoteLoading = isQuoteFetching || fromAmount !== fromAmountDebounced;
+    const { fromBalance, toBalance, isFromBalanceLoading, isToBalanceLoading } = useSwapBalances({
         fromToken,
         toToken,
         ownerAddress: address ?? undefined,
+        network,
     });
+    const { data: tonBalance } = useBalance({ network, query: { refetchInterval: 5000 } });
 
-    const handleMaxClick = useCallback(() => {
-        if (fromBalance) {
-            setFromAmount(fromBalance.replace(/\s/g, ''));
-        }
-    }, [fromBalance, setFromAmount]);
+    // 4. Mutations (hoisted above validation: the mutation `error` is one of its inputs)
+    const {
+        mutateAsync: buildTransaction,
+        isPending: isBuildingTransaction,
+        error: buildError,
+        reset: resetBuild,
+    } = useBuildSwapTransaction({ mutation: { networkMode: 'always' } });
+    const {
+        mutateAsync: sendTransaction,
+        isPending: isSendingPending,
+        error: sendMutationError,
+        reset: resetSend,
+    } = useSendTransaction({ mutation: { networkMode: 'always' } });
+    const isSendingTransaction = isBuildingTransaction || isSendingPending;
+    const sendError = sendMutationError ?? buildError;
 
-    const { mutateAsync: buildTransaction } = useBuildSwapTransaction();
-    const { mutateAsync: sendTransaction, isPending: isSendingTransaction } = useSendTransaction();
+    // Drop the previous send error when the user changes anything that would invalidate it —
+    // the next attempt is conceptually a new swap, no need to keep the old message on screen.
+    const resetSendError = useCallback(() => {
+        resetBuild();
+        resetSend();
+    }, [resetBuild, resetSend]);
 
-    const sendSwapTransaction = useCallback(async () => {
-        if (!quote || !address) return;
-
-        const transactionParams = await buildTransaction({ quote, userAddress: address });
-
-        await sendTransaction(transactionParams);
-    }, [quote, address, buildTransaction, sendTransaction]);
-
+    // 3. Derivations
+    const toAmount = quote?.toAmount ?? '';
     const { error, canSubmit } = useSwapValidation({
         fromAmount,
         fromAmountDebounced,
         fromToken,
         toToken,
         fromBalance,
+        quote,
         quoteError,
+        sendError,
+        isNetworkSupported,
     });
+    const isLowBalanceWarningOpen = pendingSwap !== undefined;
+    const lowBalanceMode: LowBalanceMode = pendingSwap?.mode ?? 'reduce';
+    const lowBalanceRequiredTon = useMemo(() => {
+        if (!pendingSwap) return '';
+        return formatUnits(pendingSwap.requiredNanos, 9);
+    }, [pendingSwap]);
+
+    // Drop the previous send error when the user changes anything that would invalidate it —
+    // the next attempt is conceptually a new swap, no need to keep the old message on screen.
+    useEffect(() => {
+        resetSendError();
+    }, [fromToken?.address, toToken?.address, fromAmount, resetSendError]);
+
+    // Auto-clear the send error after a short delay so a stale failure doesn't linger in the
+    // submit button — the user is expected to act on it within seconds or move on.
+    useEffect(() => {
+        if (!sendError) return;
+        const id = setTimeout(resetSendError, 5000);
+        return () => clearTimeout(id);
+    }, [sendError, resetSendError]);
+
+    // 5. Callbacks
+    const handleMaxClick = useCallback(() => {
+        if (!fromBalance || !fromToken) return;
+        setFromAmount(calcMaxSpendable({ balance: fromBalance, token: fromToken, feeReserveNanos: 350_000_000n }));
+    }, [fromBalance, fromToken, setFromAmount]);
+
+    const sendSwapTransaction = useCallback(async () => {
+        if (!quote || !address || !fromToken) return;
+
+        const tx = await buildTransaction({ quote, userAddress: address });
+
+        const shortfall = checkTransferBalance({
+            messages: tx.messages,
+            tonBalance,
+            gasBufferNanos: 100_000_000n,
+            fromToken,
+            fromAmount,
+        });
+
+        if (shortfall) {
+            setPendingSwap(shortfall);
+            return;
+        }
+
+        await sendTransaction(tx);
+    }, [quote, address, fromToken, fromAmount, buildTransaction, sendTransaction, tonBalance]);
+
+    const onLowBalanceChange = useCallback(() => {
+        if (!pendingSwap || pendingSwap.mode !== 'reduce') return;
+        setFromAmount(pendingSwap.suggestedFromAmount);
+        setPendingSwap(undefined);
+    }, [pendingSwap, setFromAmount]);
+
+    const onLowBalanceCancel = useCallback(() => {
+        setPendingSwap(undefined);
+    }, []);
 
     const value = useMemo(
         () => ({
-            tokens: mappedTokens,
+            tokens: networkFilteredTokens,
             tokenSections,
             fromToken,
             toToken,
@@ -237,11 +360,16 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
             fiatSymbol,
             fromBalance,
             toBalance,
+            isFromBalanceLoading,
+            isToBalanceLoading,
             canSubmit,
             quote,
             isQuoteLoading,
             error,
             slippage,
+            provider,
+            providers,
+            setProviderId,
             setFromToken,
             setToToken,
             setFromAmount,
@@ -250,9 +378,14 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
             onMaxClick: handleMaxClick,
             sendSwapTransaction,
             isSendingTransaction,
+            isLowBalanceWarningOpen,
+            lowBalanceMode,
+            lowBalanceRequiredTon,
+            onLowBalanceChange,
+            onLowBalanceCancel,
         }),
         [
-            mappedTokens,
+            networkFilteredTokens,
             tokenSections,
             fromToken,
             toToken,
@@ -261,11 +394,16 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
             fiatSymbol,
             fromBalance,
             toBalance,
+            isFromBalanceLoading,
+            isToBalanceLoading,
             canSubmit,
             quote,
             isQuoteLoading,
             error,
             slippage,
+            provider,
+            providers,
+            setProviderId,
             setFromToken,
             setToToken,
             setFromAmount,
@@ -274,6 +412,11 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
             handleMaxClick,
             sendSwapTransaction,
             isSendingTransaction,
+            isLowBalanceWarningOpen,
+            lowBalanceMode,
+            lowBalanceRequiredTon,
+            onLowBalanceChange,
+            onLowBalanceCancel,
         ],
     );
 

@@ -12,10 +12,12 @@ import clsx from 'clsx';
 import { UnstakeMode } from '@ton/appkit';
 import type { UnstakeModes, StakingProviderInfo, StakingProviderMetadata } from '@ton/appkit';
 
-import { Collapsible } from '../../../../components/collapsible';
+import { Collapsible } from '../../../../components/ui/collapsible';
+import { ChevronDownIcon } from '../../../../components/ui/icons';
 import { useI18n } from '../../../settings/hooks/use-i18n';
 import { formatAmount } from '../staking-info/utils';
 import styles from './select-unstake-mode.module.css';
+import { Button } from '../../../../components/ui/button';
 
 export interface SelectUnstakeModeProps extends ComponentProps<'div'> {
     value: UnstakeModes;
@@ -83,27 +85,20 @@ export const SelectUnstakeMode: FC<SelectUnstakeModeProps> = ({
 
     return (
         <div className={clsx(styles.root, className)} {...props}>
-            <button type="button" className={styles.header} onClick={() => setOpen((v) => !v)}>
+            <div className={styles.header}>
                 <span className={styles.headerLabel}>{t('staking.unstakeType')}</span>
-                <span className={styles.headerValue}>
+
+                <Button
+                    variant="gray"
+                    size="s"
+                    borderRadius="full"
+                    className={styles.headerValue}
+                    onClick={() => setOpen((v) => !v)}
+                >
                     {selectedLabel}
-                    <svg
-                        className={clsx(styles.chevron, open && styles.chevronOpen)}
-                        width="16"
-                        height="16"
-                        viewBox="0 0 16 16"
-                        fill="none"
-                    >
-                        <path
-                            d="M4 6L8 10L12 6"
-                            stroke="currentColor"
-                            strokeWidth="1.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                        />
-                    </svg>
-                </span>
-            </button>
+                    <ChevronDownIcon size={16} className={clsx(styles.chevron, open && styles.chevronOpen)} />
+                </Button>
+            </div>
 
             <Collapsible open={open}>
                 <div className={styles.options}>

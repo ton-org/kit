@@ -24,9 +24,9 @@ export type Hex = `0x${string}` & { readonly [hashBrand]: never };
  * Base64-encoded string representation
  */
 
-declare const base64StringBrand: unique symbol;
+// declare const base64StringBrand: unique symbol;
 
-export type Base64String = string & { readonly [base64StringBrand]: never };
+export type Base64String = string;
 
 /**
  * Logical time value used for ordering transactions on the TON blockchain

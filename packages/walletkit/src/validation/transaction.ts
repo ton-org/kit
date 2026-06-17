@@ -13,30 +13,8 @@ import { validateTonAddress } from './address';
 import { isFriendlyTonAddress, isValidAddress } from '../utils/address';
 
 /**
- * Human-readable transaction message
- */
-export interface HumanReadableTx {
-    /** Recipient address */
-    to: string;
-
-    /** Amount in TON (formatted string) */
-    valueTON: string;
-
-    /** Optional comment/memo */
-    comment?: string;
-
-    /** Transaction type */
-    type: 'ton' | 'jetton' | 'nft' | 'contract-call' | 'raw';
-
-    /** Additional metadata */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    extra?: Record<string, any>;
-}
-
-/**
  * Validate transaction messages array
  */
-
 export function validateTransactionMessages(
     messages: unknown[],
     isTonConnect: boolean = true,
@@ -122,11 +100,11 @@ export function validateMessageObject(message: any, requireFriendlyAddress: bool
     }
 
     if (message.amount !== undefined) {
-        if (!isValidNanotonAmount(message.amount)) {
-            errors.push('value must be a valid nanonton amount (string of digits)');
+        if (!isValidNanoAmount(message.amount)) {
+            errors.push('value must be a valid nano units amount (string of digits)');
         }
     } else {
-        errors.push('value must be a valid nanonton amount (string of digits)');
+        errors.push('value must be a valid nano units amount (string of digits)');
     }
 
     // Optional fields validation
@@ -293,10 +271,10 @@ export function validateStructuredItems(items: unknown[]): ValidationResult {
 }
 
 /**
- * Check if value is a valid nanonton amount
+ * Check if value is a valid nano units amount
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function isValidNanotonAmount(amount: any): boolean {
+export function isValidNanoAmount(amount: any): boolean {
     if (typeof amount !== 'string') {
         return false;
     }
@@ -332,7 +310,7 @@ export function estimateTransactionFees(messages: any[]): string {
     // - Calculating gas costs
     // - Including network fees
 
-    const baseFeePerMessage = 5000000; // 0.005 TON per message
+    const baseFeePerMessage = 5000000; // 0.005 GRAM per message
     const totalFees = messages.length * baseFeePerMessage;
 
     return totalFees.toString();

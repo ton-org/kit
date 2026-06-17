@@ -6,10 +6,16 @@
  *
  */
 
-import { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { FC, PropsWithChildren } from 'react';
-import type { Network, StakingQuoteDirection } from '@ton/appkit';
-import { validateNumericString } from '@ton/appkit';
+import type { Network, StakingProvider, StakingQuoteDirection, TransferShortfall } from '@ton/appkit';
+import {
+    calcMaxSpendable,
+    checkTransferBalance,
+    formatUnits,
+    setDefaultStakingProvider,
+    validateNumericString,
+} from '@ton/appkit';
 import type {
     StakingQuote,
     StakingProviderInfo,
@@ -18,12 +24,14 @@ import type {
     StakingProviderMetadata,
 } from '@ton/appkit';
 import { UnstakeMode } from '@ton/appkit';
-import { keepPreviousData } from '@tanstack/react-query';
 
+import type { LowBalanceMode } from '../../../../components/shared/low-balance-modal/low-balance-modal';
 import { useNetwork } from '../../../network';
-import { convertByRate } from '../../utils/convert-by-rate';
+import { useAppKit } from '../../../settings/hooks/use-app-kit';
 import { useStakingQuote } from '../../hooks/use-staking-quote';
 import type { UseStakingQuoteParameters } from '../../hooks/use-staking-quote';
+import { useStakingProvider } from '../../hooks/use-staking-provider';
+import { useStakingProviders } from '../../hooks/use-staking-providers';
 import { useStakingProviderInfo } from '../../hooks/use-staking-provider-info';
 import { useStakingProviderMetadata } from '../../hooks/use-staking-provider-metadata';
 import { useStakedBalance } from '../../hooks/use-staked-balance';
@@ -34,8 +42,6 @@ import { useJettonBalanceByAddress } from '../../../jettons/hooks/use-jetton-bal
 import { useSendTransaction } from '../../../transaction/hooks/use-send-transaction';
 import { useDebounceValue } from '../../../../hooks/use-debounce-value';
 import { useStakingValidation } from './use-staking-validation';
-
-export type StakingWidgetError = 'insufficientBalance' | 'tooManyDecimals' | 'quoteError' | null;
 
 /**
  * Context type for the StakingWidget.
@@ -51,11 +57,19 @@ export interface StakingContextType {
     /** True while the stake quote is being fetched */
     isQuoteLoading: boolean;
     /** Current validation/fetch error for staking, null when everything is ok */
-    error: StakingWidgetError;
+    error: string | null;
     /** Staking provider dynamic info (APY, instant unstake availability, etc.) */
     providerInfo: StakingProviderInfo | undefined;
     /** Staking provider static metadata */
     providerMetadata: StakingProviderMetadata | undefined;
+    /** Currently selected staking provider (defaults to the first registered one) */
+    provider: StakingProvider | undefined;
+    /** All registered staking providers */
+    providers: StakingProvider[];
+    /** Updates the selected staking provider */
+    setProviderId: (providerId: string) => void;
+    /** Network the widget is operating on (resolved from prop or wallet) */
+    network: Network | undefined;
     /** Current operation direction: 'stake' or 'unstake' */
     direction: StakingQuoteDirection;
     /** True while provider info is being fetched */
@@ -86,6 +100,18 @@ export interface StakingContextType {
     toggleReversed: () => void;
     /** Amount displayed in the reversed (bottom) input */
     reversedAmount: string;
+    /** Sets the input amount to the maximum available balance (leaves room for GRAM gas on native stake) */
+    onMaxClick: () => void;
+    /** True when the built transaction outflow exceeds the user's GRAM balance */
+    isLowBalanceWarningOpen: boolean;
+    /** `reduce` when the outgoing token is GRAM (user can fix by changing amount), `topup` otherwise. */
+    lowBalanceMode: LowBalanceMode;
+    /** Required GRAM amount for the pending operation, formatted as a decimal string. Empty when no pending op. */
+    lowBalanceRequiredTon: string;
+    /** Replace the input with a value that fits into the current GRAM balance and close the warning */
+    onLowBalanceChange: () => void;
+    /** Dismiss the low-balance warning without changing the input */
+    onLowBalanceCancel: () => void;
 }
 
 export const StakingContext = createContext<StakingContextType>({
@@ -96,6 +122,10 @@ export const StakingContext = createContext<StakingContextType>({
     error: null,
     providerInfo: undefined,
     providerMetadata: undefined,
+    provider: undefined,
+    providers: [],
+    setProviderId: () => {},
+    network: undefined,
     direction: 'stake',
     isProviderInfoLoading: false,
     balance: undefined,
@@ -111,6 +141,12 @@ export const StakingContext = createContext<StakingContextType>({
     isReversed: false,
     toggleReversed: () => {},
     reversedAmount: '0',
+    onMaxClick: () => {},
+    isLowBalanceWarningOpen: false,
+    lowBalanceMode: 'reduce',
+    lowBalanceRequiredTon: '',
+    onLowBalanceChange: () => {},
+    onLowBalanceCancel: () => {},
 });
 
 /**
@@ -137,26 +173,44 @@ export const StakingWidgetProvider: FC<StakingProviderProps> = ({ children, netw
     const [unstakeMode, setUnstakeMode] = useState<UnstakeModes>(UnstakeMode.INSTANT);
     const [direction, setDirection] = useState<StakingQuoteDirection>('stake');
     const [isReversed, setIsReversed] = useState(false);
+    const [pendingStake, setPendingStake] = useState<TransferShortfall | undefined>(undefined);
 
     const walletNetwork = useNetwork();
     const network = networkProp ?? walletNetwork;
 
     const address = useAddress();
+    const appKit = useAppKit();
+    const provider = useStakingProvider();
+    const providers = useStakingProviders();
+    const setProviderId = useCallback(
+        (providerId: string) => {
+            setDefaultStakingProvider(appKit, { providerId });
+        },
+        [appKit],
+    );
+
+    const isNetworkSupported = useMemo(
+        () => !provider || !network || provider.getSupportedNetworks().some((n) => n.chainId === network.chainId),
+        [provider, network],
+    );
 
     const { data: providerInfo, isLoading: isProviderInfoLoading } = useStakingProviderInfo({ network });
     const providerMetadata = useStakingProviderMetadata({ network });
 
     const isNativeTon = providerMetadata?.stakeToken.address === 'ton';
 
+    // Always fetch GRAM balance: even when the stake token is a jetton we need it to check whether the user has
+    // enough GRAM to cover network fees before sending.
     const { data: nativeBalanceData, isLoading: isNativeBalanceLoading } = useBalance({
-        query: { enabled: isNativeTon },
+        network,
+        query: { enabled: isNativeTon, refetchInterval: 5000 },
     });
 
     const { data: jettonBalanceData, isLoading: isJettonBalanceLoading } = useJettonBalanceByAddress({
         jettonAddress: !isNativeTon ? providerMetadata?.stakeToken.address : undefined,
         ownerAddress: address ?? undefined,
         network,
-        query: { enabled: !isNativeTon && !!providerMetadata?.stakeToken.address && !!address },
+        query: { enabled: !isNativeTon && !!providerMetadata?.stakeToken.address && !!address, refetchInterval: 5000 },
     });
 
     const balance = isNativeTon ? nativeBalanceData : jettonBalanceData;
@@ -168,8 +222,39 @@ export const StakingWidgetProvider: FC<StakingProviderProps> = ({ children, netw
         query: { refetchInterval: 5000 },
     });
 
-    const { mutateAsync: buildTransaction } = useBuildStakeTransaction();
-    const { mutateAsync: sendTransaction, isPending: isSendingTransaction } = useSendTransaction();
+    const {
+        mutateAsync: buildTransaction,
+        isPending: isBuildingTransaction,
+        error: buildError,
+        reset: resetBuild,
+    } = useBuildStakeTransaction({ mutation: { networkMode: 'always' } });
+    const {
+        mutateAsync: sendTransaction,
+        isPending: isSendingPending,
+        error: sendMutationError,
+        reset: resetSend,
+    } = useSendTransaction({ mutation: { networkMode: 'always' } });
+    const isSendingTransaction = isBuildingTransaction || isSendingPending;
+    const sendError = sendMutationError ?? buildError;
+
+    const resetSendError = useCallback(() => {
+        resetBuild();
+        resetSend();
+    }, [resetBuild, resetSend]);
+
+    // Drop the previous send error when the user changes anything that invalidates it —
+    // the next attempt is conceptually a new stake, no need to keep the old message on screen.
+    useEffect(() => {
+        resetSendError();
+    }, [direction, amount, isReversed, resetSendError]);
+
+    // Auto-clear the send error after a short delay so a stale failure doesn't linger in the
+    // submit button — the user is expected to act on it within seconds or move on.
+    useEffect(() => {
+        if (!sendError) return;
+        const id = setTimeout(resetSendError, 5000);
+        return () => clearTimeout(id);
+    }, [sendError, resetSendError]);
 
     const amountDecimals = useMemo(() => {
         const unstakeDecimals = isReversed
@@ -192,51 +277,106 @@ export const StakingWidgetProvider: FC<StakingProviderProps> = ({ children, netw
             unstakeMode,
             isReversed,
             network,
-            query: { placeholderData: keepPreviousData },
         },
         500,
     );
 
-    const { data: quote, isFetching: isQuoteLoading, error: quoteError } = useStakingQuote(quoteParamsDebounced);
+    const {
+        data: quote,
+        isFetching: isQuoteLoading,
+        error: quoteError,
+    } = useStakingQuote({
+        ...quoteParamsDebounced,
+        query: { enabled: isNetworkSupported, networkMode: 'always', retry: false, gcTime: 0 },
+    });
 
     const reversedAmount = useMemo(() => {
-        if (direction === 'stake') return quote?.amountOut || '0';
-        if (isReversed) return quote?.amountIn || '0';
-        if (!quote?.amountIn) return '0';
-
-        return convertByRate(quote.amountIn, providerInfo?.exchangeRate, providerMetadata?.stakeToken.decimals) || '0';
-    }, [
-        direction,
-        isReversed,
-        quote?.amountOut,
-        quote?.amountIn,
-        providerInfo?.exchangeRate,
-        providerMetadata?.stakeToken.decimals,
-    ]);
+        if (direction === 'unstake' && isReversed) return quote?.amountIn || '0';
+        return quote?.amountOut || '0';
+    }, [direction, isReversed, quote?.amountOut, quote?.amountIn]);
 
     const toggleReversed = useCallback(() => {
         setAmountRaw(reversedAmount);
         setIsReversed((prev) => !prev);
     }, [reversedAmount]);
 
+    const handleMaxClick = useCallback(() => {
+        const outgoingToken = direction === 'stake' ? providerMetadata?.stakeToken : providerMetadata?.receiveToken;
+        const available = direction === 'stake' ? balance : stakedBalanceData?.stakedBalance;
+
+        if (direction === 'unstake') setIsReversed(false);
+
+        if (!available || !outgoingToken) {
+            setAmountRaw(available ?? '');
+            return;
+        }
+
+        setAmountRaw(calcMaxSpendable({ balance: available, token: outgoingToken, feeReserveNanos: 1_200_000_000n }));
+    }, [
+        direction,
+        balance,
+        stakedBalanceData?.stakedBalance,
+        providerMetadata?.stakeToken,
+        providerMetadata?.receiveToken,
+    ]);
+
     const handleSendTransaction = useCallback(async () => {
-        if (!quote || !address) return;
+        if (!quote || !address || !providerMetadata) return;
 
         const transactionParams = await buildTransaction({ quote, userAddress: address });
 
+        const outgoingTokenAddress =
+            direction === 'stake' ? providerMetadata.stakeToken.address : providerMetadata.receiveToken?.address;
+
+        if (outgoingTokenAddress) {
+            const shortfall = checkTransferBalance({
+                messages: transactionParams.messages,
+                tonBalance: nativeBalanceData,
+                gasBufferNanos: 100_000_000n,
+                fromToken: { address: outgoingTokenAddress },
+                fromAmount: quote.amountIn,
+            });
+
+            if (shortfall) {
+                setPendingStake(shortfall);
+                return;
+            }
+        }
+
         await sendTransaction(transactionParams);
-    }, [quote, address, buildTransaction, sendTransaction]);
+    }, [quote, address, providerMetadata, direction, nativeBalanceData, buildTransaction, sendTransaction]);
+
+    const onLowBalanceChange = useCallback(() => {
+        if (!pendingStake || pendingStake.mode !== 'reduce') return;
+        // The suggested amount is always a direct (non-reversed) outgoing amount.
+        if (isReversed) setIsReversed(false);
+        setAmountRaw(pendingStake.suggestedFromAmount);
+        setPendingStake(undefined);
+    }, [pendingStake, isReversed]);
+
+    const onLowBalanceCancel = useCallback(() => {
+        setPendingStake(undefined);
+    }, []);
+
+    const isLowBalanceWarningOpen = pendingStake !== undefined;
+    const lowBalanceMode: LowBalanceMode = pendingStake?.mode ?? 'reduce';
+    const lowBalanceRequiredTon = useMemo(() => {
+        if (!pendingStake) return '';
+        return formatUnits(pendingStake.requiredNanos, 9);
+    }, [pendingStake]);
 
     const { error, canSubmit } = useStakingValidation({
         amount,
         amountDebounced: quoteParamsDebounced.amount || '',
         balance,
         quoteError,
+        sendError,
         direction,
         stakedBalance: stakedBalanceData?.stakedBalance,
         quote,
         isReversed,
         amountDecimals,
+        isNetworkSupported,
     });
 
     const value = useMemo(
@@ -249,6 +389,10 @@ export const StakingWidgetProvider: FC<StakingProviderProps> = ({ children, netw
             error,
             providerInfo,
             providerMetadata,
+            provider,
+            providers,
+            setProviderId,
+            network,
             isProviderInfoLoading,
             balance,
             isBalanceLoading,
@@ -262,7 +406,13 @@ export const StakingWidgetProvider: FC<StakingProviderProps> = ({ children, netw
             isReversed,
             toggleReversed,
             reversedAmount,
+            onMaxClick: handleMaxClick,
             onChangeDirection: setDirection,
+            isLowBalanceWarningOpen,
+            lowBalanceMode,
+            lowBalanceRequiredTon,
+            onLowBalanceChange,
+            onLowBalanceCancel,
         }),
         [
             amount,
@@ -274,6 +424,10 @@ export const StakingWidgetProvider: FC<StakingProviderProps> = ({ children, netw
             error,
             providerInfo,
             providerMetadata,
+            provider,
+            providers,
+            setProviderId,
+            network,
             isProviderInfoLoading,
             balance,
             isBalanceLoading,
@@ -287,7 +441,13 @@ export const StakingWidgetProvider: FC<StakingProviderProps> = ({ children, netw
             isReversed,
             toggleReversed,
             reversedAmount,
+            handleMaxClick,
             setDirection,
+            isLowBalanceWarningOpen,
+            lowBalanceMode,
+            lowBalanceRequiredTon,
+            onLowBalanceChange,
+            onLowBalanceCancel,
         ],
     );
 

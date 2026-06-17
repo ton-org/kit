@@ -6,28 +6,13 @@
  *
  */
 
-import { useCallback } from 'react';
-
 import { generateCard } from '../store/actions/generate-card';
 import { clearCard } from '../store/actions/clear-card';
 import { useMinterStore } from '../store/minter-store';
 
-export function useCardGenerator() {
+export const useCardGenerator = () => {
     const currentCard = useMinterStore((state) => state.currentCard);
     const isGenerating = useMinterStore((state) => state.isGenerating);
 
-    const generate = useCallback(() => {
-        generateCard();
-    }, []);
-
-    const clear = useCallback(() => {
-        clearCard();
-    }, []);
-
-    return {
-        currentCard,
-        isGenerating,
-        generate,
-        clear,
-    };
-}
+    return { currentCard, isGenerating, generate: generateCard, clear: clearCard };
+};

@@ -8,7 +8,7 @@
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { Button } from '../../../../components/button';
+import { Button } from '../../../../components/ui/button';
 
 // Create a preview component that doesn't depend on context
 const SendPreview = ({
@@ -24,7 +24,7 @@ const SendPreview = ({
 };
 
 const meta: Meta<typeof SendPreview> = {
-    title: 'Public/Features/Transaction/Send',
+    title: 'Features/Transaction/Send',
     component: SendPreview,
     tags: ['autodocs'],
 };
@@ -41,7 +41,7 @@ export const Default: Story = {
 
 export const CustomText: Story = {
     args: {
-        text: 'Send 1.5 TON',
+        text: 'Send 1.5 GRAM',
     },
 };
 
@@ -60,7 +60,7 @@ export const Disabled: Story = {
 
 export const SendTonButton: Story = {
     args: {
-        text: 'Send 10 TON',
+        text: 'Send 10 GRAM',
     },
 };
 

@@ -12,7 +12,7 @@ import type { CONNECT_EVENT_ERROR_CODES, SendTransactionRpcResponseError } from 
 
 import type { JettonsAPI } from './jettons';
 import type { StreamingAPI } from '../api/interfaces';
-import type { ApiClient } from './toncenter/ApiClient';
+import type { ApiClient } from '../api/interfaces';
 import type { Wallet, WalletAdapter } from '../api/interfaces';
 import type { Network } from '../api/models/core/Network';
 import type { WalletId } from '../utils/walletId';
@@ -29,11 +29,12 @@ import type {
     TONConnectSession,
     SendTransactionApprovalResponse,
     ConnectionApprovalResponse,
-    IntentActionRequestEvent,
+    EmbeddedRequestEvent,
+    BaseProvider,
 } from '../api/models';
-import type { SwapAPI, StakingAPI } from '../api/interfaces';
+import type { SwapAPI, StakingAPI, GaslessAPI } from '../api/interfaces';
 import type { NetworkManager } from '../core/NetworkManager';
-import type { ProviderFactoryContext } from './factory';
+import type { ProviderFactoryContext, ProviderInput } from './factory';
 
 /**
  * Main TonWalletKit interface
@@ -104,11 +105,11 @@ export interface ITonWalletKit {
 
     // === Request Processing ===
 
-    /** Approve a connect request. Returns an IntentActionRequestEvent if the event carries an intent. */
+    /** Approve a connect request. Returns an EmbeddedRequestEvent if the event carries an embedded request. */
     approveConnectRequest(
         event: ConnectionRequestEvent,
         response?: ConnectionApprovalResponse,
-    ): Promise<IntentActionRequestEvent | undefined>;
+    ): Promise<EmbeddedRequestEvent | undefined>;
     /** Reject a connect request */
     rejectConnectRequest(
         event: ConnectionRequestEvent,
@@ -174,6 +175,8 @@ export interface ITonWalletKit {
     removeDisconnectCallback(cb: (event: DisconnectionEvent) => void): void;
     removeErrorCallback(cb: (event: RequestErrorEvent) => void): void;
 
+    registerProvider(input: ProviderInput<BaseProvider>): void;
+
     // === Jettons API ===
 
     /** Jettons API access */
@@ -187,4 +190,7 @@ export interface ITonWalletKit {
 
     /** Staking API access */
     staking: StakingAPI;
+
+    /** Gasless API access */
+    gasless: GaslessAPI;
 }

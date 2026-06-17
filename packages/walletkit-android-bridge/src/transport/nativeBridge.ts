@@ -8,30 +8,64 @@
 
 import { v7 as uuidv7 } from 'uuid';
 
-import type { BridgePayload } from '../types';
+import type { BridgePayload, WrappedFunctionRef } from '../types';
 import { bigIntReplacer } from '../utils/serialization';
-import { warn, error, info } from '../utils/logger';
-
-// Reverse-RPC: JS sends {kind:'request', id, method, params} via postMessage.
-// Kotlin responds via window.__walletkitResponse(id, resultJson, errorJson).
+import { warn, error } from '../utils/logger';
+import { sendToNative } from './port';
 
 const pendingRequests = new Map<string, { resolve: (v: unknown) => void; reject: (e: Error) => void }>();
 
-/**
- * Synchronous bridge call via @JavascriptInterface (WalletKitNative.adapterCallSync).
- * Used for sync WalletAdapter getters that cannot be async.
- */
+export type BridgeFailureKind = 'bridge_unavailable' | 'native_threw' | 'decode_failed';
+
+/** Structured failure for every bridge call. Distinguishes wire-level vs. host vs. decode. */
+export class BridgeError extends Error {
+    constructor(
+        public readonly kind: BridgeFailureKind,
+        public readonly method: string,
+        options?: { cause?: unknown; raw?: string },
+    ) {
+        super(`[bridge:${kind}] ${method}${options?.raw ? ` raw=${truncate(options.raw)}` : ''}`);
+        this.name = 'BridgeError';
+        if (options?.cause !== undefined) (this as { cause?: unknown }).cause = options.cause;
+    }
+}
+
+function truncate(s: string, max = 200): string {
+    return s.length <= max ? s : `${s.slice(0, max)}…(${s.length} chars)`;
+}
+
+/** Sync host call via @JavascriptInterface — returns the raw string the host produced. */
 export function bridgeRequestSync(method: string, params: Record<string, unknown>): string {
     const native = window.WalletKitNative;
     if (!native || typeof native.adapterCallSync !== 'function') {
-        throw new Error('WalletKitNative.adapterCallSync not available');
+        throw new BridgeError('bridge_unavailable', method);
     }
-    return native.adapterCallSync(method, JSON.stringify(params));
+    try {
+        return native.adapterCallSync(method, JSON.stringify(params, bigIntReplacer));
+    } catch (cause) {
+        throw new BridgeError('native_threw', method, { cause });
+    }
 }
 
-/**
- * Send a request to Kotlin via postMessage and wait for a response.
- */
+/** Sync host call with JSON-parsed return. Optional [decode] runs after parse. */
+export function bridgeRequestSyncTyped<T>(
+    method: string,
+    params: Record<string, unknown>,
+    decode?: (parsed: unknown) => T,
+): T {
+    const raw = bridgeRequestSync(method, params);
+    try {
+        const parsed = JSON.parse(raw);
+        return decode ? decode(parsed) : (parsed as T);
+    } catch (cause) {
+        throw new BridgeError('decode_failed', method, { cause, raw });
+    }
+}
+
+export function isBridgeAvailable(): boolean {
+    return typeof window.WalletKitNative?.adapterCallSync === 'function';
+}
+
 export function bridgeRequest(method: string, params: Record<string, unknown>): Promise<unknown> {
     const id = uuidv7();
     return new Promise<unknown>((resolve, reject) => {
@@ -40,76 +74,52 @@ export function bridgeRequest(method: string, params: Record<string, unknown>): 
     });
 }
 
-export function registerNativeResponseHandler(): void {
-    window.__walletkitResponse = (id: string, resultJson?: string | null, errorJson?: string | null) => {
-        const entry = pendingRequests.get(id);
-        if (!entry) {
-            warn('[walletkitBridge] __walletkitResponse: no pending request for id', id);
-            return;
-        }
-        pendingRequests.delete(id);
-
-        if (errorJson) {
-            try {
-                const err = JSON.parse(errorJson);
-                entry.reject(new Error(err.message ?? 'Native request failed'));
-            } catch {
-                entry.reject(new Error(errorJson));
-            }
-            return;
-        }
-
-        if (resultJson) {
-            try {
-                entry.resolve(JSON.parse(resultJson));
-            } catch {
-                // If it's not JSON, return the raw string
-                entry.resolve(resultJson);
-            }
-        } else {
-            entry.resolve(undefined);
-        }
+/**
+ * Reconstructs a native callback that crossed the bridge as a WrappedFunctionRef into a callable.
+ * The function itself can't be serialized, so the returned wrapper forwards its arguments through
+ * the async `callByReference` reverse-RPC method. Returns undefined when there's no reference.
+ * Wrappers are memoized under window.wrapped_funcs (keyed by reference id), not on global scope.
+ */
+export function unwrapRef(ref: WrappedFunctionRef | undefined): ((...args: unknown[]) => Promise<unknown>) | undefined {
+    if (!ref?.__wrappedFn) {
+        return undefined;
+    }
+    const refId = ref.__wrappedFn;
+    const registry = window as unknown as {
+        wrapped_funcs?: Record<string, (...args: unknown[]) => Promise<unknown>>;
     };
-    info('[walletkitBridge] __walletkitResponse handler registered');
+    registry.wrapped_funcs ??= {};
+    registry.wrapped_funcs[refId] ??= (...args: unknown[]) => bridgeRequest('callByReference', { refId, args });
+    return registry.wrapped_funcs[refId];
 }
 
-/**
- * Resolves WalletKit's native bridge implementation exposed on the global scope.
- */
-export function resolveNativeBridge(scope: typeof globalThis) {
-    const candidate = (scope as typeof globalThis & { WalletKitNative?: { postMessage?: (json: string) => void } })
-        .WalletKitNative;
-    if (candidate && typeof candidate.postMessage === 'function') {
-        return candidate.postMessage.bind(candidate);
+export function handleNativeResponse(id: string, resultJson: unknown, errorJson: unknown): void {
+    const entry = pendingRequests.get(id);
+    if (!entry) {
+        warn('[walletkitBridge] handleNativeResponse: no pending request for id', id);
+        return;
     }
-    const windowRef = typeof scope.window === 'object' && scope.window ? scope.window : undefined;
-    const windowCandidate = windowRef?.WalletKitNative;
-    if (windowCandidate && typeof windowCandidate.postMessage === 'function') {
-        return windowCandidate.postMessage.bind(windowCandidate);
+    pendingRequests.delete(id);
+
+    if (errorJson) {
+        const err = errorJson as { message?: string };
+        entry.reject(new Error(err.message ?? 'Native request failed'));
+        return;
     }
-    return null;
+
+    if (resultJson === null || resultJson === undefined) {
+        entry.resolve(undefined);
+        return;
+    }
+
+    if (typeof resultJson === 'string') {
+        entry.resolve(JSON.parse(resultJson));
+        return;
+    }
+
+    entry.resolve(resultJson);
 }
 
-/**
- * Resolves the Android bridge exposed by the host WebView.
- */
-export function resolveAndroidBridge(scope: typeof globalThis) {
-    const candidate = (scope as typeof globalThis & { AndroidBridge?: { postMessage?: (json: string) => void } })
-        .AndroidBridge;
-    if (candidate && typeof candidate.postMessage === 'function') {
-        return candidate.postMessage.bind(candidate);
-    }
-    const windowRef = typeof scope.window === 'object' && scope.window ? scope.window : undefined;
-    const windowCandidate = windowRef?.AndroidBridge;
-    if (windowCandidate && typeof windowCandidate.postMessage === 'function') {
-        return windowCandidate.postMessage.bind(windowCandidate);
-    }
-    return null;
-}
-
-/**
- * Sends a payload to the native bridge, falling back to debug logging when unavailable.
- */
 export function postToNative(payload: BridgePayload): void {
     if (payload === null || (typeof payload !== 'object' && typeof payload !== 'function')) {
         const diagnostic = {
@@ -121,18 +131,5 @@ export function postToNative(payload: BridgePayload): void {
         throw new Error('Invalid payload - must be an object');
     }
     const json = JSON.stringify(payload, bigIntReplacer);
-    const nativePostMessage = resolveNativeBridge(window);
-    if (nativePostMessage) {
-        nativePostMessage(json);
-        return;
-    }
-    const androidPostMessage = resolveAndroidBridge(window);
-    if (androidPostMessage) {
-        androidPostMessage(json);
-        return;
-    }
-    if (payload.kind === 'event') {
-        throw new Error('Native bridge not available - cannot deliver event');
-    }
-    warn('[walletkitBridge] postToNative: no native handler', payload);
+    sendToNative(json);
 }

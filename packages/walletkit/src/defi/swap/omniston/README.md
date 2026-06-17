@@ -1,9 +1,3 @@
-<!--
-This file is auto-generated. Do not edit manually.
-Changes will be overwritten when running the docs update script.
-Source template: template/packages/walletkit/src/defi/swap/omniston/README.md
--->
-
 # Omniston Swap Provider
 
 Omniston is STON.fi's swap aggregator that finds the best rates across multiple DEXs on TON blockchain.
@@ -13,11 +7,12 @@ For detailed information about Omniston features and capabilities, see the [offi
 ## Quick Start
 
 ```ts
-const provider = new OmnistonSwapProvider({
-    defaultSlippageBps: 100, // 1%
-    quoteTimeoutMs: 10000,
-});
-kit.registerProvider(provider);
+kit.registerProvider(
+    createOmnistonProvider({
+        defaultSlippageBps: 100, // 1%
+        quoteTimeoutMs: 10000,
+    }),
+);
 ```
 
 ## Configuration
@@ -39,14 +34,14 @@ interface OmnistonSwapProviderConfig {
 ### Usage Example
 
 ```ts
-const TON = { address: 'ton', decimals: 9 };
+const GRAM = { address: 'ton', decimals: 9 };
 const USDT = {
     address: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs',
     decimals: 6,
 };
 
 const quote = await getSwapQuote(appKit, {
-    from: TON,
+    from: GRAM,
     to: USDT,
     amount: '0.1',
     network: Network.mainnet(),
@@ -57,14 +52,14 @@ const quote = await getSwapQuote(appKit, {
 ## Referral Fees
 
 ```ts
-const TON = { address: 'ton', decimals: 9 };
+const GRAM = { address: 'ton', decimals: 9 };
 const USDT = {
     address: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs',
     decimals: 6,
 };
 
 const quote = await getSwapQuote(appKit, {
-    from: TON,
+    from: GRAM,
     to: USDT,
     amount: '0.1',
     network: Network.mainnet(),
@@ -78,22 +73,23 @@ const quote = await getSwapQuote(appKit, {
 ### Overriding Referral Settings
 
 ```ts
-const TON = { address: 'ton', decimals: 9 };
+const GRAM = { address: 'ton', decimals: 9 };
 const USDT = {
     address: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs',
     decimals: 6,
 };
 
 // Global referrer in config
-const provider = new OmnistonSwapProvider({
-    referrerAddress: 'EQ...global',
-    referrerFeeBps: 10,
-});
-appKit.registerProvider(provider);
+appKit.registerProvider(
+    createOmnistonProvider({
+        referrerAddress: 'EQ...global',
+        referrerFeeBps: 10,
+    }),
+);
 
 // Override for specific quote
 const quote = await getSwapQuote(appKit, {
-    from: TON,
+    from: GRAM,
     to: USDT,
     amount: '1000000000',
     network: Network.mainnet(),
@@ -105,7 +101,7 @@ const quote = await getSwapQuote(appKit, {
 
 // Or use global settings by omitting providerOptions
 const quote2 = await getSwapQuote(appKit, {
-    from: TON,
+    from: GRAM,
     to: USDT,
     amount: '0.1',
     network: Network.mainnet(),
@@ -119,3 +115,10 @@ const quote2 = await getSwapQuote(appKit, {
 - [Referral Fees](https://docs.ston.fi/developer-section/omniston/referral-fees) - How to earn fees
 - [SDK Repository](https://github.com/ston-fi/omniston-sdk) - Source code and examples
 - [Demo Implementation](https://github.com/ton-connect/kit/blob/main/apps/demo-wallet/src/pages/Swap.tsx) - Working example
+
+<!--
+This file is auto-generated. Do not edit manually.
+Changes will be overwritten when running the docs update script.
+Source template: template/packages/walletkit/src/defi/swap/omniston/README.md
+-->
+

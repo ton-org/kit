@@ -6,7 +6,7 @@
  *
  */
 
-import { compareAddress, Base64NormalizeUrl, HexToBase64, Network } from '@ton/walletkit';
+import { compareAddress, Base64ToHex, Network } from '@ton/walletkit';
 import type { ITonWalletKit, Transaction, TransactionsUpdate, Wallet, WalletAdapter } from '@ton/walletkit';
 import { createLedgerPath } from '@demo/v4ledger-adapter';
 
@@ -148,7 +148,9 @@ export const createWalletManagementSlice =
                     state.walletManagement.activeWalletId = walletId;
                     state.walletManagement.address = address;
                     state.walletManagement.publicKey = publicKey;
-                    state.walletManagement.balance = '0';
+                    // Leave balance undefined (shows skeleton) until the real balance loads,
+                    // so the received-toast hook seeds the actual balance instead of diffing from 0.
+                    state.walletManagement.balance = undefined;
                     state.walletManagement.currentWallet = wallet;
                 });
 
@@ -366,28 +368,30 @@ export const createWalletManagementSlice =
 
             const isRemovingActiveWallet = state.walletManagement.activeWalletId === walletId;
             const isLastWallet = state.walletManagement.savedWallets.length === 1;
+            // Pick the next wallet to switch to BEFORE removing. Don't touch activeWalletId here —
+            // switchWallet must see it still pointing at the removed wallet, otherwise it treats the
+            // target as "already active" and early-returns without loading address/currentWallet.
+            const nextActiveId =
+                isRemovingActiveWallet && !isLastWallet
+                    ? state.walletManagement.savedWallets.find((w) => w.id !== walletId)?.id
+                    : undefined;
 
             set((state) => {
                 state.walletManagement.savedWallets.splice(walletIndex, 1);
 
-                if (isRemovingActiveWallet) {
-                    if (state.walletManagement.savedWallets.length > 0) {
-                        const newActiveId = state.walletManagement.savedWallets[0].id;
-                        state.walletManagement.activeWalletId = newActiveId;
-                    } else {
-                        state.walletManagement.hasWallet = false;
-                        state.walletManagement.isAuthenticated = false;
-                        state.walletManagement.activeWalletId = undefined;
-                        state.walletManagement.address = undefined;
-                        state.walletManagement.publicKey = undefined;
-                        state.walletManagement.balance = undefined;
-                        state.walletManagement.currentWallet = undefined;
-                        state.walletManagement.events = [];
-                        state.walletManagement.pendingTransactions = [];
-                        state.walletManagement.confirmedTraceIds = [];
-                        state.walletManagement.confirmedExternalHashes = [];
-                        state.walletManagement.isStreamingConnected = false;
-                    }
+                if (isRemovingActiveWallet && isLastWallet) {
+                    state.walletManagement.hasWallet = false;
+                    state.walletManagement.isAuthenticated = false;
+                    state.walletManagement.activeWalletId = undefined;
+                    state.walletManagement.address = undefined;
+                    state.walletManagement.publicKey = undefined;
+                    state.walletManagement.balance = undefined;
+                    state.walletManagement.currentWallet = undefined;
+                    state.walletManagement.events = [];
+                    state.walletManagement.pendingTransactions = [];
+                    state.walletManagement.confirmedTraceIds = [];
+                    state.walletManagement.confirmedExternalHashes = [];
+                    state.walletManagement.isStreamingConnected = false;
                 }
             });
 
@@ -397,9 +401,10 @@ export const createWalletManagementSlice =
 
             log.info(`Removed wallet ${walletId}`);
 
-            const newState = get();
-            if (newState.walletManagement.activeWalletId && newState.walletManagement.activeWalletId !== walletId) {
-                get().switchWallet(newState.walletManagement.activeWalletId);
+            if (nextActiveId) {
+                void get()
+                    .switchWallet(nextActiveId)
+                    .catch((err) => log.error('Error switching wallet after removal:', err));
             }
         },
 
@@ -579,7 +584,14 @@ export const createWalletManagementSlice =
             if (!network) return;
 
             const streaming = state.walletCore.walletKit?.streaming;
+
             if (!streaming) return;
+            if (!streaming.hasProvider(network)) {
+                log.info(
+                    `No streaming provider registered for network ${network.chainId}; skipping WebSocket streaming`,
+                );
+                return;
+            }
 
             activeStreamingUnwatchers.forEach((unwatch) => unwatch());
             activeStreamingUnwatchers = [];
@@ -678,7 +690,7 @@ export const createWalletManagementSlice =
 
             // Derive a stable identifier: prefer traceExternalHash, fall back to hash of first tx
             const externalHash = firstTx.traceExternalHash || undefined;
-            const traceId = firstTx.traceId || firstTx.hash;
+            const traceId = firstTx.traceId ? Base64ToHex(firstTx.traceId) : firstTx.hash;
 
             // Build preview from the first tx's messages
             const hasExternalInMessage = firstTx.inMessage && !firstTx.inMessage.source;
@@ -772,15 +784,11 @@ export const createWalletManagementSlice =
                 set((state) => {
                     state.walletManagement.events = response.events;
                     state.walletManagement.hasNextEvents = response.hasNext;
-                    // Remove pending that now appear in history. trace_id and trace_external_hash are different - match each to its own.
                     const eventTraceIds = new Set<string>();
                     const eventExtHashes = new Set<string>();
                     for (const ev of response.events as Array<{ eventId?: string; traceExternalHash?: string }>) {
-                        if (ev.eventId)
-                            eventTraceIds.add(
-                                Base64NormalizeUrl(HexToBase64(ev.eventId as Parameters<typeof HexToBase64>[0])),
-                            );
-                        if (ev.traceExternalHash) eventExtHashes.add(Base64NormalizeUrl(ev.traceExternalHash));
+                        if (ev.eventId) eventTraceIds.add(ev.eventId);
+                        if (ev.traceExternalHash) eventExtHashes.add(Base64ToHex(ev.traceExternalHash));
                     }
                     state.walletManagement.confirmedTraceIds = [
                         ...state.walletManagement.confirmedTraceIds,
@@ -792,9 +800,8 @@ export const createWalletManagementSlice =
                     ].slice(-50);
                     state.walletManagement.pendingTransactions = state.walletManagement.pendingTransactions.filter(
                         (p) =>
-                            !(p.traceIdFromFirstTx && eventTraceIds.has(Base64NormalizeUrl(p.traceIdFromFirstTx))) &&
-                            !(p.traceId && eventTraceIds.has(Base64NormalizeUrl(p.traceId))) &&
-                            !(p.externalHash && eventExtHashes.has(Base64NormalizeUrl(p.externalHash))),
+                            !(p.traceId && eventTraceIds.has(p.traceId)) &&
+                            !(p.externalHash && eventExtHashes.has(p.externalHash)),
                     );
                 });
 

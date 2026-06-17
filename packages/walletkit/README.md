@@ -1,9 +1,3 @@
-<!--
-This file is auto-generated. Do not edit manually.
-Changes will be overwritten when running the docs update script.
-Source template: template/packages/walletkit/README.md
--->
-
 # TonWalletKit
 
 A production-ready wallet-side integration layer for TON Connect, designed for building TON wallets at scale
@@ -18,9 +12,11 @@ A production-ready wallet-side integration layer for TON Connect, designed for b
 - 💼 **Wallet Management** - Multi-wallet support with persistent storage
 - 🌉 **Bridge & JS Bridge** - HTTP bridge and browser extension support
 - 🎨 **Previews for actions** - Transaction emulation with money flow analysis
-- 🪙 **Asset Support** - TON, Jettons, NFTs with metadata
+- 🪙 **Asset Support** - GRAM, Jettons, NFTs with metadata
 
-**Live Demo**: [https://walletkit-demo-wallet.vercel.app/](https://walletkit-demo-wallet.vercel.app/)
+**WalletKit Demo**: [https://walletkit-demo-wallet.vercel.app/](https://walletkit-demo-wallet.vercel.app/)
+
+**AppKit Demo**: [https://appkit-minter.vercel.app/](https://appkit-minter.vercel.app/)
 
 ## Documentation
 
@@ -114,7 +110,7 @@ if (walletV5R1) {
 Before handling requests, it's helpful to understand the preview data that the kit provides for each request type. These previews help you display user-friendly confirmation dialogs.
 
 - **ConnectPreview (`req.preview`)**: Information about the dApp asking to connect. Includes `manifest` (name, description, icon), `requestedItems`, and `permissions` your UI can show before approval.
-- **TransactionPreview (`tx.preview`)**: Human-readable transaction summary. On success, `preview.moneyFlow.ourTransfers` contains an array of net asset changes (TON and jettons) with positive amounts for incoming and negative for outgoing. `preview.moneyFlow.inputs` and `preview.moneyFlow.outputs` show raw TON flow, and `preview.emulationResult` has low-level emulation details. On error, `preview.result === 'error'` with an `emulationError`.
+- **TransactionPreview (`tx.preview`)**: Human-readable transaction summary. On success, `preview.moneyFlow.ourTransfers` contains an array of net asset changes (GRAM and jettons) with positive amounts for incoming and negative for outgoing. `preview.moneyFlow.inputs` and `preview.moneyFlow.outputs` show raw GRAM flow, and `preview.emulationResult` has low-level emulation details. On error, `preview.result === 'error'` with an `emulationError`.
 - **SignDataPreview (`sd.preview`)**: Shape of the data to sign. `kind` is `'text' | 'binary' | 'cell'`. Use this to render a safe preview.
 
 You can display these previews directly in your confirmation modals.
@@ -267,7 +263,7 @@ function summarizeTransaction(preview: TransactionEmulatedPreview) {
         kind: 'success' as const,
         transfers: transfers.map((transfer) => ({
             assetType: transfer.assetType,
-            jettonAddress: transfer.assetType === AssetType.ton ? 'TON' : (transfer.tokenAddress ?? ''),
+            jettonAddress: transfer.assetType === AssetType.ton ? 'GRAM' : (transfer.tokenAddress ?? ''),
             amount: transfer.amount, // string, can be positive or negative
             isIncoming: BigInt(transfer.amount) >= 0n,
         })),
@@ -289,7 +285,7 @@ function renderMoneyFlow(transfers: TransactionTraceMoneyFlowItem[]) {
     return transfers.map((transfer: TransactionTraceMoneyFlowItem) => {
         const amount = BigInt(transfer.amount);
         const isIncoming = amount >= 0n;
-        const jettonAddress = transfer.assetType === AssetType.ton ? 'TON' : (transfer.tokenAddress ?? '');
+        const jettonAddress = transfer.assetType === AssetType.ton ? 'GRAM' : (transfer.tokenAddress ?? '');
 
         return (
             <div key={jettonAddress}>
@@ -335,7 +331,7 @@ const info = kit.jettons.getJettonInfo(jettonAddress, Network.mainnet());
 
 You can create transactions from your wallet app (not from dApps) and feed them into the regular approval flow via `handleNewTransaction`. This triggers your `onTransactionRequest` callback, allowing the same UI confirmation flow for both dApp and wallet-initiated transactions.
 
-### Send TON
+### Send GRAM
 
 ```ts
 import type { TONTransferRequest } from '@ton/walletkit';
@@ -345,7 +341,7 @@ if (!from) throw new Error('No wallet');
 
 const tonTransfer: TONTransferRequest = {
     recipientAddress: 'EQC...recipient...',
-    transferAmount: (1n * 10n ** 9n).toString(), // 1 TON in nanotons
+    transferAmount: (1n * 10n ** 9n).toString(), // 1 GRAM in nano units
     // Optional comment OR body (base64 BOC), not both
     comment: 'Thanks!',
 };
@@ -378,7 +374,7 @@ await kit.handleNewTransaction(wallet, tx);
 
 **Notes:**
 - `amount` is the raw integer amount (apply jetton decimals yourself)
-- The transaction includes TON for gas automatically
+- The transaction includes GRAM for gas automatically
 
 ### Send NFTs
 
@@ -391,7 +387,7 @@ if (!wallet) throw new Error('No wallet');
 const nftTransfer: NFTTransferRequest = {
     nftAddress: 'EQD...nft-item...',
     recipientAddress: 'EQC...recipient...',
-    transferAmount: '1', // TON used to invoke NFT transfer (nanotons)
+    transferAmount: '1', // GRAM used to invoke NFT transfer (nano units)
     comment: 'Gift',
 };
 
@@ -473,9 +469,17 @@ The store slices [walletCoreSlice.ts](https://github.com/ton-connect/kit/blob/ma
 ## Resources
 
 - [TON Connect Protocol](https://github.com/ton-blockchain/ton-connect) - Official TON Connect protocol specification
-- [Live Demo](https://walletkit-demo-wallet.vercel.app/) - Reference implementation [sources](https://github.com/ton-connect/kit/tree/main/apps/demo-wallet)
+- [WalletKit Demo](https://walletkit-demo-wallet.vercel.app/) - Reference implementation [sources](https://github.com/ton-connect/kit/tree/main/apps/demo-wallet)
+- [AppKit Demo](https://appkit-minter.vercel.app/staking) - AppKit demo dApp for testing WalletKit connections and DeFi flows
 - [Complete development guide](https://github.com/ton-connect/kit/blob/main/packages/walletkit/DEVELOPMENT.md)
 
 ## License
 
 MIT License - see LICENSE file for details
+
+<!--
+This file is auto-generated. Do not edit manually.
+Changes will be overwritten when running the docs update script.
+Source template: template/packages/walletkit/README.md
+-->
+

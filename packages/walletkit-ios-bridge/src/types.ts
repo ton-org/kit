@@ -9,6 +9,7 @@
 import type {
     ApiClient,
     Hex,
+    ManifestFetchResult,
     Network,
     TonWalletKitOptions,
     WalletSigner,
@@ -34,12 +35,15 @@ import type {
     StreamingAPI,
     StakingProviderInterface,
     StakingAPI,
-    IntentActionRequestEvent,
     ConnectionRequestEvent,
+    EmbeddedRequestEvent,
+    GaslessAPI,
+    GaslessProviderInterface,
 } from '@ton/walletkit';
 import type { OmnistonSwapProviderConfig } from '@ton/walletkit/swap/omniston';
 import type { DeDustSwapProviderConfig } from '@ton/walletkit/swap/dedust';
 import type { TonStakersProviderConfig } from '@ton/walletkit/staking/tonstakers';
+import type { TonApiGaslessProviderConfig } from '@ton/walletkit/gasless/tonapi';
 
 export interface SwiftApiClient extends ApiClient {
     getNetwork: () => Network;
@@ -50,7 +54,10 @@ export interface SwiftWalletSigner {
     publicKey: () => Hex;
 }
 
-type ReusedTonWalletKitOptions = Pick<TonWalletKitOptions, 'deviceInfo' | 'walletManifest' | 'bridge' | 'dev'>;
+type ReusedTonWalletKitOptions = Pick<
+    TonWalletKitOptions,
+    'deviceInfo' | 'walletManifest' | 'bridge' | 'dev' | 'analytics'
+>;
 
 export interface SwiftWalletKitConfiguration extends ReusedTonWalletKitOptions {
     networkConfigurations?: {
@@ -69,14 +76,18 @@ export interface SwiftWalletKitConfiguration extends ReusedTonWalletKitOptions {
 
 export type SwiftBridgeTransport = (data: { sessionID: string; messageID: string; message: unknown }) => void;
 
+export type SwiftFetchManifest = (manifestUrl: string) => Promise<ManifestFetchResult>;
+
 export interface SwiftWalletKit {
     isReady(): boolean;
 
-    jettonsManager(): JettonsAPI;
+    jettons(): JettonsAPI;
 
     setEventsListeners(callback: (type: string, event: unknown) => Promise<void>): void;
 
     removeEventListeners(): void;
+
+    createMnemonic(): Promise<string[]>;
 
     createSignerFromMnemonic(mnemonic: string): Promise<WalletSigner>;
 
@@ -118,7 +129,7 @@ export interface SwiftWalletKit {
     approveConnectRequest(
         event: ConnectionRequestEvent,
         response?: ConnectionApprovalResponse,
-    ): Promise<IntentActionRequestEvent | undefined>;
+    ): Promise<EmbeddedRequestEvent | undefined>;
 
     rejectConnectRequest(event: ConnectionRequestEvent, reason?: string): Promise<void>;
 
@@ -156,9 +167,13 @@ export interface SwiftWalletKit {
 
     createTonStakersStakingProvider(config?: TonStakersProviderConfig): StakingProviderInterface;
 
+    createTonApiGaslessProvider(config?: TonApiGaslessProviderConfig): GaslessProviderInterface;
+
     swap(): SwapAPI;
 
     streaming(): StreamingAPI;
 
     staking(): StakingAPI;
+
+    gasless(): GaslessAPI;
 }

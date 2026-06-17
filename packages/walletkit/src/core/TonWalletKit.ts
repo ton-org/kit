@@ -32,6 +32,8 @@ import type { JettonsAPI } from '../types/jettons';
 import { ConnectHandler } from '../handlers/ConnectHandler';
 import { SwapManager } from '../defi/swap';
 import { StakingManager } from '../defi/staking';
+import type { GaslessProvider } from '../defi/gasless';
+import { GaslessManager } from '../defi/gasless';
 import type {
     RawBridgeEventConnect,
     RawBridgeEventRestoreConnection,
@@ -42,8 +44,10 @@ import { EventEmitter } from './EventEmitter';
 import type { StorageEventProcessor } from './EventProcessor';
 import type { BridgeManager } from './BridgeManager';
 import type { BridgeEventMessageInfo, InjectedToExtensionBridgeRequestPayload } from '../types/jsBridge';
-import type { ApiClient } from '../types/toncenter/ApiClient';
+import type { ApiClient, StakingProviderInterface, StreamingProvider, SwapProviderInterface } from '../api/interfaces';
 import { StreamingManager } from '../streaming/StreamingManager';
+import { CustomProvidersManager } from '../providers';
+import type { CustomProvider } from '../providers';
 import type { WalletKitEvents, WalletKitEventEmitter } from '../types/emitter';
 import { AnalyticsManager } from '../analytics';
 import { getDeviceInfoForWallet } from '../utils/getDefaultWalletConfig';
@@ -68,11 +72,12 @@ import type {
     SignMessageApprovalResponse,
     TONConnectSession,
     ConnectionApprovalResponse,
-    IntentActionRequestEvent,
+    EmbeddedRequestEvent,
+    BaseProvider,
 } from '../api/models';
 import { asAddressFriendly } from '../utils';
-import { parseIntentFromReqParam } from '../utils/intent';
-import type { ProviderFactoryContext } from '../types/factory';
+import { parseEmbeddedRequestFromReqParam } from '../utils/embeddedRequest';
+import type { ProviderFactoryContext, ProviderInput } from '../types/factory';
 
 const log = globalLogger.createChild('TonWalletKit');
 
@@ -99,6 +104,8 @@ export class TonWalletKit implements ITonWalletKit {
     private swapManager: SwapManager;
     private streamingManager: StreamingManager;
     private stakingManager: StakingManager;
+    private gaslessManager: GaslessManager;
+    private customProvidersManager: CustomProvidersManager;
     private initializer: Initializer;
     private eventProcessor!: StorageEventProcessor;
     private bridgeManager!: BridgeManager;
@@ -143,6 +150,10 @@ export class TonWalletKit implements ITonWalletKit {
         this.swapManager = new SwapManager(() => this.createFactoryContext());
         // Initialize StakingManager
         this.stakingManager = new StakingManager(() => this.createFactoryContext());
+        // Initialize GaslessManager
+        this.gaslessManager = new GaslessManager(() => this.createFactoryContext());
+        // Initialize CustomProvidersManager
+        this.customProvidersManager = new CustomProvidersManager(() => this.createFactoryContext());
 
         this.eventEmitter.on('restoreConnection', async ({ payload: event }) => {
             if (!event.domain) {
@@ -212,7 +223,6 @@ export class TonWalletKit implements ITonWalletKit {
         return {
             networkManager: this.networkManager,
             eventEmitter: this.eventEmitter,
-            ssr: false,
         };
     }
 
@@ -712,9 +722,22 @@ export class TonWalletKit implements ITonWalletKit {
             domain: '',
         };
 
-        // Parse embedded intent request if present
+        // Parse embedded embedded request if present
         if (params.e) {
-            bridgeEvent.intentPayload = parseIntentFromReqParam(params.e);
+            // check if we have embedded requests supported in features
+            const hasEmbeddedRequests = this.config.deviceInfo?.features.some(
+                (feature) => typeof feature === 'object' && feature.name === 'EmbeddedRequest',
+            );
+            if (hasEmbeddedRequests) {
+                bridgeEvent.embeddedRequest = parseEmbeddedRequestFromReqParam(params.e);
+            } else {
+                log.warn(
+                    'Embedded request feature is not supported in features, but we received request with embedded request payload',
+                    {
+                        features: this.config.deviceInfo?.features,
+                    },
+                );
+            }
         }
 
         return bridgeEvent;
@@ -725,7 +748,7 @@ export class TonWalletKit implements ITonWalletKit {
     async approveConnectRequest(
         event: ConnectionRequestEvent,
         response?: ConnectionApprovalResponse,
-    ): Promise<IntentActionRequestEvent | undefined> {
+    ): Promise<EmbeddedRequestEvent | undefined> {
         await this.ensureInitialized();
         return this.requestProcessor.approveConnectRequest(event, response);
     }
@@ -845,6 +868,32 @@ export class TonWalletKit implements ITonWalletKit {
         this.isInitialized = false;
     }
 
+    /**
+     * Add a provider
+     */
+    registerProvider(input: ProviderInput<BaseProvider>): void {
+        const provider = typeof input === 'function' ? input(this.createFactoryContext()) : input;
+        switch (provider.type) {
+            case 'swap':
+                this.swapManager.registerProvider(provider as SwapProviderInterface);
+                break;
+            case 'staking':
+                this.stakingManager.registerProvider(provider as StakingProviderInterface);
+                break;
+            case 'streaming':
+                this.streamingManager.registerProvider(provider as StreamingProvider);
+                break;
+            case 'gasless':
+                this.gaslessManager.registerProvider(provider as GaslessProvider);
+                break;
+            case 'custom':
+                this.customProvidersManager.registerProvider(provider as CustomProvider);
+                break;
+            default:
+                throw new Error('Unknown provider type');
+        }
+    }
+
     // === Jettons API ===
 
     /**
@@ -880,6 +929,20 @@ export class TonWalletKit implements ITonWalletKit {
      */
     get staking(): StakingManager {
         return this.stakingManager;
+    }
+
+    /**
+     * Gasless API access
+     */
+    get gasless(): GaslessManager {
+        return this.gaslessManager;
+    }
+
+    /**
+     * Custom providers API access
+     */
+    get customProviders(): CustomProvidersManager {
+        return this.customProvidersManager;
     }
 
     /**

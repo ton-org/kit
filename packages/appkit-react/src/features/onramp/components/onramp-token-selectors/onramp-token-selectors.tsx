@@ -10,12 +10,22 @@ import type { FC, ComponentProps } from 'react';
 import clsx from 'clsx';
 
 import styles from './onramp-token-selectors.module.css';
-import { TokenSelector } from '../../../../components/token-selector';
+import { TokenSelector } from '../../../../components/shared/token-selector';
 import { useI18n } from '../../../settings/hooks/use-i18n';
 
+interface SlotProps {
+    title: string;
+    logoSrc?: string;
+    networkLogoSrc?: string;
+    /** When true, the pill outline stays but icon + title render as skeletons inside. */
+    loading?: boolean;
+    /** Text shown when `title` is empty — bypasses the `buyToken`/`forCurrency` symbol template. */
+    placeholder?: string;
+}
+
 export interface OnrampTokenSelectorsProps extends ComponentProps<'div'> {
-    from: { title: string; logoSrc?: string; network?: string; networkLogoSrc?: string };
-    to: { title: string; logoSrc?: string; network?: string; networkLogoSrc?: string };
+    from: SlotProps;
+    to: SlotProps;
     onFromClick: () => void;
     onToClick: () => void;
 }
@@ -36,8 +46,10 @@ export const OnrampTokenSelectors: FC<OnrampTokenSelectorsProps> = ({
                 size="m"
                 variant="secondary"
                 className={styles.tokenSelector}
-                title={t('onramp.buyToken', { symbol: from.title })}
+                title={from.title ? t('onramp.buyToken', { symbol: from.title }) : (from.placeholder ?? '')}
                 icon={from.logoSrc}
+                empty={!from.title}
+                loading={from.loading}
                 onClick={onFromClick}
             />
 
@@ -45,9 +57,11 @@ export const OnrampTokenSelectors: FC<OnrampTokenSelectorsProps> = ({
                 size="m"
                 variant="secondary"
                 className={styles.tokenSelector}
-                title={t('onramp.forCurrency', { symbol: to.title })}
+                title={to.title ? t('onramp.forCurrency', { symbol: to.title }) : (to.placeholder ?? '')}
                 icon={to.logoSrc}
                 networkIcon={to.networkLogoSrc}
+                empty={!to.title}
+                loading={to.loading}
                 onClick={onToClick}
             />
         </div>

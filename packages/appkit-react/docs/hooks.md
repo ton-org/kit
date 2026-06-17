@@ -1,9 +1,3 @@
-<!--
-This file is auto-generated. Do not edit manually.
-Changes will be overwritten when running the docs update script.
-Source template: template/packages/appkit-react/docs/hooks.md
--->
-
 # Hooks
 
 AppKit React provides a set of hooks to interact with the blockchain and wallets.
@@ -263,7 +257,6 @@ const handleTransfer = () => {
         recipientAddress: 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c',
         amount: '100', // 100 USDT
         jettonAddress: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs',
-        jettonDecimals: 6,
     });
 };
 
@@ -697,81 +690,360 @@ return (
 
 ### `useSwapProvider`
 
-Hook to get a specific swap provider. Returns the provider instance directly or `null` if not found.
+Hook to read and change the currently selected swap provider. Returns a tuple `[provider, setProviderId]` — mirrors `useSelectedWallet`.
 
 ```tsx
-const provider = useSwapProvider({ id: 'stonfi' });
-return <div>Result: {provider ? provider.providerId : 'null'}</div>;
+const [provider, setProviderId] = useSwapProvider();
+return (
+    <div>
+        <div>Result: {provider ? provider.providerId : 'null'}</div>
+        <button onClick={() => setProviderId('stonfi')}>Use STON.fi</button>
+    </div>
+);
 ```
 
-## Onramp
+### `useSwapProviders`
 
-### `useOnrampQuote`
-
-Hook to get an onramp quote for a specific fiat/crypto pair.
+Hook to get all registered swap providers. The returned array keeps a stable reference until the provider list changes, so it is safe to use with `useSyncExternalStore`.
 
 ```tsx
-const { data: quote, isLoading } = useOnrampQuote({
-    fiatCurrency: 'USD',
-    cryptoCurrency: 'TON',
-    amount: '100',
-});
-
-if (isLoading) return <div>Loading quote...</div>;
-return <div>Quote: {quote?.cryptoAmount} TON</div>;
+const providers = useSwapProviders();
+return (
+    <ul>
+        {providers.map((p) => (
+            <li key={p.providerId}>{p.getMetadata().name}</li>
+        ))}
+    </ul>
+);
 ```
 
-### `useOnrampProvider`
+## Crypto Onramp
 
-Hook to get a specific onramp provider.
+### `useCryptoOnrampProvider`
+
+Hook to get a registered crypto-onramp provider by id, or the default one when no id is given.
 
 ```tsx
-const provider = useOnrampProvider({ id: 'moonpay' });
+const provider = useCryptoOnrampProviderById({ id: 'layerswap' });
 
 return <div>Provider: {provider?.providerId}</div>;
 ```
 
-### `useOnrampProviders`
+### `useCryptoOnrampProviders`
 
-Hook to get all registered onramp providers.
+Hook to get all registered crypto-onramp providers.
 
-### `useBuildOnrampUrl`
+```tsx
+const providers = useCryptoOnrampProviders();
 
-Hook to build an onramp URL for redirecting the user to the provider.
+return (
+    <ul>
+        {providers.map((p) => (
+            <li key={p.providerId}>{p.providerId}</li>
+        ))}
+    </ul>
+);
+```
+
+### `useCryptoOnrampProviderMetadata`
+
+Hook to get static metadata for a crypto-onramp provider (display name, logo, url).
+
+```tsx
+const metadata = useCryptoOnrampProviderMetadata({ providerId: 'layerswap' });
+return <div>Provider name: {metadata?.name}</div>;
+```
 
 ## Staking
 
-### Staking Hooks
+### `useStakingProviders`
 
-These hooks allow you to interact with staking providers directly.
-
-#### `useStakingQuote`
-Get a quote for staking or unstaking.
-
-#### `useStakedBalance`
-Get the user's staked balance.
-
-#### `useStakingProviderMetadata`
-Get static metadata about a specific staking provider.
+Hook to get all registered staking providers. The returned array keeps a stable reference until the provider list changes.
 
 ```tsx
-const { data: quote } = useStakingQuote({
-    amount: '1000000000',
+const providers = useStakingProviders();
+return (
+    <ul>
+        {providers.map((p) => (
+            <li key={p.providerId}>{p.providerId}</li>
+        ))}
+    </ul>
+);
+```
+
+### `useStakingProvider`
+
+Hook to get a specific staking provider by id (or the default when no id is passed).
+
+```tsx
+const provider = useStakingProvider({ id: 'tonstakers' });
+return <div>Result: {provider ? provider.providerId : 'null'}</div>;
+```
+
+### `useStakingQuote`
+
+Hook to get a quote for staking or unstaking a given amount.
+
+```tsx
+const {
+    data: quote,
+    isLoading,
+    error,
+} = useStakingQuote({
+    amount: '10',
     direction: 'stake',
 });
 
-const { data: balance } = useStakedBalance({
+if (isLoading) return <div>Loading quote...</div>;
+if (error) return <div>Error: {error.message}</div>;
+
+return <div>Expected Output: {quote?.amountOut}</div>;
+```
+
+### `useStakedBalance`
+
+Hook to get the user's currently staked balance.
+
+```tsx
+const { data: balance, isLoading } = useStakedBalance({
     userAddress: 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c',
 });
 
+if (isLoading) return <div>Loading balance...</div>;
+
+return <div>Staked Balance: {balance?.stakedBalance}</div>;
+```
+
+### `useStakingProviderInfo`
+
+Hook to get live info about a staking provider (APY, limits, etc.).
+
+```tsx
+const { data: info, isLoading } = useStakingProviderInfo({
+    providerId: 'tonstakers',
+});
+
+if (isLoading) return <div>Loading info...</div>;
+
+return <div>APY: {info?.apy}</div>;
+```
+
+### `useStakingProviderMetadata`
+
+Hook to get static metadata about a staking provider (name, receive token, etc.).
+
+```tsx
 const metadata = useStakingProviderMetadata();
+return <div>Receive Token: {metadata?.receiveToken?.ticker}</div>;
+```
+
+### `useBuildStakeTransaction`
+
+Hook to build a stake transaction from a previously fetched quote.
+
+```tsx
+const { data: quote } = useStakingQuote({
+    amount: '10',
+    direction: 'stake',
+});
+
+const { mutateAsync: buildTx, isPending: isBuilding } = useBuildStakeTransaction();
+const { mutateAsync: sendTx, isPending: isSending } = useSendTransaction();
+
+const handleStake = async () => {
+    if (!quote) return;
+    try {
+        const transaction = await buildTx({
+            quote,
+            userAddress: 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c',
+        });
+        await sendTx(transaction);
+    } catch (e) {
+        console.error(e);
+    }
+};
+
+const isPending = isBuilding || isSending;
 
 return (
     <div>
-        <div>Staking Quote: {quote?.amountOut}</div>
-        <div>Staked Balance: {balance?.stakedBalance}</div>
-        <div>Receive Token Ticker: {metadata?.receiveToken?.ticker}</div>
+        <button onClick={handleStake} disabled={!quote || isPending}>
+            {isPending ? 'Processing...' : 'Stake'}
+        </button>
     </div>
+);
+```
+
+## Gasless
+
+Gasless lets a dApp submit on-chain transactions without the user holding TON for gas: a relayer co-signs and broadcasts the transaction, charging the user a fee in a relayer-accepted asset (e.g. USDT). The connected wallet must support the `SignMessage` TonConnect feature. See the [gasless guide](https://github.com/ton-connect/kit/blob/main/packages/appkit/docs/gasless.md) for a regular-send → gasless-send migration.
+
+### `useGaslessProviders`
+
+Hook to get all registered gasless providers.
+
+```tsx
+const providers = useGaslessProviders();
+return (
+    <ul>
+        {providers.map((p) => (
+            <li key={p.providerId}>{p.providerId}</li>
+        ))}
+    </ul>
+);
+```
+
+### `useGaslessProvider`
+
+Hook to get the current default gasless provider and a setter to switch the default.
+
+```tsx
+const [provider, setProviderId] = useGaslessProvider();
+return (
+    <div>
+        <div>Current: {provider?.providerId ?? 'none'}</div>
+        <button onClick={() => setProviderId('tonapi')}>Use TonApi</button>
+    </div>
+);
+```
+
+### `useGaslessProviderMetadata`
+
+Hook to fetch static metadata (display name, logo, url) for a gasless provider.
+
+```tsx
+const { data: metadata, isLoading } = useGaslessProviderMetadata();
+
+if (isLoading) return <div>Loading provider...</div>;
+if (!metadata) return null;
+
+return (
+    <a href={metadata.url} target="_blank" rel="noreferrer">
+        {metadata.logo && <img src={metadata.logo} alt="" width={16} height={16} />}
+        {metadata.name}
+    </a>
+);
+```
+
+### `useGaslessConfig`
+
+Hook to fetch the gasless relayer's configuration — relay address (e.g. for jetton-transfer `responseDestination`) and accepted fee assets.
+
+```tsx
+const { data: config, isLoading } = useGaslessConfig();
+
+if (isLoading) return <div>Loading gasless config...</div>;
+
+return (
+    <div>
+        <p>Relay: {config?.relayAddress}</p>
+        <select>
+            {config?.supportedAssets.map((asset) => (
+                <option key={asset.address} value={asset.address}>
+                    {asset.address}
+                </option>
+            ))}
+        </select>
+    </div>
+);
+```
+
+### `useGaslessQuote`
+
+Hook to fetch a gasless quote. Auto-refetches as inputs change; cached results become stale after ~2 minutes (matches the relayer `validUntil` window). Omit `feeAsset` for free / sponsored providers — jetton-fee providers throw `GaslessError(UNSUPPORTED_OPERATION)` in that case.
+
+```tsx
+const { data: quote, isFetching } = useGaslessQuote({
+    feeAsset: asAddressFriendly('EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs'), // USDT
+    messages: [
+        {
+            address: 'EQ...jetton_wallet_address',
+            amount: '60000000', // 0.06 TON gas budget
+            payload: 'te6cckEBAQEAAgAAAA==' as Base64String,
+        },
+    ],
+});
+
+return (
+    <div>
+        {isFetching && <span>Quoting...</span>}
+        {quote && (
+            <>
+                <div>Fee: {quote.fee}</div>
+                <div>Valid until: {new Date(quote.validUntil * 1000).toISOString()}</div>
+            </>
+        )}
+    </div>
+);
+```
+
+### `useGaslessJettonTransferQuote`
+
+Hook to fetch a gasless quote for a jetton transfer from semantic params (`jettonAddress`, `recipientAddress`, `amount`, `feeAsset`) — no manual message building. Auto-refetches as inputs change and on wallet/network switch.
+
+```tsx
+// No manual message building — pass the transfer intent, get a quote back.
+const { data: quote, isFetching } = useGaslessJettonTransferQuote({
+    jettonAddress: USDT_MASTER,
+    recipientAddress: 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c',
+    amount: '100',
+    feeAsset: asAddressFriendly(USDT_MASTER),
+});
+
+const { mutateAsync: sendGasless, isPending } = useSendGaslessTransaction();
+
+return (
+    <div>
+        {isFetching && <span>Quoting...</span>}
+        {quote && (
+            <>
+                <div>Fee: {quote.fee}</div>
+                <button disabled={isPending} onClick={() => sendGasless({ quote })}>
+                    Send
+                </button>
+            </>
+        )}
+    </div>
+);
+```
+
+### `useSendGaslessTransaction`
+
+Hook to sign a previously computed quote and submit the resulting BoC to the relayer. Returns a `GaslessSendResponse` (`{ boc, normalizedBoc, normalizedHash, internalBoc }`).
+
+Throws:
+- `GaslessError(QUOTE_EXPIRED)` if the quote's `validUntil` window has passed (checked before signing).
+- `GaslessError(WALLET_MISMATCH)` if the quote was issued for a different address than the selected wallet.
+- `GaslessError(SIGN_MESSAGE_NOT_SUPPORTED)` if the wallet does not advertise `SignMessage`.
+- `GaslessError(TOO_MANY_MESSAGES)` if the quote carries more messages than the wallet's `maxMessages` cap.
+
+```tsx
+const { data: quote } = useGaslessQuote({
+    feeAsset: asAddressFriendly('EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs'),
+    messages: [
+        {
+            address: 'EQ...jetton_wallet_address',
+            amount: '60000000',
+            payload: 'te6cckEBAQEAAgAAAA==' as Base64String,
+        },
+    ],
+});
+const { mutateAsync: sendGasless, isPending } = useSendGaslessTransaction();
+
+const handleSend = async () => {
+    if (!quote) return;
+    try {
+        const { internalBoc, normalizedHash } = await sendGasless({ quote });
+        console.log('Submitted. Hash:', normalizedHash, 'BoC:', internalBoc);
+    } catch (e) {
+        console.error(e);
+    }
+};
+
+return (
+    <button onClick={handleSend} disabled={!quote || isPending}>
+        {isPending ? 'Sending...' : 'Send Gasless'}
+    </button>
 );
 ```
 
@@ -1100,4 +1372,33 @@ return (
 );
 ```
 
+### `useSignMessageSupport`
+
+Hook to check whether the selected wallet advertises the `SignMessage` feature (required for gasless). Reactive to wallet selection changes; fail-closed (`false`) when no wallet is selected or features aren't advertised.
+
+```tsx
+const hasSignMessageSupport = useSignMessageSupport();
+
+return <p>{hasSignMessageSupport ? 'Wallet supports SignMessage' : 'SignMessage not supported'}</p>;
+```
+
+### `useCustomProvider`
+
+Hook to get a registered custom provider by id.
+
+```tsx
+const provider = useCustomProvider<MyCustomProvider>('my-provider');
+
+if (!provider) {
+    return <div>Custom provider not registered</div>;
+}
+
+return <div>Custom provider is ready</div>;
+```
+
+<!--
+This file is auto-generated. Do not edit manually.
+Changes will be overwritten when running the docs update script.
+Source template: template/packages/appkit-react/docs/hooks.md
+-->
 
