@@ -9,7 +9,7 @@
 import { z } from 'zod';
 
 import type { McpWalletService } from '../services/McpWalletService.js';
-import { toRawAmount, TON_DECIMALS } from './types.js';
+import { toRawAmount, TON_DECIMALS, toolError } from './types.js';
 import type { ToolResponse } from './types.js';
 
 export const tonTransferSchema = z.object({
@@ -45,13 +45,6 @@ export const emulateTransactionSchema = z.object({
 
 const PREPARED_TRANSACTION_NOTE =
     'Transaction prepared but NOT sent. Preview it with emulate_transaction, then broadcast with send_raw_transaction (which signs and sends).';
-
-function toolError(message: string): ToolResponse {
-    return {
-        content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: message }) }],
-        isError: true,
-    };
-}
 
 /** Resolves a human-readable jetton amount to raw units using the wallet's known jetton decimals. */
 async function resolveJettonRawAmount(
@@ -118,18 +111,7 @@ export function createMcpTransferTools(service: McpWalletService) {
                         ],
                     };
                 } catch (error) {
-                    return {
-                        content: [
-                            {
-                                type: 'text' as const,
-                                text: JSON.stringify({
-                                    success: false,
-                                    error: error instanceof Error ? error.message : 'Unknown error',
-                                }),
-                            },
-                        ],
-                        isError: true,
-                    };
+                    return toolError(error instanceof Error ? error.message : 'Unknown error');
                 }
             },
         },

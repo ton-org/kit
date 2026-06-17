@@ -708,32 +708,6 @@ export class McpWalletService {
         return results;
     }
 
-    private buildTonTransferRequest(
-        toAddress: string,
-        amountNano: string,
-        comment?: string,
-    ): Promise<TransactionRequest> {
-        return this.wallet.createTransferTonTransaction({
-            recipientAddress: toAddress,
-            transferAmount: amountNano,
-            comment,
-        });
-    }
-
-    private buildJettonTransferRequest(
-        toAddress: string,
-        jettonAddress: string,
-        amountRaw: string,
-        comment?: string,
-    ): Promise<TransactionRequest> {
-        return this.wallet.createTransferJettonTransaction({
-            recipientAddress: toAddress,
-            jettonAddress,
-            transferAmount: amountRaw,
-            comment,
-        });
-    }
-
     /** Builds the transfer without signing or broadcasting it. */
     async buildTonTransferTransaction(
         toAddress: string,
@@ -741,7 +715,11 @@ export class McpWalletService {
         comment?: string,
     ): Promise<PreparedTransaction> {
         return McpWalletService.toPreparedTransaction(
-            await this.buildTonTransferRequest(toAddress, amountNano, comment),
+            await this.wallet.createTransferTonTransaction({
+                recipientAddress: toAddress,
+                transferAmount: amountNano,
+                comment,
+            }),
         );
     }
 
@@ -753,7 +731,12 @@ export class McpWalletService {
         comment?: string,
     ): Promise<PreparedTransaction> {
         return McpWalletService.toPreparedTransaction(
-            await this.buildJettonTransferRequest(toAddress, jettonAddress, amountRaw, comment),
+            await this.wallet.createTransferJettonTransaction({
+                recipientAddress: toAddress,
+                jettonAddress,
+                transferAmount: amountRaw,
+                comment,
+            }),
         );
     }
 
@@ -1071,18 +1054,6 @@ export class McpWalletService {
         };
     }
 
-    private buildNftTransferRequest(
-        nftAddress: string,
-        toAddress: string,
-        comment?: string,
-    ): Promise<TransactionRequest> {
-        return this.wallet.createTransferNftTransaction({
-            nftAddress,
-            recipientAddress: toAddress,
-            comment,
-        });
-    }
-
     /** Builds the transfer without signing or broadcasting it. */
     async buildNftTransferTransaction(
         nftAddress: string,
@@ -1090,7 +1061,11 @@ export class McpWalletService {
         comment?: string,
     ): Promise<PreparedTransaction> {
         return McpWalletService.toPreparedTransaction(
-            await this.buildNftTransferRequest(nftAddress, toAddress, comment),
+            await this.wallet.createTransferNftTransaction({
+                nftAddress,
+                recipientAddress: toAddress,
+                comment,
+            }),
         );
     }
 

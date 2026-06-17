@@ -10,6 +10,7 @@ import { z } from 'zod';
 
 import type { McpWalletService } from '../services/McpWalletService.js';
 import type { ToolResponse } from './types.js';
+import { toolError } from './types.js';
 
 export const getNftsSchema = z.object({
     limit: z.number().min(1).max(100).optional().describe('Maximum number of NFTs to return (default: 20, max: 100)'),
@@ -177,18 +178,7 @@ export function createMcpNftTools(service: McpWalletService) {
                         ],
                     };
                 } catch (error) {
-                    return {
-                        content: [
-                            {
-                                type: 'text' as const,
-                                text: JSON.stringify({
-                                    success: false,
-                                    error: error instanceof Error ? error.message : 'Unknown error',
-                                }),
-                            },
-                        ],
-                        isError: true,
-                    };
+                    return toolError(error instanceof Error ? error.message : 'Unknown error');
                 }
             },
         },
