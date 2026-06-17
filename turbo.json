@@ -18,7 +18,7 @@
         "VERCEL_ENV",
         "VERCEL_URL",
         "VERCEL_BRANCH_URL",
-        "VERCEL_PROJECT_PRODUCTION_URL"
+        "VERCEL_PROJECT_PRODUCTION_URL",
         "VITE_PRIVY_APP_ID",
         "VITE_GETGEMS_API_KEY"
       ]

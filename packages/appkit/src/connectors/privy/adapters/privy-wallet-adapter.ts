@@ -149,9 +149,7 @@ export class PrivyWalletAdapter implements WalletInterface {
     }
 
     async signMessage(request: TransactionRequest): Promise<SignMessageResponse> {
-        const boc = await this.walletAdapter.getSignedSendTransaction(request, {
-            internal: true,
-        });
+        const boc = await this.walletAdapter.getSignedSignMessage(request);
 
         return {
             internalBoc: boc,

@@ -6,6 +6,7 @@
  *
  */
 
+import type { Base64String } from '@ton/walletkit';
 import { createCommentPayloadBase64, parseUnits } from '@ton/walletkit';
 
 import type { TransactionRequest, TransactionRequestMessage, ExtraCurrencies } from '../../types/transaction';

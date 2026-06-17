@@ -8,7 +8,7 @@
 
 import { CONNECTOR_EVENTS, NETWORKS_EVENTS } from '../../../core/app-kit';
 import { createConnector } from '../../../types/connector';
-import type { Connector, ConnectorMetadata } from '../../../types/connector';
+import type { Connector } from '../../../types/connector';
 import type { Network } from '../../../types/network';
 import type { WalletInterface } from '../../../types/wallet';
 import { PRIVY_DEFAULT_CONNECTOR_ID } from '../constants/id';
@@ -18,7 +18,6 @@ import { fetchPrivyTonWalletPublicKey } from '../utils/public-key';
 
 export interface PrivyConnectorConfig {
     id?: string;
-    metadata?: ConnectorMetadata;
     /** Privy app id — required to call the Privy REST API. */
     appId: string;
     /** Subwallet id override for V5R1. Defaults to walletkit's `defaultWalletIdV5R1`. */
@@ -54,7 +53,7 @@ export type PrivyConnector = Connector & {
 };
 
 export const createPrivyConnector = (config: PrivyConnectorConfig) => {
-    return createConnector(({ eventEmitter, networkManager, ssr }): PrivyConnector => {
+    return createConnector(({ eventEmitter, networkManager }): PrivyConnector => {
         const id = config.id ?? PRIVY_DEFAULT_CONNECTOR_ID;
 
         let latestState: PrivyState | null = null;
@@ -102,7 +101,7 @@ export const createPrivyConnector = (config: PrivyConnectorConfig) => {
             currentWallet = adapter;
             currentWalletUuid = tonWallet.walletId;
             buildStatus = 'ready';
-            eventEmitter.emit(CONNECTOR_EVENTS.CONNECTED, { wallets: [adapter], connectorId: id }, id);
+            eventEmitter.emit(CONNECTOR_EVENTS.WALLETS_UPDATED, { wallets: [adapter], connectorId: id }, id);
         }
 
         function runBuild(tonWallet: PrivyTonWallet, state: PrivyState): void {
@@ -120,13 +119,13 @@ export const createPrivyConnector = (config: PrivyConnectorConfig) => {
             }
             currentWallet = null;
             currentWalletUuid = null;
-            eventEmitter.emit(CONNECTOR_EVENTS.DISCONNECTED, { connectorId: id }, id);
+            eventEmitter.emit(CONNECTOR_EVENTS.WALLETS_UPDATED, { wallets: [], connectorId: id }, id);
         }
 
         function applyState(state: PrivyState): void {
             latestState = state;
 
-            if (ssr && typeof window === 'undefined') {
+            if (typeof window === 'undefined') {
                 return;
             }
 
@@ -161,10 +160,6 @@ export const createPrivyConnector = (config: PrivyConnectorConfig) => {
         return {
             id,
             type: 'privy',
-            metadata: {
-                name: 'Privy',
-                ...config.metadata,
-            },
 
             updatePrivyState(state: PrivyState) {
                 applyState(state);

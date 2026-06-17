@@ -21,17 +21,14 @@ import { createTonstakersProvider } from '@ton/appkit/staking/tonstakers';
 import { createLayerswapProvider } from '@ton/appkit/crypto-onramp/layerswap';
 import { createDecentProvider } from '@ton/appkit/crypto-onramp/decent';
 import { createTonApiGaslessProvider } from '@ton/appkit/gasless/tonapi';
-import { TonApiGaslessProvider } from '@ton/appkit/gasless/tonapi';
-import { TonApiClient } from '@ton-api/client';
-import { LayerswapCryptoOnrampProvider } from '@ton/appkit/crypto-onramp/layerswap';
 
 import {
     ENV_TON_API_KEY_TESTNET,
     ENV_TON_API_KEY_MAINNET,
     ENV_DECENT_API_KEY,
     ENV_TONCONNECT_MANIFEST_URL,
+    ENV_PRIVY_APP_ID,
 } from '@/core/configs/env';
-import { ENV_TON_API_KEY_TESTNET, ENV_TON_API_KEY_MAINNET, ENV_PRIVY_APP_ID } from '@/core/configs/env';
 import { loadStoredNetworkChainId } from '@/features/network';
 
 const mainnetApiClient = new ApiClientToncenter({
@@ -54,9 +51,6 @@ const CONFIGURED_CHAIN_IDS = new Set([Network.mainnet().chainId, Network.testnet
 const storedChainId = loadStoredNetworkChainId();
 const initialDefaultNetwork =
     storedChainId && CONFIGURED_CHAIN_IDS.has(storedChainId) ? Network.custom(storedChainId) : undefined;
-const mainnetTonApi = new TonApiClient({
-    baseUrl: 'https://tonapi.io',
-});
 
 export const appKit = new AppKit({
     networks: {

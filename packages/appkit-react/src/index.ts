@@ -54,3 +54,4 @@ export * from './features/gasless';
 export * from './features/providers';
 
 export * from './types/appkit-ui-token';
+export * from './privy';
