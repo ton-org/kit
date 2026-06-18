@@ -31,6 +31,7 @@ export const CenteredAmountInput: FC<CenteredAmountInputProps> = ({
     placeholder = '0',
     disabled,
     className,
+    onClick,
     ...props
 }) => {
     const wrapperRef = useRef<HTMLDivElement>(null);
@@ -77,7 +78,10 @@ export const CenteredAmountInput: FC<CenteredAmountInputProps> = ({
         <div
             ref={wrapperRef}
             className={clsx(styles.wrapper, className)}
-            onClick={() => inputRef.current?.focus()}
+            onClick={(e) => {
+                onClick?.(e);
+                inputRef.current?.focus();
+            }}
             {...props}
         >
             <div ref={measureRowRef} className={styles.measureRow} aria-hidden="true">
