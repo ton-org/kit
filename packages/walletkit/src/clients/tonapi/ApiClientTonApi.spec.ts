@@ -73,11 +73,15 @@ describe('ApiClientTonApi', () => {
             offset: 17,
         });
 
-        expect(getJsonSpy).toHaveBeenCalledWith(`/v2/blockchain/accounts/${TEST_ADDRESS}/transactions`, {
-            limit: 5,
-            offset: 17,
-            sort_order: 'desc',
-        });
+        expect(getJsonSpy).toHaveBeenCalledWith(
+            `/v2/blockchain/accounts/${TEST_ADDRESS}/transactions`,
+            {
+                limit: 5,
+                offset: 17,
+                sort_order: 'desc',
+            },
+            undefined,
+        );
         expect(result.transactions).toHaveLength(1);
     });
 
@@ -140,12 +144,16 @@ describe('ApiClientTonApi', () => {
             offset: 12,
         });
 
-        expect(getJsonSpy).toHaveBeenCalledWith(`/v2/accounts/${TEST_ADDRESS}/events`, {
-            limit: 3,
-            offset: 12,
-            sort_order: 'desc',
-            i18n: 'en',
-        });
+        expect(getJsonSpy).toHaveBeenCalledWith(
+            `/v2/accounts/${TEST_ADDRESS}/events`,
+            {
+                limit: 3,
+                offset: 12,
+                sort_order: 'desc',
+                i18n: 'en',
+            },
+            undefined,
+        );
         expect(result.events).toHaveLength(1);
         expect(result.hasNext).toBe(true);
         expect(result.limit).toBe(3);
@@ -213,9 +221,13 @@ describe('ApiClientTonApi', () => {
 
             const result = await client.getAccountStates([TEST_ADDRESS]);
 
-            expect(postJsonSpy).toHaveBeenCalledWith('/v2/blockchain/accounts/_bulk', {
-                account_ids: [TEST_ADDRESS],
-            });
+            expect(postJsonSpy).toHaveBeenCalledWith(
+                '/v2/blockchain/accounts/_bulk',
+                {
+                    account_ids: [TEST_ADDRESS],
+                },
+                undefined,
+            );
             expect(Object.keys(result)).toEqual([TEST_ADDRESS]);
             expect(result[TEST_ADDRESS]).toMatchObject({
                 address: TEST_ADDRESS,
@@ -253,9 +265,13 @@ describe('ApiClientTonApi', () => {
 
             const result = await client.getAccountStates([EQ, UQ]);
 
-            expect(postJsonSpy).toHaveBeenCalledWith('/v2/blockchain/accounts/_bulk', {
-                account_ids: [EQ],
-            });
+            expect(postJsonSpy).toHaveBeenCalledWith(
+                '/v2/blockchain/accounts/_bulk',
+                {
+                    account_ids: [EQ],
+                },
+                undefined,
+            );
             expect(Object.keys(result)).toEqual([EQ]);
         });
 

@@ -41,6 +41,7 @@ import type { ToncenterTracesResponse } from '../../types/toncenter/emulation';
 import type { ToncenterResponseJettonMasters } from '../toncenter/types/jettons';
 import { BaseApiClient } from '../BaseApiClient';
 import type { BaseApiClientConfig } from '../BaseApiClient';
+import type { RequestOptions } from '../types';
 import { ApiClientHttpError } from '../errors';
 import { globalLogger } from '../../core/Logger';
 import type { TonApiBlockchainAccount } from './types/accounts';
@@ -98,14 +99,18 @@ export class ApiClientTonApi extends BaseApiClient implements ApiClient {
         return this.network;
     }
 
-    async getAccountState(address: UserFriendlyAddress, seqno?: number): Promise<AccountState> {
+    async getAccountState(address: UserFriendlyAddress, seqno?: number, opts?: RequestOptions): Promise<AccountState> {
         if (typeof seqno === 'number') {
             log.warn(
                 `getAccountState: seqno=${seqno} is ignored — TonApi /v2/accounts endpoint does not support historical state queries.`,
             );
         }
         try {
-            const raw = await this.getJson<TonApiBlockchainAccount>(`/v2/blockchain/accounts/${address}`);
+            const raw = await this.getJson<TonApiBlockchainAccount>(
+                `/v2/blockchain/accounts/${address}`,
+                undefined,
+                opts,
+            );
 
             return mapAccountState(raw, address);
         } catch (e) {
@@ -123,7 +128,7 @@ export class ApiClientTonApi extends BaseApiClient implements ApiClient {
         }
     }
 
-    async getAccountStates(addresses: UserFriendlyAddress[]): Promise<AccountStates> {
+    async getAccountStates(addresses: UserFriendlyAddress[], opts?: RequestOptions): Promise<AccountStates> {
         if (addresses.length > MAX_ACCOUNT_STATES_BATCH) {
             throw new Error(
                 `ApiClientTonApi.getAccountStates: requested ${addresses.length} addresses, ` +
@@ -141,9 +146,13 @@ export class ApiClientTonApi extends BaseApiClient implements ApiClient {
             return {};
         }
 
-        const raw = await this.postJson<{ accounts: TonApiBlockchainAccount[] }>('/v2/blockchain/accounts/_bulk', {
-            account_ids: uniqueAddrs,
-        });
+        const raw = await this.postJson<{ accounts: TonApiBlockchainAccount[] }>(
+            '/v2/blockchain/accounts/_bulk',
+            {
+                account_ids: uniqueAddrs,
+            },
+            opts,
+        );
 
         const result: AccountStates = {};
         for (const inputAddr of uniqueAddrs) {
@@ -155,33 +164,42 @@ export class ApiClientTonApi extends BaseApiClient implements ApiClient {
         return result;
     }
 
-    async getBalance(address: UserFriendlyAddress, seqno?: number): Promise<TokenAmount> {
-        const state = await this.getAccountState(address, seqno);
+    async getBalance(address: UserFriendlyAddress, seqno?: number, opts?: RequestOptions): Promise<TokenAmount> {
+        const state = await this.getAccountState(address, seqno, opts);
 
         return state.rawBalance;
     }
 
-    async jettonsByAddress(request: GetJettonsByAddressRequest): Promise<ToncenterResponseJettonMasters> {
-        const raw = await this.getJson<TonApiJettonInfo>(`/v2/jettons/${request.address}`);
+    async jettonsByAddress(
+        request: GetJettonsByAddressRequest,
+        opts?: RequestOptions,
+    ): Promise<ToncenterResponseJettonMasters> {
+        const raw = await this.getJson<TonApiJettonInfo>(`/v2/jettons/${request.address}`, undefined, opts);
 
         return mapJettonMasters(raw);
     }
 
-    async jettonsByOwnerAddress(request: GetJettonsByOwnerRequest): Promise<JettonsResponse> {
+    async jettonsByOwnerAddress(request: GetJettonsByOwnerRequest, opts?: RequestOptions): Promise<JettonsResponse> {
         const raw = await this.getJson<TonApiJettonsBalances>(
             `/v2/accounts/${this.normalizeAddress(request.ownerAddress)}/jettons?currencies=usd`,
+            undefined,
+            opts,
         );
 
         return mapUserJettons(raw);
     }
 
-    async nftItemsByAddress(request: NFTsRequest): Promise<NFTsResponse> {
+    async nftItemsByAddress(request: NFTsRequest, opts?: RequestOptions): Promise<NFTsResponse> {
         if (!request.address) {
             throw new Error('TonApi requires an address to fetch NFT items.');
         }
 
         try {
-            const raw = await this.getJson<TonApiNftItem>(`/v2/nfts/${this.normalizeAddress(request.address)}`);
+            const raw = await this.getJson<TonApiNftItem>(
+                `/v2/nfts/${this.normalizeAddress(request.address)}`,
+                undefined,
+                opts,
+            );
             return mapNftItemsResponse([raw]);
         } catch (e) {
             if (e instanceof ApiClientHttpError && e.status === 404) {
@@ -191,7 +209,7 @@ export class ApiClientTonApi extends BaseApiClient implements ApiClient {
         }
     }
 
-    async nftItemsByOwner(request: UserNFTsRequest): Promise<NFTsResponse> {
+    async nftItemsByOwner(request: UserNFTsRequest, opts?: RequestOptions): Promise<NFTsResponse> {
         const query: Record<string, unknown> = {};
         if (request.pagination?.limit) query.limit = request.pagination.limit;
         if (request.pagination?.offset) query.offset = request.pagination.offset;
@@ -199,27 +217,33 @@ export class ApiClientTonApi extends BaseApiClient implements ApiClient {
         const raw = await this.getJson<TonApiNftItems>(
             `/v2/accounts/${this.normalizeAddress(request.ownerAddress)}/nfts`,
             query,
+            opts,
         );
         return mapNftItemsResponse(raw.nft_items);
     }
 
-    async sendBoc(boc: Base64String): Promise<string> {
+    async sendBoc(boc: Base64String, opts?: RequestOptions): Promise<string> {
         if (this.disableNetworkSend) {
             return '';
         }
 
-        await this.postJson('/v2/liteserver/send_message', { body: boc });
+        await this.postJson('/v2/liteserver/send_message', { body: boc }, opts);
         const { hash } = getNormalizedExtMessageHash(boc);
 
         return Base64ToBigInt(hash).toString(16);
     }
 
-    async fetchEmulation(messageBoc: Base64String, ignoreSignature?: boolean): Promise<EmulationResult> {
+    async fetchEmulation(
+        messageBoc: Base64String,
+        ignoreSignature?: boolean,
+        opts?: RequestOptions,
+    ): Promise<EmulationResult> {
         const result = await this.postJson<TonApiMessageConsequences>(
             `/v2/traces/emulate?ignore_signature_check=${ignoreSignature === true ? 'true' : 'false'}`,
             {
                 boc: messageBoc,
             },
+            opts,
         );
         return {
             result: 'success',
@@ -232,12 +256,14 @@ export class ApiClientTonApi extends BaseApiClient implements ApiClient {
         method: string,
         stack?: RawStackItem[],
         _seqno?: number,
+        opts?: RequestOptions,
     ): Promise<GetMethodResult> {
         const args = mapTonApiGetMethodArgs(stack);
 
         const raw = await this.postJson<TonApiMethodExecutionResult>(
             `/v2/blockchain/accounts/${address}/methods/${method}`,
             { args },
+            opts,
         );
 
         if (!raw.success) {
@@ -252,7 +278,10 @@ export class ApiClientTonApi extends BaseApiClient implements ApiClient {
         };
     }
 
-    async getAccountTransactions(request: TransactionsByAddressRequest): Promise<TransactionsResponse> {
+    async getAccountTransactions(
+        request: TransactionsByAddressRequest,
+        opts?: RequestOptions,
+    ): Promise<TransactionsResponse> {
         const address = request.address?.[0];
         if (!address) {
             return { transactions: [], addressBook: {} };
@@ -268,6 +297,7 @@ export class ApiClientTonApi extends BaseApiClient implements ApiClient {
                 offset,
                 sort_order: 'desc',
             },
+            opts,
         );
 
         const transactions = (response.transactions ?? []).map(mapTonApiTransaction);
@@ -278,15 +308,18 @@ export class ApiClientTonApi extends BaseApiClient implements ApiClient {
         };
     }
 
-    async getTransactionsByHash(request: GetTransactionByHashRequest): Promise<TransactionsResponse> {
+    async getTransactionsByHash(
+        request: GetTransactionByHashRequest,
+        opts?: RequestOptions,
+    ): Promise<TransactionsResponse> {
         const isMessageHash = 'msgHash' in request;
         const requestHash = isMessageHash ? request.msgHash : request.bodyHash;
         const normalizedHash = this.normalizeTonApiId(requestHash);
 
         const byTransaction = async () =>
-            this.getJson<TonApiTransaction>(`/v2/blockchain/transactions/${normalizedHash}`);
+            this.getJson<TonApiTransaction>(`/v2/blockchain/transactions/${normalizedHash}`, undefined, opts);
         const byMessage = async () =>
-            this.getJson<TonApiTransaction>(`/v2/blockchain/messages/${normalizedHash}/transaction`);
+            this.getJson<TonApiTransaction>(`/v2/blockchain/messages/${normalizedHash}/transaction`, undefined, opts);
 
         const primaryRequest = isMessageHash ? byMessage : byTransaction;
         const fallbackRequest = isMessageHash ? byTransaction : byMessage;
@@ -316,7 +349,7 @@ export class ApiClientTonApi extends BaseApiClient implements ApiClient {
         };
     }
 
-    async getTrace(request: GetTraceRequest): Promise<ToncenterTracesResponse> {
+    async getTrace(request: GetTraceRequest, opts?: RequestOptions): Promise<ToncenterTracesResponse> {
         const candidates = request.traceId && request.traceId.length > 0 ? request.traceId : [];
         if (request.account) {
             candidates.push(String(request.account));
@@ -325,7 +358,7 @@ export class ApiClientTonApi extends BaseApiClient implements ApiClient {
         for (const candidate of candidates) {
             const traceId = this.normalizeTonApiId(candidate);
             try {
-                const trace = await this.getJson<TonApiTrace>(`/v2/traces/${traceId}`);
+                const trace = await this.getJson<TonApiTrace>(`/v2/traces/${traceId}`, undefined, opts);
                 return mapTonApiTrace(trace, mapTonApiTraceTransaction);
             } catch (error) {
                 if (error instanceof ApiClientHttpError && error.status === 404) {
@@ -338,14 +371,16 @@ export class ApiClientTonApi extends BaseApiClient implements ApiClient {
         throw new Error('Failed to fetch trace');
     }
 
-    async getPendingTrace(request: GetPendingTraceRequest): Promise<ToncenterTracesResponse> {
+    async getPendingTrace(request: GetPendingTraceRequest, opts?: RequestOptions): Promise<ToncenterTracesResponse> {
         for (const messageHash of request.externalMessageHash) {
             const normalizedHash = this.normalizeTonApiId(messageHash);
             try {
                 const tx = await this.getJson<TonApiTransaction>(
                     `/v2/blockchain/messages/${normalizedHash}/transaction`,
+                    undefined,
+                    opts,
                 );
-                return await this.getTrace({ traceId: [tx.hash] });
+                return await this.getTrace({ traceId: [tx.hash] }, opts);
             } catch (error) {
                 if (error instanceof ApiClientHttpError && error.status === 404) {
                     continue;
@@ -357,9 +392,9 @@ export class ApiClientTonApi extends BaseApiClient implements ApiClient {
         throw new Error('Failed to fetch pending trace');
     }
 
-    async resolveDnsWallet(domain: string): Promise<string | undefined> {
+    async resolveDnsWallet(domain: string, opts?: RequestOptions): Promise<string | undefined> {
         try {
-            const raw = await this.getJson<TonApiDnsResolveResponse>(`/v2/dns/${domain}/resolve`);
+            const raw = await this.getJson<TonApiDnsResolveResponse>(`/v2/dns/${domain}/resolve`, undefined, opts);
             const address = raw?.wallet?.address;
 
             return address ? asAddressFriendly(address) : undefined;
@@ -368,26 +403,34 @@ export class ApiClientTonApi extends BaseApiClient implements ApiClient {
         }
     }
 
-    async backResolveDnsWallet(address: UserFriendlyAddress): Promise<string | undefined> {
+    async backResolveDnsWallet(address: UserFriendlyAddress, opts?: RequestOptions): Promise<string | undefined> {
         try {
-            const raw = await this.getJson<TonApiDnsBackresolveResponse>(`/v2/accounts/${address}/dns/backresolve`);
+            const raw = await this.getJson<TonApiDnsBackresolveResponse>(
+                `/v2/accounts/${address}/dns/backresolve`,
+                undefined,
+                opts,
+            );
             return raw.domains && raw.domains.length > 0 ? raw.domains[0] : undefined;
         } catch (_e) {
             return undefined;
         }
     }
 
-    async getEvents(request: GetEventsRequest): Promise<GetEventsResponse> {
+    async getEvents(request: GetEventsRequest, opts?: RequestOptions): Promise<GetEventsResponse> {
         const account = String(request.account);
         const limit = Math.max(1, Math.min(request.limit ?? 20, 100));
         const offset = Math.max(0, request.offset ?? 0);
 
-        const response = await this.getJson<TonApiAccountEventsResponse>(`/v2/accounts/${account}/events`, {
-            limit,
-            offset,
-            sort_order: 'desc',
-            i18n: 'en',
-        });
+        const response = await this.getJson<TonApiAccountEventsResponse>(
+            `/v2/accounts/${account}/events`,
+            {
+                limit,
+                offset,
+                sort_order: 'desc',
+                i18n: 'en',
+            },
+            opts,
+        );
 
         const pageEvents = response.events ?? [];
 
@@ -399,8 +442,12 @@ export class ApiClientTonApi extends BaseApiClient implements ApiClient {
         };
     }
 
-    async getMasterchainInfo(): Promise<MasterchainInfo> {
-        const raw = await this.getJson<TonApiMasterchainHeadResponse>(`/v2/blockchain/masterchain-head`);
+    async getMasterchainInfo(opts?: RequestOptions): Promise<MasterchainInfo> {
+        const raw = await this.getJson<TonApiMasterchainHeadResponse>(
+            `/v2/blockchain/masterchain-head`,
+            undefined,
+            opts,
+        );
         return mapMasterchainInfo(raw);
     }
 
