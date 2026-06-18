@@ -7,7 +7,9 @@
  */
 
 import { Network } from '../api/models';
-import { ApiClientHttpError } from './errors';
+import { combineSignals } from './combine-signals';
+import { ApiClientHttpError, ApiClientTimeoutError } from './errors';
+import type { RequestOptions } from './types';
 
 export interface BaseApiClientConfig {
     endpoint?: string;
@@ -37,12 +39,11 @@ export abstract class BaseApiClient {
 
     protected abstract appendAuthHeaders(headers: Headers): void;
 
-    async fetch<T>(url: URL, props: globalThis.RequestInit = {}): Promise<T> {
+    async fetch<T>(url: URL, props: globalThis.RequestInit = {}, opts: RequestOptions = {}): Promise<T> {
         const headers = new Headers(props.headers);
         headers.set('accept', 'application/json');
         this.appendAuthHeaders(headers);
-        props = { ...props, headers };
-        const response = await this.doRequest(url, props);
+        const response = await this.doRequest(url, { ...props, headers }, opts.signal);
         if (!response.ok) {
             throw await this.buildError(response);
         }
@@ -55,16 +56,20 @@ export abstract class BaseApiClient {
         return json as Promise<T>;
     }
 
-    async getJson<T>(path: string, query?: Record<string, unknown>): Promise<T> {
-        return this.fetch(this.buildUrl(path, query), { method: 'GET' });
+    async getJson<T>(path: string, query?: Record<string, unknown>, opts?: RequestOptions): Promise<T> {
+        return this.fetch(this.buildUrl(path, query), { method: 'GET' }, opts);
     }
 
-    async postJson<T>(path: string, props: unknown): Promise<T> {
-        return this.fetch(this.buildUrl(path), {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify(props),
-        });
+    async postJson<T>(path: string, props: unknown, opts?: RequestOptions): Promise<T> {
+        return this.fetch(
+            this.buildUrl(path),
+            {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify(props),
+            },
+            opts,
+        );
     }
 
     protected buildUrl(path: string, query: Record<string, unknown> = {}): URL {
@@ -97,18 +102,39 @@ export abstract class BaseApiClient {
         return new ApiClientHttpError(`HTTP ${response.status}: ${message}`, code, detail);
     }
 
-    private async doRequest(url: URL, init: globalThis.RequestInit = {}): Promise<globalThis.Response> {
+    private async doRequest(
+        url: URL,
+        init: globalThis.RequestInit = {},
+        externalSignal?: AbortSignal,
+    ): Promise<globalThis.Response> {
         const fetchFn = this.fetchApi;
 
-        if (!this.timeout || this.timeout <= 0) {
-            return fetchFn(url, init);
+        // Bail out before touching the network if the caller already aborted.
+        externalSignal?.throwIfAborted();
+
+        const hasTimeout = this.timeout > 0;
+        if (!hasTimeout) {
+            return fetchFn(url, externalSignal ? { ...init, signal: externalSignal } : init);
         }
 
+        // Fresh controller per attempt — a timeout aborts it, so it cannot be
+        // reused once spent. A flag (not the abort reason) distinguishes a
+        // timeout from a caller abort, so the underlying AbortError surfaces as
+        // a typed ApiClientTimeoutError while the caller's abort propagates as-is.
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+        let timedOut = false;
+        const timeoutId = setTimeout(() => {
+            timedOut = true;
+            controller.abort();
+        }, this.timeout);
 
         try {
-            return await fetchFn(url, { ...init, signal: controller.signal });
+            return await fetchFn(url, { ...init, signal: combineSignals(externalSignal, controller.signal) });
+        } catch (error) {
+            if (timedOut) {
+                throw new ApiClientTimeoutError(`Request timed out after ${this.timeout}ms`, this.timeout);
+            }
+            throw error;
         } finally {
             clearTimeout(timeoutId);
         }
