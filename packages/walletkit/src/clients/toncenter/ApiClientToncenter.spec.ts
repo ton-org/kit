@@ -9,9 +9,18 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { ApiClientToncenter } from './ApiClientToncenter';
+import { ApiClientTimeoutError } from '../errors';
 
 const TEST_ADDRESS = 'EQAvDfWFG0oYX19jwNDNBBL1rKNT9XfaGP9HyTb5nb2Eml6y';
 const TEST_RAW = '0:2F0DF5851B4A185F5F63C0D0CD0412F5ACA353F577DA18FF47C936F99DBD849A';
+
+/** A fetch that never resolves on its own — only rejects (with the abort reason) once aborted. */
+const hangingFetch = (): typeof fetch =>
+    ((_input: RequestInfo | URL, init?: RequestInit) =>
+        new Promise<Response>((_resolve, reject) => {
+            const signal = init?.signal;
+            signal?.addEventListener('abort', () => reject(signal.reason), { once: true });
+        })) as typeof fetch;
 
 type ClientWithGetJson = ApiClientToncenter & {
     getJson: (url: string, query?: Record<string, unknown>) => Promise<unknown>;
@@ -171,6 +180,18 @@ describe('ApiClientToncenter', () => {
                 rawBalance: '29651060393',
                 balance: '29.651060393',
             });
+        });
+    });
+
+    describe('abort signal threading', () => {
+        it('forwards a caller abort through getAccountState down to fetch', async () => {
+            const controller = new AbortController();
+            const client = new ApiClientToncenter({ fetchApi: hangingFetch(), timeout: 1000 });
+            const promise = client.getAccountState(TEST_ADDRESS, undefined, { signal: controller.signal });
+            controller.abort();
+            // If the forward were dropped, the request would hang until the 1000ms timeout
+            // and reject as ApiClientTimeoutError instead.
+            await expect(promise).rejects.not.toBeInstanceOf(ApiClientTimeoutError);
         });
     });
 });

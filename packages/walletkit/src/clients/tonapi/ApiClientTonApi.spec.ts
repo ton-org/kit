@@ -9,9 +9,18 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { ApiClientTonApi } from './ApiClientTonApi';
+import { ApiClientTimeoutError } from '../errors';
 
 const TEST_ADDRESS = 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c';
 const HEX_HASH = `0x${'11'.repeat(32)}`;
+
+/** A fetch that never resolves on its own — only rejects (with the abort reason) once aborted. */
+const hangingFetch = (): typeof fetch =>
+    ((_input: RequestInfo | URL, init?: RequestInit) =>
+        new Promise<Response>((_resolve, reject) => {
+            const signal = init?.signal;
+            signal?.addEventListener('abort', () => reject(signal.reason), { once: true });
+        })) as typeof fetch;
 type ClientWithGetJson = ApiClientTonApi & {
     getJson: (url: string, query?: Record<string, unknown>) => Promise<unknown>;
 };
@@ -337,6 +346,18 @@ describe('ApiClientTonApi', () => {
 
             expect(result[ADDR_A]?.rawBalance).toBe('100');
             expect(result[ADDR_B]?.rawBalance).toBe('200');
+        });
+    });
+
+    describe('abort signal threading', () => {
+        it('forwards a caller abort through getMasterchainInfo down to fetch', async () => {
+            const controller = new AbortController();
+            const client = new ApiClientTonApi({ fetchApi: hangingFetch(), timeout: 1000 });
+            const promise = client.getMasterchainInfo({ signal: controller.signal });
+            controller.abort();
+            // If the forward were dropped, the request would hang until the 1000ms timeout
+            // and reject as ApiClientTimeoutError instead.
+            await expect(promise).rejects.not.toBeInstanceOf(ApiClientTimeoutError);
         });
     });
 });
