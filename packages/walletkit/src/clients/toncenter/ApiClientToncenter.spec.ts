@@ -100,10 +100,14 @@ describe('ApiClientToncenter', () => {
 
             const result = await client.getAccountStates([EQ, UQ]);
 
-            expect(getJsonSpy).toHaveBeenCalledWith('/api/v3/accountStates', {
-                address: [EQ],
-                include_boc: true,
-            });
+            expect(getJsonSpy).toHaveBeenCalledWith(
+                '/api/v3/accountStates',
+                {
+                    address: [EQ],
+                    include_boc: true,
+                },
+                undefined,
+            );
             expect(Object.keys(result)).toEqual([EQ]);
         });
 
@@ -152,10 +156,14 @@ describe('ApiClientToncenter', () => {
 
             const result = await client.getAccountStates([TEST_ADDRESS]);
 
-            expect(getJsonSpy).toHaveBeenCalledWith('/api/v3/accountStates', {
-                address: [TEST_ADDRESS],
-                include_boc: true,
-            });
+            expect(getJsonSpy).toHaveBeenCalledWith(
+                '/api/v3/accountStates',
+                {
+                    address: [TEST_ADDRESS],
+                    include_boc: true,
+                },
+                undefined,
+            );
             expect(Object.keys(result)).toEqual([TEST_ADDRESS]);
             expect(result[TEST_ADDRESS]).toMatchObject({
                 address: TEST_ADDRESS,

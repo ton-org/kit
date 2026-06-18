@@ -60,6 +60,7 @@ import type { EmulationResult } from '../../api/models';
 import { mapToncenterEmulationResponse } from './mappers/map-emulation';
 import { BaseApiClient } from '../BaseApiClient';
 import type { BaseApiClientConfig } from '../BaseApiClient';
+import type { RequestOptions } from '../types';
 import type { V2AddressInformation, V2SendMessageResult, V3RunGetMethodRequest, TonBlockIdExt } from './types/internal';
 import { padBase64, parseInternalTransactionId, prepareAddress } from './utils';
 import { ApiClientHttpError } from '../errors';
@@ -91,26 +92,30 @@ export class ApiClientToncenter extends BaseApiClient implements ApiClient {
         if (this.apiKey) headers.set('x-api-key', this.apiKey);
     }
 
-    async nftItemsByAddress(request: NFTsRequest): Promise<NFTsResponse> {
+    async nftItemsByAddress(request: NFTsRequest, opts?: RequestOptions): Promise<NFTsResponse> {
         const props: Record<string, unknown> = {
             address: request.address,
         };
-        const response = await this.getJson<NftItemsResponseV3>('/api/v3/nft/items', props);
+        const response = await this.getJson<NftItemsResponseV3>('/api/v3/nft/items', props, opts);
         return toNftItemsResponse(response);
     }
 
-    async nftItemsByOwner(request: UserNFTsRequest): Promise<NFTsResponse> {
+    async nftItemsByOwner(request: UserNFTsRequest, opts?: RequestOptions): Promise<NFTsResponse> {
         const props: Record<string, unknown> = {
             owner_address: request.ownerAddress,
             limit: request.pagination?.limit ?? 10,
             offset: request.pagination?.offset ?? 0,
         };
-        const response = await this.getJson<NftItemsResponseV3>('/api/v3/nft/items', props);
+        const response = await this.getJson<NftItemsResponseV3>('/api/v3/nft/items', props, opts);
         const formattedResponse = toNftItemsResponse(response);
         return formattedResponse;
     }
 
-    async fetchEmulation(messageBoc: Base64String, ignoreSignature?: boolean): Promise<EmulationResult> {
+    async fetchEmulation(
+        messageBoc: Base64String,
+        ignoreSignature?: boolean,
+        opts?: RequestOptions,
+    ): Promise<EmulationResult> {
         const props: Record<string, unknown> = {
             boc: messageBoc,
             ignore_chksig: ignoreSignature === true,
@@ -119,19 +124,19 @@ export class ApiClientToncenter extends BaseApiClient implements ApiClient {
             include_metadata: true,
             with_actions: true,
         };
-        const response = await this.postJson<ToncenterEmulationResponse>('/api/emulate/v1/emulateTrace', props);
+        const response = await this.postJson<ToncenterEmulationResponse>('/api/emulate/v1/emulateTrace', props, opts);
         return {
             result: 'success',
             emulationResult: mapToncenterEmulationResponse(response),
         };
     }
 
-    async sendBoc(boc: Base64String): Promise<string> {
+    async sendBoc(boc: Base64String, opts?: RequestOptions): Promise<string> {
         if (this.disableNetworkSend) {
             return '';
         }
 
-        const response = await this.postJson<V2SendMessageResult>('/api/v3/message', { boc });
+        const response = await this.postJson<V2SendMessageResult>('/api/v3/message', { boc }, opts);
 
         return `0x${Base64ToBigInt(response.message_hash_norm).toString(16)}`;
     }
@@ -141,6 +146,7 @@ export class ApiClientToncenter extends BaseApiClient implements ApiClient {
         method: string,
         stack: RawStackItem[] = [],
         seqno?: number,
+        opts?: RequestOptions,
     ): Promise<GetMethodResult> {
         const props: Record<string, unknown> = {
             address,
@@ -148,7 +154,7 @@ export class ApiClientToncenter extends BaseApiClient implements ApiClient {
             stack: stack, //serializeStack(stack),
         };
         if (typeof seqno === 'number') props.seqno = seqno;
-        const raw = await this.postJson<V3RunGetMethodRequest>('/api/v3/runGetMethod', props);
+        const raw = await this.postJson<V3RunGetMethodRequest>('/api/v3/runGetMethod', props, opts);
         return {
             gasUsed: raw.gas_used,
             stack: raw.stack,
@@ -156,10 +162,10 @@ export class ApiClientToncenter extends BaseApiClient implements ApiClient {
         };
     }
 
-    async getAccountState(address: UserFriendlyAddress, seqno?: number): Promise<AccountState> {
+    async getAccountState(address: UserFriendlyAddress, seqno?: number, opts?: RequestOptions): Promise<AccountState> {
         const query: Record<string, unknown> = { include_boc: true, address: [address] };
         if (typeof seqno === 'number') query.seqno = seqno.toString();
-        const raw = await this.getJson<V2AddressInformation>('/api/v3/addressInformation', query);
+        const raw = await this.getJson<V2AddressInformation>('/api/v3/addressInformation', query, opts);
         const rawBalance = BigInt(raw.balance).toString();
         const extraCurrencies: ExtraCurrencies = {};
         for (const currency of raw.extra_currencies || []) {
@@ -185,7 +191,7 @@ export class ApiClientToncenter extends BaseApiClient implements ApiClient {
         return out;
     }
 
-    async getAccountStates(addresses: UserFriendlyAddress[]): Promise<AccountStates> {
+    async getAccountStates(addresses: UserFriendlyAddress[], opts?: RequestOptions): Promise<AccountStates> {
         if (addresses.length > MAX_ACCOUNT_STATES_BATCH) {
             throw new Error(
                 `ApiClientToncenter.getAccountStates: requested ${addresses.length} addresses, ` +
@@ -203,10 +209,14 @@ export class ApiClientToncenter extends BaseApiClient implements ApiClient {
             return {};
         }
 
-        const raw = await this.getJson<ToncenterAccountStatesResponse>('/api/v3/accountStates', {
-            address: uniqueAddrs,
-            include_boc: true,
-        });
+        const raw = await this.getJson<ToncenterAccountStatesResponse>(
+            '/api/v3/accountStates',
+            {
+                address: uniqueAddrs,
+                include_boc: true,
+            },
+            opts,
+        );
 
         const result: AccountStates = {};
         for (const inputAddr of uniqueAddrs) {
@@ -218,11 +228,14 @@ export class ApiClientToncenter extends BaseApiClient implements ApiClient {
         return result;
     }
 
-    async getBalance(address: UserFriendlyAddress, seqno?: number): Promise<TokenAmount> {
-        return (await this.getAccountState(address, seqno)).rawBalance;
+    async getBalance(address: UserFriendlyAddress, seqno?: number, opts?: RequestOptions): Promise<TokenAmount> {
+        return (await this.getAccountState(address, seqno, opts)).rawBalance;
     }
 
-    async getAccountTransactions(request: TransactionsByAddressRequest): Promise<TransactionsResponse> {
+    async getAccountTransactions(
+        request: TransactionsByAddressRequest,
+        opts?: RequestOptions,
+    ): Promise<TransactionsResponse> {
         const accounts = request.address?.map(prepareAddress);
         let offset = request.offset ?? 0;
         let limit = request.limit ?? 10;
@@ -234,36 +247,54 @@ export class ApiClientToncenter extends BaseApiClient implements ApiClient {
         if (offset < 0) {
             offset = 0;
         }
-        const response = await this.getJson<ToncenterTransactionsResponse>('/api/v3/transactions', {
-            account: accounts,
-            limit,
-            offset,
-        });
+        const response = await this.getJson<ToncenterTransactionsResponse>(
+            '/api/v3/transactions',
+            {
+                account: accounts,
+                limit,
+                offset,
+            },
+            opts,
+        );
         return toTransactionsResponse(response);
     }
 
-    async getTransactionsByHash(request: GetTransactionByHashRequest): Promise<TransactionsResponse> {
+    async getTransactionsByHash(
+        request: GetTransactionByHashRequest,
+        opts?: RequestOptions,
+    ): Promise<TransactionsResponse> {
         const msgHash = 'msgHash' in request ? padBase64(request.msgHash) : undefined;
         const bodyHash = 'bodyHash' in request ? padBase64(request.bodyHash) : undefined;
 
-        const response = await this.getJson<ToncenterTransactionsResponse>('/api/v3/transactionsByMessage', {
-            msg_hash: msgHash ? [msgHash] : undefined,
-            body_hash: bodyHash ? [bodyHash] : undefined,
-        });
+        const response = await this.getJson<ToncenterTransactionsResponse>(
+            '/api/v3/transactionsByMessage',
+            {
+                msg_hash: msgHash ? [msgHash] : undefined,
+                body_hash: bodyHash ? [bodyHash] : undefined,
+            },
+            opts,
+        );
         return toTransactionsResponse(response);
     }
 
-    async getPendingTransactions(request: GetPendingTransactionsRequest): Promise<TransactionsResponse> {
+    async getPendingTransactions(
+        request: GetPendingTransactionsRequest,
+        opts?: RequestOptions,
+    ): Promise<TransactionsResponse> {
         const accounts = 'accounts' in request ? request.accounts?.map(prepareAddress) : undefined;
         const traceId = 'traceId' in request ? request.traceId : undefined;
-        const response = await this.getJson<ToncenterTransactionsResponse>('/api/v3/pendingTransactions', {
-            account: accounts,
-            trace_id: traceId,
-        });
+        const response = await this.getJson<ToncenterTransactionsResponse>(
+            '/api/v3/pendingTransactions',
+            {
+                account: accounts,
+                trace_id: traceId,
+            },
+            opts,
+        );
         return toTransactionsResponse(response);
     }
 
-    async getTrace(request: GetTraceRequest): Promise<ToncenterTracesResponse> {
+    async getTrace(request: GetTraceRequest, opts?: RequestOptions): Promise<ToncenterTracesResponse> {
         const inTraceId = request.traceId ? request.traceId[0] : undefined;
 
         const traceIdStr = inTraceId || '';
@@ -272,7 +303,7 @@ export class ApiClientToncenter extends BaseApiClient implements ApiClient {
 
         const tryGetTrace = async (field: 'tx_hash' | 'trace_id' | 'msg_hash') => {
             const response = await CallForSuccess(
-                () => this.getJson<ToncenterTracesResponse>('/api/v3/traces', { [field]: traceId }),
+                () => this.getJson<ToncenterTracesResponse>('/api/v3/traces', { [field]: traceId }, opts),
                 undefined,
                 undefined,
                 // 422: toncenter failed to decode field value
@@ -307,13 +338,17 @@ export class ApiClientToncenter extends BaseApiClient implements ApiClient {
         throw new Error('Failed to fetch trace');
     }
 
-    async getPendingTrace(request: GetPendingTraceRequest): Promise<ToncenterTracesResponse> {
+    async getPendingTrace(request: GetPendingTraceRequest, opts?: RequestOptions): Promise<ToncenterTracesResponse> {
         try {
             const response = await CallForSuccess(
                 () => {
-                    return this.getJson<ToncenterTracesResponse>('/api/v3/pendingTraces', {
-                        ext_msg_hash: request.externalMessageHash,
-                    });
+                    return this.getJson<ToncenterTracesResponse>(
+                        '/api/v3/pendingTraces',
+                        {
+                            ext_msg_hash: request.externalMessageHash,
+                        },
+                        opts,
+                    );
                 },
                 undefined,
                 undefined,
@@ -331,13 +366,17 @@ export class ApiClientToncenter extends BaseApiClient implements ApiClient {
         throw new Error('Failed to fetch pending trace');
     }
 
-    async resolveDnsWallet(domain: string): Promise<string | undefined> {
+    async resolveDnsWallet(domain: string, opts?: RequestOptions): Promise<string | undefined> {
         const response = toDnsRecords(
-            await this.getJson<DNSRecordsResponseV3>('/api/v3/dns/records', {
-                domain,
-                limit: 1,
-                offset: 0,
-            }),
+            await this.getJson<DNSRecordsResponseV3>(
+                '/api/v3/dns/records',
+                {
+                    domain,
+                    limit: 1,
+                    offset: 0,
+                },
+                opts,
+            ),
         );
 
         if (response.records.length > 0 && response.records[0].dnsWallet) {
@@ -347,17 +386,21 @@ export class ApiClientToncenter extends BaseApiClient implements ApiClient {
         return undefined;
     }
 
-    async backResolveDnsWallet(wallet: Address | string): Promise<string | undefined> {
+    async backResolveDnsWallet(wallet: Address | string, opts?: RequestOptions): Promise<string | undefined> {
         if (wallet instanceof Address) {
             wallet = wallet.toString();
         }
 
         const response = toDnsRecords(
-            await this.getJson<DNSRecordsResponseV3>('/api/v3/dns/records', {
-                wallet,
-                limit: 1,
-                offset: 0,
-            }),
+            await this.getJson<DNSRecordsResponseV3>(
+                '/api/v3/dns/records',
+                {
+                    wallet,
+                    limit: 1,
+                    offset: 0,
+                },
+                opts,
+            ),
         );
 
         if (response.records.length > 0) {
@@ -367,22 +410,33 @@ export class ApiClientToncenter extends BaseApiClient implements ApiClient {
         return undefined;
     }
 
-    async jettonsByAddress(request: GetJettonsByAddressRequest): Promise<ToncenterResponseJettonMasters> {
-        return this.getJson<ToncenterResponseJettonMasters>('/api/v3/jetton/masters', {
-            address: request.address,
-            offset: request.offset,
-            limit: request.limit,
-        });
+    async jettonsByAddress(
+        request: GetJettonsByAddressRequest,
+        opts?: RequestOptions,
+    ): Promise<ToncenterResponseJettonMasters> {
+        return this.getJson<ToncenterResponseJettonMasters>(
+            '/api/v3/jetton/masters',
+            {
+                address: request.address,
+                offset: request.offset,
+                limit: request.limit,
+            },
+            opts,
+        );
     }
 
-    async jettonsByOwnerAddress(request: GetJettonsByOwnerRequest): Promise<JettonsResponse> {
+    async jettonsByOwnerAddress(request: GetJettonsByOwnerRequest, opts?: RequestOptions): Promise<JettonsResponse> {
         const offset = request.offset ?? 0;
         const limit = request.limit ?? 50;
-        const rawResponse = await this.getJson<ToncenterResponseJettonWallets>('/api/v3/jetton/wallets', {
-            owner_address: request.ownerAddress,
-            offset,
-            limit,
-        });
+        const rawResponse = await this.getJson<ToncenterResponseJettonWallets>(
+            '/api/v3/jetton/wallets',
+            {
+                owner_address: request.ownerAddress,
+                offset,
+                limit,
+            },
+            opts,
+        );
 
         return this.mapToResponseUserJettons(rawResponse);
     }
@@ -470,7 +524,7 @@ export class ApiClientToncenter extends BaseApiClient implements ApiClient {
         };
     }
 
-    async getEvents(request: GetEventsRequest): Promise<GetEventsResponse> {
+    async getEvents(request: GetEventsRequest, opts?: RequestOptions): Promise<GetEventsResponse> {
         const account = request.account instanceof Address ? request.account.toString() : request.account;
         const limit = request.limit ?? 20;
         const offset = request.offset ?? 0;
@@ -479,7 +533,7 @@ export class ApiClientToncenter extends BaseApiClient implements ApiClient {
             limit,
             offset,
         };
-        const list = await this.getJson<ToncenterTracesResponse>('/api/v3/traces', query);
+        const list = await this.getJson<ToncenterTracesResponse>('/api/v3/traces', query, opts);
         const out: GetEventsResponse = { events: [], limit, offset, hasNext: list.traces.length >= limit };
         const addressBook = toAddressBook(list);
         for (const trace of list.traces) {
@@ -488,8 +542,12 @@ export class ApiClientToncenter extends BaseApiClient implements ApiClient {
         return out;
     }
 
-    async getMasterchainInfo(): Promise<MasterchainInfo> {
-        const raw = await this.getJson<{ last: TonBlockIdExt; first: TonBlockIdExt }>('/api/v3/masterchainInfo');
+    async getMasterchainInfo(opts?: RequestOptions): Promise<MasterchainInfo> {
+        const raw = await this.getJson<{ last: TonBlockIdExt; first: TonBlockIdExt }>(
+            '/api/v3/masterchainInfo',
+            undefined,
+            opts,
+        );
 
         return {
             workchain: raw.last.workchain,

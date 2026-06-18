@@ -8,6 +8,7 @@
 
 import type { Address } from '@ton/core';
 
+import type { RequestOptions } from '../../clients/types';
 import type { ToncenterResponseJettonMasters, ToncenterTracesResponse } from '../../types/toncenter/emulation';
 import type { Event } from '../../types/toncenter/AccountEvent';
 import type {
@@ -99,17 +100,22 @@ export interface GetEventsResponse {
 export interface ApiClient {
     getNetwork(): Network;
 
-    nftItemsByAddress(request: NFTsRequest): Promise<NFTsResponse>;
-    nftItemsByOwner(request: UserNFTsRequest): Promise<NFTsResponse>;
-    fetchEmulation(messageBoc: Base64String, ignoreSignature?: boolean): Promise<EmulationResult>;
-    sendBoc(boc: Base64String): Promise<string>;
+    nftItemsByAddress(request: NFTsRequest, opts?: RequestOptions): Promise<NFTsResponse>;
+    nftItemsByOwner(request: UserNFTsRequest, opts?: RequestOptions): Promise<NFTsResponse>;
+    fetchEmulation(
+        messageBoc: Base64String,
+        ignoreSignature?: boolean,
+        opts?: RequestOptions,
+    ): Promise<EmulationResult>;
+    sendBoc(boc: Base64String, opts?: RequestOptions): Promise<string>;
     runGetMethod(
         address: UserFriendlyAddress,
         method: string,
         stack?: RawStackItem[],
         seqno?: number,
+        opts?: RequestOptions,
     ): Promise<GetMethodResult>; // TODO - Make serializable
-    getAccountState(address: UserFriendlyAddress, seqno?: number): Promise<AccountState>;
+    getAccountState(address: UserFriendlyAddress, seqno?: number, opts?: RequestOptions): Promise<AccountState>;
 
     /**
      * Fetches blockchain state for multiple accounts in a single batched request.
@@ -123,25 +129,31 @@ export interface ApiClient {
      * Throws on any HTTP failure. Has no `seqno` parameter — bulk endpoints
      * of both toncenter and tonapi do not support historical state queries.
      */
-    getAccountStates(addresses: UserFriendlyAddress[]): Promise<AccountStates>;
+    getAccountStates(addresses: UserFriendlyAddress[], opts?: RequestOptions): Promise<AccountStates>;
 
-    getBalance(address: UserFriendlyAddress, seqno?: number): Promise<TokenAmount>;
+    getBalance(address: UserFriendlyAddress, seqno?: number, opts?: RequestOptions): Promise<TokenAmount>;
 
-    getAccountTransactions(request: TransactionsByAddressRequest): Promise<TransactionsResponse>;
-    getTransactionsByHash(request: GetTransactionByHashRequest): Promise<TransactionsResponse>;
+    getAccountTransactions(request: TransactionsByAddressRequest, opts?: RequestOptions): Promise<TransactionsResponse>;
+    getTransactionsByHash(request: GetTransactionByHashRequest, opts?: RequestOptions): Promise<TransactionsResponse>;
 
-    getPendingTransactions(request: GetPendingTransactionsRequest): Promise<TransactionsResponse>;
+    getPendingTransactions(
+        request: GetPendingTransactionsRequest,
+        opts?: RequestOptions,
+    ): Promise<TransactionsResponse>;
 
-    getTrace(request: GetTraceRequest): Promise<ToncenterTracesResponse>;
-    getPendingTrace(request: GetPendingTraceRequest): Promise<ToncenterTracesResponse>;
+    getTrace(request: GetTraceRequest, opts?: RequestOptions): Promise<ToncenterTracesResponse>;
+    getPendingTrace(request: GetPendingTraceRequest, opts?: RequestOptions): Promise<ToncenterTracesResponse>;
 
-    resolveDnsWallet(domain: string): Promise<string | undefined>;
-    backResolveDnsWallet(address: UserFriendlyAddress): Promise<string | undefined>;
+    resolveDnsWallet(domain: string, opts?: RequestOptions): Promise<string | undefined>;
+    backResolveDnsWallet(address: UserFriendlyAddress, opts?: RequestOptions): Promise<string | undefined>;
 
-    jettonsByAddress(request: GetJettonsByAddressRequest): Promise<ToncenterResponseJettonMasters>;
-    jettonsByOwnerAddress(request: GetJettonsByOwnerRequest): Promise<JettonsResponse>;
+    jettonsByAddress(
+        request: GetJettonsByAddressRequest,
+        opts?: RequestOptions,
+    ): Promise<ToncenterResponseJettonMasters>;
+    jettonsByOwnerAddress(request: GetJettonsByOwnerRequest, opts?: RequestOptions): Promise<JettonsResponse>;
 
-    getEvents(request: GetEventsRequest): Promise<GetEventsResponse>;
+    getEvents(request: GetEventsRequest, opts?: RequestOptions): Promise<GetEventsResponse>;
 
-    getMasterchainInfo(): Promise<MasterchainInfo>;
+    getMasterchainInfo(opts?: RequestOptions): Promise<MasterchainInfo>;
 }
