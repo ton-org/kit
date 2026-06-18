@@ -41,7 +41,7 @@ import type { ToncenterTracesResponse } from '../../types/toncenter/emulation';
 import type { ToncenterResponseJettonMasters } from '../toncenter/types/jettons';
 import { BaseApiClient } from '../BaseApiClient';
 import type { BaseApiClientConfig } from '../BaseApiClient';
-import { TonClientError } from '../TonClientError';
+import { ApiClientHttpError } from '../errors';
 import { globalLogger } from '../../core/Logger';
 import type { TonApiBlockchainAccount } from './types/accounts';
 import { asAddressFriendly, compareAddress } from '../../utils/address';
@@ -110,7 +110,7 @@ export class ApiClientTonApi extends BaseApiClient implements ApiClient {
             return mapAccountState(raw, address);
         } catch (e) {
             // TonApi returns 404 for non-existent accounts
-            if (e instanceof TonClientError && e.status === 404) {
+            if (e instanceof ApiClientHttpError && e.status === 404) {
                 return {
                     address: asAddressFriendly(address),
                     status: 'non-existing',
@@ -184,7 +184,7 @@ export class ApiClientTonApi extends BaseApiClient implements ApiClient {
             const raw = await this.getJson<TonApiNftItem>(`/v2/nfts/${this.normalizeAddress(request.address)}`);
             return mapNftItemsResponse([raw]);
         } catch (e) {
-            if (e instanceof TonClientError && e.status === 404) {
+            if (e instanceof ApiClientHttpError && e.status === 404) {
                 return { addressBook: {}, nfts: [] };
             }
             throw e;
@@ -295,7 +295,7 @@ export class ApiClientTonApi extends BaseApiClient implements ApiClient {
         try {
             tx = await primaryRequest();
         } catch (error) {
-            if (!(error instanceof TonClientError) || error.status !== 404) {
+            if (!(error instanceof ApiClientHttpError) || error.status !== 404) {
                 throw error;
             }
             tx = await fallbackRequest();
@@ -328,7 +328,7 @@ export class ApiClientTonApi extends BaseApiClient implements ApiClient {
                 const trace = await this.getJson<TonApiTrace>(`/v2/traces/${traceId}`);
                 return mapTonApiTrace(trace, mapTonApiTraceTransaction);
             } catch (error) {
-                if (error instanceof TonClientError && error.status === 404) {
+                if (error instanceof ApiClientHttpError && error.status === 404) {
                     continue;
                 }
                 throw error;
@@ -347,7 +347,7 @@ export class ApiClientTonApi extends BaseApiClient implements ApiClient {
                 );
                 return await this.getTrace({ traceId: [tx.hash] });
             } catch (error) {
-                if (error instanceof TonClientError && error.status === 404) {
+                if (error instanceof ApiClientHttpError && error.status === 404) {
                     continue;
                 }
                 throw error;

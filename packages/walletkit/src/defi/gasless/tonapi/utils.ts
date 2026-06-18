@@ -20,7 +20,7 @@ import {
 
 import { Network } from '../../../api/models';
 import type { Base64String, TransactionRequestMessage } from '../../../api/models';
-import { TonClientError } from '../../../clients/TonClientError';
+import { ApiClientHttpError } from '../../../clients/errors';
 import { asBase64, HexToBase64 } from '../../../utils/base64';
 import { asHex } from '../../../utils/hex';
 import { GaslessError, GaslessErrorCode } from '../errors';
@@ -114,7 +114,7 @@ export const networkFromChainId = (chainId: string): Network => {
  * We should only retry false if we are sure that retrying will not help (for example, wrong input data, abort)
  */
 export const isTransientError = (error: unknown): boolean => {
-    if (error instanceof TonClientError) {
+    if (error instanceof ApiClientHttpError) {
         // retry codes <400 and >=500
         if (error.status >= 500 || error.status < 400) {
             return true;

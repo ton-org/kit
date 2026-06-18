@@ -62,7 +62,7 @@ import { BaseApiClient } from '../BaseApiClient';
 import type { BaseApiClientConfig } from '../BaseApiClient';
 import type { V2AddressInformation, V2SendMessageResult, V3RunGetMethodRequest, TonBlockIdExt } from './types/internal';
 import { padBase64, parseInternalTransactionId, prepareAddress } from './utils';
-import { TonClientError } from '../TonClientError';
+import { ApiClientHttpError } from '../errors';
 import { isHex } from '../../utils';
 
 const log = globalLogger.createChild('ApiClientToncenter');
@@ -276,7 +276,7 @@ export class ApiClientToncenter extends BaseApiClient implements ApiClient {
                 undefined,
                 undefined,
                 // 422: toncenter failed to decode field value
-                (err) => (err instanceof TonClientError ? err.status !== 422 : true),
+                (err) => (err instanceof ApiClientHttpError ? err.status !== 422 : true),
             );
 
             if (response?.traces?.length > 0) {
@@ -318,7 +318,7 @@ export class ApiClientToncenter extends BaseApiClient implements ApiClient {
                 undefined,
                 undefined,
                 // 422: toncenter failed to decode field value
-                (err) => (err instanceof TonClientError ? err.status !== 422 : true),
+                (err) => (err instanceof ApiClientHttpError ? err.status !== 422 : true),
             );
 
             if (response?.traces?.length > 0) {

@@ -35,6 +35,7 @@ export type { EventListener, EventPayload, KitEvent } from './core/EventEmitter'
 export type { SharedKitEvents } from './types/emitter';
 export { ApiClientToncenter } from './clients/toncenter';
 export { ApiClientTonApi } from './clients/tonapi';
+export { ApiClientError, ApiClientHttpError, ApiClientTimeoutError, ApiClientNetworkError } from './clients/errors';
 export type { NetworkManager } from './core/NetworkManager';
 export { KitNetworkManager } from './core/NetworkManager';
 export { StorageEventStore } from './core/EventStore';

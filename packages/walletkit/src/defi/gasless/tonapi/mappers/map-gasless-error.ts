@@ -18,7 +18,7 @@ import { GaslessError } from '../../errors';
 // relayer's own message. To restore, re-enable the import + the block inside
 // `mapTonApiGaslessError` below.
 //
-// import { TonClientError } from '../../../../clients/TonClientError';
+// import { ApiClientHttpError } from '../../../../clients/errors';
 //
 // // Wire shapes observed in practice:
 // //   { "error": "Jetton is not supported.", "error_code": 40000 }
@@ -40,7 +40,7 @@ export const mapTonApiGaslessError = (
     }
 
     // Numeric error_code mapping disabled (see note at top of file):
-    // if (error instanceof TonClientError) {
+    // if (error instanceof ApiClientHttpError) {
     //     const body = error.details as TonApiErrorBody | undefined;
     //     if (body && typeof body === 'object' && body.error_code === TONAPI_UNSUPPORTED_FEE_ASSET_CODE) {
     //         return new GaslessError(

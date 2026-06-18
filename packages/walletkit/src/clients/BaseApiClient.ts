@@ -7,7 +7,7 @@
  */
 
 import { Network } from '../api/models';
-import { TonClientError } from './TonClientError';
+import { ApiClientHttpError } from './errors';
 
 export interface BaseApiClientConfig {
     endpoint?: string;
@@ -49,7 +49,7 @@ export abstract class BaseApiClient {
         const contentType = response.headers.get('content-type') || '';
         if (!contentType.includes('application/json')) {
             const text = await (response as globalThis.Response).text();
-            throw new TonClientError('Unexpected non-JSON response', response.status, text.slice(0, 200));
+            throw new ApiClientHttpError('Unexpected non-JSON response', response.status, text.slice(0, 200));
         }
         const json = await response.json();
         return json as Promise<T>;
@@ -94,7 +94,7 @@ export abstract class BaseApiClient {
         } catch {
             /* empty */
         }
-        return new TonClientError(`HTTP ${response.status}: ${message}`, code, detail);
+        return new ApiClientHttpError(`HTTP ${response.status}: ${message}`, code, detail);
     }
 
     private async doRequest(url: URL, init: globalThis.RequestInit = {}): Promise<globalThis.Response> {
