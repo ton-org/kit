@@ -11,6 +11,7 @@ import type {
     Hex,
     ManifestFetchResult,
     Network,
+    SignatureDomain,
     TonWalletKitOptions,
     WalletSigner,
     WalletAdapter,
@@ -95,12 +96,12 @@ export interface SwiftWalletKit {
 
     createV4R2WalletAdapter(
         signer: WalletSigner | SwiftWalletSigner,
-        parameters: { network: Network },
+        parameters: { network: Network; domain?: SignatureDomain; walletId?: number | bigint; workchain?: number },
     ): Promise<WalletAdapter>;
 
     createV5R1WalletAdapter(
         signer: WalletSigner | SwiftWalletSigner,
-        parameters: { network: Network },
+        parameters: { network: Network; domain?: SignatureDomain; walletId?: number | bigint; workchain?: number },
     ): Promise<WalletAdapter>;
 
     jsSigner(signer: WalletSigner | SwiftWalletSigner): WalletSigner;
@@ -114,7 +115,7 @@ export interface SwiftWalletKit {
 
     jsWalletAdapter(walletAdapter: WalletAdapter): WalletAdapter;
 
-    getWallet(address: string): Wallet | undefined;
+    getWallet(walletId: string): Wallet | undefined;
 
     removeWallet(address: string): Promise<void>;
 

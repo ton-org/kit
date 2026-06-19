@@ -280,7 +280,7 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, sessionMa
 
         async createV4R2WalletAdapter(
             signer: WalletSigner | SwiftWalletSigner,
-            parameters: { network: Network; domain?: SignatureDomain },
+            parameters: { network: Network; domain?: SignatureDomain; walletId?: number | bigint; workchain?: number },
         ): Promise<WalletAdapter> {
             if (!initialized) throw new Error('WalletKit Bridge not initialized');
 
@@ -296,13 +296,15 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, sessionMa
             return await WalletV4R2Adapter.create(this.jsSigner(signer), {
                 client: walletKit.getApiClient(network),
                 network: network,
+                walletId: parameters.walletId,
+                workchain: parameters.workchain,
                 domain: parameters.domain,
             });
         },
 
         async createV5R1WalletAdapter(
             signer: WalletSigner | SwiftWalletSigner,
-            parameters: { network: Network; domain?: SignatureDomain },
+            parameters: { network: Network; domain?: SignatureDomain; walletId?: number | bigint; workchain?: number },
         ): Promise<WalletAdapter> {
             if (!initialized) throw new Error('WalletKit Bridge not initialized');
 
@@ -318,6 +320,8 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, sessionMa
             return await WalletV5R1Adapter.create(this.jsSigner(signer), {
                 client: walletKit.getApiClient(network),
                 network: network,
+                walletId: parameters.walletId,
+                workchain: parameters.workchain,
                 domain: parameters.domain,
             });
         },
@@ -368,11 +372,11 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, sessionMa
             return walletAdapter;
         },
 
-        getWallet(address: string): Wallet | undefined {
+        getWallet(walletId: string): Wallet | undefined {
             if (!initialized) throw new Error('WalletKit Bridge not initialized');
 
-            console.log('🔍 Bridge: Getting wallet for address:', address);
-            return walletKit.getWallet(address);
+            console.log('🔍 Bridge: Getting wallet for walletId:', walletId);
+            return walletKit.getWallet(walletId);
         },
 
         async removeWallet(address: string): Promise<void> {
