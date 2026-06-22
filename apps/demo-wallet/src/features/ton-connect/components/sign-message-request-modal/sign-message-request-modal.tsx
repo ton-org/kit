@@ -6,13 +6,15 @@
  *
  */
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import type { SavedWallet } from '@demo/wallet-core';
 import { useSignMessageRequests } from '@demo/wallet-core';
 import { Drawer } from 'vaul';
 import { toast } from 'sonner';
 import { ExternalLinkIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
+
+import { getPurchaseAsset } from '../../purchase-asset';
 
 import { Button } from '@/core/components/ui/button';
 import { createComponentLogger } from '@/core/lib/logger';
@@ -27,8 +29,11 @@ interface SignMessageRequestModalProps {
 
 const log = createComponentLogger('SignMessageRequestModal');
 
-const NFT_NAME = 'Kissed Frog #0000';
-const NFT_IMAGE = '/frog.png';
+// Fallbacks for when the dApp didn't pass an `asset` (e.g. a direct open or a
+// real wallet receiving the request over the bridge).
+const DEFAULT_NFT_NAME = 'Kissed Frog #0000';
+const DEFAULT_NFT_IMAGE = '/frog.png';
+const DEFAULT_PRICE_LABEL = '100 USDT';
 
 export const SignMessageRequestModal: React.FC<SignMessageRequestModalProps> = ({
     wallet,
@@ -40,6 +45,13 @@ export const SignMessageRequestModal: React.FC<SignMessageRequestModalProps> = (
     const { approveSignMessageRequest, rejectSignMessageRequest } = useSignMessageRequests();
     const [isBuying, setIsBuying] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
+
+    // The NFT and price come from the dApp via the `asset` query param, captured
+    // at boot. Fall back to the demo defaults when it's absent.
+    const asset = useMemo(() => getPurchaseAsset(), []);
+    const nftName = asset?.name ?? DEFAULT_NFT_NAME;
+    const nftImage = asset?.image ?? DEFAULT_NFT_IMAGE;
+    const priceLabel = asset ? `${asset.amount} ${asset.symbol}` : DEFAULT_PRICE_LABEL;
 
     // Drawer close animation is ~300ms. Run any unmount-causing action AFTER the
     // animation so the slide-down isn't cut short by the parent unmounting us.
@@ -128,7 +140,7 @@ export const SignMessageRequestModal: React.FC<SignMessageRequestModalProps> = (
                                     <p className="text-xs font-medium uppercase tracking-wide text-gray-500 mb-1">
                                         Send
                                     </p>
-                                    <p className="text-base font-semibold text-gray-900">100 USDT</p>
+                                    <p className="text-base font-semibold text-gray-900">{priceLabel}</p>
 
                                     <div className="my-4 w-full h-px bg-gray-300" />
 
@@ -137,11 +149,11 @@ export const SignMessageRequestModal: React.FC<SignMessageRequestModalProps> = (
                                     </p>
                                     <div className="flex items-center gap-3">
                                         <img
-                                            src={NFT_IMAGE}
-                                            alt={NFT_NAME}
+                                            src={nftImage}
+                                            alt={nftName}
                                             className="h-14 w-14 flex-shrink-0 rounded-lg object-cover"
                                         />
-                                        <p className="text-base font-semibold text-gray-900">{NFT_NAME}</p>
+                                        <p className="text-base font-semibold text-gray-900">{nftName}</p>
                                     </div>
 
                                     <div className="my-4 w-full h-px bg-gray-300" />
@@ -174,7 +186,7 @@ export const SignMessageRequestModal: React.FC<SignMessageRequestModalProps> = (
                                         }}
                                         fullWidth
                                     >
-                                        Return to Marketplace
+                                        Return to Minter
                                         <ExternalLinkIcon className="w-4 h-4 ml-2" />
                                     </Button>
                                     <Button variant="secondary" onClick={handleDone} fullWidth>
@@ -195,7 +207,7 @@ export const SignMessageRequestModal: React.FC<SignMessageRequestModalProps> = (
                             </Drawer.Title>
 
                             <p className="mt-1 text-xs mb-5 text-gray-500 text-center">
-                                Confirm the purchase of {NFT_NAME} for 100 USDT.
+                                Confirm the purchase of {nftName} for {priceLabel}.
                             </p>
 
                             <div className="flex flex-col gap-3 px-4 pt-0 pb-6">
@@ -203,7 +215,7 @@ export const SignMessageRequestModal: React.FC<SignMessageRequestModalProps> = (
                                     <p className="text-xs font-medium uppercase tracking-wide text-gray-500 mb-1">
                                         Send
                                     </p>
-                                    <p className="text-base font-semibold text-gray-900">100 USDT</p>
+                                    <p className="text-base font-semibold text-gray-900">{priceLabel}</p>
 
                                     <div className="my-4 w-full h-px bg-gray-300" />
 
@@ -212,11 +224,11 @@ export const SignMessageRequestModal: React.FC<SignMessageRequestModalProps> = (
                                     </p>
                                     <div className="flex items-center gap-3">
                                         <img
-                                            src={NFT_IMAGE}
-                                            alt={NFT_NAME}
+                                            src={nftImage}
+                                            alt={nftName}
                                             className="h-14 w-14 flex-shrink-0 rounded-lg object-cover"
                                         />
-                                        <p className="text-base font-semibold text-gray-900">{NFT_NAME}</p>
+                                        <p className="text-base font-semibold text-gray-900">{nftName}</p>
                                     </div>
 
                                     <div className="my-4 w-full h-px bg-gray-300" />

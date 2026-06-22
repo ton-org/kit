@@ -18,11 +18,12 @@ import { MintSettingsModal } from './mint-settings-modal';
 import { useCardGenerator } from '../hooks/use-card-generator';
 import { useMintNft } from '../hooks/use-mint-nft';
 import type { MintShortfall } from '../hooks/use-mint-nft';
+import { buildDemoWalletPurchaseUrl } from '../lib/demo-wallet-purchase';
 import { enableGasless } from '../store/actions/enable-gasless';
 import { mintCard } from '../store/actions/mint-card';
 import { setMintError } from '../store/actions/set-mint-error';
 
-import { DEMO_WALLET_APP_URL, isConnectedViaDemoWallet } from '@/features/connect-wallet';
+import { isConnectedViaDemoWallet } from '@/features/connect-wallet';
 import { cn } from '@/core/lib/utils';
 
 const RARITY_ODDS: { label: string; chance: number; color: string }[] = [
@@ -68,12 +69,12 @@ export const CardGenerator: React.FC<CardGeneratorProps> = ({ className }) => {
 
         // The demo wallet isn't running in the background like a mobile wallet,
         // so reopen it (synchronously, within the click gesture to dodge popup
-        // blockers) to surface the approval. `ret` tells it to return here after
-        // signing. Harmless no-op for real wallets, which receive the request
+        // blockers) to surface the approval. The link carries `ret` (return here
+        // after signing) and `asset` (the NFT the wallet renders in its confirm
+        // modal). Harmless no-op for real wallets, which receive the request
         // over the bridge on their own.
-        if (isConnectedViaDemoWallet()) {
-            const ret = encodeURIComponent(window.location.href);
-            window.open(`${DEMO_WALLET_APP_URL}/?ret=${ret}`, '_blank', 'noopener,noreferrer');
+        if (isConnectedViaDemoWallet() && currentCard) {
+            window.open(buildDemoWalletPurchaseUrl(currentCard), '_blank', 'noopener,noreferrer');
         }
 
         try {
@@ -86,7 +87,7 @@ export const CardGenerator: React.FC<CardGeneratorProps> = ({ className }) => {
             setMintErrorLocal(msg);
             setMintError(msg);
         }
-    }, [mint]);
+    }, [mint, currentCard]);
 
     const handleSwitchToGasless = useCallback(() => {
         enableGasless();

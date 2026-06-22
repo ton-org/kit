@@ -62,7 +62,7 @@ export const WalletDashboard: React.FC = () => {
 
     return (
         <NewLayout header={<DashboardHeader />}>
-            <div className="w-screen h-screen bg-white absolute top-0 left-0" />
+            <div className="absolute inset-0 bg-white pointer-events-none" />
             <img
                 src={hasPurchasedNft ? '/holdings-nft.png' : '/holdings-usdt.png'}
                 alt=""

@@ -15,7 +15,7 @@ interface NewLayoutProps {
 
 export const NewLayout: React.FC<NewLayoutProps> = ({ header, children }) => (
     <div className="min-h-screen bg-white select-none">
-        <div className="max-w-md mx-auto">
+        <div className="max-w-md mx-auto relative">
             {header}
             <main className="px-4 pb-6">{children}</main>
         </div>
