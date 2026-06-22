@@ -17,3 +17,4 @@ export * from './components/sign-data-request-modal';
 export * from './components/sign-message-request-modal';
 export * from './components/transaction-request-modal';
 export * from './components/transaction-request-details';
+export * from './return-to-dapp';

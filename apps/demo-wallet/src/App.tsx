@@ -10,6 +10,7 @@ import TransportWebHID from '@ledgerhq/hw-transport-webhid';
 import { WalletProvider } from '@demo/wallet-core';
 import type { WalletKitConfig } from '@demo/wallet-core';
 
+import { rememberReturnTarget } from '@/features/ton-connect';
 import { AppRouter } from '@/core/routing';
 import { Toaster } from '@/core/components/ui/sonner';
 import {
@@ -28,6 +29,11 @@ import type { SendMessageToExtensionContent, CreateExtensionStorageAdapter } fro
 
 import './App.css';
 import './storePatch';
+
+// Capture a dApp's return target (`ret`) as early as possible: the root route
+// redirects on mount and would otherwise strip the query before the
+// `/ton-connect` route or any approval modal can read it.
+rememberReturnTarget(window.location.href);
 
 let jsBridgeTransport: typeof SendMessageToExtensionContent | undefined;
 let storage: ReturnType<typeof CreateExtensionStorageAdapter> | undefined;

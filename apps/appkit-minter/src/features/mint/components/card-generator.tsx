@@ -22,6 +22,7 @@ import { enableGasless } from '../store/actions/enable-gasless';
 import { mintCard } from '../store/actions/mint-card';
 import { setMintError } from '../store/actions/set-mint-error';
 
+import { DEMO_WALLET_APP_URL, isConnectedViaDemoWallet } from '@/features/connect-wallet';
 import { cn } from '@/core/lib/utils';
 
 const RARITY_ODDS: { label: string; chance: number; color: string }[] = [
@@ -64,6 +65,17 @@ export const CardGenerator: React.FC<CardGeneratorProps> = ({ className }) => {
         }
 
         setIsConfirmOpen(false);
+
+        // The demo wallet isn't running in the background like a mobile wallet,
+        // so reopen it (synchronously, within the click gesture to dodge popup
+        // blockers) to surface the approval. `ret` tells it to return here after
+        // signing. Harmless no-op for real wallets, which receive the request
+        // over the bridge on their own.
+        if (isConnectedViaDemoWallet()) {
+            const ret = encodeURIComponent(window.location.href);
+            window.open(`${DEMO_WALLET_APP_URL}/?ret=${ret}`, '_blank', 'noopener,noreferrer');
+        }
+
         try {
             await mint.send();
             mintCard();

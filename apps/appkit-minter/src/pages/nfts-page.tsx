@@ -7,10 +7,11 @@
  */
 
 import type React from 'react';
-import { Button, TonConnectButton, useNfts, useSelectedWallet } from '@ton/appkit-react';
+import { Button, useNfts, useSelectedWallet } from '@ton/appkit-react';
 import { ImageIcon, RefreshCw } from 'lucide-react';
 
 import { NftsCard } from '@/features/nft';
+import { ConnectWalletButton } from '@/features/connect-wallet';
 import { EmptyState, Layout } from '@/core/components';
 
 export const NftsPage: React.FC = () => {
@@ -35,7 +36,7 @@ export const NftsPage: React.FC = () => {
                     icon={ImageIcon}
                     title="No wallet connected"
                     description="Connect your wallet to see your NFTs."
-                    action={<TonConnectButton />}
+                    action={<ConnectWalletButton />}
                 />
             )}
         </Layout>

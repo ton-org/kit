@@ -6,7 +6,7 @@
  *
  */
 
-import { TonConnectButton, useAddress } from '@ton/appkit-react';
+import { useAddress } from '@ton/appkit-react';
 import {
     ArrowLeftRight,
     BookOpen,
@@ -40,6 +40,8 @@ import {
 } from '../../sidebar';
 import { BalanceCard } from '../balance-card';
 import { ThemeSwitcher } from '../theme-switcher';
+
+import { ConnectWalletButton } from '@/features/connect-wallet';
 
 // import { NetworkPicker } from '@/features/network';
 
@@ -160,7 +162,7 @@ export const Layout: FC<LayoutProps> = ({ children, title }) => {
                     </div>
 
                     <div className="ml-auto">
-                        <TonConnectButton />
+                        <ConnectWalletButton />
                     </div>
                     <ThemeSwitcher />
                     <div className="md:hidden">

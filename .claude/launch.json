@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "appkit-minter",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "appkit-minter", "exec", "vite", "--port", "5180", "--strictPort"],
+      "port": 5180
+    },
+    {
+      "name": "demo-wallet",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "demo-wallet", "exec", "vite", "--port", "5173", "--strictPort"],
+      "port": 5173
+    }
+  ]
+}

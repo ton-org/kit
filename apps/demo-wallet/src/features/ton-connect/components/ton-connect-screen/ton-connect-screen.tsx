@@ -10,6 +10,8 @@ import React, { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTonConnect } from '@demo/wallet-core';
 
+import { rememberReturnTarget } from '../../return-to-dapp';
+
 import { LoaderCircle } from '@/core/components/ui/loader-circle';
 import { createComponentLogger } from '@/core/lib/logger';
 import { CenteredScreen } from '@/core/components/shared/centered-screen';
@@ -26,6 +28,9 @@ export const TonConnectRoute: React.FC = () => {
         hasHandled.current = true;
 
         const url = window.location.href;
+        // Capture where the dApp wants us to return before we navigate away — the
+        // `ret` param is only present on this initial URL.
+        rememberReturnTarget(url);
         handleTonConnectUrl(url)
             .catch((err) => log.error('Failed to handle TON Connect URL:', err))
             .finally(() => navigate('/wallet', { replace: true }));

@@ -6,7 +6,7 @@
  *
  */
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
     useWallet,
     useTonConnect,
@@ -14,6 +14,7 @@ import {
     useSignDataRequests,
     useSignMessageRequests,
 } from '@demo/wallet-core';
+import type { Wallet } from '@ton/walletkit';
 
 import { DashboardHeader } from '../dashboard-header';
 import { BalanceTotal } from '../balance-total';
@@ -25,6 +26,7 @@ import {
     TransactionRequestModal,
     SignDataRequestModal,
     SignMessageRequestModal,
+    returnToDapp,
 } from '@/features/ton-connect';
 import { NewLayout } from '@/core/components/shared/new-layout';
 import { NftsCard } from '@/features/nft';
@@ -46,6 +48,15 @@ export const WalletDashboard: React.FC = () => {
         useSignDataRequests();
     const { pendingSignMessageRequest, isSignMessageModalOpen } = useSignMessageRequests();
 
+    // After approving a connection, return the user to the dApp that opened us.
+    const handleApproveConnect = useCallback(
+        async (wallet: Wallet) => {
+            await approveConnectRequest(wallet);
+            returnToDapp();
+        },
+        [approveConnectRequest],
+    );
+
     return (
         <NewLayout header={<DashboardHeader />}>
             <div className="space-y-4">
@@ -63,7 +74,7 @@ export const WalletDashboard: React.FC = () => {
                     savedWallets={savedWallets}
                     currentWallet={getAvailableWallets().find((w) => w.getWalletId() === activeWallet?.kitWalletId)}
                     isOpen={isConnectModalOpen}
-                    onApprove={approveConnectRequest}
+                    onApprove={handleApproveConnect}
                     onReject={rejectConnectRequest}
                 />
             )}

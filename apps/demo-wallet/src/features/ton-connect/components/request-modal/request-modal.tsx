@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 
 import { DappRequestModal } from '../dapp-request-modal';
 import { WalletPlate } from '../wallet-plate';
+import { returnToDapp } from '../../return-to-dapp';
 
 import { Button } from '@/core/components/ui/button';
 import { HoldToSignButton } from '@/core/components/ui/hold-to-sign-button';
@@ -107,6 +108,8 @@ export const RequestModal: React.FC<RequestModalProps> = ({
         setIsLoading(true);
         try {
             await onApprove();
+            // If a dApp opened us to approve this, hand the user back to it.
+            returnToDapp();
         } catch (error) {
             log.error(`Failed to approve ${loggerName}:`, error);
             toast.error('Failed to approve request', { description: (error as Error)?.message });
