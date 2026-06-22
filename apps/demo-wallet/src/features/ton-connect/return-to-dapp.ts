@@ -32,9 +32,14 @@ export function rememberReturnTarget(url: string): void {
  * Return the user to the dApp after they approve a request. Only acts when a
  * dApp actually asked us to return (a `ret` was captured) — so a request from a
  * wallet we opened ourselves, or from a dApp that didn't pass `ret`, leaves the
- * tab alone. The dApp opened us in a new tab, so closing it hands focus straight
- * back; if the browser refuses to close the tab (it wasn't script-opened), we
- * redirect to the saved URL instead so the user still ends up back in the dApp.
+ * tab alone.
+ *
+ * We navigate the current tab back to the dApp rather than calling
+ * `window.close()`. Closing looks tidier when the wallet runs in its own pop-up
+ * tab, but inside an embedded/in-app browser (an IDE preview pane, a web view)
+ * there are no separate tabs, so `window.close()` tears down the whole browser
+ * surface and strands the user the moment they confirm. Redirecting reliably
+ * lands them back in the dApp in every environment.
  */
 export function returnToDapp(): void {
     const ret = window.sessionStorage.getItem(RETURN_TARGET_KEY);
@@ -43,9 +48,5 @@ export function returnToDapp(): void {
     }
     window.sessionStorage.removeItem(RETURN_TARGET_KEY);
 
-    window.close();
-
-    window.setTimeout(() => {
-        window.location.href = ret;
-    }, 150);
+    window.location.href = ret;
 }

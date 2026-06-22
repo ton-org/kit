@@ -28,15 +28,13 @@ export const WalletTile: FC<WalletTileProps> = ({ name, onClick, iconUrl, icon, 
         <button
             type="button"
             onClick={onClick}
-            className="flex w-[88px] flex-col items-center gap-2 rounded-2xl px-1 py-2 transition-transform hover:scale-[1.04] active:scale-95"
+            className="flex w-full flex-col items-center rounded-2xl px-1 py-2 transition-transform hover:scale-[1.04] active:scale-95"
         >
-            <span className="flex size-[60px] items-center justify-center overflow-hidden rounded-[14px] bg-[#2a2a2d]">
+            <span className="mb-2 flex size-[60px] items-center justify-center overflow-hidden rounded-2xl bg-[#2a2a2d]">
                 {icon ?? <img src={iconUrl} alt="" className="size-full object-cover" />}
             </span>
-            <span className="line-clamp-2 w-full text-center text-[13px] font-medium leading-tight text-white">
-                {name}
-            </span>
-            {sublabel && <span className="-mt-1.5 text-[12px] leading-tight text-[#8b8b8e]">{sublabel}</span>}
+            <span className="line-clamp-2 w-full text-center text-sm font-medium leading-[1.3] text-white">{name}</span>
+            {sublabel && <span className="text-sm leading-[1.3] text-[#8b8b8e]">{sublabel}</span>}
         </button>
     );
 };

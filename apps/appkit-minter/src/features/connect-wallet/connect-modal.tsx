@@ -10,7 +10,7 @@ import { useEffect, useState } from 'react';
 import type { FC } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { QRCodeSVG } from 'qrcode.react';
-import { X } from 'lucide-react';
+import { Copy, X } from 'lucide-react';
 import { useTonConnectUI } from '@tonconnect/ui-react';
 import type { WalletInfo } from '@tonconnect/ui-react';
 
@@ -27,6 +27,15 @@ interface ConnectModalProps {
 
 /** Registry wallets featured next to the demo wallet, in display order. */
 const FEATURED_APP_NAMES = ['telegram-wallet', 'tonkeeper'];
+
+/** Grey sublabels under featured tiles, mirroring the stock TON Connect modal. */
+const FEATURED_SUBLABELS: Record<string, string | undefined> = { tonkeeper: 'Popular' };
+
+/** The stock modal special-cases the Telegram wallet's display name. */
+const WALLET_DISPLAY_NAMES: Record<string, string> = { 'telegram-wallet': 'Wallet in Telegram' };
+
+/** "What is TON Connect?" target behind the footer help button. */
+const TON_CONNECT_HELP_URL = 'https://docs.ton.org/develop/dapps/ton-connect/overview';
 
 /**
  * A faithful re-creation of the TON Connect modal (header, QR, "Available
@@ -88,6 +97,17 @@ export const ConnectModal: FC<ConnectModalProps> = ({ open, onClose }) => {
         void tonConnectUI.openModal();
     };
 
+    const copyLink = () => {
+        const url = link ?? getDemoLink();
+        if (url) {
+            void navigator.clipboard?.writeText(url);
+        }
+    };
+
+    const openHelp = () => {
+        window.open(TON_CONNECT_HELP_URL, '_blank', 'noopener,noreferrer');
+    };
+
     return (
         <Dialog.Root open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
             <Dialog.Portal>
@@ -95,11 +115,13 @@ export const ConnectModal: FC<ConnectModalProps> = ({ open, onClose }) => {
                     <Dialog.Content
                         aria-describedby={undefined}
                         onOpenAutoFocus={(e) => e.preventDefault()}
-                        className="w-[400px] max-w-full overflow-hidden rounded-[24px] bg-[#121214] text-white shadow-2xl"
+                        className="w-[416px] max-w-full overflow-hidden rounded-[24px] bg-[#121214] text-white shadow-2xl"
                     >
-                        <div className="relative px-6 pb-4 pt-6 text-center">
-                            <Dialog.Title className="text-[20px] font-bold">Connect your TON wallet</Dialog.Title>
-                            <p className="mt-1 text-sm text-[#8b8b8e]">Scan with your mobile wallet</p>
+                        <div className="relative px-[56px] pb-8 pt-11 text-center">
+                            <Dialog.Title className="text-[20px] font-semibold leading-7">
+                                Connect your TON wallet
+                            </Dialog.Title>
+                            <p className="mt-1 text-base leading-[22px] text-[#8b8b8e]">Scan with your mobile wallet</p>
                             <Dialog.Close
                                 aria-label="Close"
                                 className="absolute right-5 top-5 flex size-8 items-center justify-center rounded-full bg-[#2a2a2d] text-[#8b8b8e] transition-colors hover:text-white"
@@ -108,23 +130,31 @@ export const ConnectModal: FC<ConnectModalProps> = ({ open, onClose }) => {
                             </Dialog.Close>
                         </div>
 
-                        <div className="mx-6 flex justify-center rounded-2xl bg-white p-5">
+                        <div className="relative mx-[56px] flex justify-center rounded-2xl bg-white py-6">
                             {link ? (
                                 <QRCodeSVG
                                     value={link}
-                                    size={224}
+                                    size={256}
                                     level="M"
                                     bgColor="#FFFFFF"
                                     fgColor="#000000"
-                                    imageSettings={{ src: '/ton.png', height: 44, width: 44, excavate: true }}
+                                    imageSettings={{ src: '/ton.png', height: 60, width: 60, excavate: true }}
                                 />
                             ) : (
-                                <div className="size-[224px]" />
+                                <div className="size-[256px]" />
                             )}
+                            <button
+                                type="button"
+                                onClick={copyLink}
+                                aria-label="Copy link"
+                                className="absolute bottom-3 right-3 text-[#9a9ca3] transition-colors hover:text-[#4a4a4e]"
+                            >
+                                <Copy size={20} />
+                            </button>
                         </div>
 
-                        <p className="mb-3 mt-5 text-center text-sm text-[#8b8b8e]">Available wallets</p>
-                        <div className="flex justify-center gap-1 px-4 pb-5">
+                        <p className="mb-3 mt-5 text-center text-base text-[#8b8b8e]">Available wallets</p>
+                        <div className="grid grid-cols-4 px-[56px] pb-5">
                             <WalletTile
                                 name={DEMO_WALLET_NAME}
                                 sublabel="Recent"
@@ -134,7 +164,8 @@ export const ConnectModal: FC<ConnectModalProps> = ({ open, onClose }) => {
                             {featured.map((w) => (
                                 <WalletTile
                                     key={w.appName}
-                                    name={w.name}
+                                    name={WALLET_DISPLAY_NAMES[w.appName] ?? w.name}
+                                    sublabel={FEATURED_SUBLABELS[w.appName]}
                                     iconUrl={w.imageUrl}
                                     onClick={() => openWallet(w.appName)}
                                 />
@@ -146,11 +177,22 @@ export const ConnectModal: FC<ConnectModalProps> = ({ open, onClose }) => {
                             />
                         </div>
 
-                        <div className="flex items-center justify-between border-t border-white/[0.08] px-6 py-3 text-sm text-[#8b8b8e]">
-                            <span className="flex items-center gap-2">
-                                <img src="/ton.png" alt="" className="size-4 rounded-full" />
-                                TON Connect
+                        <div className="flex items-center justify-between border-t border-white/[0.08] px-6 py-3">
+                            <span className="flex items-center gap-2 text-[15px] font-semibold">
+                                <img src="/ton.png" alt="" className="size-5 rounded-full" />
+                                <span>
+                                    <span className="text-white">TON</span>{' '}
+                                    <span className="text-white/60">Connect</span>
+                                </span>
                             </span>
+                            <button
+                                type="button"
+                                onClick={openHelp}
+                                aria-label="What is TON Connect?"
+                                className="flex size-9 items-center justify-center rounded-full bg-white/[0.06] text-base text-[#8b8b8e] transition-colors hover:text-white"
+                            >
+                                ?
+                            </button>
                         </div>
                     </Dialog.Content>
                 </Dialog.Overlay>
