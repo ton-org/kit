@@ -18,7 +18,7 @@ import { MintSettingsModal } from './mint-settings-modal';
 import { useCardGenerator } from '../hooks/use-card-generator';
 import { useMintNft } from '../hooks/use-mint-nft';
 import type { MintShortfall } from '../hooks/use-mint-nft';
-import { buildDemoWalletPurchaseUrl } from '../lib/demo-wallet-purchase';
+import { buildDemoWalletMintUrl } from '../lib/demo-wallet-mint';
 import { enableGasless } from '../store/actions/enable-gasless';
 import { mintCard } from '../store/actions/mint-card';
 import { setMintError } from '../store/actions/set-mint-error';
@@ -74,7 +74,7 @@ export const CardGenerator: React.FC<CardGeneratorProps> = ({ className }) => {
         // modal). Harmless no-op for real wallets, which receive the request
         // over the bridge on their own.
         if (isConnectedViaDemoWallet() && currentCard) {
-            window.open(buildDemoWalletPurchaseUrl(currentCard), '_blank', 'noopener,noreferrer');
+            window.open(buildDemoWalletMintUrl(currentCard, mint.gasless.fee), '_blank', 'noopener,noreferrer');
         }
 
         try {

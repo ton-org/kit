@@ -7,7 +7,7 @@
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
-import type { ConnectionRequestEvent, Wallet } from '@ton/walletkit';
+import type { ConnectionRequestEvent, DAppInfo, Wallet } from '@ton/walletkit';
 import type { SavedWallet } from '@demo/wallet-core';
 import { toast } from 'sonner';
 
@@ -19,6 +19,13 @@ import { createComponentLogger } from '@/core/lib/logger';
 import { WalletPickerView } from '@/features/wallets';
 
 const log = createComponentLogger('ConnectRequestModal');
+
+// The demo always connects to the AppKit NFT Minter, but the request carries a
+// generic TON Connect manifest (name/icon). Hardcode the dApp branding so the
+// connect screen shows the minter regardless of what the manifest reports.
+const DAPP_NAME = 'NFT Minter';
+const DAPP_ICON_URL = '/market-logo.png';
+const DAPP_INFO: DAppInfo = { name: DAPP_NAME, iconUrl: DAPP_ICON_URL };
 
 interface ConnectRequestModalProps {
     request: ConnectionRequestEvent;
@@ -66,7 +73,6 @@ export const ConnectRequestModal: React.FC<ConnectRequestModalProps> = ({
         [availableWallets, savedByKitId],
     );
 
-    const dApp = request.dAppInfo ?? request.preview.dAppInfo;
     const permissions = request.preview.permissions ?? [];
     const canSelect = availableWallets.length > 1;
     const selectedSavedId = selectedWallet ? savedByKitId.get(selectedWallet.getWalletId())?.id : undefined;
@@ -105,10 +111,9 @@ export const ConnectRequestModal: React.FC<ConnectRequestModalProps> = ({
         <DappRequestModal
             isOpen={isOpen}
             testId="connect-request"
-            dAppInfo={dApp}
-            domain={request.domain}
+            dAppInfo={DAPP_INFO}
             verb="Connect to"
-            subtitle={`${dApp?.name ?? 'This dApp'} is requesting access to your wallet address:`}
+            subtitle={`${DAPP_NAME} is requesting access to your wallet address:`}
             walletSlot={walletSlot}
             altView={
                 pickerOpen ? (

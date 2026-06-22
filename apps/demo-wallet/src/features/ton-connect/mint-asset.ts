@@ -7,24 +7,22 @@
  */
 
 /**
- * The asset a dApp is asking the user to buy. The marketplace passes it as an
- * `asset` query param on the link that reopens the wallet for approval; we stash
- * it so the purchase-confirmation modal can show the real NFT (name + art) and
- * the exact price instead of hard-coded placeholders. Mirrors the lifecycle of
- * the `ret` return target in `./return-to-dapp`.
+ * The NFT a dApp is asking the user to mint. The minter passes it as an `asset`
+ * query param on the link that reopens the wallet for approval; we stash it so
+ * the mint-confirmation modal can show the real NFT (name + art) and the exact
+ * gasless fee instead of hard-coded placeholders. Mirrors the lifecycle of the
+ * `ret` return target in `./return-to-dapp`.
  */
-export interface PurchaseAsset {
+export interface MintAsset {
     /** Display name of the NFT, e.g. "Storm Drake". */
     name: string;
     /** Image URL to render (a data URL or absolute URL). */
     image?: string;
-    /** Numeric sale price. */
-    amount: number;
-    /** Ticker the price is denominated in, e.g. "USDT". */
-    symbol: string;
+    /** Pre-formatted gasless fee, e.g. "0.024594 USDT". */
+    fee?: string;
 }
 
-const PURCHASE_ASSET_KEY = 'demo-wallet:purchase-asset';
+const MINT_ASSET_KEY = 'demo-wallet:mint-asset';
 
 /**
  * Capture the `asset` query param for the current request. Called as early as
@@ -32,13 +30,13 @@ const PURCHASE_ASSET_KEY = 'demo-wallet:purchase-asset';
  * query). Clears any stale asset when the param is absent — e.g. a plain
  * connect link — so an unrelated request never shows the previous NFT.
  */
-export function rememberPurchaseAsset(url: string): void {
+export function rememberMintAsset(url: string): void {
     try {
         const raw = new URL(url).searchParams.get('asset');
         if (raw) {
-            window.sessionStorage.setItem(PURCHASE_ASSET_KEY, raw);
+            window.sessionStorage.setItem(MINT_ASSET_KEY, raw);
         } else {
-            window.sessionStorage.removeItem(PURCHASE_ASSET_KEY);
+            window.sessionStorage.removeItem(MINT_ASSET_KEY);
         }
     } catch {
         // Ignore malformed URLs — there's simply no asset to show.
@@ -46,22 +44,21 @@ export function rememberPurchaseAsset(url: string): void {
 }
 
 /** The asset captured for the current request, or `null` if none/invalid. */
-export function getPurchaseAsset(): PurchaseAsset | null {
-    const raw = window.sessionStorage.getItem(PURCHASE_ASSET_KEY);
+export function getMintAsset(): MintAsset | null {
+    const raw = window.sessionStorage.getItem(MINT_ASSET_KEY);
     if (!raw) {
         return null;
     }
 
     try {
-        const parsed = JSON.parse(raw) as Partial<PurchaseAsset>;
-        if (typeof parsed.name !== 'string' || typeof parsed.amount !== 'number') {
+        const parsed = JSON.parse(raw) as Partial<MintAsset>;
+        if (typeof parsed.name !== 'string') {
             return null;
         }
         return {
             name: parsed.name,
             image: typeof parsed.image === 'string' ? parsed.image : undefined,
-            amount: parsed.amount,
-            symbol: typeof parsed.symbol === 'string' ? parsed.symbol : 'USDT',
+            fee: typeof parsed.fee === 'string' ? parsed.fee : undefined,
         };
     } catch {
         return null;

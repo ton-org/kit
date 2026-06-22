@@ -14,7 +14,7 @@ import { toast } from 'sonner';
 import { ExternalLinkIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-import { getPurchaseAsset } from '../../purchase-asset';
+import { getMintAsset } from '../../mint-asset';
 
 import { Button } from '@/core/components/ui/button';
 import { createComponentLogger } from '@/core/lib/logger';
@@ -33,7 +33,7 @@ const log = createComponentLogger('SignMessageRequestModal');
 // real wallet receiving the request over the bridge).
 const DEFAULT_NFT_NAME = 'Kissed Frog #0000';
 const DEFAULT_NFT_IMAGE = '/frog.png';
-const DEFAULT_PRICE_LABEL = '100 USDT';
+const DEFAULT_FEE_LABEL = '0 TON';
 
 export const SignMessageRequestModal: React.FC<SignMessageRequestModalProps> = ({
     wallet,
@@ -46,12 +46,12 @@ export const SignMessageRequestModal: React.FC<SignMessageRequestModalProps> = (
     const [isBuying, setIsBuying] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
 
-    // The NFT and price come from the dApp via the `asset` query param, captured
-    // at boot. Fall back to the demo defaults when it's absent.
-    const asset = useMemo(() => getPurchaseAsset(), []);
+    // The NFT and its gasless fee come from the dApp via the `asset` query param,
+    // captured at boot. Fall back to the demo defaults when it's absent.
+    const asset = useMemo(() => getMintAsset(), []);
     const nftName = asset?.name ?? DEFAULT_NFT_NAME;
     const nftImage = asset?.image ?? DEFAULT_NFT_IMAGE;
-    const priceLabel = asset ? `${asset.amount} ${asset.symbol}` : DEFAULT_PRICE_LABEL;
+    const feeLabel = asset?.fee ?? DEFAULT_FEE_LABEL;
 
     // Drawer close animation is ~300ms. Run any unmount-causing action AFTER the
     // animation so the slide-down isn't cut short by the parent unmounting us.
@@ -69,7 +69,7 @@ export const SignMessageRequestModal: React.FC<SignMessageRequestModalProps> = (
             onPurchased();
         } catch (error) {
             log.error('Failed to approve sign message request:', error);
-            toast.error('Failed to complete purchase', {
+            toast.error('Failed to complete mint', {
                 description: (error as Error)?.message,
             });
         } finally {
@@ -128,7 +128,7 @@ export const SignMessageRequestModal: React.FC<SignMessageRequestModalProps> = (
                                 </motion.svg>
                             </motion.div>
                             <Drawer.Title className="mt-4 text-center text-2xl font-semibold text-gray-900">
-                                Signed Successfully
+                                Minted Successfully
                             </Drawer.Title>
 
                             <p className="mt-1 text-xs mb-5 text-gray-500 text-center">
@@ -137,15 +137,8 @@ export const SignMessageRequestModal: React.FC<SignMessageRequestModalProps> = (
 
                             <div className="flex flex-col gap-3 px-4 pt-0 pb-6">
                                 <div className="rounded-xl bg-gray-100 px-3 py-5">
-                                    <p className="text-xs font-medium uppercase tracking-wide text-gray-500 mb-1">
-                                        Send
-                                    </p>
-                                    <p className="text-base font-semibold text-gray-900">{priceLabel}</p>
-
-                                    <div className="my-4 w-full h-px bg-gray-300" />
-
                                     <p className="text-xs font-medium uppercase tracking-wide text-gray-500 mb-2">
-                                        Receive
+                                        Mint
                                     </p>
                                     <div className="flex items-center gap-3">
                                         <img
@@ -159,11 +152,11 @@ export const SignMessageRequestModal: React.FC<SignMessageRequestModalProps> = (
                                     <div className="my-4 w-full h-px bg-gray-300" />
 
                                     <p className="text-xs font-medium uppercase tracking-wide text-gray-500 mb-1">
-                                        Fee
+                                        Network fee
                                     </p>
                                     <p className="text-base font-semibold text-gray-900 flex items-center gap-1">
                                         <s className="text-gray-500">0.1 TON</s>
-                                        <span>0 TON</span>
+                                        <span>{feeLabel}</span>
                                         <span className="bg-blue-500/10 uppercase text-blue-500 text-xs rounded-lg px-1.5 py-0.75 ml-1">
                                             Gasless
                                         </span>
@@ -182,7 +175,10 @@ export const SignMessageRequestModal: React.FC<SignMessageRequestModalProps> = (
                                 <div className="mt-2 flex w-full flex-col gap-2">
                                     <Button
                                         onClick={() => {
-                                            window.open('http://localhost:5174/frog', '_blank');
+                                            window.open(
+                                                'https://appkit-minter-git-appkit-demo-video-topteam.vercel.app/',
+                                                '_blank',
+                                            );
                                         }}
                                         fullWidth
                                     >
@@ -206,21 +202,12 @@ export const SignMessageRequestModal: React.FC<SignMessageRequestModalProps> = (
                                 Confirm Action
                             </Drawer.Title>
 
-                            <p className="mt-1 text-xs mb-5 text-gray-500 text-center">
-                                Confirm the purchase of {nftName} for {priceLabel}.
-                            </p>
+                            <p className="mt-1 text-xs mb-5 text-gray-500 text-center">Confirm minting of {nftName}.</p>
 
                             <div className="flex flex-col gap-3 px-4 pt-0 pb-6">
                                 <div className="rounded-xl bg-gray-100 px-3 py-5">
-                                    <p className="text-xs font-medium uppercase tracking-wide text-gray-500 mb-1">
-                                        Send
-                                    </p>
-                                    <p className="text-base font-semibold text-gray-900">{priceLabel}</p>
-
-                                    <div className="my-4 w-full h-px bg-gray-300" />
-
                                     <p className="text-xs font-medium uppercase tracking-wide text-gray-500 mb-2">
-                                        Receive
+                                        Mint
                                     </p>
                                     <div className="flex items-center gap-3">
                                         <img
@@ -234,11 +221,11 @@ export const SignMessageRequestModal: React.FC<SignMessageRequestModalProps> = (
                                     <div className="my-4 w-full h-px bg-gray-300" />
 
                                     <p className="text-xs font-medium uppercase tracking-wide text-gray-500 mb-1">
-                                        Fee
+                                        Network fee
                                     </p>
                                     <p className="text-base font-semibold text-gray-900 flex items-center gap-1">
                                         <s className="text-gray-500">0.1 TON</s>
-                                        <span>0 TON</span>
+                                        <span>{feeLabel}</span>
                                         <span className="bg-blue-500/10 uppercase text-blue-500 text-xs rounded-lg px-1.5 py-0.75 ml-1">
                                             Gasless
                                         </span>

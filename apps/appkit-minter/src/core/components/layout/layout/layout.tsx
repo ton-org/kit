@@ -155,7 +155,7 @@ export const Layout: FC<LayoutProps> = ({ children, title }) => {
             <AppSidebar />
 
             <SidebarInset>
-                <header className="sticky top-0 z-10 flex h-14 items-center gap-3 border-b border-tertiary bg-background/80 px-4 backdrop-blur">
+                <header className="sticky top-0 z-10 flex h-12 items-center gap-3 border-b border-tertiary bg-background/80 px-4 backdrop-blur md:h-14">
                     <AppLogo className="size-8 md:hidden" />
                     <div className="hidden text-lg font-semibold md:flex md:justify-center md:items-center">
                         {typeof title === 'string' ? <h1>{title}</h1> : title}

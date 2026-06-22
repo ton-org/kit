@@ -7,4 +7,3 @@
  */
 
 export * from './mint-forward';
-export * from './mint-price';
