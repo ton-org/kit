@@ -117,7 +117,7 @@ export const ConnectModal: FC<ConnectModalProps> = ({ open, onClose }) => {
                         onOpenAutoFocus={(e) => e.preventDefault()}
                         className="w-[416px] max-w-full overflow-hidden rounded-[24px] bg-[#121214] text-white shadow-2xl"
                     >
-                        <div className="relative px-[56px] pb-8 pt-11 text-center">
+                        <div className="relative px-12 pb-8 pt-11 text-center">
                             <Dialog.Title className="text-[20px] font-semibold leading-7">
                                 Connect your TON wallet
                             </Dialog.Title>
@@ -130,7 +130,7 @@ export const ConnectModal: FC<ConnectModalProps> = ({ open, onClose }) => {
                             </Dialog.Close>
                         </div>
 
-                        <div className="relative mx-[56px] flex justify-center rounded-2xl bg-white py-6">
+                        <div className="relative mx-12 flex justify-center rounded-2xl bg-white py-6">
                             {link ? (
                                 <QRCodeSVG
                                     value={link}
@@ -154,7 +154,7 @@ export const ConnectModal: FC<ConnectModalProps> = ({ open, onClose }) => {
                         </div>
 
                         <p className="mb-3 mt-5 text-center text-base text-[#8b8b8e]">Available wallets</p>
-                        <div className="grid grid-cols-4 px-[56px] pb-5">
+                        <div className="grid grid-cols-4 px-10 pb-5">
                             <WalletTile
                                 name={DEMO_WALLET_NAME}
                                 sublabel="Recent"
