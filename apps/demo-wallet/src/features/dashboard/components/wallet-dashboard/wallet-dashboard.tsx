@@ -42,7 +42,7 @@ export const WalletDashboard: React.FC = () => {
 
     const [hasPurchasedNft, setHasPurchasedNft] = useState(false);
     const [purchaseSuccessVisible, setPurchaseSuccessVisible] = useState(false);
-    const [connectSuccessVisible, setConnectSuccessVisible] = useState(false);
+    const [connectActive, setConnectActive] = useState(false);
 
     const { getAvailableWallets, savedWallets, getActiveWallet } = useWallet();
     const activeWallet = getActiveWallet();
@@ -52,19 +52,29 @@ export const WalletDashboard: React.FC = () => {
         useSignDataRequests();
     const { pendingSignMessageRequest, isSignMessageModalOpen } = useSignMessageRequests();
 
-    // After approving a connection, show a brief success confirmation before returning
-    // the user to the dApp that opened us. Keeping the modal mounted via
-    // `connectSuccessVisible` survives the store clearing the pending request on approve.
+    // Keep the connect modal mounted across the whole approve → "Connected" → return flow.
+    // We flip `connectActive` *before* awaiting approval, because `approveConnectRequest`
+    // clears the pending request from the store; without this the modal would unmount for a
+    // frame (the request is gone, success not yet shown) and visibly flicker before reappearing.
     const handleApproveConnect = useCallback(
         async (wallet: Wallet) => {
+            setConnectActive(true);
             await approveConnectRequest(wallet);
-            setConnectSuccessVisible(true);
         },
         [approveConnectRequest],
     );
 
+    const handleRejectConnect = useCallback(
+        (reason?: string) => {
+            setConnectActive(false);
+            rejectConnectRequest(reason);
+        },
+        [rejectConnectRequest],
+    );
+
+    // Fired after the modal has shown "Connected" — hand the user back to the dApp.
     const handleConnectSuccessDone = useCallback(() => {
-        setConnectSuccessVisible(false);
+        setConnectActive(false);
         returnToDapp();
     }, []);
 
@@ -85,16 +95,15 @@ export const WalletDashboard: React.FC = () => {
                 <TransactionHistory />
             </div>
 
-            {(pendingConnectRequest || connectSuccessVisible) && (
+            {(pendingConnectRequest || connectActive) && (
                 <ConnectRequestModal
                     request={pendingConnectRequest}
                     availableWallets={getAvailableWallets()}
                     savedWallets={savedWallets}
                     currentWallet={getAvailableWallets().find((w) => w.getWalletId() === activeWallet?.kitWalletId)}
-                    isOpen={isConnectModalOpen || connectSuccessVisible}
-                    showSuccess={connectSuccessVisible}
+                    isOpen={isConnectModalOpen || connectActive}
                     onApprove={handleApproveConnect}
-                    onReject={rejectConnectRequest}
+                    onReject={handleRejectConnect}
                     onSuccessDone={handleConnectSuccessDone}
                 />
             )}

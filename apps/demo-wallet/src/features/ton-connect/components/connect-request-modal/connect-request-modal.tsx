@@ -32,17 +32,15 @@ const DAPP_INFO: DAppInfo = { name: DAPP_NAME, iconUrl: DAPP_ICON_URL };
 const SUCCESS_DISPLAY_MS = 700;
 
 interface ConnectRequestModalProps {
-    /** Absent once the connection is approved — the success view keeps rendering without it. */
+    /** Absent once the connection is approved — the modal stays mounted to show the success state. */
     request?: ConnectionRequestEvent;
     availableWallets: Wallet[];
     savedWallets: SavedWallet[];
     currentWallet?: Wallet;
     isOpen: boolean;
-    /** When true, show the post-approval success confirmation instead of the request. */
-    showSuccess: boolean;
     onApprove: (selectedWallet: Wallet) => void;
     onReject: (reason?: string) => void;
-    /** Fired after the success confirmation has been shown — return the user to the dApp. */
+    /** Fired after the "Connected" confirmation has been shown — return the user to the dApp. */
     onSuccessDone: () => void;
 }
 
@@ -52,7 +50,6 @@ export const ConnectRequestModal: React.FC<ConnectRequestModalProps> = ({
     savedWallets,
     currentWallet,
     isOpen,
-    showSuccess,
     onApprove,
     onReject,
     onSuccessDone,
@@ -60,13 +57,14 @@ export const ConnectRequestModal: React.FC<ConnectRequestModalProps> = ({
     const [selectedWallet, setSelectedWallet] = useState<Wallet | null>(currentWallet ?? null);
     const [pickerOpen, setPickerOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [showSuccess, setShowSuccess] = useState(false);
 
     // Fall back to the active or first available wallet until one is picked.
     useEffect(() => {
         if (selectedWallet === null) setSelectedWallet(currentWallet ?? availableWallets[0] ?? null);
     }, [selectedWallet, currentWallet, availableWallets]);
 
-    // Once connected, hold the success confirmation briefly, then hand the user back to the dApp.
+    // Once the "Connected" confirmation is showing, hold it briefly, then hand the user back to the dApp.
     useEffect(() => {
         if (!showSuccess) return;
         const timer = setTimeout(onSuccessDone, SUCCESS_DISPLAY_MS);
@@ -100,6 +98,7 @@ export const ConnectRequestModal: React.FC<ConnectRequestModalProps> = ({
         setIsLoading(true);
         try {
             await onApprove(selectedWallet);
+            setShowSuccess(true);
         } catch (error) {
             log.error('Failed to approve connection:', error);
             toast.error('Failed to approve connection', { description: (error as Error)?.message });
