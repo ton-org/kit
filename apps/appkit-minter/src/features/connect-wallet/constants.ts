@@ -7,14 +7,14 @@
  */
 
 /** Human-readable name shown on the demo wallet tile. */
-export const DEMO_WALLET_NAME = 'Demo Wallet';
+export const DEMO_WALLET_NAME = 'Wallet';
 
 /**
  * Where the demo wallet (apps/demo-wallet) is served. In dev we target the
  * local Vite server (port 5173, its default) so the whole connect flow runs
  * against the local wallet; in production we fall back to the deployed app.
  */
-const DEMO_WALLET_BASE_URL = import.meta.env.DEV ? 'http://localhost:5173' : 'https://walletkit-demo-wallet.vercel.app';
+const DEMO_WALLET_BASE_URL = import.meta.env.DEV ? 'http://localhost:5173' : 'https://kit-demo-wallet-git-appkit-demo-video-topteam.vercel.app';
 
 /** Demo wallet app root — opened to bring it to the foreground for approvals. */
 export const DEMO_WALLET_APP_URL = DEMO_WALLET_BASE_URL;
