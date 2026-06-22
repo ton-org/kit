@@ -42,6 +42,7 @@ export const WalletDashboard: React.FC = () => {
 
     const [hasPurchasedNft, setHasPurchasedNft] = useState(false);
     const [purchaseSuccessVisible, setPurchaseSuccessVisible] = useState(false);
+    const [connectSuccessVisible, setConnectSuccessVisible] = useState(false);
 
     const { getAvailableWallets, savedWallets, getActiveWallet } = useWallet();
     const activeWallet = getActiveWallet();
@@ -51,14 +52,21 @@ export const WalletDashboard: React.FC = () => {
         useSignDataRequests();
     const { pendingSignMessageRequest, isSignMessageModalOpen } = useSignMessageRequests();
 
-    // After approving a connection, return the user to the dApp that opened us.
+    // After approving a connection, show a brief success confirmation before returning
+    // the user to the dApp that opened us. Keeping the modal mounted via
+    // `connectSuccessVisible` survives the store clearing the pending request on approve.
     const handleApproveConnect = useCallback(
         async (wallet: Wallet) => {
             await approveConnectRequest(wallet);
-            returnToDapp();
+            setConnectSuccessVisible(true);
         },
         [approveConnectRequest],
     );
+
+    const handleConnectSuccessDone = useCallback(() => {
+        setConnectSuccessVisible(false);
+        returnToDapp();
+    }, []);
 
     return (
         <NewLayout header={<DashboardHeader />}>
@@ -77,15 +85,17 @@ export const WalletDashboard: React.FC = () => {
                 <TransactionHistory />
             </div>
 
-            {pendingConnectRequest && (
+            {(pendingConnectRequest || connectSuccessVisible) && (
                 <ConnectRequestModal
                     request={pendingConnectRequest}
                     availableWallets={getAvailableWallets()}
                     savedWallets={savedWallets}
                     currentWallet={getAvailableWallets().find((w) => w.getWalletId() === activeWallet?.kitWalletId)}
-                    isOpen={isConnectModalOpen}
+                    isOpen={isConnectModalOpen || connectSuccessVisible}
+                    showSuccess={connectSuccessVisible}
                     onApprove={handleApproveConnect}
                     onReject={rejectConnectRequest}
+                    onSuccessDone={handleConnectSuccessDone}
                 />
             )}
 

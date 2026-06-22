@@ -10,6 +10,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import type { ConnectionRequestEvent, DAppInfo, Wallet } from '@ton/walletkit';
 import type { SavedWallet } from '@demo/wallet-core';
 import { toast } from 'sonner';
+import { Check } from 'lucide-react';
 
 import { DappRequestModal } from '../dapp-request-modal';
 import { WalletPlate } from '../wallet-plate';
@@ -27,14 +28,22 @@ const DAPP_NAME = 'NFT Minter';
 const DAPP_ICON_URL = '/market-logo.png';
 const DAPP_INFO: DAppInfo = { name: DAPP_NAME, iconUrl: DAPP_ICON_URL };
 
+// How long the "Connected" confirmation stays up before we hand the user back to the dApp.
+const SUCCESS_DISPLAY_MS = 700;
+
 interface ConnectRequestModalProps {
-    request: ConnectionRequestEvent;
+    /** Absent once the connection is approved — the success view keeps rendering without it. */
+    request?: ConnectionRequestEvent;
     availableWallets: Wallet[];
     savedWallets: SavedWallet[];
     currentWallet?: Wallet;
     isOpen: boolean;
+    /** When true, show the post-approval success confirmation instead of the request. */
+    showSuccess: boolean;
     onApprove: (selectedWallet: Wallet) => void;
     onReject: (reason?: string) => void;
+    /** Fired after the success confirmation has been shown — return the user to the dApp. */
+    onSuccessDone: () => void;
 }
 
 export const ConnectRequestModal: React.FC<ConnectRequestModalProps> = ({
@@ -43,8 +52,10 @@ export const ConnectRequestModal: React.FC<ConnectRequestModalProps> = ({
     savedWallets,
     currentWallet,
     isOpen,
+    showSuccess,
     onApprove,
     onReject,
+    onSuccessDone,
 }) => {
     const [selectedWallet, setSelectedWallet] = useState<Wallet | null>(currentWallet ?? null);
     const [pickerOpen, setPickerOpen] = useState(false);
@@ -54,6 +65,13 @@ export const ConnectRequestModal: React.FC<ConnectRequestModalProps> = ({
     useEffect(() => {
         if (selectedWallet === null) setSelectedWallet(currentWallet ?? availableWallets[0] ?? null);
     }, [selectedWallet, currentWallet, availableWallets]);
+
+    // Once connected, hold the success confirmation briefly, then hand the user back to the dApp.
+    useEffect(() => {
+        if (!showSuccess) return;
+        const timer = setTimeout(onSuccessDone, SUCCESS_DISPLAY_MS);
+        return () => clearTimeout(timer);
+    }, [showSuccess, onSuccessDone]);
 
     // SavedWallet records keyed by the WalletKit id (savedWallet.id is a separate store id).
     const savedByKitId = useMemo(() => {
@@ -73,7 +91,7 @@ export const ConnectRequestModal: React.FC<ConnectRequestModalProps> = ({
         [availableWallets, savedByKitId],
     );
 
-    const permissions = request.preview.permissions ?? [];
+    const permissions = request?.preview.permissions ?? [];
     const canSelect = availableWallets.length > 1;
     const selectedSavedId = selectedWallet ? savedByKitId.get(selectedWallet.getWalletId())?.id : undefined;
 
@@ -126,18 +144,30 @@ export const ConnectRequestModal: React.FC<ConnectRequestModalProps> = ({
                 ) : undefined
             }
             primary={
-                <Button
-                    fullWidth
-                    onClick={handleApprove}
-                    loading={isLoading}
-                    disabled={!selectedWallet || isLoading}
-                    data-testid="connect-approve"
-                >
-                    Connect wallet
-                </Button>
+                showSuccess ? (
+                    <Button
+                        fullWidth
+                        disabled
+                        icon={<Check className="h-5 w-5" strokeWidth={3} />}
+                        className="!bg-green-500 !text-white"
+                        data-testid="connect-success"
+                    >
+                        Connected
+                    </Button>
+                ) : (
+                    <Button
+                        fullWidth
+                        onClick={handleApprove}
+                        loading={isLoading}
+                        disabled={!selectedWallet || isLoading}
+                        data-testid="connect-approve"
+                    >
+                        Connect wallet
+                    </Button>
+                )
             }
             onReject={() => onReject('User rejected the connection')}
-            rejectDisabled={isLoading}
+            rejectDisabled={isLoading || showSuccess}
             rejectTestId="connect-reject"
             disclaimer="Only connect to trusted applications. This will give the dApp access to your wallet address and allow it to request transactions."
         >
