@@ -25,16 +25,16 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const VARIANT_CLASS: Record<ButtonVariant, string> = {
-    primary: 'bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-100 disabled:text-gray-400',
-    secondary: 'bg-blue-50 text-blue-600 hover:bg-blue-100 disabled:opacity-60',
-    gray: 'bg-gray-100 text-gray-900 hover:bg-gray-200 disabled:opacity-50',
-    danger: 'bg-red-500 text-white hover:bg-red-600 disabled:opacity-60',
-    ghost: 'bg-transparent text-gray-400 hover:text-gray-600 disabled:opacity-50',
+    primary: 'bg-[#007AFF] text-white disabled:bg-gray-100 disabled:text-gray-400',
+    secondary: 'bg-gray-200 text-gray-900 disabled:opacity-60',
+    gray: 'bg-gray-100 text-gray-900 disabled:opacity-50',
+    danger: 'bg-red-500 text-white disabled:opacity-60',
+    ghost: 'bg-transparent text-gray-400 disabled:opacity-50',
 };
 
 const SIZE_CLASS: Record<ButtonSize, string> = {
     lg: 'px-5 py-3.5 text-base font-bold rounded-2xl',
-    md: 'px-4 py-2.5 text-sm font-semibold rounded-xl',
+    md: 'px-4 py-3.5 text-sm font-semibold rounded-xl',
     sm: 'px-4 py-2 text-sm font-semibold rounded-full',
     icon: 'h-9 w-9 rounded-full',
 };
@@ -64,7 +64,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             type={type ?? 'button'}
             disabled={disabled || loading}
             className={cn(
-                'inline-flex items-center justify-center gap-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 disabled:cursor-not-allowed',
+                'inline-flex items-center justify-center gap-2 transition-transform duration-[180ms] ease-out enabled:active:duration-[80ms] touch-manipulation select-none [-webkit-tap-highlight-color:transparent] focus:outline-none disabled:cursor-not-allowed enabled:hover:scale-[1.015] enabled:active:scale-[0.995]',
                 VARIANT_CLASS[variant],
                 SIZE_CLASS[size],
                 fullWidth && 'w-full',

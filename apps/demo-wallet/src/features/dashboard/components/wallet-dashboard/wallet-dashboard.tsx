@@ -6,7 +6,7 @@
  *
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
     useWallet,
     useTonConnect,
@@ -40,6 +40,9 @@ export const WalletDashboard: React.FC = () => {
     // before the store rehydrates (isUnlocked=false), skipping loadAllWallets with no retry.
     useTonWallet();
 
+    const [hasPurchasedNft, setHasPurchasedNft] = useState(false);
+    const [purchaseSuccessVisible, setPurchaseSuccessVisible] = useState(false);
+
     const { getAvailableWallets, savedWallets, getActiveWallet } = useWallet();
     const activeWallet = getActiveWallet();
     const { pendingConnectRequest, isConnectModalOpen, approveConnectRequest, rejectConnectRequest } = useTonConnect();
@@ -59,6 +62,13 @@ export const WalletDashboard: React.FC = () => {
 
     return (
         <NewLayout header={<DashboardHeader />}>
+            <div className="w-screen h-screen bg-white absolute top-0 left-0" />
+            <img
+                src={hasPurchasedNft ? '/holdings-nft.png' : '/holdings-usdt.png'}
+                alt=""
+                className="w-full absolute top-0 left-0 z-20 pointer-events-none"
+            />
+
             <div className="space-y-4">
                 <BalanceTotal />
                 <DashboardActions />
@@ -97,11 +107,16 @@ export const WalletDashboard: React.FC = () => {
                 />
             )}
 
-            {pendingSignMessageRequest && (
+            {(pendingSignMessageRequest || purchaseSuccessVisible) && (
                 <SignMessageRequestModal
-                    request={pendingSignMessageRequest}
-                    savedWallets={savedWallets}
-                    isOpen={isSignMessageModalOpen}
+                    wallet={activeWallet}
+                    isOpen={isSignMessageModalOpen || purchaseSuccessVisible}
+                    showSuccess={purchaseSuccessVisible}
+                    onPurchased={() => {
+                        setTimeout(() => setHasPurchasedNft(true), 1200);
+                        setPurchaseSuccessVisible(true);
+                    }}
+                    onSuccessClose={() => setPurchaseSuccessVisible(false)}
                 />
             )}
         </NewLayout>
