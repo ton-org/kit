@@ -143,9 +143,10 @@
     @apply bg-background text-foreground;
     margin: 0;
     display: flex;
-    place-items: center;
+    flex-direction: column;
+    align-items: stretch;
     min-width: 320px;
     width: 100%;
-    min-height: 100vh;
+    min-height: 100svh;
   }
 }
