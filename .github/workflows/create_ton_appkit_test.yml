@@ -57,14 +57,31 @@ jobs:
           TARBALL="$(ls create-ton-appkit-*.tgz)"
           echo "TARBALL=$(pwd)/$TARBALL" >> "$GITHUB_ENV"
 
-      - name: Install create-ton-appkit globally
-        shell: bash
-        run: npm install -g "$TARBALL"
-
-      - name: Scaffold a project
+      - name: Scaffold a project via "create" (${{ matrix.pm }})
         shell: bash
         working-directory: ${{ runner.temp }}
-        run: create-ton-appkit my-app -y --template react --app-url https://example.com
+        run: |
+          set -euo pipefail
+          # Run the crate's bin straight from the locally built tarball, exercised through
+          # each package manager so the matrix tests the crate itself, not a published copy.
+          APP_URL=https://example.com
+          args=(my-app -y --template react --app-url "$APP_URL")
+          case "${{ matrix.pm }}" in
+            npm)  npm exec --yes --package="$TARBALL" -- create-ton-appkit "${args[@]}" ;;
+            pnpm) pnpm --package="$TARBALL" dlx create-ton-appkit "${args[@]}" ;;
+            # Yarn Classic and Bun have no dlx/exec for a local tarball — install the bin globally, then run it.
+            yarn) yarn global add "file:$TARBALL"
+                  export PATH="$(yarn global bin):$PATH"
+                  create-ton-appkit "${args[@]}" ;;
+            bun)  bun install -g "$TARBALL"
+                  export PATH="$HOME/.bun/bin:$PATH"
+                  create-ton-appkit "${args[@]}" ;;
+          esac
+
+          # Sanity-check the generated TonConnect manifest got the requested app URL.
+          manifest="my-app/public/tonconnect-manifest.json"
+          grep -q "\"url\": \"$APP_URL\"" "$manifest"
+          grep -q "\"iconUrl\": \"$APP_URL/favicon.svg\"" "$manifest"
 
       - name: Install dependencies (${{ matrix.pm }})
         shell: bash
