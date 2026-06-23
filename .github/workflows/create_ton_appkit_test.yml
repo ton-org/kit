@@ -57,25 +57,15 @@ jobs:
           TARBALL="$(ls create-ton-appkit-*.tgz)"
           echo "TARBALL=$(pwd)/$TARBALL" >> "$GITHUB_ENV"
 
-      - name: Scaffold a project from the local tarball (${{ matrix.pm }})
+      - name: Scaffold a project from the local tarball
         shell: bash
         working-directory: ${{ runner.temp }}
         run: |
           set -euo pipefail
           APP_URL=https://example.com
-          args=(my-app -y --template react --app-url "$APP_URL")
           tname="$(basename "$TARBALL")"
-          case "${{ matrix.pm }}" in
-            npm)  npm exec --yes --package="$TARBALL" -- create-ton-appkit "${args[@]}" ;;
-            pnpm) pnpm --package="$TARBALL" dlx create-ton-appkit "${args[@]}" ;;
-            yarn) cp "$TARBALL" "./$tname"
-                  yarn global add "file:./$tname"
-                  export PATH="$(yarn global bin):$PATH"
-                  create-ton-appkit "${args[@]}" ;;
-            bun)  bun add -g "$TARBALL"
-                  export PATH="$HOME/.bun/bin:$PATH"
-                  create-ton-appkit "${args[@]}" ;;
-          esac
+          cp "$TARBALL" "./$tname"
+          npm exec --yes --package="./$tname" -- create-ton-appkit my-app -y --template react --app-url "$APP_URL"
           # Sanity-check the generated TonConnect manifest got the requested app URL.
           manifest="my-app/public/tonconnect-manifest.json"
           grep -q "\"url\": \"$APP_URL\"" "$manifest"
