@@ -3,4 +3,4 @@
 VITE_TONCENTER_API_KEY=
 
 # Override the TonConnect manifest URL. Defaults to ${origin}/tonconnect-manifest.json.
-# VITE_TONCONNECT_MANIFEST_URL=https://your-app.example.com/tonconnect-manifest.json
+# VITE_TONCONNECT_MANIFEST_URL=https://appkit-template.vercel.app/tonconnect-manifest.json
