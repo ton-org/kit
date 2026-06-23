@@ -23,7 +23,7 @@ import { enableGasless } from '../store/actions/enable-gasless';
 import { mintCard } from '../store/actions/mint-card';
 import { setMintError } from '../store/actions/set-mint-error';
 
-import { isConnectedViaDemoWallet } from '@/features/connect-wallet';
+import { isConnectedViaDemoWallet, DEMO_WALLET_WINDOW_NAME } from '@/features/connect-wallet';
 import { cn } from '@/core/lib/utils';
 
 const RARITY_ODDS: { label: string; chance: number; color: string }[] = [
@@ -74,7 +74,7 @@ export const CardGenerator: React.FC<CardGeneratorProps> = ({ className }) => {
         // modal). Harmless no-op for real wallets, which receive the request
         // over the bridge on their own.
         if (isConnectedViaDemoWallet() && currentCard) {
-            window.open(buildDemoWalletMintUrl(currentCard, mint.gasless.fee), '_blank', 'noopener,noreferrer');
+            window.open(buildDemoWalletMintUrl(currentCard, mint.gasless.fee), DEMO_WALLET_WINDOW_NAME);
         }
 
         try {

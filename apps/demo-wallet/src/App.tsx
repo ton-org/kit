@@ -6,12 +6,14 @@
  *
  */
 
+import { useEffect } from 'react';
 import TransportWebHID from '@ledgerhq/hw-transport-webhid';
 import { WalletProvider } from '@demo/wallet-core';
 import type { WalletKitConfig } from '@demo/wallet-core';
 
 import { rememberReturnTarget, rememberMintAsset } from '@/features/ton-connect';
 import { AppRouter } from '@/core/routing';
+import { dismissBootSplash } from '@/core/lib/boot-splash';
 import { Toaster } from '@/core/components/ui/sonner';
 import {
     DISABLE_AUTO_EMULATION,
@@ -86,6 +88,8 @@ const walletKitConfig: WalletKitConfig = {
 };
 
 function App() {
+    useEffect(dismissBootSplash, []);
+
     return (
         <WalletProvider storage={localStorage} walletKitConfig={walletKitConfig} enableDevtools={false}>
             <AppRouter />

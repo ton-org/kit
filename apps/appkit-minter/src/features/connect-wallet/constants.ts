@@ -33,3 +33,12 @@ export const DEMO_WALLET_BRIDGE_URL = 'https://connect.ton.org/bridge';
 
 /** Simple blue TON icon for the wallet tile (local minter asset). */
 export const DEMO_WALLET_ICON_URL = '/ton-wallet.png';
+
+/**
+ * Stable target name for the demo-wallet window. Reusing one named window for
+ * both connect and mint means the wallet replaces itself in place instead of
+ * piling up a fresh tab on every hop. We deliberately open it *without*
+ * `noopener`/`noreferrer`: per the HTML spec both force a brand-new context and
+ * ignore the name, which would defeat the reuse.
+ */
+export const DEMO_WALLET_WINDOW_NAME = 'ton-demo-wallet';

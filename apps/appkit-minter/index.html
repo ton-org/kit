@@ -10,9 +10,67 @@
     <link rel="manifest" href="/site.webmanifest" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>NFT Minter - AppKit Demo</title>
+    <script>
+      // Resolve the saved theme and apply it to <html> before first paint, so the
+      // boot background matches the app and the cross-app handoff never flashes
+      // white or wrong-theme. Mirrors ThemeProvider (same key + 'dark' default).
+      (function () {
+        try {
+          var stored = localStorage.getItem('vite-ui-theme') || 'dark';
+          var resolved =
+            stored === 'system'
+              ? window.matchMedia('(prefers-color-scheme: dark)').matches
+                ? 'dark'
+                : 'light'
+              : stored;
+          var el = document.documentElement;
+          el.classList.add(resolved);
+          el.setAttribute('data-theme', resolved);
+          el.setAttribute('data-ta-theme', resolved);
+        } catch (e) {}
+      })();
+    </script>
+    <style>
+      html,
+      body {
+        margin: 0;
+        background: #121214;
+      }
+      html[data-theme='light'],
+      html[data-theme='light'] body {
+        background: #ffffff;
+      }
+      #boot-splash {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #121214;
+        transition: opacity 300ms ease;
+      }
+      html[data-theme='light'] #boot-splash {
+        background: #ffffff;
+      }
+      #boot-splash .spinner {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        border: 3px solid rgba(128, 128, 128, 0.25);
+        border-top-color: #0098ea;
+        animation: boot-spin 0.7s linear infinite;
+      }
+      @keyframes boot-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
+    <div id="boot-splash"><div class="spinner"></div></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

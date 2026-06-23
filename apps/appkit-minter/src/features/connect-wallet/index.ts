@@ -8,4 +8,4 @@
 
 export { ConnectWalletButton } from './connect-wallet-button';
 export { isConnectedViaDemoWallet } from './demo-wallet-session';
-export { DEMO_WALLET_APP_URL } from './constants';
+export { DEMO_WALLET_APP_URL, DEMO_WALLET_WINDOW_NAME } from './constants';

@@ -18,7 +18,7 @@ import { WalletTile } from './wallet-tile';
 import { ViewAllIcon } from './view-all-icon';
 import { useDemoConnectLink } from './use-demo-connect-link';
 import { clearConnectedViaDemoWallet, markConnectedViaDemoWallet } from './demo-wallet-session';
-import { DEMO_WALLET_ICON_URL, DEMO_WALLET_NAME } from './constants';
+import { DEMO_WALLET_ICON_URL, DEMO_WALLET_NAME, DEMO_WALLET_WINDOW_NAME } from './constants';
 
 interface ConnectModalProps {
     open: boolean;
@@ -80,7 +80,7 @@ export const ConnectModal: FC<ConnectModalProps> = ({ open, onClose }) => {
             // Remember the choice so the mint flow knows to reopen the demo
             // wallet for approvals.
             markConnectedViaDemoWallet();
-            window.open(url, '_blank', 'noopener,noreferrer');
+            window.open(url, DEMO_WALLET_WINDOW_NAME);
         }
         onClose();
     };
