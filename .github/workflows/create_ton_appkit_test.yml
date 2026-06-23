@@ -64,11 +64,12 @@ jobs:
           set -euo pipefail
           APP_URL=https://example.com
           args=(my-app -y --template react --app-url "$APP_URL")
-          tdir="$(dirname "$TARBALL")"; tname="$(basename "$TARBALL")"
+          tname="$(basename "$TARBALL")"
           case "${{ matrix.pm }}" in
             npm)  npm exec --yes --package="$TARBALL" -- create-ton-appkit "${args[@]}" ;;
             pnpm) pnpm --package="$TARBALL" dlx create-ton-appkit "${args[@]}" ;;
-            yarn) (cd "$tdir" && yarn global add "file:$tname")
+            yarn) cp "$TARBALL" "./$tname"
+                  yarn global add "file:./$tname"
                   export PATH="$(yarn global bin):$PATH"
                   create-ton-appkit "${args[@]}" ;;
             bun)  bun add -g "$TARBALL"
