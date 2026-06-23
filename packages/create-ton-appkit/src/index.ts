@@ -197,12 +197,12 @@ async function run(): Promise<void> {
     let appUrl = argv['app-url'] as string | undefined;
     if (!appUrl) {
         if (useDefaults) {
-            appUrl = 'https://your-app.example.com';
+            appUrl = 'https://appkit-template.vercel.app';
         } else {
             const result = await prompts.text({
                 message: 'App URL (for TonConnect manifest)',
-                placeholder: 'https://your-app.example.com',
-                defaultValue: 'https://your-app.example.com',
+                placeholder: 'https://appkit-template.vercel.app',
+                defaultValue: 'https://appkit-template.vercel.app',
             });
             if (prompts.isCancel(result)) {
                 prompts.cancel('Cancelled.');
