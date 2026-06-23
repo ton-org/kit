@@ -31,7 +31,7 @@ pnpm create ton-appkit my-app --template react --app-url https://example.com -y
 |------|-------|-------------|---------|
 | `[project-name]` | | Project directory name | `my-ton-app` |
 | `--template <name>` | `-t` | Template to use | `react` |
-| `--app-url <url>` | | App URL for TonConnect manifest | `https://your-app.example.com` |
+| `--app-url <url>` | | App URL for TonConnect manifest | `https://appkit-template.vercel.app` |
 | `--overwrite` | `-o` | Overwrite existing directory | `false` |
 | `--yes` | `-y` | Accept all defaults (non-interactive) | `false` |
 | `--help` | `-h` | Show help message | |
