@@ -9,7 +9,7 @@
 import { Address } from '@ton/core';
 
 import { Base64ToBigInt, Base64Normalize, Base64ToHex } from '../../utils/base64';
-import type { JettonInfo } from '../../types';
+import type { JettonInfo } from '../../api/models';
 import type { ToncenterEmulationResponse } from './types/raw-emulation';
 import type {
     ApiClient,

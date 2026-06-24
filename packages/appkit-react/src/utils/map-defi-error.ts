@@ -29,6 +29,8 @@ export const mapDefiError = (error: unknown): string | null => {
             return 'defi.invalidProvider';
         case DefiErrorCode.InvalidParams:
             return 'defi.invalidParams';
+        case DefiErrorCode.Unknown:
+            return 'defi.genericError';
         default:
             return null;
     }

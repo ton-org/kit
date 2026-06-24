@@ -223,7 +223,7 @@ describe('mcp config registry', () => {
             'utf-8',
         );
 
-        expect(async () => await loadConfigWithMigration()).toThrow(ConfigError);
+        await expect(loadConfigWithMigration()).rejects.toThrow(ConfigError);
     });
 
     it('persists the agentic wallet NFT index on createAgenticWalletRecord', () => {

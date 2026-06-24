@@ -6,11 +6,12 @@
  *
  */
 
-import { AppKit, Network } from '@ton/appkit';
-import { createTonConnectConnector } from '@ton/appkit';
+import { AppKit, Network, createTonConnectConnector } from '@ton/appkit';
 import { createOmnistonProvider } from '@ton/appkit/swap/omniston';
 import { createDeDustProvider } from '@ton/appkit/swap/dedust';
 import { createTonstakersProvider } from '@ton/appkit/staking/tonstakers';
+import { createLayerswapProvider } from '@ton/appkit/crypto-onramp/layerswap';
+import { createTonApiGaslessProvider } from '@ton/appkit/gasless/tonapi';
 
 export const appKit = new AppKit({
     networks: {
@@ -35,5 +36,11 @@ export const appKit = new AppKit({
             },
         }),
     ],
-    providers: [createOmnistonProvider(), createDeDustProvider(), createTonstakersProvider()],
+    providers: [
+        createOmnistonProvider(),
+        createDeDustProvider(),
+        createTonstakersProvider(),
+        createLayerswapProvider(),
+        createTonApiGaslessProvider(),
+    ],
 });

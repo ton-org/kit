@@ -6,7 +6,7 @@
  *
  */
 
-import { createComponentLogger } from '../src/utils/logger';
+import { createComponentLogger } from '../src/core/lib/logger';
 
 const log = createComponentLogger('Allure');
 

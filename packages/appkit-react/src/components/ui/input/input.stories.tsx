@@ -120,7 +120,7 @@ export const Advanced: Story = {
                                 fontWeight: 600,
                             }}
                         >
-                            TON ▾
+                            GRAM ▾
                         </div>
                     </Input.Slot>
                 </Input.Field>
@@ -152,7 +152,7 @@ export const Resizable: Story = {
                                 fontWeight: 600,
                             }}
                         >
-                            TON ▾
+                            GRAM ▾
                         </div>
                     </Input.Slot>
                 </Input.Field>

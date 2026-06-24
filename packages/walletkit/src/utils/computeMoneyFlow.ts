@@ -21,7 +21,7 @@ import type { ApiClient } from '../api/interfaces';
 
 export interface ProcessMoneyFlowOptions {
     // When true, the first transaction's incoming message is excluded from inputs
-    // (used for sign-message previews where that message is a synthetic 2-TON gasless-relay wrapper).
+    // (used for sign-message previews where that message is a synthetic 2-GRAM gasless-relay wrapper).
     skipFirstTxInput?: boolean;
 }
 
@@ -29,7 +29,7 @@ const JETTON_TRANSFER_OPCODE = 0x0f8a7ea5;
 // const JETTON_TRANSFER_OPCODE_HEX = '0x0f8a7ea5' as Hex;
 
 // pTON proxy contracts (STON.fi v1 and v2) — wrapped TON used in DEX swaps.
-// TON flow is already captured in outputs/inputs, so exclude these from ourTransfers.
+// GRAM flow is already captured in outputs/inputs, so exclude these from ourTransfers.
 const TON_PROXY_ADDRESSES = new Set([
     'EQCM3B12QK1e4yZSf8GtBRT0aLMNyEsBc_DhVfRRtOEffLez',
     'EQBnGWMCf3-FZZq1W4IWcWiGAc3PHuZ0_H-7sad2oY00o83S',

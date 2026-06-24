@@ -1,5 +1,68 @@
 # @ton/mcp
 
+## 0.1.15-alpha.22
+
+### Minor Changes
+
+- 01f198a: Replace the one-shot `send_ton` / `send_jetton` / `send_nft` tools with prepare-only `build_ton_transfer`, `build_jetton_transfer`, and `build_nft_transfer`. The build tools build a transaction and return a ready-to-send `transaction` (`messages`, `validUntil`, `fromAddress`) without broadcasting, mirroring the `get_swap_quote` pipeline. Preview the result with `emulate_transaction`, then broadcast with `send_raw_transaction`, passing `transaction.fromAddress` along with the messages.
+
+    Because they do not sign, the build tools are available to read-only and operator-keyless agentic wallets. Transfers now go through the single `build_*` → `emulate_transaction` → `send_raw_transaction` path — there are no one-shot send tools.
+
+### Patch Changes
+
+- 82fa071: Rebrand the native asset display from TON to GRAM across the libraries. Technical identifiers are unchanged for backward compatibility — the `'ton'` token address, `AssetType.ton`, the `"TON"` selector / returned symbols in the MCP tools, field names, locale keys, and the SDK branding ("TON AppKit", TON Connect) are kept.
+
+    **@ton/walletkit**
+
+    - The native token's `TokenInfo` / jetton metadata now reports `name: 'Gram'` and `symbol: 'GRAM'`.
+    - The Tonstakers staking provider's stake token is renamed: `stakeToken.ticker` is now `'GRAM'` (was `'TON'`) in both the mainnet and testnet metadata. The token `address` (`'ton'`) and the receive token (`tsTON` / `TUNA`) are unchanged.
+    - Human-readable transaction previews now read "Gram Transfer", and amounts are labelled `GRAM` (e.g. `1.5 GRAM`) instead of `TON`.
+    - Also dropped the unused `HumanReadableTx` type from the public exports.
+
+    All widgets and components now present the native asset as GRAM instead of TON:
+
+    - Balance "Send" labels and the shared low-balance modal read GRAM ("Not enough GRAM", with matching reduce / top-up / gasless messages).
+    - The staking widget shows GRAM as the native stake token (its ticker comes from the updated `@ton/walletkit` Tonstakers metadata).
+    - The native-asset icon is now the GRAM mark: added `GramIconCircle` and a `--ta-color-gram` token, rendered by the amount preview and staking balance block. The `TonIcon` / `TonIconCircle` components are kept.
+    - JSDoc on the swap/staking widget context types (providers) and on the `AppkitUIToken` type now refers to GRAM (documentation only — no API or behavior change).
+
+    **@ton/mcp**
+
+    - Tool descriptions and output labels now read GRAM (e.g. "Send GRAM", "Get GRAM balance", amounts rendered as "1.5 GRAM"); raw-unit wording now reads "nano units" instead of "nanoTON".
+    - The tool API is unchanged: the `"TON"` token selector, returned token symbols, and the `nanoTon` output field stay the same.
+
+- Updated dependencies [68f4abb]
+- Updated dependencies [438588e]
+- Updated dependencies [82fa071]
+    - @ton/walletkit@1.1.0-beta.0
+
+## 0.1.15-alpha.20
+
+### Patch Changes
+
+- Updated dependencies [4a060fb]
+    - @ton/walletkit@1.0.0
+
+## 0.1.15-alpha.20
+
+### Patch Changes
+
+- Updated dependencies [912e0a2]
+    - @ton/walletkit@1.0.0-alpha.4
+
+## 0.1.15-alpha.19
+
+### Patch Changes
+
+- Fixed a transaction creation bug caused by an incorrect input cell format. Thanks @trypartyhard for the report.
+
+## 0.1.15-alpha.18
+
+### Patch Changes
+
+- Updated dependencies
+    - @ton/walletkit@1.0.0-alpha.3
+
 ## 0.1.15-alpha.17
 
 ### Patch Changes

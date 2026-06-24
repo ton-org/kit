@@ -11,6 +11,7 @@ import clsx from 'clsx';
 
 import { Dialog } from '../dialog';
 import { CloseIcon } from '../icons';
+import { useI18n } from '../../../features/settings/hooks/use-i18n';
 import styles from './modal.module.css';
 
 export interface ModalProps {
@@ -34,9 +35,15 @@ export interface ModalProps {
      * Additional class name for the content container.
      */
     className?: string;
+    /**
+     * Additional class name for the body container.
+     */
+    bodyClassName?: string;
 }
 
-export const Modal: FC<ModalProps> = ({ open, onOpenChange, title, children, className }) => {
+export const Modal: FC<ModalProps> = ({ open, onOpenChange, title, children, className, bodyClassName }) => {
+    const { t } = useI18n();
+
     return (
         <Dialog.Root open={open} onOpenChange={onOpenChange}>
             <Dialog.Portal>
@@ -44,11 +51,11 @@ export const Modal: FC<ModalProps> = ({ open, onOpenChange, title, children, cla
                     <Dialog.Content className={clsx(styles.content, className)} onClick={(e) => e.stopPropagation()}>
                         <div className={styles.header}>
                             {title && <Dialog.Title className={styles.title}>{title}</Dialog.Title>}
-                            <Dialog.Close className={styles.close} aria-label="Close">
+                            <Dialog.Close className={styles.close} aria-label={t('ui.close')}>
                                 <CloseIcon size={12} />
                             </Dialog.Close>
                         </div>
-                        <div className={styles.body}>{children}</div>
+                        <div className={clsx(styles.body, bodyClassName)}>{children}</div>
                     </Dialog.Content>
                 </Dialog.Overlay>
             </Dialog.Portal>

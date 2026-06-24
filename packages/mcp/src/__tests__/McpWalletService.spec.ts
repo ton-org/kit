@@ -131,3 +131,39 @@ describe('McpWalletService.getTransactions', () => {
         });
     });
 });
+
+describe('McpWalletService.buildTonTransferTransaction', () => {
+    it('keeps fromAddress, validUntil, and payload in the prepared transaction', async () => {
+        const createTransferTonTransaction = vi.fn(async () => ({
+            messages: [
+                {
+                    address: 'EQTo',
+                    amount: '1000000000',
+                    payload: 'base64payload',
+                },
+            ],
+            validUntil: 123,
+            fromAddress: 'UQTestWallet',
+        }));
+
+        const service = Object.create(McpWalletService.prototype) as McpWalletService;
+        Object.defineProperty(service, 'wallet', {
+            value: { createTransferTonTransaction },
+            configurable: true,
+        });
+
+        const prepared = await service.buildTonTransferTransaction('EQTo', '1000000000');
+
+        expect(prepared).toEqual({
+            messages: [
+                {
+                    address: 'EQTo',
+                    amount: '1000000000',
+                    payload: 'base64payload',
+                },
+            ],
+            validUntil: 123,
+            fromAddress: 'UQTestWallet',
+        });
+    });
+});

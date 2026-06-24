@@ -13,8 +13,8 @@ import { SwapConfirmModal } from './swap-confirm-modal';
 import type { AppkitUIToken } from '../../../../types/appkit-ui-token';
 
 const tonToken = {
-    symbol: 'TON',
-    name: 'Toncoin',
+    symbol: 'GRAM',
+    name: 'Gram',
     decimals: 9,
     address: 'ton',
     rate: '2.28',

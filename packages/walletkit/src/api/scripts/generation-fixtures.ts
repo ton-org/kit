@@ -382,3 +382,46 @@ export interface DiscriminatedUnionWithFormatB {
     /** @format uint16 */
     code: number;
 }
+
+// ----------------------------------------------------------------------------
+// Case 25: Generic instantiation property (single type argument)
+// ----------------------------------------------------------------------------
+// Exercises the x-generic-instance-type path in GenericInterfaceNodeParser:
+// a property whose type is another generic type parameterized by THIS
+// interface's own type param (`GenericContainer<TMeta>`). JSON Schema can't
+// carry the type argument, so the parser records the raw Swift type text and
+// the template re-attaches it (prefixed) → `TONGenericContainer<TMeta>`.
+// Covers required + optional. The bare `label` keeps the non-generic path live.
+
+export interface GenericInstanceContainer<TMeta> {
+    inner: GenericContainer<TMeta>;
+    optionalInner?: GenericContainer<TMeta>;
+    label: string;
+}
+
+// ----------------------------------------------------------------------------
+// Case 26: Generic instantiation with multiple type arguments
+// ----------------------------------------------------------------------------
+// Like Case 25 but the instantiated type takes two arguments, both of which
+// are the parent's type params (`MultiGenericContainer<A, B>`) →
+// `TONMultiGenericContainer<A, B>`. The `@format int32` sibling checks the
+// integer-format path still fires alongside x-generic-instance-type.
+
+export interface GenericInstanceMultiArg<A, B> {
+    pair: MultiGenericContainer<A, B>;
+    /** @format int32 */
+    count: number;
+}
+
+// ----------------------------------------------------------------------------
+// Case 27: Generic instantiation using a subset of the parent's type params
+// ----------------------------------------------------------------------------
+// The parent declares two type params but the instantiation uses only one
+// (`GenericContainer<TUsed>`), while the other (`TUnused`) is consumed by a
+// bare generic-type-ref property. Verifies that x-generic-instance-type emits
+// exactly the used argument and coexists with x-generic-type-ref.
+
+export interface GenericInstanceSubsetArg<TUsed, TUnused> {
+    used: GenericContainer<TUsed>;
+    spare: TUnused;
+}

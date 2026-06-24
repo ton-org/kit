@@ -6,12 +6,20 @@
  *
  */
 
-import { SwapManager, StreamingManager } from '@ton/walletkit';
-import type { ProviderInput, SwapProviderInterface, StakingProviderInterface, StreamingProvider } from '@ton/walletkit';
+import { SwapManager, StreamingManager, CryptoOnrampManager } from '@ton/walletkit';
+import type {
+    ProviderInput,
+    SwapProviderInterface,
+    StakingProviderInterface,
+    CryptoOnrampProviderInterface,
+    StreamingProvider,
+} from '@ton/walletkit';
 
 import type { AppKitConfig } from '../types/config';
 import { CONNECTOR_EVENTS, WALLETS_EVENTS } from '../constants/events';
 import { StakingManager } from '../../../staking';
+import { GaslessManager } from '../../../gasless';
+import type { GaslessProviderInterface } from '../../../gasless';
 import type { Connector, ConnectorFactoryContext, ConnectorInput } from '../../../types/connector';
 import { EventEmitter } from '../../emitter';
 import type { AppKitEmitter, AppKitEvents } from '../types/events';
@@ -22,6 +30,8 @@ import { Network } from '../../../types/network';
 import type { AppKitCache } from '../../cache';
 import { LruAppKitCache } from '../../cache';
 import type { AppKitProvider } from '../../../types/provider';
+import { CustomProvidersManager } from '../../../providers';
+import type { CustomProvider } from '../../../providers';
 
 /**
  * Central hub for wallet management.
@@ -33,6 +43,9 @@ export class AppKit {
     readonly walletsManager: WalletsManager;
     readonly swapManager: SwapManager;
     readonly stakingManager: StakingManager;
+    readonly cryptoOnrampManager: CryptoOnrampManager;
+    readonly gaslessManager: GaslessManager;
+    readonly customProvidersManager: CustomProvidersManager;
 
     readonly networkManager: AppKitNetworkManager;
     readonly streamingManager: StreamingManager;
@@ -56,6 +69,9 @@ export class AppKit {
 
         this.swapManager = new SwapManager(() => this.createFactoryContext());
         this.stakingManager = new StakingManager(() => this.createFactoryContext());
+        this.cryptoOnrampManager = new CryptoOnrampManager(() => this.createFactoryContext());
+        this.gaslessManager = new GaslessManager(() => this.createFactoryContext());
+        this.customProvidersManager = new CustomProvidersManager(() => this.createFactoryContext());
         this.streamingManager = new StreamingManager(() => this.createFactoryContext());
 
         if (config.connectors) {
@@ -123,8 +139,17 @@ export class AppKit {
             case 'staking':
                 this.stakingManager.registerProvider(provider as StakingProviderInterface);
                 break;
+            case 'crypto-onramp':
+                this.cryptoOnrampManager.registerProvider(provider as CryptoOnrampProviderInterface);
+                break;
             case 'streaming':
                 this.streamingManager.registerProvider(provider as StreamingProvider);
+                break;
+            case 'gasless':
+                this.gaslessManager.registerProvider(provider as GaslessProviderInterface);
+                break;
+            case 'custom':
+                this.customProvidersManager.registerProvider(provider as CustomProvider);
                 break;
             default:
                 throw new Error('Unknown provider type');

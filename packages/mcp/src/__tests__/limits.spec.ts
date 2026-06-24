@@ -743,12 +743,11 @@ describe('McpWalletService send choke point', () => {
             getAddress: () => WALLET,
             getClient: () => ({ getAccountState }),
             sendTransaction,
-            createTransferTonTransaction: vi
-                .fn()
-                .mockResolvedValue({ messages: [{ address: RECIPIENT, amount: '1000000000' }] }),
         });
 
-        const result = await service.sendTon(RECIPIENT, '1000000000');
+        const result = await service.sendRawTransaction({
+            messages: [{ address: RECIPIENT, amount: '1000000000' }],
+        });
 
         expect(result.success).toBe(true);
         expect(getAccountState).not.toHaveBeenCalled();
@@ -765,12 +764,11 @@ describe('McpWalletService send choke point', () => {
                 runGetMethod: vi.fn(),
             }),
             sendTransaction,
-            createTransferTonTransaction: vi
-                .fn()
-                .mockResolvedValue({ messages: [{ address: RECIPIENT, amount: '1000000000' }] }),
         });
 
-        const result = await service.sendTon(RECIPIENT, '1000000000');
+        const result = await service.sendRawTransaction({
+            messages: [{ address: RECIPIENT, amount: '1000000000' }],
+        });
 
         expect(result.success).toBe(false);
         expect(result.message).toContain('Could not verify spend limits');

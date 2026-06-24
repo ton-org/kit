@@ -9,13 +9,15 @@
 import type { Network } from '@ton/appkit';
 
 export interface AppkitUIToken {
-    /** Token symbol, e.g. "TON" */
+    /** Unique identifier for the token, used for section grouping */
+    id: string;
+    /** Token symbol, e.g. "GRAM" */
     symbol: string;
-    /** Full token name, e.g. "Toncoin" */
+    /** Full token name, e.g. "Gram" */
     name: string;
     /** Number of decimals for the token */
     decimals: number;
-    /** Jetton contract address (use "ton" for TON) */
+    /** Jetton contract address (use "ton" for GRAM) */
     address: string;
     /** Optional token logo */
     logo?: string;

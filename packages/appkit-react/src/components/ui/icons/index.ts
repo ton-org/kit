@@ -7,9 +7,11 @@
  */
 
 export * from './types';
+export * from './check-icon';
 export * from './chevrons-icon';
 export * from './chevron-down-icon';
 export * from './close-icon';
+export * from './copy-icon';
 export * from './failed-icon';
 export * from './flip-icon';
 export * from './image-icon';
@@ -17,5 +19,6 @@ export * from './search-icon';
 export * from './sliders-icon';
 export * from './spinner-icon';
 export * from './success-icon';
+export * from './gram-icon';
 export * from './ton-icon';
 export * from './verified-icon';

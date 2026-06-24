@@ -13,7 +13,7 @@ import clsx from 'clsx';
 import { formatLargeValue } from '@ton/appkit';
 
 import { useI18n } from '../../../settings/hooks/use-i18n';
-import { TonIconCircle } from '../../../../components/ui/icons';
+import { GramIconCircle } from '../../../../components/ui/icons';
 import { Button } from '../../../../components/ui/button';
 import { Skeleton } from '../../../../components/ui/skeleton';
 import styles from './staking-balance-block.module.css';
@@ -61,7 +61,7 @@ export const StakingBalanceBlock: FC<StakingBalanceBlockProps> = ({
     return (
         <div className={clsx(styles.container, className)} {...props}>
             <div className={styles.iconContainer}>
-                {isNativeTon ? <TonIconCircle size={36} /> : <Logo size={36} src={jettonInfo?.image} />}
+                {isNativeTon ? <GramIconCircle size={36} /> : <Logo size={36} src={jettonInfo?.image} />}
             </div>
 
             <div className={styles.info}>

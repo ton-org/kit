@@ -55,7 +55,7 @@ export const BalanceCard: FC = () => {
                 ) : (
                     <span className="text-3xl font-bold text-foreground">{formatLargeValue(balance || '0', 4)}</span>
                 )}
-                <span className="text-base font-medium text-tertiary-foreground">TON</span>
+                <span className="text-base font-medium text-tertiary-foreground">GRAM</span>
             </p>
 
             <div className="mt-3 flex items-center gap-1.5">

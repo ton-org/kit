@@ -37,14 +37,14 @@ interface DeDustSwapProviderConfig {
 ## Protocol Routing
 
 ```ts
-const TON = { address: 'ton', decimals: 9 };
+const GRAM = { address: 'ton', decimals: 9 };
 const USDT = {
     address: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs',
     decimals: 6,
 };
 
 const quote = await getSwapQuote(appKit, {
-    from: TON,
+    from: GRAM,
     to: USDT,
     amount: '1000000000',
     network: Network.mainnet(),
@@ -62,14 +62,14 @@ const quote = await getSwapQuote(appKit, {
 ## Referral Fees
 
 ```ts
-const TON = { address: 'ton', decimals: 9 };
+const GRAM = { address: 'ton', decimals: 9 };
 const USDT = {
     address: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs',
     decimals: 6,
 };
 
 const quote = await getSwapQuote(appKit, {
-    from: TON,
+    from: GRAM,
     to: USDT,
     amount: '1000000000',
     network: Network.mainnet(),
@@ -83,7 +83,7 @@ const quote = await getSwapQuote(appKit, {
 ### Overriding Referral Settings
 
 ```ts
-const TON = { address: 'ton', decimals: 9 };
+const GRAM = { address: 'ton', decimals: 9 };
 const USDT = {
     address: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs',
     decimals: 6,
@@ -99,7 +99,7 @@ appKit.registerProvider(
 
 // Override for specific quote
 const quote = await getSwapQuote(appKit, {
-    from: TON,
+    from: GRAM,
     to: USDT,
     amount: '1000000000',
     network: Network.mainnet(),
@@ -111,7 +111,7 @@ const quote = await getSwapQuote(appKit, {
 
 // Or use global settings by omitting providerOptions
 const quote2 = await getSwapQuote(appKit, {
-    from: TON,
+    from: GRAM,
     to: USDT,
     amount: '1000000000',
     network: Network.mainnet(),

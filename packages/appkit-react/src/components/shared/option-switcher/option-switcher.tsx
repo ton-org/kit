@@ -11,6 +11,7 @@ import clsx from 'clsx';
 
 import { ChevronsIcon } from '../../ui/icons';
 import { Select } from '../../ui/select';
+import { Skeleton } from '../../ui/skeleton';
 import styles from './option-switcher.module.css';
 
 export interface OptionSwitcherOption {
@@ -27,21 +28,29 @@ export interface OptionSwitcherProps {
     onChange: (value: string) => void;
     /** When true, the trigger is non-interactive and dimmed. */
     disabled?: boolean;
+    /** When true, replaces the trigger content with a skeleton and disables interaction. */
+    loading?: boolean;
     className?: string;
 }
 
 /**
  * Compact selector used inside settings modals next to a label.
  */
-export const OptionSwitcher: FC<OptionSwitcherProps> = ({ value, options, onChange, disabled, className }) => {
+export const OptionSwitcher: FC<OptionSwitcherProps> = ({ value, options, onChange, disabled, loading, className }) => {
     const current = options.find((option) => option.value === value);
     const currentLabel = current?.label ?? value ?? '—';
 
     return (
-        <Select.Root value={value} onValueChange={onChange} disabled={disabled}>
+        <Select.Root value={value} onValueChange={onChange} disabled={disabled || loading}>
             <Select.Trigger variant="unstyled" size="unset" className={clsx(styles.button, className)}>
-                {currentLabel}
-                <ChevronsIcon size={20} />
+                {loading ? (
+                    <Skeleton width={80} height={16} />
+                ) : (
+                    <>
+                        {currentLabel}
+                        <ChevronsIcon size={20} />
+                    </>
+                )}
             </Select.Trigger>
             <Select.Content align="end">
                 {options.map((option) => (

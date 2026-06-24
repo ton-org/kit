@@ -13,7 +13,7 @@ export interface StakingTokenInfo {
     ticker: string;
     /** @format int */
     decimals: number;
-    /** 'ton' for native TON, otherwise contract address in friendly format */
+    /** 'ton' for native GRAM, otherwise contract address in friendly format */
     address: string;
 }
 
@@ -27,10 +27,10 @@ export interface StakingProviderMetadata {
     /** Supported unstake modes for this provider */
     supportedUnstakeModes: UnstakeModes[];
 
-    /** Whether provider supports reversed quote format (e.g., passing TON instead of tsTON for unstake) */
+    /** Whether provider supports reversed quote format (e.g., passing GRAM instead of tsTON for unstake) */
     supportsReversedQuote: boolean;
 
-    /** Token that the user sends when staking (e.g. TON) */
+    /** Token that the user sends when staking (e.g. GRAM) */
     stakeToken: StakingTokenInfo;
 
     /** Token that the user receives when staking (e.g. tsTON for liquid staking). Absent for direct/custodial staking. */

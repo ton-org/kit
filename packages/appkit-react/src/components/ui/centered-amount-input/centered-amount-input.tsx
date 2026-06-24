@@ -20,6 +20,7 @@ export interface CenteredAmountInputProps extends ComponentProps<'div'> {
     ticker?: string;
     symbol?: string;
     placeholder?: string;
+    disabled?: boolean;
 }
 
 export const CenteredAmountInput: FC<CenteredAmountInputProps> = ({
@@ -28,7 +29,9 @@ export const CenteredAmountInput: FC<CenteredAmountInputProps> = ({
     ticker,
     symbol,
     placeholder = '0',
+    disabled,
     className,
+    onClick,
     ...props
 }) => {
     const wrapperRef = useRef<HTMLDivElement>(null);
@@ -75,7 +78,10 @@ export const CenteredAmountInput: FC<CenteredAmountInputProps> = ({
         <div
             ref={wrapperRef}
             className={clsx(styles.wrapper, className)}
-            onClick={() => inputRef.current?.focus()}
+            onClick={(e) => {
+                onClick?.(e);
+                inputRef.current?.focus();
+            }}
             {...props}
         >
             <div ref={measureRowRef} className={styles.measureRow} aria-hidden="true">
@@ -97,6 +103,7 @@ export const CenteredAmountInput: FC<CenteredAmountInputProps> = ({
                     inputMode="decimal"
                     placeholder={placeholder}
                     value={value}
+                    disabled={disabled}
                     onChange={(e) => onValueChange(e.target.value)}
                     style={{
                         width: inputWidth ? `${inputWidth}px` : undefined,

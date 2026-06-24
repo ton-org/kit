@@ -11,8 +11,7 @@ import type { DefiProvider } from '../api/interfaces';
 import { resolveProvider } from '../types';
 import type { ProviderInput } from '../types';
 import type { ProviderFactoryContext } from '../types/factory';
-import type { DefiError } from './errors';
-import { DefiErrorCode } from './errors';
+import { DefiError, DefiErrorCode } from './errors';
 import type { SharedKitEvents } from '../types/emitter';
 import type { EventEmitter } from '../core/EventEmitter';
 
@@ -24,7 +23,6 @@ export abstract class DefiManager<
 
     protected providers: T[] = [];
     protected defaultProviderId?: string;
-    protected abstract createError(message: string, code: string, details?: unknown): DefiError;
     protected eventEmitter: EventEmitter<E>;
 
     constructor(createFactoryContext: () => ProviderFactoryContext<E>) {
@@ -44,7 +42,7 @@ export abstract class DefiManager<
         const providerId = provider.providerId;
 
         if (!providerId) {
-            throw this.createError('Provider must have a providerId', DefiErrorCode.InvalidProvider);
+            throw new DefiError('Provider must have a providerId', DefiErrorCode.InvalidProvider);
         }
 
         const oldProvider = this.providers.find((p) => p.providerId === providerId);
@@ -84,7 +82,7 @@ export abstract class DefiManager<
         const provider = this.providers.find((p) => p.providerId === providerId);
 
         if (!provider) {
-            throw this.createError(`Provider '${providerId}' not found`, DefiErrorCode.ProviderNotFound, {
+            throw new DefiError(`Provider '${providerId}' not found`, DefiErrorCode.ProviderNotFound, {
                 provider: providerId,
                 registered: this.providers.map((p) => p.providerId),
             });
@@ -104,15 +102,12 @@ export abstract class DefiManager<
         const providerName = providerId || this.defaultProviderId;
 
         if (!providerName) {
-            throw this.createError(
-                'No default provider set. Register a provider first.',
-                DefiErrorCode.NoDefaultProvider,
-            );
+            throw new DefiError('No default provider set. Register a provider first.', DefiErrorCode.NoDefaultProvider);
         }
 
         const provider = this.providers.find((p) => p.providerId === providerName);
         if (!provider) {
-            throw this.createError(`Provider '${providerName}' not found`, DefiErrorCode.ProviderNotFound, {
+            throw new DefiError(`Provider '${providerName}' not found`, DefiErrorCode.ProviderNotFound, {
                 provider: providerName,
                 registered: this.providers.map((p) => p.providerId),
             });

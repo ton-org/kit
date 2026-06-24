@@ -20,6 +20,7 @@ import type {
 import { globalLogger } from '../../../core/Logger';
 import { StakingProvider } from '../StakingProvider';
 import { StakingError, StakingErrorCode } from '../errors';
+import { DefiError, DefiErrorCode } from '../../errors';
 import type { TonStakersChainConfig, TonStakersProviderConfig } from './models/TonStakersProviderConfig';
 import type { ProviderFactoryContext } from '../../../types/factory';
 import type { NetworkManager } from '../../../core/NetworkManager';
@@ -36,8 +37,8 @@ const log = globalLogger.createChild('TonStakersStakingProvider');
  * TonStakersStakingProvider - Staking provider for the Tonstakers liquid staking protocol.
  *
  * This provider implements all staking operations. It supports:
- * - Stake: Deposit TON to receive tsTON liquid staking tokens
- * - Unstake: Burn tsTON to withdraw TON with {@link UnstakeMode} values:
+ * - Stake: Deposit GRAM to receive tsTON liquid staking tokens
+ * - Unstake: Burn tsTON to withdraw GRAM with {@link UnstakeMode} values:
  *   - `INSTANT` – immediate withdrawal if the pool has liquidity (`fillOrKill`)
  *   - `WHEN_AVAILABLE` – withdraw when liquidity is available (non–fill-or-kill)
  *   - `ROUND_END` – wait until round end for the projected rate
@@ -109,8 +110,9 @@ export class TonStakersStakingProvider extends StakingProvider {
         }
 
         if (Object.keys(chainConfig).length === 0) {
-            throw new Error(
+            throw new DefiError(
                 'createTonstakersProvider: no eligible networks (add mainnet/testnet or pass metadata.contractAddress in overrides)',
+                DefiErrorCode.InvalidParams,
             );
         }
 
@@ -194,11 +196,11 @@ export class TonStakersStakingProvider extends StakingProvider {
     }
 
     /**
-     * Build a transaction for staking TON.
+     * Build a transaction for staking GRAM.
      *
-     * The stake operation sends TON to the Tonstakers pool contract
+     * The stake operation sends GRAM to the Tonstakers pool contract
      * and receives tsTON liquid staking tokens in return.
-     * A fee reserve of 1 TON is automatically added to the amount.
+     * A fee reserve of 1 GRAM is automatically added to the amount.
      *
      * @param params - Stake parameters including quote and user address
      * @returns Transaction request ready to be signed and sent
@@ -485,7 +487,7 @@ export class TonStakersStakingProvider extends StakingProvider {
         const poolInfo = await client.getJson<{ pool: { apy: number } }>(`/v2/staking/pool/${address}`);
 
         if (!poolInfo?.pool?.apy) {
-            throw new Error('Invalid APY data from TonAPI');
+            throw new StakingError('Invalid APY data from TonAPI', StakingErrorCode.InvalidParams);
         }
 
         return Number(poolInfo.pool.apy);

@@ -23,7 +23,7 @@ function renderMoneyFlow(transfers: TransactionTraceMoneyFlowItem[]) {
     return transfers.map((transfer: TransactionTraceMoneyFlowItem) => {
         const amount = BigInt(transfer.amount);
         const isIncoming = amount >= 0n;
-        const jettonAddress = transfer.assetType === AssetType.ton ? 'TON' : (transfer.tokenAddress ?? '');
+        const jettonAddress = transfer.assetType === AssetType.ton ? 'GRAM' : (transfer.tokenAddress ?? '');
 
         return (
             <div key={jettonAddress}>

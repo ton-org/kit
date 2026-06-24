@@ -8,28 +8,7 @@
 
 // Jettons API types based on JETTONS.md specification
 
-import type { Jetton, Network } from '../api/models';
-
-// === Core Jetton Information ===
-export interface JettonInfo {
-    address: string;
-    name: string;
-    symbol: string;
-    description: string;
-    decimals?: number;
-    totalSupply?: string;
-    image?: string;
-    image_data?: string;
-    uri?: string;
-    verification?: JettonVerification;
-    metadata?: Record<string, unknown>;
-}
-
-export interface JettonVerification {
-    verified: boolean;
-    source?: 'toncenter' | 'community' | 'manual';
-    warnings?: string[];
-}
+import type { Jetton, JettonInfo, Network } from '../api/models';
 
 // === User's Jetton Holdings ===
 export interface AddressJetton extends JettonInfo {

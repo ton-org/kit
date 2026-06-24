@@ -86,29 +86,29 @@ Returns: Transaction status (pending, completed, failed) and trace details
 Get list of known/popular Jettons on TON.
 Returns: array with symbol, name, address, decimals
 
-### send_ton
-Send TON to an address.
+### build_ton_transfer
+Build a TON transfer to an address. Does NOT broadcast.
 Parameters:
 - toAddress (required): recipient address
 - amount (required): amount in TON (e.g., "1.5")
 - comment (optional): transaction memo
-Returns: top-level normalizedHash plus details
+Returns: transaction {messages, validUntil, fromAddress} ready for emulate_transaction (preview) then send_raw_transaction (broadcast)
 
-### send_jetton
-Send Jettons to an address.
+### build_jetton_transfer
+Build a Jetton transfer to an address. Does NOT broadcast.
 Parameters:
 - toAddress (required): recipient address
 - jettonAddress (required): token contract address
 - amount (required): human-readable amount
 - comment (optional): transaction memo
-Returns: top-level normalizedHash plus details
+Returns: transaction {messages, validUntil, fromAddress} ready for emulate_transaction (preview) then send_raw_transaction (broadcast)
 
 ### send_raw_transaction
-Send raw transaction with full control.
+Sign and broadcast a raw transaction with full control. This is the tool that actually sends prepared transactions (from build_ton_transfer/build_jetton_transfer/build_nft_transfer/get_swap_quote).
 Parameters:
 - messages (required): array of {address, amount (nanoTON), stateInit?, payload?}
 - validUntil (optional): expiry timestamp
-- fromAddress (optional): sender address
+- fromAddress (optional): sender address; pass transaction.fromAddress when broadcasting a prepared transaction
 Returns: top-level normalizedHash plus details
 
 ### emulate_transaction
@@ -145,12 +145,13 @@ Get NFT details.
 Parameters:
 - nftAddress (required): NFT item contract address
 
-### send_nft
-Transfer NFT to another address.
+### build_nft_transfer
+Build an NFT transfer to another address. Does NOT broadcast.
 Parameters:
 - nftAddress (required): NFT to transfer
 - toAddress (required): recipient address
 - comment (optional): transaction memo
+Returns: transaction {messages, validUntil, fromAddress} ready for emulate_transaction (preview) then send_raw_transaction (broadcast)
 
 ### resolve_dns
 Resolve TON DNS-compatible domain to wallet address.
@@ -250,13 +251,17 @@ Parameters:
 
 ### Sending TON
 1. If recipient is a DNS name rather than a raw address: resolve_dns first
-2. send_ton with resolved address
-3. Default: poll get_transaction_status until completed or failed. User can ask to skip.
+2. build_ton_transfer with resolved address (builds only — does NOT broadcast)
+3. emulate_transaction with the returned transaction.messages to preview balance changes and fees (recommended before sending)
+4. Confirm with user, then send_raw_transaction with transaction.messages and transaction.fromAddress to broadcast
+5. Default: poll get_transaction_status until completed or failed. User can ask to skip.
 
 ### Sending Tokens
 1. get_jettons to find token address
-2. send_jetton with token details
-3. Default: poll get_transaction_status until completed or failed. User can ask to skip.
+2. build_jetton_transfer with token details (builds only — does NOT broadcast)
+3. emulate_transaction with the returned transaction.messages to preview balance changes and fees (recommended before sending)
+4. Confirm with user, then send_raw_transaction with transaction.messages and transaction.fromAddress to broadcast
+5. Default: poll get_transaction_status until completed or failed. User can ask to skip.
 
 ### Swapping Tokens
 1. get_known_jettons if needed for addresses
@@ -299,11 +304,13 @@ Parameters:
 - If the host client exposes a structured confirmation or choice tool (approval dialog, option picker, request_user_input-style UI), use it for yes/no approvals and small option sets instead of free-text replies
 - Always confirm transfers/swaps with user before executing; prefer structured confirmation UI when available, otherwise use a short natural-language yes/no confirmation, and never require a fixed phrase
 - Prefer callback/status tools over asking the user to paste data that can be discovered automatically, but only in long-lived stdio/HTTP MCP server sessions, not raw CLI
-- send_ton/send_jetton/get_swap_quote use human-readable amounts
+- build_ton_transfer/build_jetton_transfer/get_swap_quote use human-readable amounts
 - Registry mode uses the local TON config file from `~/.config/ton/config.json` or `TON_CONFIG_PATH`
 - Agentic onboarding callback state is persisted in the local config; in stdio mode use `AGENTIC_CALLBACK_BASE_URL` and/or `AGENTIC_CALLBACK_PORT` when you need a stable callback endpoint across restarts
 - Registry management responses are sanitized and do not expose mnemonic, private keys, operator private keys, or Toncenter API keys
 - Read tools can work with imported agentic wallets without `operator_private_key`; write tools cannot
 - generate_ton_proof is not a transaction, but it requires signing access and will not work with read-only imported agentic wallets
 - TonProof signs wallet ownership for a domain and payload; only generate it for domains/payloads the user or verifying service intentionally provided
-- **Default flow:** After any send, poll get_transaction_status until completed or failed. User can specify whether to check status.
+- `build_ton_transfer`/`build_jetton_transfer`/`build_nft_transfer` and `get_swap_quote` only BUILD transactions (return `transaction.messages`); they do not broadcast. `send_raw_transaction` is the only tool that signs and sends.
+- Standard transfer flow: build with build_ton_transfer/build_jetton_transfer/build_nft_transfer → preview with `emulate_transaction` → broadcast with `send_raw_transaction`, passing the prepared `transaction.fromAddress` (jetton/NFT messages are bound to the wallet they were built for)
+- **Default flow:** After broadcasting via send_raw_transaction, poll get_transaction_status until completed or failed. User can specify whether to check status.

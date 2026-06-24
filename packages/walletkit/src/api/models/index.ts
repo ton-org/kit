@@ -18,6 +18,7 @@ export type { AddressBook, AddressBookEntry } from './core/AddressBook';
 export type { ManifestFetchResult } from './core/ManifestFetchResult';
 export { AssetType } from './core/AssetType';
 export type { BaseProvider, BaseProviderEvents, BaseProviderUpdate } from './core/BaseProvider';
+export type { DefiProviderType } from './core/DefiProviderType';
 export type { DAppInfo } from './core/DAppInfo';
 export type { ExtraCurrencies } from './core/ExtraCurrencies';
 export { Network } from './core/Network';
@@ -99,6 +100,7 @@ export type {
 
 // Jetton models
 export type { Jetton } from './jettons/Jetton';
+export type { JettonInfo, JettonVerification } from './jettons/JettonInfo';
 export type { JettonsRequest } from './jettons/JettonsRequest';
 export type { JettonsResponse } from './jettons/JettonsResponse';
 export type { JettonsTransferRequest } from './jettons/JettonsTransferRequest';
@@ -137,6 +139,32 @@ export type { StakingQuoteDirection } from './staking/StakingQuoteDirection';
 export type { StakingQuoteParams } from './staking/StakingQuoteParams';
 export type { UnstakeModes } from './staking/UnstakeMode';
 export { UnstakeMode } from './staking/UnstakeMode';
+
+// Crypto onramp models
+export type { CryptoOnrampQuote } from './crypto-onramp/CryptoOnrampQuote';
+export type { CryptoOnrampQuoteParams } from './crypto-onramp/CryptoOnrampQuoteParams';
+export type { CryptoOnrampDepositParams } from './crypto-onramp/CryptoOnrampDepositParams';
+export type { CryptoOnrampDeposit } from './crypto-onramp/CryptoOnrampDeposit';
+export type { CryptoOnrampStatusParams } from './crypto-onramp/CryptoOnrampStatusParams';
+export type { CryptoOnrampStatus } from './crypto-onramp/CryptoOnrampStatus';
+export type {
+    CryptoOnrampProviderMetadata,
+    CryptoOnrampProviderMetadataOverride,
+} from './crypto-onramp/CryptoOnrampProviderMetadata';
+export type {
+    CryptoOnrampSourceCurrency,
+    CryptoOnrampDestinationCurrency,
+    CryptoOnrampSupportedCurrencies,
+} from './crypto-onramp/CryptoOnrampCurrency';
+
+// Gasless models
+export type { GaslessSupportedAsset } from './gasless/GaslessSupportedAsset';
+export type { GaslessConfig } from './gasless/GaslessConfig';
+export type { GaslessProviderMetadata, GaslessProviderMetadataOverride } from './gasless/GaslessProviderMetadata';
+export type { GaslessQuoteParams } from './gasless/GaslessQuoteParams';
+export type { GaslessQuote } from './gasless/GaslessQuote';
+export type { GaslessSendParams } from './gasless/GaslessSendParams';
+export type { GaslessSendResponse } from './gasless/GaslessSendResponse';
 
 // Transaction models
 export * from './transactions/Transaction';

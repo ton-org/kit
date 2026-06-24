@@ -39,6 +39,7 @@ export interface WalletKitBridgeInitConfig {
         apiClientConfiguration?: {
             url?: string;
             key?: string;
+            timeout?: number;
         };
         apiClientType?: 'default' | 'toncenter' | 'tonapi' | 'custom';
     }>;

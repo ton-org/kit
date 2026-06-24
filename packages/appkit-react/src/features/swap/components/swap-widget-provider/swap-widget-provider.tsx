@@ -12,8 +12,8 @@ import { formatUnits } from '@ton/appkit';
 import type { Network } from '@ton/appkit';
 import type { GetSwapQuoteData } from '@ton/appkit/queries';
 import type { SwapProvider } from '@ton/appkit';
-import { getTonShortfall } from '@ton/appkit';
-import type { TonShortfall } from '@ton/appkit';
+import { checkTransferBalance } from '@ton/appkit';
+import type { TransferShortfall } from '@ton/appkit';
 import { calcMaxSpendable } from '@ton/appkit';
 
 import { useSwapQuote } from '../../hooks/use-swap-quote';
@@ -25,7 +25,9 @@ import { useBalance } from '../../../balances/hooks/use-balance';
 import { useNetwork } from '../../../network';
 import { useSendTransaction } from '../../../transaction/hooks/use-send-transaction';
 import { useDebounceValue } from '../../../../hooks/use-debounce-value';
+import type { LowBalanceMode } from '../../../../components/shared/low-balance-modal/low-balance-modal';
 import type { AppkitUIToken } from '../../../../types/appkit-ui-token';
+import type { TokenSectionConfig } from '../../../../components/shared/token-select-modal';
 import { mapSwapWidgetTokens } from '../../utils/map-swap-widget-tokens';
 import { useSwapTokenState } from './use-swap-token-state';
 import { useSwapBalances } from './use-swap-balances';
@@ -40,6 +42,8 @@ export type { AppkitUIToken };
 export interface SwapContextType {
     /** Full list of available tokens for swapping */
     tokens: AppkitUIToken[];
+    /** Optional section configs for grouping tokens in the selector */
+    tokenSections?: TokenSectionConfig[];
     /** Currently selected source token */
     fromToken: AppkitUIToken | null;
     /** Currently selected target token */
@@ -69,11 +73,11 @@ export interface SwapContextType {
     /** Slippage tolerance in basis points (100 = 1%) */
     slippage: number;
     /** Currently selected swap provider (defaults to the first registered one) */
-    swapProvider: SwapProvider | undefined;
+    provider: SwapProvider | undefined;
     /** All registered swap providers */
-    swapProviders: SwapProvider[];
+    providers: SwapProvider[];
     /** Updates the selected swap provider */
-    setSwapProviderId: (providerId: string) => void;
+    setProviderId: (providerId: string) => void;
     /** Updates the source token */
     setFromToken: (token: AppkitUIToken) => void;
     /** Updates the target token */
@@ -90,13 +94,13 @@ export interface SwapContextType {
     sendSwapTransaction: () => Promise<void>;
     /** True while a transaction is being built or sent */
     isSendingTransaction: boolean;
-    /** True when the built transaction outflow exceeds the user's TON balance */
+    /** True when the built transaction outflow exceeds the user's GRAM balance */
     isLowBalanceWarningOpen: boolean;
-    /** `reduce` when the outgoing token is TON (user can fix by changing amount), `topup` otherwise. */
-    lowBalanceMode: 'reduce' | 'topup';
-    /** Required TON amount for the pending operation, formatted as a decimal string. Empty when no pending op. */
+    /** `reduce` when the outgoing token is GRAM (user can fix by changing amount), `topup` otherwise. */
+    lowBalanceMode: LowBalanceMode;
+    /** Required GRAM amount for the pending operation, formatted as a decimal string. Empty when no pending op. */
     lowBalanceRequiredTon: string;
-    /** Replace the input with a value that fits into the current TON balance and close the warning */
+    /** Replace the input with a value that fits into the current GRAM balance and close the warning */
     onLowBalanceChange: () => void;
     /** Dismiss the low-balance warning without changing the input */
     onLowBalanceCancel: () => void;
@@ -104,6 +108,7 @@ export interface SwapContextType {
 
 export const SwapContext = createContext<SwapContextType>({
     tokens: [],
+    tokenSections: undefined,
     fromToken: null,
     toToken: null,
     fromAmount: '',
@@ -118,9 +123,9 @@ export const SwapContext = createContext<SwapContextType>({
     isQuoteLoading: false,
     error: null,
     slippage: 50,
-    swapProvider: undefined,
-    swapProviders: [],
-    setSwapProviderId: () => {},
+    provider: undefined,
+    providers: [],
+    setProviderId: () => {},
     setFromToken: () => {},
     setToToken: () => {},
     setFromAmount: () => {},
@@ -140,9 +145,9 @@ export const SwapContext = createContext<SwapContextType>({
  * Hook to access the swap context.
  * Must be used within a SwapWidgetProvider (or SwapWidget).
  */
-export function useSwapContext() {
+export const useSwapContext = () => {
     return useContext(SwapContext);
-}
+};
 
 /**
  * Props for the SwapWidgetProvider.
@@ -150,14 +155,17 @@ export function useSwapContext() {
 export interface SwapProviderProps extends PropsWithChildren {
     /** Full list of tokens available for swapping in the UI */
     tokens: AppkitUIToken[];
-    /** Network to use for quote fetching. When omitted, uses the selected wallet's network. */
-    network?: Network;
-    /** Fiat currency symbol for price display, defaults to "$" */
-    fiatSymbol?: string;
+    /** Optional section configs for grouping tokens in the selector */
+    tokenSections?: TokenSectionConfig[];
     /** Ticker of the token pre-selected for the source */
     defaultFromSymbol?: string;
     /** Ticker of the token pre-selected for the target */
     defaultToSymbol?: string;
+    /** Initial slippage in basis points (100 = 1%), defaults to 50 (0.5%) */
+    /** Network to use for quote fetching. When omitted, uses the selected wallet's network. */
+    network?: Network;
+    /** Fiat currency symbol for price display, defaults to "$" */
+    fiatSymbol?: string;
     /** Initial slippage in basis points (100 = 1%), defaults to 100 (1%) */
     defaultSlippage?: number;
 }
@@ -165,6 +173,7 @@ export interface SwapProviderProps extends PropsWithChildren {
 export const SwapWidgetProvider: FC<SwapProviderProps> = ({
     children,
     tokens,
+    tokenSections,
     network: networkProp,
     fiatSymbol = '$',
     defaultFromSymbol,
@@ -191,10 +200,10 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
     });
     const [slippage, setSlippage] = useState(defaultSlippage);
     const [fromAmountDebounced] = useDebounceValue(fromAmount, 500);
-    const [pendingSwap, setPendingSwap] = useState<TonShortfall | undefined>(undefined);
+    const [pendingSwap, setPendingSwap] = useState<TransferShortfall | undefined>(undefined);
     const address = useAddress();
-    const [swapProvider, setSwapProviderId] = useSwapProvider();
-    const swapProviders = useSwapProviders();
+    const [provider, setProviderId] = useSwapProvider();
+    const providers = useSwapProviders();
 
     // Stabilized query inputs — kept next to the query that consumes them.
     const fromTokenParam = useMemo(
@@ -218,9 +227,8 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
     );
 
     const isNetworkSupported = useMemo(
-        () =>
-            !swapProvider || !network || swapProvider.getSupportedNetworks().some((n) => n.chainId === network.chainId),
-        [swapProvider, network],
+        () => !provider || !network || provider.getSupportedNetworks().some((n) => n.chainId === network.chainId),
+        [provider, network],
     );
 
     const {
@@ -233,7 +241,7 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
         amount: fromAmountDebounced,
         network,
         slippageBps: slippage,
-        providerId: swapProvider?.providerId,
+        providerId: provider?.providerId,
         query: { enabled: isNetworkSupported, networkMode: 'always', retry: false, gcTime: 0 },
     });
     // Also show "loading" while the user is still typing (debounce in-flight) so the UI doesn't flash
@@ -284,7 +292,7 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
         isNetworkSupported,
     });
     const isLowBalanceWarningOpen = pendingSwap !== undefined;
-    const lowBalanceMode: 'reduce' | 'topup' = pendingSwap?.mode ?? 'reduce';
+    const lowBalanceMode: LowBalanceMode = pendingSwap?.mode ?? 'reduce';
     const lowBalanceRequiredTon = useMemo(() => {
         if (!pendingSwap) return '';
         return formatUnits(pendingSwap.requiredNanos, 9);
@@ -315,9 +323,10 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
 
         const tx = await buildTransaction({ quote, userAddress: address });
 
-        const shortfall = getTonShortfall({
+        const shortfall = checkTransferBalance({
             messages: tx.messages,
             tonBalance,
+            gasBufferNanos: 100_000_000n,
             fromToken,
             fromAmount,
         });
@@ -343,6 +352,7 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
     const value = useMemo(
         () => ({
             tokens: networkFilteredTokens,
+            tokenSections,
             fromToken,
             toToken,
             fromAmount,
@@ -357,9 +367,9 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
             isQuoteLoading,
             error,
             slippage,
-            swapProvider,
-            swapProviders,
-            setSwapProviderId,
+            provider,
+            providers,
+            setProviderId,
             setFromToken,
             setToToken,
             setFromAmount,
@@ -376,6 +386,7 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
         }),
         [
             networkFilteredTokens,
+            tokenSections,
             fromToken,
             toToken,
             fromAmount,
@@ -390,9 +401,9 @@ export const SwapWidgetProvider: FC<SwapProviderProps> = ({
             isQuoteLoading,
             error,
             slippage,
-            swapProvider,
-            swapProviders,
-            setSwapProviderId,
+            provider,
+            providers,
+            setProviderId,
             setFromToken,
             setToToken,
             setFromAmount,

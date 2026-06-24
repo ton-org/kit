@@ -248,7 +248,7 @@ export class AgenticSetupSessionManager {
             return true;
         }
 
-        this.syncFromStore();
+        await this.syncFromStore();
         const session = this.sessions.get(match[1]!);
         if (!session) {
             this.writeCorsHeaders(res);

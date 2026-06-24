@@ -159,7 +159,7 @@ describe('createTonWalletMCP registry mode', () => {
             expect(balance).toMatchObject({
                 success: true,
                 address: second.address,
-                balanceNano: '2000000000',
+                amountRaw: '2000000000',
             });
             expect(closeContext).toHaveBeenCalledTimes(3);
         } finally {
@@ -372,16 +372,76 @@ describe('createTonWalletMCP registry mode', () => {
 
         try {
             const result = await client.callTool({
-                name: 'send_ton',
+                name: 'send_raw_transaction',
                 arguments: {
-                    toAddress: firstAddress,
-                    amount: '0.1',
+                    messages: [{ address: firstAddress, amount: '100000000' }],
                 },
             });
             expect(result.isError).toBe(true);
             const text = result.content[0] && 'text' in result.content[0] ? result.content[0].text : '';
             expect(text).toContain('operator_private_key');
             expect(mocks.createMcpWalletServiceFromStoredWallet).not.toHaveBeenCalled();
+        } finally {
+            await client.close();
+            await server.close();
+        }
+    });
+
+    it('allows build tools for agentic wallets without operator key in registry mode', async () => {
+        saveConfig({
+            ...createEmptyConfig(),
+            active_wallet_id: 'agent-1',
+            wallets: [
+                {
+                    id: 'agent-1',
+                    type: 'agentic',
+                    name: 'Read-only agent',
+                    network: 'mainnet',
+                    address: secondAddress,
+                    owner_address: firstAddress,
+                    created_at: '2026-03-10T00:00:00.000Z',
+                    updated_at: '2026-03-10T00:00:00.000Z',
+                },
+            ],
+        });
+
+        const closeContext = vi.fn();
+        const buildTonTransferTransaction = vi.fn(async () => ({
+            messages: [{ address: firstAddress, amount: '100000000' }],
+            validUntil: 123,
+            fromAddress: secondAddress,
+        }));
+        mocks.createMcpWalletServiceFromStoredWallet.mockImplementation(async () => ({
+            service: { buildTonTransferTransaction, close: closeContext },
+            close: closeContext,
+        }));
+
+        const server = await createTonWalletMCP({});
+        const client = new Client({ name: 'mcp-test', version: '1.0.0' });
+        const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+
+        await server.connect(serverTransport);
+        await client.connect(clientTransport);
+
+        try {
+            const result = parseToolResult(
+                await client.callTool({
+                    name: 'build_ton_transfer',
+                    arguments: {
+                        toAddress: firstAddress,
+                        amount: '0.1',
+                    },
+                }),
+            );
+
+            expect(result).toMatchObject({
+                success: true,
+                transaction: {
+                    messages: [{ address: firstAddress, amount: '100000000' }],
+                    fromAddress: secondAddress,
+                },
+            });
+            expect(buildTonTransferTransaction).toHaveBeenCalledWith(firstAddress, '100000000', undefined);
         } finally {
             await client.close();
             await server.close();

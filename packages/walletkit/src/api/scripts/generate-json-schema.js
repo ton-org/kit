@@ -989,6 +989,7 @@ class GenericInterfaceNodeParser {
                 // Check if the property type references a generic type parameter
                 let propType;
                 let genericTypeRef = null;
+                let genericInstanceType = null;
 
                 if (member.type) {
                     const typeText = member.type.getText();
@@ -999,6 +1000,23 @@ class GenericInterfaceNodeParser {
                     } else {
                         // Parse the type normally
                         propType = this.childNodeParser.createType(member.type, context);
+
+                        // Detect a generic instantiation parameterized by the parent's own type
+                        // params, e.g. `CryptoOnrampQuote<TQuoteMetadata>`. JSON Schema can't carry
+                        // the type argument (it collapses to a $ref to the base), so capture the
+                        // unprefixed Swift type text and let the template re-attach it. Restricted
+                        // to the case where every argument is one of this interface's type params,
+                        // so none of them need the model-name prefix.
+                        if (
+                            ts.isTypeReferenceNode(member.type) &&
+                            member.type.typeArguments &&
+                            member.type.typeArguments.length > 0 &&
+                            member.type.typeArguments.every((arg) => typeParamNames.has(arg.getText()))
+                        ) {
+                            const baseName = member.type.typeName.getText();
+                            const argList = member.type.typeArguments.map((arg) => arg.getText()).join(', ');
+                            genericInstanceType = `${baseName}<${argList}>`;
+                        }
                     }
                 } else {
                     propType = new tsj.AnyType();
@@ -1042,6 +1060,7 @@ class GenericInterfaceNodeParser {
                     description,
                     format,
                     genericTypeRef,
+                    genericInstanceType,
                 });
             }
         }
@@ -1194,6 +1213,11 @@ class GenericInterfaceTypeFormatter {
             if (prop.genericTypeRef) {
                 // Property uses a generic type parameter
                 propDef['x-generic-type-ref'] = prop.genericTypeRef;
+            } else if (prop.genericInstanceType) {
+                // Property is a generic instantiation parameterized by the parent's type params
+                // (e.g. CryptoOnrampQuote<TQuoteMetadata>). Emit it as a vendor extension instead
+                // of a $ref so the type argument survives to the Swift template.
+                propDef['x-generic-instance-type'] = prop.genericInstanceType;
             } else {
                 // Get the normal type definition
                 const typeDef = this.childTypeFormatter.getDefinition(prop.type);
@@ -1269,6 +1293,8 @@ class GenericPropertiesObjectTypeFormatter {
 
             if (prop.genericTypeRef) {
                 propDef['x-generic-type-ref'] = prop.genericTypeRef;
+            } else if (prop.genericInstanceType) {
+                propDef['x-generic-instance-type'] = prop.genericInstanceType;
             } else {
                 const typeDef = this.childTypeFormatter.getDefinition(prop.type);
                 Object.assign(propDef, typeDef);

@@ -9,7 +9,7 @@
 /**
  * WalletKit initialization helpers used by the bridge entry point.
  */
-import type { BridgeResponse, BridgeEvent } from '@ton/walletkit';
+import type { BridgeResponse, BridgeEvent, Network } from '@ton/walletkit';
 import { TONCONNECT_BRIDGE_EVENT, ApiClientTonApi, ApiClientToncenter } from '@ton/walletkit';
 import { TONCONNECT_BRIDGE_RESPONSE } from '@ton/walletkit/bridge';
 
@@ -29,7 +29,7 @@ import {
     AndroidTONConnectSessionsManager,
 } from '../adapters/AndroidTONConnectSessionsManager';
 import { AndroidAPIClientAdapter } from '../adapters/AndroidAPIClientAdapter';
-import { unwrapRef } from '../transport/nativeBridge';
+import { bridgeRequestSyncTyped, isBridgeAvailable, unwrapRef } from '../transport/nativeBridge';
 
 interface InitTonWalletKitDeps {
     emit: (type: WalletKitBridgeEvent['type'], data?: WalletKitBridgeEvent['data']) => void;
@@ -69,12 +69,15 @@ export async function initTonWalletKit(
                 apiClient = new ApiClientTonApi({
                     endpoint: netConfig.apiClientConfiguration?.url,
                     apiKey: netConfig.apiClientConfiguration?.key,
+                    timeout: netConfig.apiClientConfiguration?.timeout,
                     network: netConfig.network,
                 });
             } else if (type === 'toncenter') {
                 apiClient = new ApiClientToncenter({
                     endpoint: netConfig.apiClientConfiguration?.url,
                     apiKey: netConfig.apiClientConfiguration?.key,
+                    timeout: netConfig.apiClientConfiguration?.timeout,
+                    network: netConfig.network,
                 });
             } else {
                 apiClient = netConfig.apiClientConfiguration;
@@ -84,11 +87,9 @@ export async function initTonWalletKit(
         }
     }
 
-    // Check if native API clients are available and use them if so
-    if (AndroidAPIClientAdapter.isAvailable()) {
-        const availableNetworks = AndroidAPIClientAdapter.getAvailableNetworks();
-
-        for (const nativeNetwork of availableNetworks) {
+    // Use the native API clients when the host exposes them.
+    if (isBridgeAvailable()) {
+        for (const nativeNetwork of bridgeRequestSyncTyped<Network[]>('api.getNetworks', {})) {
             networksConfig[nativeNetwork.chainId] = {
                 apiClient: new AndroidAPIClientAdapter(nativeNetwork),
             };

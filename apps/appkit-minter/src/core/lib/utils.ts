@@ -12,9 +12,4 @@ import { twMerge } from 'tailwind-merge';
 
 export const cn = (...inputs: ClassValue[]) => twMerge(clsx(inputs));
 
-export const formatAddress = (address: string): string => {
-    if (address.length <= 10) return address;
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
-};
-
 export const generateId = (): string => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;

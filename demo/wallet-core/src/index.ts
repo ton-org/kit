@@ -30,8 +30,10 @@ export {
     useDisconnectEvents,
     useNfts,
     useJettons,
+    useRates,
     useSwap,
     useStaking,
+    useGasless,
 } from './hooks/useWalletStore';
 export { useFormattedTonBalance, useFormattedAmount } from './hooks/useFormattedBalance';
 export { useWalletInitialization } from './hooks/useWalletInitialization';
@@ -46,8 +48,13 @@ export type {
     TonConnectSlice,
     JettonsSlice,
     NftsSlice,
+    RatesSlice,
+    RateEntry,
     SwapSlice,
     StakingSlice,
+    GaslessSlice,
+    GaslessState,
+    GaslessQuoteRequest,
 } from './types/store';
 
 export type {

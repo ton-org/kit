@@ -38,8 +38,8 @@ export const KNOWN_JETTONS = [
         decimals: 9,
     },
     {
-        symbol: 'GRAM',
-        name: 'Gram',
+        symbol: 'GRM',
+        name: 'Grm',
         address: 'EQC47093oX5Xhb0xuk2lCr2RhS8rj-vul61u4W2UH5ORmG_O',
         decimals: 9,
     },

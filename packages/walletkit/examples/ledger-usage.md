@@ -93,7 +93,7 @@ The Ledger wallet automatically handles signing with the hardware device:
 // Create a transaction message
 const message: TransactionRequestMessage = {
     address: 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c',
-    amount: '100000000', // 0.1 TON in nanotons
+    amount: '100000000', // 0.1 GRAM in nano units
 };
 
 // Sign and send (this will prompt on Ledger device)

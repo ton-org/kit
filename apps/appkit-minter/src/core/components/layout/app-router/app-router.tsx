@@ -9,9 +9,10 @@
 import type React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useWatchBalance, useWatchTransactions, useWatchJettons, useBalance } from '@ton/appkit-react';
+import { middleEllipsis } from '@ton/appkit';
 import { toast } from 'sonner';
 
-import { JettonsPage, MinterPage, NftsPage, StakingPage, SwapPage } from '@/pages';
+import { CryptoOnrampPage, JettonsPage, MinterPage, NftsPage, StakingPage, SwapPage } from '@/pages';
 
 export const AppRouter: React.FC = () => {
     // Set balance refetch interval to 20 seconds
@@ -26,7 +27,7 @@ export const AppRouter: React.FC = () => {
         onChange: (update) => {
             if (update.traceHash) {
                 const hash = update.traceHash;
-                const shortHash = `${hash.slice(0, 6)}...${hash.slice(-4)}`;
+                const shortHash = middleEllipsis(hash);
 
                 if (update.status === 'invalidated') {
                     toast.error(`Transaction invalidated`, { id: hash, description: shortHash });
@@ -57,6 +58,7 @@ export const AppRouter: React.FC = () => {
                 <Route path="/nfts" element={<NftsPage />} />
                 <Route path="/swap" element={<SwapPage />} />
                 <Route path="/staking" element={<StakingPage />} />
+                <Route path="/crypto-onramp" element={<CryptoOnrampPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
         </BrowserRouter>

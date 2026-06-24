@@ -1,0 +1,38 @@
+.tokenSelector:hover {
+  opacity: 0.8;
+}
+
+.readOnly {
+  cursor: default;
+}
+
+.readOnly:hover {
+  opacity: 1;
+}
+
+.symbol {
+  display: flex;
+  align-items: center;
+  padding-right: 2px;
+  margin-right: auto;
+}
+
+.chevron {
+  opacity: 0.5;
+  margin-left: auto;
+}
+
+.placeholderIcon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background-color: var(--ta-color-background-tertiary);
+}
+
+.titleSkeleton {
+  width: calc(100% - 20px);
+  min-width: 60px;
+  margin-right: auto;
+  border-radius: var(--ta-border-radius-full);
+}

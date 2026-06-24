@@ -162,7 +162,7 @@ npx @ton/mcp@alpha get_known_jettons
 
 **Approximate agent response**
 
-> `USDT` was found in the list of known jettons with master contract address `EQ...`. That address can be used with `send_jetton` or `get_swap_quote`.
+> `USDT` was found in the list of known jettons with master contract address `EQ...`. That address can be used with `build_jetton_transfer` or `get_swap_quote`.
 
 ## TON Proof Authentication
 
@@ -194,13 +194,32 @@ npx @ton/mcp@alpha generate_ton_proof --domain getgems.io --payload getgems-llm
 
 ```bash
 npx @ton/mcp@alpha resolve_dns --domain foundation.ton
-npx @ton/mcp@alpha send_ton --toAddress EQ... --amount 1
+npx @ton/mcp@alpha build_ton_transfer --toAddress EQ... --amount 1
+npx @ton/mcp@alpha emulate_transaction --messages '<transaction.messages>'
+npx @ton/mcp@alpha send_raw_transaction --messages '<transaction.messages>' --fromAddress '<transaction.fromAddress>'
 npx @ton/mcp@alpha get_transaction_status --normalizedHash <NORMALIZED_HASH>
 ```
 
 **Approximate agent response**
 
 > `foundation.ton` was resolved to TON address `EQ...`. The `1 TON` transfer was sent with `normalizedHash: <NORMALIZED_HASH>`. Transaction status: `completed`.
+
+### Preview a TON transfer before sending
+
+**User request**
+
+`Prepare a 0.5 TON payment to UQAbc... and show me what happens before sending`
+
+**Approximate command list**
+
+```bash
+npx @ton/mcp@alpha build_ton_transfer --toAddress UQAbc... --amount 0.5
+npx @ton/mcp@alpha emulate_transaction --messages '<transaction.messages>'
+```
+
+**Approximate agent response**
+
+> Prepared the `0.5 TON` transfer (it was not sent). Emulation shows the expected balance changes and fees. Confirm to broadcast it with `send_raw_transaction`.
 
 ### Send a jetton
 
@@ -212,13 +231,15 @@ npx @ton/mcp@alpha get_transaction_status --normalizedHash <NORMALIZED_HASH>
 
 ```bash
 npx @ton/mcp@alpha get_jettons
-npx @ton/mcp@alpha send_jetton --jettonAddress EQ... --toAddress UQAbc... --amount 25
+npx @ton/mcp@alpha build_jetton_transfer --jettonAddress EQ... --toAddress UQAbc... --amount 25
+npx @ton/mcp@alpha emulate_transaction --messages '<transaction.messages>'
+npx @ton/mcp@alpha send_raw_transaction --messages '<transaction.messages>' --fromAddress '<transaction.fromAddress>'
 npx @ton/mcp@alpha get_transaction_status --normalizedHash <NORMALIZED_HASH>
 ```
 
 **Approximate agent response**
 
-> `USDT` was found in the wallet, and the `25 USDT` transfer to `UQAbc...` was sent. `normalizedHash: <NORMALIZED_HASH>`. Current status: `completed`.
+> `USDT` was found in the wallet. I prepared the `25 USDT` transfer to `UQAbc...`, previewed it, then broadcast it with `send_raw_transaction`. `normalizedHash: <NORMALIZED_HASH>`. Current status: `completed`.
 
 ### Swap TON for a jetton
 
@@ -335,7 +356,9 @@ npx @ton/mcp@alpha get_nft --nftAddress EQ...
 **Approximate command list**
 
 ```bash
-npx @ton/mcp@alpha send_nft --nftAddress EQ... --toAddress UQReceiver...
+npx @ton/mcp@alpha build_nft_transfer --nftAddress EQ... --toAddress UQReceiver...
+npx @ton/mcp@alpha emulate_transaction --messages '<transaction.messages>'
+npx @ton/mcp@alpha send_raw_transaction --messages '<transaction.messages>' --fromAddress '<transaction.fromAddress>'
 npx @ton/mcp@alpha get_transaction_status --normalizedHash <NORMALIZED_HASH>
 ```
 

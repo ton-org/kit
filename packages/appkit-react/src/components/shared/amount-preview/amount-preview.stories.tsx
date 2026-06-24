@@ -13,8 +13,9 @@ import { AmountPreview } from './amount-preview';
 import type { AppkitUIToken } from '../../../types/appkit-ui-token';
 
 const tonToken: AppkitUIToken = {
-    symbol: 'TON',
-    name: 'Toncoin',
+    id: 'ton',
+    symbol: 'GRAM',
+    name: 'Gram',
     decimals: 9,
     address: 'ton',
     network: Network.mainnet(),
@@ -22,6 +23,7 @@ const tonToken: AppkitUIToken = {
 };
 
 const usdtToken: AppkitUIToken = {
+    id: 'usdt',
     symbol: 'USDT',
     name: 'Tether USD',
     decimals: 6,

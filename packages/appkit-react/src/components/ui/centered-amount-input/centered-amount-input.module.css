@@ -32,6 +32,10 @@
     opacity: 1;
 }
 
+.input:disabled {
+    pointer-events: none;
+}
+
 .ticker {
     composes: inputXlSymbol from "../../../styles/typography.module.css";
     color: var(--ta-color-text-secondary);

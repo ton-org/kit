@@ -8,6 +8,6 @@
 
 /**
  * Token amount represented as a string to preserve precision.
- * For TON, this is typically in nanotons (1 TON = 10^9 nanotons).
+ * For GRAM, this is typically in nano units (1 GRAM = 10^9 nano units).
  */
 export type TokenAmount = string;

@@ -6,12 +6,7 @@
  *
  */
 
-import type { Network, BaseProvider } from '../models';
-
-/**
- * Type of provider
- */
-export type DefiProviderType = 'swap' | 'staking';
+import type { Network, BaseProvider, DefiProviderType } from '../models';
 
 /**
  * Base interface for all DeFi providers

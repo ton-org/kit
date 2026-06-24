@@ -22,7 +22,7 @@ export interface EmulationAccountState {
     hash?: Hex;
 
     /**
-     * Account balance in nanotons
+     * Account balance in nano units
      */
     balance: TokenAmount;
 
@@ -79,7 +79,7 @@ export interface EmulationBlockRef {
  */
 export interface EmulationStoragePhase {
     /**
-     * Storage fees collected during this phase in nanotons
+     * Storage fees collected during this phase in nano units
      */
     storageFeesCollected: TokenAmount;
 
@@ -94,7 +94,7 @@ export interface EmulationStoragePhase {
  */
 export interface EmulationCreditPhase {
     /**
-     * Amount credited to the account in nanotons
+     * Amount credited to the account in nano units
      */
     credit: TokenAmount;
 }
@@ -124,7 +124,7 @@ export interface EmulationComputePhase {
     isAccountActivated: boolean;
 
     /**
-     * Gas fees charged in nanotons
+     * Gas fees charged in nano units
      */
     gasFees: TokenAmount;
 
@@ -214,12 +214,12 @@ export interface EmulationActionPhase {
     statusChange: string;
 
     /**
-     * Total forwarding fees charged in nanotons
+     * Total forwarding fees charged in nano units
      */
     totalFwdFees?: TokenAmount;
 
     /**
-     * Total action fees charged in nanotons
+     * Total action fees charged in nano units
      */
     totalActionFees?: TokenAmount;
 
@@ -376,7 +376,7 @@ export interface EmulationTransaction {
     endStatus: AccountStatus;
 
     /**
-     * Total fees paid in nanotons
+     * Total fees paid in nano units
      */
     totalFees: TokenAmount;
 

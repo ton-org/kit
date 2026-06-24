@@ -13,7 +13,7 @@ import type { DeDustQuoteMetadata } from './models';
 import type { SwapToken } from '../../../api/models';
 
 /**
- * Native TON identifier used by DeDust Router API
+ * Native GRAM identifier used by DeDust Router API
  */
 export const NATIVE_TON_MINTER = 'native';
 
@@ -45,7 +45,7 @@ export const minterToToken = (minter: string, decimals: number = 9): SwapToken =
 };
 
 /**
- * Check if token is native TON
+ * Check if token is native GRAM
  */
 export const isNativeTon = (token: SwapToken): boolean => {
     return token.address === 'ton';

@@ -9,9 +9,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { FC } from 'react';
 
+import { CheckIcon } from './check-icon';
 import { ChevronsIcon } from './chevrons-icon';
 import { ChevronDownIcon } from './chevron-down-icon';
 import { CloseIcon } from './close-icon';
+import { CopyIcon } from './copy-icon';
 import { FailedIcon } from './failed-icon';
 import { FlipIcon } from './flip-icon';
 import { ImageIcon } from './image-icon';
@@ -19,14 +21,17 @@ import { SearchIcon } from './search-icon';
 import { SlidersIcon } from './sliders-icon';
 import { SpinnerIcon } from './spinner-icon';
 import { SuccessIcon } from './success-icon';
+import { GramIconCircle } from './gram-icon';
 import { TonIcon, TonIconCircle } from './ton-icon';
 import { VerifiedIcon } from './verified-icon';
 import type { IconProps } from './types';
 
 const ICONS: { name: string; Component: FC<IconProps> }[] = [
+    { name: 'CheckIcon', Component: CheckIcon },
     { name: 'ChevronsIcon', Component: ChevronsIcon },
     { name: 'ChevronDownIcon', Component: ChevronDownIcon },
     { name: 'CloseIcon', Component: CloseIcon },
+    { name: 'CopyIcon', Component: CopyIcon },
     { name: 'FailedIcon', Component: FailedIcon },
     { name: 'FlipIcon', Component: FlipIcon },
     { name: 'ImageIcon', Component: ImageIcon },
@@ -34,6 +39,7 @@ const ICONS: { name: string; Component: FC<IconProps> }[] = [
     { name: 'SlidersIcon', Component: SlidersIcon },
     { name: 'SpinnerIcon', Component: SpinnerIcon },
     { name: 'SuccessIcon', Component: SuccessIcon },
+    { name: 'GramIconCircle', Component: GramIconCircle },
     { name: 'TonIcon', Component: TonIcon },
     { name: 'TonIconCircle', Component: TonIconCircle },
     { name: 'VerifiedIcon', Component: VerifiedIcon },

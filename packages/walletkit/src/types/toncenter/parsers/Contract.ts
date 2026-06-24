@@ -59,7 +59,7 @@ export function parseContractActions(
                 simplePreview: {
                     name: 'Smart Contract Execution',
                     description: 'Execution of smart contract',
-                    value: `${fromNano(String(tonAttached))} TON`,
+                    value: `${fromNano(String(tonAttached))} GRAM`,
                     accounts: [toAccount(ownerFriendly, addressBook), toContractAccount(contractAddress, addressBook)],
                 },
                 baseTransactions: [baseTx],

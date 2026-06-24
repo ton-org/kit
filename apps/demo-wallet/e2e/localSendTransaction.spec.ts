@@ -47,9 +47,10 @@ test.describe('Local Send Transaction', () => {
         // Send TON locally to own address and approve
         await wallet.sendTonToSelf('0.001', true);
 
-        // Verify we're back on wallet page (transaction was processed)
+        // Verify we're back on the dashboard (transaction was processed). The settings
+        // button only exists on the wallet dashboard, so it's a stable anchor.
         const app = await wallet.open();
-        await expect(app.getByTestId('title').filter({ hasText: 'TON Wallet' })).toBeVisible({ timeout: 10000 });
+        await expect(app.getByTestId('wallet-menu')).toBeVisible({ timeout: 10000 });
 
         await wallet.close();
     });

@@ -16,9 +16,9 @@ import type {
     StakingQuote,
 } from '../../api/models';
 import type { StakingAPI, StakingProviderInterface } from '../../api/interfaces';
-import { StakingError, StakingErrorCode } from './errors';
 import { globalLogger } from '../../core/Logger';
 import { DefiManager } from '../DefiManager';
+import { toDefiError } from '../errors';
 import type { ProviderFactoryContext } from '../../types/factory';
 
 const log = globalLogger.createChild('StakingManager');
@@ -47,12 +47,12 @@ export class StakingManager extends DefiManager<StakingProviderInterface> implem
             return quote;
         } catch (error) {
             log.error('Failed to get staking quote', { error, params });
-            throw error;
+            throw toDefiError(error, 'Failed to get staking quote');
         }
     }
 
     /**
-     * Stake TON using a provider
+     * Stake GRAM using a provider
      * @param params - Staking parameters
      * @param providerId - Optional provider id to use
      */
@@ -62,7 +62,7 @@ export class StakingManager extends DefiManager<StakingProviderInterface> implem
             return await this.getProvider(providerId).buildStakeTransaction(params);
         } catch (error) {
             log.error('Failed to build staking transaction', { error, params });
-            throw error;
+            throw toDefiError(error, 'Failed to build staking transaction');
         }
     }
 
@@ -87,7 +87,7 @@ export class StakingManager extends DefiManager<StakingProviderInterface> implem
             return await this.getProvider(providerId).getStakedBalance(userAddress, network);
         } catch (error) {
             log.error('Failed to get staking balance', { error, userAddress, network });
-            throw error;
+            throw toDefiError(error, 'Failed to get staking balance');
         }
     }
 
@@ -106,7 +106,7 @@ export class StakingManager extends DefiManager<StakingProviderInterface> implem
             return await this.getProvider(providerId).getStakingProviderInfo(network);
         } catch (error) {
             log.error('Failed to get staking info', { error, network });
-            throw error;
+            throw toDefiError(error, 'Failed to get staking info');
         }
     }
 
@@ -125,15 +125,7 @@ export class StakingManager extends DefiManager<StakingProviderInterface> implem
             return this.getProvider(providerId).getStakingProviderMetadata(network);
         } catch (error) {
             log.error('Failed to get staking metadata', { error, network });
-            throw error;
+            throw toDefiError(error, 'Failed to get staking metadata');
         }
-    }
-
-    protected createError(message: string, code: string, details?: unknown): StakingError {
-        const errorCode = Object.values(StakingErrorCode).includes(code as StakingErrorCode)
-            ? (code as StakingErrorCode)
-            : StakingErrorCode.InvalidParams;
-        log.error(message, { code, details });
-        return new StakingError(message, errorCode, details);
     }
 }

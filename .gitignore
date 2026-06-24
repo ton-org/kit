@@ -1,5 +1,6 @@
 *node_modules*
 .env
+.env.integration.local
 .DS_Store
 *dist
 dist-android
@@ -39,3 +40,4 @@ release-artifacts
 *.tgz
 apps/appkit-minter/Caddyfile
 Caddyfile
+.superset

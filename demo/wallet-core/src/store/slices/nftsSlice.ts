@@ -57,8 +57,7 @@ export const createNftsSlice: NftsSliceCreator = (set: SetState, get) => ({
         try {
             log.info('Loading user NFTs', { address, limit });
 
-            const wallets = state.walletCore.walletKit.getWallets();
-            const wallet = wallets.find((w) => w.getAddress() === address);
+            const wallet = state.walletManagement.currentWallet;
 
             if (!wallet) {
                 throw new Error('Wallet not found');
@@ -112,8 +111,7 @@ export const createNftsSlice: NftsSliceCreator = (set: SetState, get) => ({
         try {
             log.info('Refreshing user NFTs', { address });
 
-            const wallets = state.walletCore.walletKit.getWallets();
-            const wallet = wallets.find((w) => w.getAddress() === address);
+            const wallet = state.walletManagement.currentWallet;
 
             if (!wallet) {
                 throw new Error('Wallet not found');
@@ -166,8 +164,7 @@ export const createNftsSlice: NftsSliceCreator = (set: SetState, get) => ({
         try {
             log.info('Loading more user NFTs', { address, offset: state.nfts.offset });
 
-            const wallets = state.walletCore.walletKit.getWallets();
-            const wallet = wallets.find((w) => w.getAddress() === address);
+            const wallet = state.walletManagement.currentWallet;
 
             if (!wallet) {
                 throw new Error('Wallet not found');

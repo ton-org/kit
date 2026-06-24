@@ -13,6 +13,13 @@ export interface ToolResponse {
     isError?: boolean;
 }
 
+export function toolError(message: string): ToolResponse {
+    return {
+        content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: message }) }],
+        isError: true,
+    };
+}
+
 /**
  * Converts a human-readable amount to raw units.
  */

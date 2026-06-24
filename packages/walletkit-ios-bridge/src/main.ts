@@ -41,6 +41,8 @@ import type {
     StakingProviderInterface,
     StakingAPI,
     EmbeddedRequestEvent,
+    GaslessAPI,
+    GaslessProviderInterface,
 } from '@ton/walletkit';
 import {
     CreateTonMnemonic,
@@ -61,6 +63,8 @@ import { DeDustSwapProvider } from '@ton/walletkit/swap/dedust';
 import type { DeDustSwapProviderConfig } from '@ton/walletkit/swap/dedust';
 import { TonStakersStakingProvider } from '@ton/walletkit/staking/tonstakers';
 import type { TonStakersProviderConfig } from '@ton/walletkit/staking/tonstakers';
+import { TonApiGaslessProvider } from '@ton/walletkit/gasless/tonapi';
+import type { TonApiGaslessProviderConfig } from '@ton/walletkit/gasless/tonapi';
 
 import { SwiftStorageAdapter } from './SwiftStorageAdapter';
 import { SwiftWalletAdapter } from './SwiftWalletAdapter';
@@ -195,7 +199,7 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, sessionMa
             return initialized && !!walletKit;
         },
 
-        jettonsManager(): JettonsAPI {
+        jettons(): JettonsAPI {
             return walletKit.jettons;
         },
 
@@ -276,7 +280,7 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, sessionMa
 
         async createV4R2WalletAdapter(
             signer: WalletSigner | SwiftWalletSigner,
-            parameters: { network: Network; domain?: SignatureDomain },
+            parameters: { network: Network; domain?: SignatureDomain; walletId?: number | bigint; workchain?: number },
         ): Promise<WalletAdapter> {
             if (!initialized) throw new Error('WalletKit Bridge not initialized');
 
@@ -292,13 +296,15 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, sessionMa
             return await WalletV4R2Adapter.create(this.jsSigner(signer), {
                 client: walletKit.getApiClient(network),
                 network: network,
+                walletId: parameters.walletId,
+                workchain: parameters.workchain,
                 domain: parameters.domain,
             });
         },
 
         async createV5R1WalletAdapter(
             signer: WalletSigner | SwiftWalletSigner,
-            parameters: { network: Network; domain?: SignatureDomain },
+            parameters: { network: Network; domain?: SignatureDomain; walletId?: number | bigint; workchain?: number },
         ): Promise<WalletAdapter> {
             if (!initialized) throw new Error('WalletKit Bridge not initialized');
 
@@ -314,6 +320,8 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, sessionMa
             return await WalletV5R1Adapter.create(this.jsSigner(signer), {
                 client: walletKit.getApiClient(network),
                 network: network,
+                walletId: parameters.walletId,
+                workchain: parameters.workchain,
                 domain: parameters.domain,
             });
         },
@@ -364,11 +372,11 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, sessionMa
             return walletAdapter;
         },
 
-        getWallet(address: string): Wallet | undefined {
+        getWallet(walletId: string): Wallet | undefined {
             if (!initialized) throw new Error('WalletKit Bridge not initialized');
 
-            console.log('🔍 Bridge: Getting wallet for address:', address);
-            return walletKit.getWallet(address);
+            console.log('🔍 Bridge: Getting wallet for walletId:', walletId);
+            return walletKit.getWallet(walletId);
         },
 
         async removeWallet(address: string): Promise<void> {
@@ -609,6 +617,10 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, sessionMa
             return TonStakersStakingProvider.createFromContext(walletKit.createFactoryContext(), config ?? {});
         },
 
+        createTonApiGaslessProvider(config?: TonApiGaslessProviderConfig): GaslessProviderInterface {
+            return TonApiGaslessProvider.createFromContext(walletKit.createFactoryContext(), config ?? {});
+        },
+
         swap(): SwapAPI {
             return walletKit.swap;
         },
@@ -619,6 +631,10 @@ window.initWalletKit = async (configuration, storage, bridgeTransport, sessionMa
 
         staking(): StakingAPI {
             return walletKit.staking;
+        },
+
+        gasless(): GaslessAPI {
+            return walletKit.gasless;
         },
     };
 };

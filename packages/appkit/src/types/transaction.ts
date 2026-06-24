@@ -9,8 +9,10 @@
 import type { ExtraCurrencies, TokenAmount } from '@ton/walletkit';
 
 import type { Network } from './network';
+import type { Base64String } from './primitives';
 
 export type { TransactionStatus } from '@ton/walletkit';
+export type { ExtraCurrencies } from '@ton/walletkit';
 
 export interface TransactionRequest {
     /**
@@ -56,10 +58,10 @@ export interface TransactionRequestMessage {
     /**
      * Initial state for deploying a new contract, encoded in Base64
      */
-    stateInit?: string;
+    stateInit?: Base64String;
 
     /**
      * Message payload data encoded in Base64
      */
-    payload?: string;
+    payload?: Base64String;
 }

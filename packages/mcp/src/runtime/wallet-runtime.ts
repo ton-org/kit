@@ -16,7 +16,13 @@ import {
     WalletV4R2Adapter,
     WalletV5R1Adapter,
 } from '@ton/walletkit';
-import type { TonWalletKit as TonWalletKitType, Wallet, WalletAdapter, WalletSigner } from '@ton/walletkit';
+import type {
+    ProviderInput,
+    TonWalletKit as TonWalletKitType,
+    Wallet,
+    WalletAdapter,
+    WalletSigner,
+} from '@ton/walletkit';
 
 import { AgenticWalletAdapter } from '../contracts/agentic_wallet/AgenticWalletAdapter.js';
 import type { IContactResolver } from '../types/contacts.js';
@@ -32,6 +38,7 @@ import type {
 } from '../registry/config.js';
 import { parsePrivateKeyInput } from '../utils/private-key.js';
 import { createApiClient } from '../utils/ton-client.js';
+import type { BaseProvider } from '../../../walletkit/dist/cjs/index.js';
 
 export interface WalletServiceContext {
     service: McpWalletService;
@@ -107,6 +114,7 @@ async function createServiceFromStoredStandard(
     wallet: StoredStandardWallet,
     contacts: IContactResolver | undefined,
     toncenterApiKey?: string,
+    providers?: Array<ProviderInput<BaseProvider>>,
 ): Promise<WalletServiceContext> {
     const signer = await createSignerFromSecrets({
         mnemonic: wallet.mnemonic,
@@ -128,6 +136,7 @@ async function createServiceFromStoredStandard(
             networks: {
                 [wallet.network]: toncenterApiKey ? { apiKey: toncenterApiKey } : undefined,
             },
+            providers,
         });
         return {
             service,
@@ -183,6 +192,7 @@ async function createServiceFromStoredAgentic(
     contacts: IContactResolver | undefined,
     toncenterApiKey?: string,
     requiresSigning?: boolean,
+    providers?: Array<ProviderInput<BaseProvider>>,
 ): Promise<WalletServiceContext> {
     if (requiresSigning && !wallet.operator_private_key) {
         throw new Error(`Agentic wallet "${wallet.name}" is missing operator_private_key.`);
@@ -216,6 +226,7 @@ async function createServiceFromStoredAgentic(
             networks: {
                 [wallet.network]: toncenterApiKey ? { apiKey: toncenterApiKey } : undefined,
             },
+            providers,
             limitsCache: createConfigBackedLimitsCache(wallet),
         });
         return {
@@ -235,10 +246,17 @@ export async function createMcpWalletServiceFromStoredWallet(input: {
     contacts?: IContactResolver;
     toncenterApiKey?: string;
     requiresSigning?: boolean;
+    providers?: Array<ProviderInput<BaseProvider>>;
 }): Promise<WalletServiceContext> {
     return input.wallet.type === 'standard'
-        ? createServiceFromStoredStandard(input.wallet, input.contacts, input.toncenterApiKey)
-        : createServiceFromStoredAgentic(input.wallet, input.contacts, input.toncenterApiKey, input.requiresSigning);
+        ? createServiceFromStoredStandard(input.wallet, input.contacts, input.toncenterApiKey, input.providers)
+        : createServiceFromStoredAgentic(
+              input.wallet,
+              input.contacts,
+              input.toncenterApiKey,
+              input.requiresSigning,
+              input.providers,
+          );
 }
 
 export async function deriveStandardWalletAddress(input: {

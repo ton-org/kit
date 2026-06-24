@@ -10,19 +10,19 @@ export const formatLargeValue = (amount: string, decimals: number = 2, minimumFr
     const cleanAmount = amount.toString().replace(/\s/g, '');
     const intPart = cleanAmount.split('.')[0] || '0';
 
-    // value > 100 000 000 000 000 => 100 T
+    // 13+ integer digits (>= 1e12) => trillions, e.g. "1.23T"
     if (intPart.length > 12) {
         const value = Number(intPart.slice(0, -10)) / 100;
         return `${value.toLocaleString('en-US')}T`;
     }
 
-    // value > 100 000 000 000 => 100 B
+    // 10+ integer digits (>= 1e9) => billions, e.g. "1.23B"
     if (intPart.length > 9) {
         const value = Number(intPart.slice(0, -7)) / 100;
         return `${value.toLocaleString('en-US')}B`;
     }
 
-    // value > 10 000 000 => 10 M
+    // 7+ integer digits (>= 1e6) => millions, e.g. "1.23M"
     if (intPart.length > 6) {
         const value = Number(intPart.slice(0, -4)) / 100;
         return `${value.toLocaleString('en-US')}M`;

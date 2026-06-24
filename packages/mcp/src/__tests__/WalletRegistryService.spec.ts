@@ -107,7 +107,7 @@ describe('WalletRegistryService', () => {
     });
 
     it('persists per-network config updates', async () => {
-        const registry = new WalletRegistryService();
+        const registry = new WalletRegistryService({});
 
         const updated = await registry.setNetworkConfig('testnet', {
             toncenter_api_key: 'test-key',
@@ -120,7 +120,7 @@ describe('WalletRegistryService', () => {
     });
 
     it('uses runtime network overrides in registry mode', async () => {
-        const registry = new WalletRegistryService(undefined, {
+        const registry = new WalletRegistryService({}, undefined, {
             mainnet: {
                 apiKey: 'override-key',
             },
@@ -157,7 +157,7 @@ describe('WalletRegistryService', () => {
             close,
         });
 
-        const registry = new WalletRegistryService();
+        const registry = new WalletRegistryService({});
         const context = await registry.createWalletService();
 
         expect(context.wallet).toMatchObject({ id: standard.id, address: standard.address });
@@ -189,7 +189,7 @@ describe('WalletRegistryService', () => {
             close: vi.fn(),
         });
 
-        const registry = new WalletRegistryService(undefined, {
+        const registry = new WalletRegistryService({}, undefined, {
             mainnet: { apiKey: 'override-key' },
         });
         const config = await registry.getNetworkConfig('mainnet');
@@ -217,7 +217,7 @@ describe('WalletRegistryService', () => {
             wallets: [wallet],
         });
 
-        const registry = new WalletRegistryService();
+        const registry = new WalletRegistryService({});
 
         await expect(registry.createWalletService(undefined, { requiresSigning: true })).rejects.toThrow(
             /missing operator_private_key/i,
@@ -238,7 +238,7 @@ describe('WalletRegistryService', () => {
             wallets: [wallet],
         });
 
-        const registry = new WalletRegistryService();
+        const registry = new WalletRegistryService({});
 
         await expect(registry.createWalletService(undefined, { requiresSigning: true })).rejects.toThrow(
             /missing operator_private_key/i,
@@ -271,7 +271,7 @@ describe('WalletRegistryService', () => {
             name: 'On-chain agent',
         });
 
-        const registry = new WalletRegistryService();
+        const registry = new WalletRegistryService({});
         const result = await registry.importAgenticWallet({
             address: agentAddress,
             network: 'mainnet',
@@ -306,7 +306,7 @@ describe('WalletRegistryService', () => {
             pending_agentic_deployments: [pending],
         });
 
-        const registry = new WalletRegistryService();
+        const registry = new WalletRegistryService({});
         const wallet = await registry.completePendingAgenticSetup({
             setupId: pending.id,
             validatedWallet: {
@@ -355,7 +355,7 @@ describe('WalletRegistryService', () => {
             wallets: [wallet],
         });
 
-        const registry = new WalletRegistryService();
+        const registry = new WalletRegistryService({});
         const result = await registry.startAgenticKeyRotation({});
 
         expect(result.wallet.id).toBe(wallet.id);
@@ -399,7 +399,7 @@ describe('WalletRegistryService', () => {
             wallets: [wallet],
         });
 
-        const registry = new WalletRegistryService();
+        const registry = new WalletRegistryService({});
         const started = await registry.startAgenticKeyRotation({
             walletSelector: wallet.id,
         });
@@ -444,7 +444,7 @@ describe('WalletRegistryService', () => {
             wallets: [wallet],
         });
 
-        const registry = new WalletRegistryService();
+        const registry = new WalletRegistryService({});
         const started = await registry.startAgenticKeyRotation({
             walletSelector: wallet.id,
             operatorPrivateKey: '0xmanual-private',
@@ -480,7 +480,7 @@ describe('WalletRegistryService', () => {
             pending_agentic_deployments: [pending],
         });
 
-        const registry = new WalletRegistryService();
+        const registry = new WalletRegistryService({});
 
         await expect(
             registry.completePendingAgenticSetup({
@@ -510,7 +510,7 @@ describe('WalletRegistryService', () => {
             pending_agentic_deployments: [pending],
         });
 
-        const registry = new WalletRegistryService();
+        const registry = new WalletRegistryService({});
 
         await expect(
             registry.completePendingAgenticSetup({
@@ -544,7 +544,7 @@ describe('WalletRegistryService', () => {
         mocks.validateAgenticWalletAddress.mockResolvedValue(expectedWallets[0]);
         mocks.listAgenticWalletsByOwner.mockResolvedValue(expectedWallets);
 
-        const registry = new WalletRegistryService();
+        const registry = new WalletRegistryService({});
         const validated = await registry.validateAgenticWallet({ address: agentAddress, network: 'testnet' });
         const listed = await registry.listAgenticWalletsByOwner({ ownerAddress, network: 'mainnet' });
 
@@ -573,7 +573,7 @@ describe('WalletRegistryService', () => {
             wallets: [first, second],
         });
 
-        const registry = new WalletRegistryService();
+        const registry = new WalletRegistryService({});
         const result = await registry.removeWallet(first.id);
 
         expect(result.removedWalletId).toBe(first.id);

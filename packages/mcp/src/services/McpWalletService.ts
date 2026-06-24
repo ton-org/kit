@@ -37,6 +37,8 @@ import type {
     TransactionRequest,
     TransactionStatusResponse,
     ProofMessage,
+    BaseProvider,
+    ProviderInput,
 } from '@ton/walletkit';
 import type { OmnistonProviderOptions } from '@ton/walletkit/swap/omniston';
 import { OmnistonSwapProvider } from '@ton/walletkit/swap/omniston';
@@ -150,7 +152,7 @@ export interface TransactionInfo {
         | 'SmartContractExec'
         | 'Unknown';
     status: 'success' | 'failure';
-    // For TON transfers
+    // For GRAM transfers
     from?: string;
     to?: string;
     amount?: string;
@@ -177,6 +179,22 @@ export interface TransferResult {
     normalizedHash?: string;
 }
 
+/** JSON-serializable message: amount is a nanoton string, stateInit/payload are Base64. */
+export interface PreparedTransactionMessage {
+    address: string;
+    amount: string;
+    stateInit?: string;
+    payload?: string;
+}
+
+/** A transaction built but not signed or broadcast. */
+export interface PreparedTransaction {
+    messages: PreparedTransactionMessage[];
+    validUntil?: number;
+    /** Wallet the transaction was built for. Pass it back to send_raw_transaction: jetton/NFT messages are bound to this sender. */
+    fromAddress?: string;
+}
+
 export interface DeployAgenticSubwalletResult extends TransferResult {
     subwalletAddress?: string;
     subwalletNftIndex?: string;
@@ -201,16 +219,8 @@ export interface SwapQuoteResult {
     minReceived: string;
     provider: string;
     expiresAt?: number;
-    /** Raw transaction params ready to send */
-    transaction: {
-        messages: Array<{
-            address: string;
-            amount: string;
-            stateInit?: string;
-            payload?: string;
-        }>;
-        validUntil?: number;
-    };
+    /** Prepared transaction ready to preview/broadcast via send_raw_transaction. */
+    transaction: PreparedTransaction;
 }
 
 /**
@@ -247,6 +257,8 @@ export interface McpWalletServiceConfig {
         mainnet?: NetworkConfig;
         testnet?: NetworkConfig;
     };
+
+    providers?: Array<ProviderInput<BaseProvider>>;
     /** Per-wallet limits cache (config-backed). Absent = re-sync limits on every send. */
     limitsCache?: LimitsCache;
 }
@@ -259,6 +271,8 @@ interface McpWalletServiceInternalConfig {
         mainnet?: NetworkConfig;
         testnet?: NetworkConfig;
     };
+
+    providers?: Array<ProviderInput<BaseProvider>>;
     limitsCache?: LimitsCache;
 }
 
@@ -441,6 +455,19 @@ export class McpWalletService {
         };
     }
 
+    private static toPreparedTransaction(tx: TransactionRequest): PreparedTransaction {
+        return {
+            messages: tx.messages.map((m) => ({
+                address: m.address,
+                amount: m.amount.toString(),
+                ...(m.stateInit ? { stateInit: m.stateInit } : {}),
+                ...(m.payload ? { payload: m.payload } : {}),
+            })),
+            validUntil: tx.validUntil,
+            ...(tx.fromAddress ? { fromAddress: tx.fromAddress } : {}),
+        };
+    }
+
     static async create(config: McpWalletServiceConfig): Promise<McpWalletService> {
         const wallet = await wrapWalletInterface(config.wallet);
         return new McpWalletService({ ...config, wallet });
@@ -488,19 +515,25 @@ export class McpWalletService {
                 defaultSlippageBps: 100,
             });
             this.kit.swap.registerProvider(omnistonProvider);
+
+            if (this.config.providers) {
+                for (const providerInput of this.config.providers) {
+                    this.kit.registerProvider(providerInput);
+                }
+            }
         }
         return this.kit;
     }
 
     /**
-     * Get TON balance
+     * Get GRAM balance
      */
     async getBalance(): Promise<string> {
         return this.wallet.getBalance();
     }
 
     /**
-     * Get TON balance for any address.
+     * Get GRAM balance for any address.
      */
     async getBalanceByAddress(address: string): Promise<AddressBalanceResult> {
         const normalizedAddress = Address.parse(address).toString();
@@ -709,8 +742,23 @@ export class McpWalletService {
         return results;
     }
 
+    /** Builds the transfer without signing or broadcasting it. */
+    async buildTonTransferTransaction(
+        toAddress: string,
+        amountNano: string,
+        comment?: string,
+    ): Promise<PreparedTransaction> {
+        return McpWalletService.toPreparedTransaction(
+            await this.wallet.createTransferTonTransaction({
+                recipientAddress: toAddress,
+                transferAmount: amountNano,
+                comment,
+            }),
+        );
+    }
+
     /**
-     * Build → enforce on-chain-anchored spend limits → broadcast. Every send path
+     * Build → enforce on-chain-anchored spend limits → broadcast. The raw-send path
      * routes through this single choke point. Limits apply only to agentic wallets;
      * other wallets, and wallets with no on-chain limits, pass straight through.
      */
@@ -919,39 +967,20 @@ export class McpWalletService {
         );
     }
 
-    /**
-     * Send TON
-     */
-    async sendTon(toAddress: string, amountNano: string, comment?: string): Promise<TransferResult> {
-        return this.sendWithLimits(
-            () =>
-                this.wallet.createTransferTonTransaction({
-                    recipientAddress: toAddress,
-                    transferAmount: amountNano,
-                    comment,
-                }),
-            `Successfully sent ${amountNano} nanoTON to ${toAddress}`,
-        );
-    }
-
-    /**
-     * Send Jetton
-     */
-    async sendJetton(
+    /** Builds the transfer without signing or broadcasting it. */
+    async buildJettonTransferTransaction(
         toAddress: string,
         jettonAddress: string,
         amountRaw: string,
         comment?: string,
-    ): Promise<TransferResult> {
-        return this.sendWithLimits(
-            () =>
-                this.wallet.createTransferJettonTransaction({
-                    recipientAddress: toAddress,
-                    jettonAddress,
-                    transferAmount: amountRaw,
-                    comment,
-                }),
-            `Successfully sent jettons to ${toAddress}`,
+    ): Promise<PreparedTransaction> {
+        return McpWalletService.toPreparedTransaction(
+            await this.wallet.createTransferJettonTransaction({
+                recipientAddress: toAddress,
+                jettonAddress,
+                transferAmount: amountRaw,
+                comment,
+            }),
         );
     }
 
@@ -983,7 +1012,7 @@ export class McpWalletService {
             this.assertAgenticWalletVersion();
 
             if (!/^\d+$/.test(params.amountNano) || BigInt(params.amountNano) <= 0n) {
-                throw new Error('amountNano must be a positive integer in nanotons');
+                throw new Error('amountNano must be a positive integer in nano units');
             }
 
             const operatorPublicKey = McpWalletService.parseUint256(params.operatorPublicKey, 'operatorPublicKey');
@@ -1107,7 +1136,7 @@ export class McpWalletService {
      * Get swap quote with transaction params ready to execute
      * @param fromToken Token to swap from ("TON" or jetton address)
      * @param toToken Token to swap to ("TON" or jetton address)
-     * @param amount Amount to swap in human-readable format (e.g., "1.5" for 1.5 TON)
+     * @param amount Amount to swap in human-readable format (e.g., "1.5" for 1.5 GRAM)
      * @param slippageBps Slippage tolerance in basis points (default 100 = 1%)
      */
     async getSwapQuote(
@@ -1119,7 +1148,7 @@ export class McpWalletService {
         const network = this.wallet.getNetwork();
         const kit = await this.getKit();
 
-        // Get decimals for tokens (TON has 9 decimals, jettons need to be fetched)
+        // Get decimals for tokens (GRAM has 9 decimals, jettons need to be fetched)
         const getDecimals = async (token: string): Promise<number> => {
             if (token === 'TON' || token === 'ton') {
                 return 9;
@@ -1158,15 +1187,7 @@ export class McpWalletService {
             minReceived: quote.minReceived,
             provider: quote.providerId,
             expiresAt: quote.expiresAt,
-            transaction: {
-                messages: tx.messages.map((m) => ({
-                    address: m.address,
-                    amount: m.amount.toString(),
-                    stateInit: m.stateInit,
-                    payload: m.payload,
-                })),
-                validUntil: tx.validUntil,
-            },
+            transaction: McpWalletService.toPreparedTransaction(tx),
         };
     }
 
@@ -1174,15 +1195,7 @@ export class McpWalletService {
      * Emulate a transaction without broadcasting it.
      * Returns the emulated preview with money flow analysis.
      */
-    async emulateTransaction(params: {
-        messages: Array<{
-            address: string;
-            amount: string;
-            stateInit?: string;
-            payload?: string;
-        }>;
-        validUntil?: number;
-    }) {
+    async emulateTransaction(params: PreparedTransaction) {
         const preview = await this.wallet.getTransactionPreview({
             messages: params.messages as TransactionRequest['messages'],
             validUntil: params.validUntil,
@@ -1281,18 +1294,18 @@ export class McpWalletService {
         };
     }
 
-    /**
-     * Send NFT
-     */
-    async sendNft(nftAddress: string, toAddress: string, comment?: string): Promise<TransferResult> {
-        return this.sendWithLimits(
-            () =>
-                this.wallet.createTransferNftTransaction({
-                    nftAddress,
-                    recipientAddress: toAddress,
-                    comment,
-                }),
-            `Successfully sent NFT ${nftAddress} to ${toAddress}`,
+    /** Builds the transfer without signing or broadcasting it. */
+    async buildNftTransferTransaction(
+        nftAddress: string,
+        toAddress: string,
+        comment?: string,
+    ): Promise<PreparedTransaction> {
+        return McpWalletService.toPreparedTransaction(
+            await this.wallet.createTransferNftTransaction({
+                nftAddress,
+                recipientAddress: toAddress,
+                comment,
+            }),
         );
     }
 
