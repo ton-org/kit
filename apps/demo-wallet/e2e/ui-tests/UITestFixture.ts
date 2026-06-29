@@ -11,6 +11,7 @@ import { fileURLToPath } from 'url';
 
 import type { BrowserContext, Page } from '@playwright/test';
 import { test } from '@playwright/test';
+import { historyId } from 'allure-js-commons';
 
 import { getExtensionId, launchPersistentContext, testWith } from '../qa';
 import { isExtensionWalletSource } from '../qa/WalletApp';
@@ -41,7 +42,7 @@ export function uiTestFixture(config: UITestConfig = {}, slowMo = 0) {
     const walletSource = config.walletSource ?? detectWalletSource();
     const isExtension = isExtensionWalletSource(walletSource);
 
-    return test.extend<UITestFixture>({
+    const extended = test.extend<UITestFixture>({
         webOnly: [
             // eslint-disable-next-line no-empty-pattern
             async ({}, use) => {
@@ -69,6 +70,20 @@ export function uiTestFixture(config: UITestConfig = {}, slowMo = 0) {
             await use(page);
         },
     });
+
+    // Pin a stable Allure historyId for every ui-test so TestOps linking is zero-manual
+    // and survives refactors. The key is the test's SEMANTIC identity — the describe
+    // chain plus the test title (testInfo.titlePath without the leading file-path element).
+    // This is independent of the spec file's path and of line:col, so editing a spec
+    // (line shifts) or moving/renaming the file no longer orphans the TestOps case, and
+    // new tests still auto-create a case on launch close. No manual @allureId pinning needed.
+    // eslint-disable-next-line no-empty-pattern
+    extended.beforeEach(async ({}, testInfo) => {
+        const semanticKey = testInfo.titlePath.slice(1).join(' > ');
+        await historyId(semanticKey);
+    });
+
+    return extended;
 }
 
 export function testWithUIFixture(config: UITestConfig = {}, slowMo = 0) {

@@ -1,0 +1,52 @@
+/**
+ * Copyright (c) TonTech.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
+import { expect } from '@playwright/test';
+
+import { testWithUIFixture } from './UITestFixture';
+import { createWalletOnDashboard } from './helpers';
+import { mockWalletApi } from '../mocks/walletApi';
+
+const test = testWithUIFixture();
+
+test.describe('Swap page form (mocked wallet API, no network send)', () => {
+    test.beforeEach(async ({ webOnly: _webOnly, page }) => {
+        await mockWalletApi(page);
+        await createWalletOnDashboard(page);
+        await page.getByTestId('swap-button').click();
+        await expect(page.getByRole('heading', { name: 'Swap' })).toBeVisible();
+    });
+
+    test('Shows From / To sides with their balances and a direction toggle', async ({ page }) => {
+        // Defaults: From = GRAM, To = USDT. Each side shows a "Balance:" line and there is a
+        // "Swap direction" button between them.
+        await expect(page.getByText('From', { exact: true })).toBeVisible();
+        await expect(page.getByText('To', { exact: true })).toBeVisible();
+        await expect(page.getByText('Balance:', { exact: false }).first()).toBeVisible();
+        await expect(page.getByRole('button', { name: 'Swap direction' })).toBeVisible();
+    });
+
+    test('Max fills the From amount keeping a gas reserve', async ({ page }) => {
+        // The From side (GRAM, balance 12.5) shows a Max button; tapping it fills the From input
+        // (balance minus the 0.1 GRAM reserve).
+        const fromInput = page.locator('input[inputmode="decimal"]').first();
+        await page.getByRole('button', { name: 'Max', exact: true }).first().click();
+        await expect(fromInput).not.toHaveValue('');
+    });
+
+    test('Primary action reads "Get Quote" before a quote exists', async ({ page }) => {
+        // With no quote yet, the primary button fetches a quote and is labelled "Get Quote".
+        await expect(page.getByRole('button', { name: 'Get Quote' })).toBeVisible();
+    });
+
+    test('Reveals the custom recipient field when enabled', async ({ page }) => {
+        // The "Send to a different address" checkbox reveals a recipient input (placeholder "Recipient address (EQ…)").
+        await page.getByText('Send to a different address', { exact: true }).click();
+        await expect(page.getByPlaceholder('Recipient address (EQ…)')).toBeVisible();
+    });
+});

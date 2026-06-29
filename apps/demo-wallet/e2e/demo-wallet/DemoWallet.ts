@@ -6,6 +6,8 @@
  *
  */
 
+import { expect } from '@playwright/test';
+
 import { WalletApp } from '../qa';
 
 // const timeout = 20_000;
@@ -28,8 +30,12 @@ export class DemoWallet extends WalletApp {
         }
         const app = await this.open();
 
-        // Welcome → "Add an existing wallet" → "Recovery phrase"
+        // Welcome → "Add an existing wallet" → "Recovery phrase". Wait for the welcome action to
+        // render — the app shows a loader until WalletKit initializes, so clicking immediately
+        // after navigation races that boot. Likewise wait for the picker option to mount/animate.
+        await app.getByTestId('welcome-add-existing').waitFor({ state: 'visible' });
         await app.getByTestId('welcome-add-existing').click();
+        await app.getByTestId('add-wallet-import').waitFor({ state: 'visible' });
         await app.getByTestId('add-wallet-import').click();
 
         // Setup password
@@ -96,6 +102,95 @@ export class DemoWallet extends WalletApp {
         await chose.click();
         await modal.waitFor({ state: 'detached' });
         await this.close();
+    }
+
+    /**
+     * Approve or reject a SignMessage request (the gasless path: the dApp asks the wallet
+     * to sign an internal message without broadcasting it). The redesigned wallet renders
+     * this as a per-type "Sign message for {dApp}" modal (`sign-message-request`; actions
+     * `sign-message-approve` / `sign-message-reject`). Parity with the appkit-minter's
+     * `DemoWallet.signMessage` — the two page-objects are kept split on purpose (see
+     * TON-1682 D2; if kit moves to its own repo the object can't be shared).
+     */
+    async signMessage(confirm: boolean = true): Promise<void> {
+        const app = await this.open();
+        const modal = app.getByTestId('sign-message-request');
+        await modal.waitFor({ state: 'visible' });
+        const chose = app.getByTestId(confirm ? 'sign-message-approve' : 'sign-message-reject');
+        await chose.waitFor({ state: 'attached' });
+        await chose.click();
+        await modal.waitFor({ state: 'detached' });
+        await this.close();
+    }
+
+    /**
+     * Assert the redesigned per-type request modals' static copy + per-type action buttons WHILE
+     * THE MODAL IS OPEN, without approving/rejecting. Each method waits for the type-specific modal
+     * (same testid the approve method anchors on), asserts the verified static strings, and leaves
+     * the page open so the matching `connect`/`accept`/`signData`/`signMessage` call can proceed.
+     *
+     * Only STATIC source-verified substrings are asserted (never the interpolated `{dApp}` name):
+     *   - the title `<h2 data-testid="request">` static verb (e.g. "Connect to"),
+     *   - a distinctive disclaimer/subtitle/section substring,
+     *   - the per-type approve & reject buttons by testid.
+     * Strings traced to apps/demo-wallet/src/features/ton-connect/components/* (see TON-1701).
+     */
+    async expectConnectModal(): Promise<void> {
+        const app = await this.open();
+        const modal = app.getByTestId('connect-request');
+        await modal.waitFor({ state: 'visible' });
+
+        // Title verb (connect-request-modal.tsx verb="Connect to").
+        await expect(modal.getByTestId('request')).toContainText('Connect to');
+        // Disclaimer (connect-request-modal.tsx disclaimer="Only connect to trusted applications. …").
+        await expect(modal).toContainText('Only connect to trusted applications');
+        // Per-type action buttons (connect-approve / connect-reject).
+        await expect(app.getByTestId('connect-approve')).toBeVisible();
+        await expect(app.getByTestId('connect-reject')).toBeVisible();
+    }
+
+    async expectTransactionModal(): Promise<void> {
+        const app = await this.open();
+        const modal = app.getByTestId('transaction-request');
+        await modal.waitFor({ state: 'visible' });
+
+        // Title verb (transaction-request-modal.tsx verb="Confirm transaction for").
+        await expect(modal.getByTestId('request')).toContainText('Confirm transaction for');
+        // Subtitle (transaction-request-modal.tsx subtitle="A dApp wants to send a transaction from your wallet:").
+        await expect(modal).toContainText('A dApp wants to send a transaction from your wallet');
+        // "You will sign" details section (TransactionRequestDetails default title="You will sign").
+        await expect(modal).toContainText('You will sign');
+        // Per-type action buttons (send-transaction-approve / send-transaction-reject).
+        await expect(app.getByTestId('send-transaction-approve')).toBeVisible();
+        await expect(app.getByTestId('send-transaction-reject')).toBeVisible();
+    }
+
+    async expectSignMessageModal(): Promise<void> {
+        const app = await this.open();
+        const modal = app.getByTestId('sign-message-request');
+        await modal.waitFor({ state: 'visible' });
+
+        // Title verb (sign-message-request-modal.tsx verb="Sign message for").
+        await expect(modal.getByTestId('request')).toContainText('Sign message for');
+        // Subtitle about signing without broadcasting (sign-message-request-modal.tsx subtitle).
+        await expect(modal).toContainText('without broadcasting it');
+        // Per-type action buttons (sign-message-approve / sign-message-reject).
+        await expect(app.getByTestId('sign-message-approve')).toBeVisible();
+        await expect(app.getByTestId('sign-message-reject')).toBeVisible();
+    }
+
+    async expectSignDataModal(): Promise<void> {
+        const app = await this.open();
+        const modal = app.getByTestId('sign-data-request');
+        await modal.waitFor({ state: 'visible' });
+
+        // Title verb (sign-data-request-modal.tsx verb="Sign data for").
+        await expect(modal.getByTestId('request')).toContainText('Sign data for');
+        // Text-payload body label (sign-data-request-modal.tsx renderDataToSign text case "Text Message").
+        await expect(modal).toContainText('Text Message');
+        // Per-type action buttons (sign-data-approve / sign-data-reject).
+        await expect(app.getByTestId('sign-data-approve')).toBeVisible();
+        await expect(app.getByTestId('sign-data-reject')).toBeVisible();
     }
 
     async sendTransaction(isPositiveCase: boolean, confirm: boolean, waitBeforeApprove: number = 0): Promise<void> {
