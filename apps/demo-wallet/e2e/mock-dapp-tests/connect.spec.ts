@@ -40,7 +40,12 @@ test.describe('TON Connect mock-dApp — connect (two-tab)', () => {
         await wallet.expectConnectModal();
         await wallet.connect(false);
 
-        // After a rejection the connector never flips to connected.
-        await expect(dapp.page.getByTestId('dapp-connected')).toHaveText('');
+        // Terminal signal: the rejection round-trips over the bridge and the connector reports
+        // it via onStatusChange's error handler → #dapp-error. (Asserting only an empty
+        // #dapp-connected would be a false pass: that's also the initial pre-connect state.)
+        const err = await dapp.error();
+        expect(err.length).toBeGreaterThan(0);
+        // …and the connector never flipped to connected.
+        await expect(dapp.page.getByTestId('dapp-connected')).not.toHaveText('true');
     });
 });

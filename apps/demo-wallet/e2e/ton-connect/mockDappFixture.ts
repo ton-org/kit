@@ -22,8 +22,8 @@ config({ quiet: true });
 /**
  * Fully mock-first two-tab TON Connect fixture for the redesigned demo-wallet.
  *
- * Mirrors {@link twoTabFixture} but swaps the appkit-minter dApp for a SELF-CONTAINED
- * mock-dApp we control (`e2e/mock-dapp/`, :5175). The mock-dApp drives all four request
+ * Self-contained mock-first variant: drives a mock-dApp we control
+ * (`e2e/mock-dapp/`, :5175) instead of the appkit-minter. The mock-dApp drives all four request
  * kinds (connect / sendTransaction / signData / signMessage) over the real TON Connect
  * bridge and surfaces results into DOM testids — no modal scraping, no clipboard.
  *

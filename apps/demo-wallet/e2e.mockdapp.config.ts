@@ -19,7 +19,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // (tab 2, :5173). The dApp drives connect / sendTransaction / signData / signMessage over
 // the real TON Connect bridge; the wallet runs with on-chain broadcast suppressed
 // (VITE_DISABLE_NETWORK_SEND) and the manifest domain check disabled
-// (VITE_DISABLE_MANIFEST_DOMAIN_CHECK). Mirrors `e2e.tonconnect.config.ts`.
+// (VITE_DISABLE_MANIFEST_DOMAIN_CHECK). Self-contained: it starts both tabs' servers itself.
 config({ quiet: true });
 
 const workersCount = process.env.WORKERS_COUNT ? parseInt(process.env.WORKERS_COUNT) : undefined;
@@ -31,6 +31,16 @@ const headless =
 // hosts before fetching, regardless of `disableManifestDomainCheck` — see the mock-dApp's
 // main.ts / packages/walletkit/src/utils/url.ts. `127.0.0.1` has dots and passes.
 const APP_URL = process.env.MOCK_DAPP_URL ?? 'http://127.0.0.1:5175/';
+// Guard against a dot-less host: WalletKit's manifest `isValidHost` rejects `localhost`
+// (no dot) before fetching the manifest, regardless of `disableManifestDomainCheck`, so the
+// connect handshake would fail with a confusing "App manifest not found". Use a dotted host
+// (e.g. 127.0.0.1). See e2e/mock-dapp/main.ts / packages/walletkit/src/utils/url.ts.
+if (new URL(APP_URL).hostname === 'localhost') {
+    throw new Error(
+        `MOCK_DAPP_URL must use a dotted host (e.g. http://127.0.0.1:5175/), not 'localhost': ` +
+            `WalletKit's manifest isValidHost guard rejects dot-less hosts. Got: ${APP_URL}`,
+    );
+}
 const WALLET_SOURCE = process.env.E2E_WALLET_SOURCE ?? 'http://localhost:5173/';
 
 // Absolute path to the mock-dApp vite config — robust to the cwd vite is launched from.
@@ -70,7 +80,7 @@ export default defineConfig({
     fullyParallel: false,
     forbidOnly: !!process.env.CI,
     // The handshake + requests ride the real TON Connect bridge; CI retries absorb transient
-    // bridge/timing hiccups (matches e2e.tonconnect.config.ts — that's why its gate is stable).
+    // bridge/timing hiccups (same retry policy as the appkit-minter gasless two-tab gate).
     retries: process.env.CI ? 2 : 0,
     workers: workersCount ?? 1,
     reporter: [['list'], ['allure-playwright']],

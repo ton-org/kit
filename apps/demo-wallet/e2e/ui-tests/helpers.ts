@@ -8,6 +8,7 @@
 
 import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
+import { step } from 'allure-js-commons';
 
 import { TEST_PASSWORD } from '../constants';
 import { SetupWalletPage } from '../pages';
@@ -20,16 +21,18 @@ import { SetupWalletPage } from '../pages';
  * default-token (USDT/XAUT) padding are mainnet-only.
  */
 export async function createWalletOnDashboard(page: Page): Promise<void> {
-    const setupWallet = new SetupWalletPage(page);
+    await step('Onboard a fresh wallet to the dashboard', async () => {
+        const setupWallet = new SetupWalletPage(page);
 
-    await page.getByTestId('welcome-create').click();
-    await page.getByTestId('password').fill(TEST_PASSWORD);
-    await page.getByTestId('password-confirm').fill(TEST_PASSWORD);
-    await page.getByTestId('password-submit').click();
-    await page.getByTestId('reveal-mnemonic').waitFor({ state: 'visible' });
+        await page.getByTestId('welcome-create').click();
+        await page.getByTestId('password').fill(TEST_PASSWORD);
+        await page.getByTestId('password-confirm').fill(TEST_PASSWORD);
+        await page.getByTestId('password-submit').click();
+        await page.getByTestId('reveal-mnemonic').waitFor({ state: 'visible' });
 
-    await page.getByTestId('reveal-mnemonic').click();
-    await setupWallet.confirmAndCreate();
+        await page.getByTestId('reveal-mnemonic').click();
+        await setupWallet.confirmAndCreate();
 
-    await expect(page.getByTestId('wallet-menu')).toBeVisible();
+        await expect(page.getByTestId('wallet-menu')).toBeVisible();
+    });
 }

@@ -60,12 +60,20 @@ const clearOutputs = (): void => {
     $('dapp-error').textContent = '';
 };
 
-// Reflect connection status into #dapp-connected so the test can poll it.
-connector.onStatusChange((wallet) => {
-    $('dapp-connected').textContent = wallet ? 'true' : '';
-    // Expose the connected account for debugging / optional assertions.
-    (window as unknown as { __dappWallet?: unknown }).__dappWallet = wallet;
-});
+// Reflect connection status into #dapp-connected so the test can poll it. The 2nd arg is
+// the connect error handler: a wallet-side connect REJECTION arrives here (not via a thrown
+// promise — `connector.connect()` only returns the universal link). Surface it into
+// #dapp-error so the test has a real terminal signal that the rejection round-tripped.
+connector.onStatusChange(
+    (wallet) => {
+        $('dapp-connected').textContent = wallet ? 'true' : '';
+        // Expose the connected account for debugging / optional assertions.
+        (window as unknown as { __dappWallet?: unknown }).__dappWallet = wallet;
+    },
+    (err) => {
+        setError(err);
+    },
+);
 
 $('dapp-connect').addEventListener('click', () => {
     clearOutputs();

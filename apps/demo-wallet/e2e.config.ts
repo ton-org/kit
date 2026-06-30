@@ -24,10 +24,11 @@ export default defineConfig({
     // `--retries=3`, blow the 30-min CI budget. After these exclusions the default run is the
     // mock-first `e2e/ui-tests/**` suite only.
     testIgnore: [
-        // Two-tab TON Connect suites — run via their dedicated configs, which start the extra
-        // dApp tabs themselves: e2e.tonconnect.config.ts (minter :5174) / e2e.mockdapp.config.ts
-        // (mock-dApp :5175). See e2e_web.yml for the mock-dApp suite's CI step.
-        '**/ton-connect/**',
+        // The mock-first two-tab TON Connect suite runs via its dedicated config, which starts
+        // the extra dApp tab itself: e2e.mockdapp.config.ts (mock-dApp :5175). See e2e_web.yml
+        // for the mock-dApp suite's CI step. (`e2e/ton-connect/` holds only the suite's driver
+        // files — MockDapp.ts / mockDappFixture.ts — which aren't *.spec.ts, so nothing is
+        // collected from there under this default config.)
         '**/mock-dapp-tests/**',
         // QUARANTINED (temporary): these drive the external allure-test-runner backend, which is
         // currently returning 500 on every case lookup → 3× retries × ~1 min each → CI timeout.
