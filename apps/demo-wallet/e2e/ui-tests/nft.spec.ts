@@ -31,7 +31,7 @@ test.describe('NFT page (mocked wallet API)', () => {
     });
 
     test('Hides the dashboard NFTs entry when the wallet holds no NFTs', async ({ webOnly: _webOnly, page }) => {
-        // empty-section-hides (§6.8): with 0 NFTs the NftsCard renders nothing, so there is no
+        // empty-section-hides: with 0 NFTs the NftsCard renders nothing, so there is no
         // "View all NFTs" link — the only entry point to /wallet/nft is removed.
         await mockWalletApi(page, { nfts: [] });
         await createWalletOnDashboard(page);

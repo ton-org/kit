@@ -9,9 +9,9 @@
 import { mockDappFixture } from '../ton-connect/mockDappFixture';
 
 /**
- * Mock-first two-tab TON Connect — modal dismissibility guards (test-plan §18.1).
+ * Mock-first two-tab TON Connect — modal dismissibility guards.
  *
- * Two invariants of the redesigned wallet (TON-1682):
+ * Two invariants of the redesigned wallet:
  *   - The TON Connect REQUEST modals (`connect-request` / `transaction-request` /
  *     `sign-message-request` / `sign-data-request`) are NON-dismissible: backdrop click / Esc must
  *     NOT close them — only Approve/Reject. They render via the shared DappRequestModal with

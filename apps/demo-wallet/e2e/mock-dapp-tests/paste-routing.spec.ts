@@ -11,7 +11,7 @@ import { expect } from '@playwright/test';
 import { mockDappFixture } from '../ton-connect/mockDappFixture';
 
 /**
- * Mock-first two-tab TON Connect — global clipboard paste routing (test-plan §18.2 + §18.4).
+ * Mock-first two-tab TON Connect — global clipboard paste routing.
  *
  * The wallet's global `usePasteHandler` (use-paste-handler.ts) listens on `document` and, when a
  * pasted string starts with `tc://` / `ton://` / `http(s)://`, routes it to `handleTonConnectUrl`
@@ -19,9 +19,9 @@ import { mockDappFixture } from '../ton-connect/mockDappFixture';
  * (dashboard-header.tsx), so it is SUPPRESSED while the Connect-to-dApp paste modal is open — to
  * avoid double-handling alongside that modal's own textarea.
  *
- * - §18.2: a real `tc://` connect link pasted globally auto-routes → connect-request modal appears;
+ * - A real `tc://` connect link pasted globally auto-routes → connect-request modal appears;
  *   and with the paste modal open, the same global paste is suppressed (no connect-request modal).
- * - §18.4: non-TON garbage text pasted globally is ignored (no connect-request modal).
+ * - Non-TON garbage text pasted globally is ignored (no connect-request modal).
  *
  * Paste is simulated by dispatching a synthetic `ClipboardEvent('paste')` on `document` carrying the
  * text in a `DataTransfer` — exactly the shape `usePasteHandler` reads (`clipboardData.getData`).
@@ -29,10 +29,7 @@ import { mockDappFixture } from '../ton-connect/mockDappFixture';
 const test = mockDappFixture();
 
 test.describe('TON Connect mock-dApp — global paste routing (two-tab)', () => {
-    test('§18.2 A real tc:// link pasted globally auto-routes to the connect-request modal', async ({
-        wallet,
-        dapp,
-    }) => {
+    test('A real tc:// link pasted globally auto-routes to the connect-request modal', async ({ wallet, dapp }) => {
         const url = await dapp.connectUrl();
         expect(url.startsWith('tc://')).toBe(true);
 
@@ -46,7 +43,7 @@ test.describe('TON Connect mock-dApp — global paste routing (two-tab)', () => 
         await wallet.connect(false);
     });
 
-    test('§18.2 Global paste is suppressed while the Connect-to-dApp paste modal is open', async ({ wallet }) => {
+    test('Global paste is suppressed while the Connect-to-dApp paste modal is open', async ({ wallet }) => {
         // Open the paste modal — this sets isConnectOpen=true → the global paste handler unsubscribes.
         await wallet.openPasteModal();
 
@@ -56,7 +53,7 @@ test.describe('TON Connect mock-dApp — global paste routing (two-tab)', () => 
         await wallet.expectNoRequestModal(['connect-request']);
     });
 
-    test('§18.4 Non-TON clipboard text pasted globally is ignored', async ({ wallet }) => {
+    test('Non-TON clipboard text pasted globally is ignored', async ({ wallet }) => {
         // Random garbage that matches none of the tc:// / ton:// / http(s):// prefixes.
         await wallet.pasteIntoDocument('just some random clipboard noise — not a TON Connect link');
         await wallet.expectNoRequestModal(['connect-request']);

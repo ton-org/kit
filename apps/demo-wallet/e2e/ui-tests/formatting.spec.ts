@@ -16,12 +16,12 @@ import { mockWalletApi, USDT_MASTER_RAW } from '../mocks/walletApi';
 const test = testWithUIFixture();
 
 /**
- * §13 amount formatting through the Assets list, where the native GRAM row and jetton rows
+ * Amount formatting through the Assets list, where the native GRAM row and jetton rows
  * render `formatLargeValue(amount, 4)`. `formatLargeValue` abbreviates ≥1M to M/B/T using the
  * integer-digit count, ALWAYS prints 2 fractional digits in that branch (the `decimals` arg is
  * ignored — silent precision drop ≥1M) and floors rather than rounds.
  */
-test.describe('Amount formatting on the Assets list (§13)', () => {
+test.describe('Amount formatting on the Assets list', () => {
     test('Abbreviates a ≥1M GRAM balance to "M" with 2 digits, floored', async ({ webOnly: _webOnly, page }) => {
         // 1,234,567.899... GRAM (raw nanotons) → "1.23M" (floor to .23, never .24; only 2 digits even
         // though the row asks for 4). This is the precision-drop + floor behaviour in one assertion.

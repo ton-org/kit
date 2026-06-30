@@ -118,8 +118,8 @@ export class DemoWallet extends WalletApp {
      * to sign an internal message without broadcasting it). The redesigned wallet renders
      * this as a per-type "Sign message for {dApp}" modal (`sign-message-request`; actions
      * `sign-message-approve` / `sign-message-reject`). Parity with the appkit-minter's
-     * `DemoWallet.signMessage` — the two page-objects are kept split on purpose (see
-     * TON-1682 D2; if kit moves to its own repo the object can't be shared).
+     * `DemoWallet.signMessage` — the two page-objects are kept split on purpose (if kit
+     * moves to its own repo the object can't be shared).
      */
     async signMessage(confirm: boolean = true): Promise<void> {
         await step(confirm ? 'Approve & sign message' : 'Reject sign-message request', async () => {
@@ -144,7 +144,7 @@ export class DemoWallet extends WalletApp {
      *   - the title `<h2 data-testid="request">` static verb (e.g. "Connect to"),
      *   - a distinctive disclaimer/subtitle/section substring,
      *   - the per-type approve & reject buttons by testid.
-     * Strings traced to apps/demo-wallet/src/features/ton-connect/components/* (see TON-1701).
+     * Strings traced to apps/demo-wallet/src/features/ton-connect/components/*.
      */
     async expectConnectModal(): Promise<void> {
         await step('Assert connect-request modal', async () => {
@@ -301,7 +301,7 @@ export class DemoWallet extends WalletApp {
      * user pasting from the OS clipboard anywhere on the page (not into a specific field). The
      * wallet's global `usePasteHandler` listens on `document` and auto-routes TON Connect URLs
      * (tc:// / ton:// / http(s)://) to `handleTonConnectUrl` (use-paste-handler.ts). Used by the
-     * §18.2 / §18.4 paste-routing checks.
+     * global paste-routing checks.
      */
     async pasteIntoDocument(text: string): Promise<void> {
         await step('Paste text into the wallet page (global clipboard paste)', async () => {

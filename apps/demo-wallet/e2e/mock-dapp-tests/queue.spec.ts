@@ -11,7 +11,7 @@ import { expect } from '@playwright/test';
 import { mockDappFixture } from '../ton-connect/mockDappFixture';
 
 /**
- * Mock-first two-tab TON Connect — request queue (test-plan §18.3).
+ * Mock-first two-tab TON Connect — request queue.
  *
  * The wallet processes TON Connect requests ONE AT A TIME via its request queue
  * (`tonConnectSlice.ts`: `enqueueRequest` → `processNextRequest`, gated on `isProcessing`; the next
@@ -31,7 +31,7 @@ import { mockDappFixture } from '../ton-connect/mockDappFixture';
  * The bridge does not guarantee which of the two requests is delivered first, so the assertions are
  * order-agnostic: exactly one of {sign-data-request, sign-message-request} is shown at a time.
  *
- * SCOPE NOTE — what this asserts vs. what it does NOT. The 18.3 invariant under test is the WALLET'S
+ * SCOPE NOTE — what this asserts vs. what it does NOT. The invariant under test is the WALLET'S
  * queue: one request modal at a time, the second shown only after the first is resolved. That is
  * fully proven below (one modal → first settles on the dApp → second modal appears → resolved). It
  * is verified empirically that only the FIRST request's response round-trips back to the dApp
