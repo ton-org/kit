@@ -19,6 +19,24 @@ const headless =
 
 export default defineConfig({
     testDir: './e2e',
+    // Specs that need their own Playwright config (extra webServer tabs) or an external backend
+    // must NOT run under this default single-server config — otherwise they hang/fail and, with
+    // `--retries=3`, blow the 30-min CI budget. After these exclusions the default run is the
+    // mock-first `e2e/ui-tests/**` suite only.
+    testIgnore: [
+        // Two-tab TON Connect suites — run via their dedicated configs, which start the extra
+        // dApp tabs themselves: e2e.tonconnect.config.ts (minter :5174) / e2e.mockdapp.config.ts
+        // (mock-dApp :5175). See e2e_web.yml for the mock-dApp suite's CI step.
+        '**/ton-connect/**',
+        '**/mock-dapp-tests/**',
+        // QUARANTINED (temporary): these drive the external allure-test-runner backend, which is
+        // currently returning 500 on every case lookup → 3× retries × ~1 min each → CI timeout.
+        // Re-enable once the runner backend is restored.
+        '**/e2e/connect.spec.ts',
+        '**/e2e/signData.spec.ts',
+        '**/e2e/localSendTransaction.spec.ts',
+        '**/e2e/sendTransaction/**',
+    ],
     timeout: timeout,
     expect: {
         timeout: timeout,
