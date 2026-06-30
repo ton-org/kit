@@ -78,6 +78,11 @@ test.describe('Assets page (mocked wallet API)', () => {
         await assets.waitForPage();
 
         await expect(assets.gramName).toBeVisible();
-        await expect(page.getByText('$', { exact: false }).first()).toBeVisible();
+        // Scope the fiat assertion to the GRAM row itself (the asset under test), not page-wide —
+        // a bare page `$` match would pass on any unrelated dollar amount. Within the row container
+        // (`.flex.items-center.gap-3.py-2`), the right-hand FIAT column is the `div.text-right`
+        // (`asset-row.tsx`); its inner `$<amount>` is the GRAM holding's fiat value (≈$65 here).
+        const gramRow = assets.gramName.locator('xpath=ancestor::div[contains(@class,"items-center")][1]');
+        await expect(gramRow.locator('div.text-right').getByText('$', { exact: false })).toBeVisible();
     });
 });

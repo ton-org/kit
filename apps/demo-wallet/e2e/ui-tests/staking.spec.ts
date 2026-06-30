@@ -32,9 +32,12 @@ test.describe('Staking page form (mocked wallet API, no network send)', () => {
     });
 
     test('Max fills the stake amount keeping the gas reserve', async ({ page }) => {
-        // On the stake tab (balance 12.5 GRAM), Max fills the amount with balance minus ~1.2 GRAM.
+        // On the stake tab, Max writes (available balance − STAKE_GAS_RESERVE). With the mocked
+        // 12.5 GRAM balance and the component's 1.2 GRAM reserve (staking-interface.tsx
+        // STAKE_GAS_RESERVE), handleMax sets `String(12.5 - 1.2)` = "11.3" exactly — assert that
+        // reserve-adjusted value, not merely that something non-empty was written.
         await page.getByRole('button', { name: 'Max', exact: true }).click();
-        await expect(page.getByTestId('stake-amount-input')).not.toHaveValue('');
+        await expect(page.getByTestId('stake-amount-input')).toHaveValue('11.3');
     });
 
     test('Guards a stake that would not keep the gas reserve', async ({ page }) => {

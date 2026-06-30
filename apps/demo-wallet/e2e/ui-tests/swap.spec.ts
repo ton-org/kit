@@ -32,11 +32,18 @@ test.describe('Swap page form (mocked wallet API, no network send)', () => {
     });
 
     test('Max fills the From amount keeping a gas reserve', async ({ page }) => {
-        // The From side (GRAM, balance 12.5) shows a Max button; tapping it fills the From input
-        // (balance minus the 0.1 GRAM reserve).
+        // The From side is the native GRAM (balance 12.5). Max writes (balance − TON_GAS_RESERVE):
+        // with the component's 0.1 GRAM reserve (swap-interface.tsx TON_GAS_RESERVE) handleMaxFrom
+        // sets `(12.5 - 0.1).toString()` = "12.4". The point of this test is that Max KEEPS A
+        // RESERVE, so assert the written value is strictly LESS than the full balance (12.5), not
+        // merely non-empty.
         const fromInput = page.locator('input[inputmode="decimal"]').first();
         await page.getByRole('button', { name: 'Max', exact: true }).first().click();
-        await expect(fromInput).not.toHaveValue('');
+        await expect(fromInput).toHaveValue('12.4');
+        // Guard the intent independently of the exact reserve constant: never the full balance.
+        const written = parseFloat(await fromInput.inputValue());
+        expect(written).toBeLessThan(12.5);
+        expect(written).toBeGreaterThan(0);
     });
 
     test('Primary action reads "Get Quote" before a quote exists', async ({ page }) => {

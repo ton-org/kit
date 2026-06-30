@@ -127,3 +127,33 @@ $('dapp-sign-message').addEventListener('click', async () => {
         setError(err);
     }
 });
+
+// Fire TWO requests back-to-back WITHOUT awaiting the first (signData, then signMessage). Each
+// `connector.<method>()` issues an independent bridge RPC with its own request id (no client-side
+// serialization in @tonconnect/sdk), so both reach the wallet, which must then surface them ONE AT
+// A TIME via its request queue. We track how many have SETTLED (resolved or rejected) into
+// #dapp-settled-count so the queue test can assert the second only settles after the first is
+// resolved in the wallet. Outputs are intentionally NOT cleared between the two (the test reads the
+// modal sequencing on the wallet side, not the dApp result text).
+$('dapp-two-requests').addEventListener('click', () => {
+    clearOutputs();
+    $('dapp-settled-count').textContent = '0';
+    let settled = 0;
+    const markSettled = (): void => {
+        settled += 1;
+        $('dapp-settled-count').textContent = String(settled);
+    };
+    // First request: signData (no balance guard, simplest modal).
+    void connector
+        .signData({ type: 'text', text: 'QA queue request #1 (signData)' })
+        .catch(() => {})
+        .finally(markSettled);
+    // Second request: signMessage. Issued synchronously right after, before #1 is resolved.
+    void connector
+        .signMessage({
+            validUntil: Math.floor(Date.now() / 1000) + 600,
+            messages: [{ address: TARGET_ADDRESS, amount: '1000' }],
+        })
+        .catch(() => {})
+        .finally(markSettled);
+});

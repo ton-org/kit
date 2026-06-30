@@ -25,6 +25,10 @@
         <button data-testid="dapp-send-tx" id="dapp-send-tx">Send transaction</button>
         <button data-testid="dapp-sign-data" id="dapp-sign-data">Sign data</button>
         <button data-testid="dapp-sign-message" id="dapp-sign-message">Sign message</button>
+        <!-- Fires signData + signMessage back-to-back WITHOUT awaiting the first, to exercise the
+             wallet's request queue (one modal at a time). Each settles independently; the count of
+             settled requests is surfaced into #dapp-settled-count. -->
+        <button data-testid="dapp-two-requests" id="dapp-two-requests">Two requests</button>
 
         <!-- Universal link returned by connector.connect(...): the wallet tab pastes this
              so the test never has to scrape a connect modal. -->
@@ -35,6 +39,10 @@
         <pre data-testid="dapp-result" id="dapp-result"></pre>
         <!-- Last error message. -->
         <pre data-testid="dapp-error" id="dapp-error"></pre>
+        <!-- Number of requests that have settled (resolved OR rejected) since "Two requests" was
+             clicked — lets the queue test assert the second request only settles after the first
+             is resolved in the wallet. -->
+        <pre data-testid="dapp-settled-count" id="dapp-settled-count">0</pre>
 
         <script type="module" src="/main.ts"></script>
     </body>

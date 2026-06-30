@@ -212,6 +212,137 @@ export class DemoWallet extends WalletApp {
         });
     }
 
+    /**
+     * Wait until exactly ONE of the given request-modal testids is visible and return it. Used by the
+     * queue test to assert one-modal-at-a-time without depending on which request the bridge delivers
+     * first. Polls until one is visible (Playwright auto-retries the OR locator via waitFor).
+     */
+    async waitForOneRequestModal(testIds: string[]): Promise<string> {
+        return await step('Wait for a single request modal to be shown', async () => {
+            const app = await this.open();
+            // Resolve as soon as any of the candidate modals is visible.
+            await Promise.race(testIds.map((id) => app.getByTestId(id).waitFor({ state: 'visible' })));
+            const visible: string[] = [];
+            for (const id of testIds) {
+                if (await app.getByTestId(id).isVisible()) visible.push(id);
+            }
+            expect(visible.length, `exactly one request modal visible, saw: [${visible.join(', ')}]`).toBe(1);
+            return visible[0]!;
+        });
+    }
+
+    /**
+     * Assert NONE of the given request-modal testids becomes visible. Waits a short settle window
+     * first so an asynchronously-routed modal (handleTonConnectUrl is async) would have appeared —
+     * `toBeHidden()` alone passes instantly and would miss a late modal.
+     */
+    async expectNoRequestModal(testIds: string[], settleMs: number = 1000): Promise<void> {
+        await step('Assert no request modal is shown', async () => {
+            const app = await this.open();
+            await delay(settleMs);
+            for (const id of testIds) {
+                await expect(app.getByTestId(id)).toBeHidden();
+            }
+        });
+    }
+
+    /**
+     * Approve the currently-shown request modal by its testid (one of the per-type request modals).
+     * Maps the modal testid to its `*-approve` action, clicks it, and waits for the modal to detach.
+     */
+    async approveRequestModal(testId: string): Promise<void> {
+        const approveByModal: Record<string, string> = {
+            'connect-request': 'connect-approve',
+            'transaction-request': 'send-transaction-approve',
+            'sign-message-request': 'sign-message-approve',
+            'sign-data-request': 'sign-data-approve',
+        };
+        const approveTestId = approveByModal[testId];
+        if (!approveTestId) throw new Error(`[approveRequestModal] unknown request modal testid: ${testId}`);
+        await step(`Approve ${testId}`, async () => {
+            const app = await this.open();
+            const modal = app.getByTestId(testId);
+            const approve = app.getByTestId(approveTestId);
+            await approve.waitFor({ state: 'visible' });
+            await approve.click();
+            await modal.waitFor({ state: 'detached' });
+        });
+    }
+
+    /**
+     * Assert a TON Connect REQUEST modal (`connect-request` / `transaction-request` /
+     * `sign-message-request` / `sign-data-request`) is NON-dismissible: pressing Escape AND clicking
+     * the backdrop must both leave it visible (only Approve/Reject close it). The shared
+     * DappRequestModal renders with `dismissible={false}`, which wires `onEscapeKeyDown` /
+     * `onInteractOutside` to `preventDefault` (core/components/ui/modal/modal.tsx). Leaves the modal
+     * OPEN so a follow-up approve/reject can clean it up.
+     */
+    async expectRequestModalNotDismissible(testId: string): Promise<void> {
+        await step(`Assert ${testId} modal ignores Esc + backdrop (non-dismissible)`, async () => {
+            const app = await this.open();
+            const modal = app.getByTestId(testId);
+            await modal.waitFor({ state: 'visible' });
+
+            // Esc must NOT close it.
+            await app.keyboard.press('Escape');
+            await delay(300);
+            await expect(modal).toBeVisible();
+
+            // A backdrop click (top-left corner, well outside the centered dialog content) must NOT
+            // close it either. `force` + a corner point avoids hitting the modal content.
+            await app.mouse.click(5, 5);
+            await delay(300);
+            await expect(modal).toBeVisible();
+        });
+    }
+
+    /**
+     * Dispatch a synthetic global `paste` ClipboardEvent on `document` carrying `text`, mimicking a
+     * user pasting from the OS clipboard anywhere on the page (not into a specific field). The
+     * wallet's global `usePasteHandler` listens on `document` and auto-routes TON Connect URLs
+     * (tc:// / ton:// / http(s)://) to `handleTonConnectUrl` (use-paste-handler.ts). Used by the
+     * §18.2 / §18.4 paste-routing checks.
+     */
+    async pasteIntoDocument(text: string): Promise<void> {
+        await step('Paste text into the wallet page (global clipboard paste)', async () => {
+            const app = await this.open();
+            await app.evaluate((value) => {
+                const dt = new DataTransfer();
+                dt.setData('text', value);
+                document.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true }));
+            }, text);
+        });
+    }
+
+    /**
+     * Open the dismissible "Connect to dApp" PASTE modal (via `connect-dapp-button`) and assert it
+     * IS dismissible by Escape: it must close. Unlike the request modals, ConnectDappModal uses the
+     * default (`dismissible` unset → true) Modal.Container, so Radix closes it on Esc / backdrop
+     * (connect-dapp-modal.tsx). The modal has no container testid, so we anchor on its unique
+     * `tonconnect-url` textarea.
+     */
+    /** Open the Connect-to-dApp paste modal and leave it open (anchored on the `tonconnect-url` field). */
+    async openPasteModal(): Promise<void> {
+        await step('Open the Connect-to-dApp paste modal', async () => {
+            const app = await this.open();
+            await app.getByTestId('connect-dapp-button').click();
+            await app.getByTestId('tonconnect-url').waitFor({ state: 'visible' });
+        });
+    }
+
+    async expectPasteModalDismissibleByEsc(): Promise<void> {
+        await step('Assert the Connect-to-dApp paste modal closes on Esc (dismissible)', async () => {
+            const app = await this.open();
+            await app.getByTestId('connect-dapp-button').click();
+            const pasteField = app.getByTestId('tonconnect-url');
+            await pasteField.waitFor({ state: 'visible' });
+
+            await app.keyboard.press('Escape');
+            await pasteField.waitFor({ state: 'hidden' });
+            await expect(pasteField).toBeHidden();
+        });
+    }
+
     async sendTransaction(isPositiveCase: boolean, confirm: boolean, waitBeforeApprove: number = 0): Promise<void> {
         await this.open();
         if (isPositiveCase || waitBeforeApprove > 0) {

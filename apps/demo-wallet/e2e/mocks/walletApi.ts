@@ -469,8 +469,18 @@ export async function mockWalletApi(page: Page, opts: MockWalletApiOpts = {}): P
     await page.route(TRACES_RE, (route) => {
         // `getEvents` queries /api/v3/traces?account=<friendly>&limit=&offset= — the trace's tx
         // must be stamped with this account or `toEvent` emits no transfer actions (no rows).
-        const account = new URL(route.request().url()).searchParams.get('account');
-        return json(route, 200, tracesBody(events, account));
+        // Honour the `limit`/`offset` window so a paginated "Load more" fetch advances through
+        // the events instead of re-receiving the full list every time (which would loop forever,
+        // since `hasNext` is `traces.length >= limit`). Defaults mirror ApiClientToncenter.getEvents
+        // (`limit` 20, `offset` 0).
+        const params = new URL(route.request().url()).searchParams;
+        const account = params.get('account');
+        const limit = Number.parseInt(params.get('limit') ?? '', 10);
+        const offset = Number.parseInt(params.get('offset') ?? '', 10);
+        const safeLimit = Number.isFinite(limit) && limit > 0 ? limit : 20;
+        const safeOffset = Number.isFinite(offset) && offset >= 0 ? offset : 0;
+        const page = events.slice(safeOffset, safeOffset + safeLimit);
+        return json(route, 200, tracesBody(page, account));
     });
     await page.route(RATES_RE, (route) => json(route, 200, ratesBody(rates)));
 }

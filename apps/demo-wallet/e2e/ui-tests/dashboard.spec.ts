@@ -24,10 +24,18 @@ test.describe('Dashboard smoke (mocked wallet API)', () => {
     test('Renders the fiat total once balance and rates load', async ({ page }) => {
         // BalanceTotal shows "$<int>.<frac>" only when balance !== undefined && ratesUpdated > 0.
         // With a 12.5 GRAM balance @ $5.20 plus jettons, the integer part is non-zero.
-        const total = page.getByText('$', { exact: false }).first();
-        await expect(total).toBeVisible();
-        // The styled total renders the dollar sign in its own span; assert the integer part shows up.
-        await expect(page.getByText(/^\d{1,3}(,\d{3})*$/).first()).toBeVisible();
+        //
+        // Scope to the balance-total widget itself, not the whole page — a bare page `$` + integer
+        // regex can match unrelated copy (asset rows, swap fields, etc.). BalanceTotal renders no
+        // testid, but the styled total lives in a single `font-display` container whose first span
+        // is the `$` sign and whose `text-gray-900` span is the integer part (balance-total.tsx).
+        const totalWidget = page.locator('div.font-display').first();
+        await expect(totalWidget).toBeVisible();
+        // The widget renders "$" + integer + "." + fraction as separate spans. Assert the `$` span
+        // and the INTEGER part (the `text-gray-900` span — distinct from the gray fraction span,
+        // which a bare digit regex would also match). Integer part is non-zero (>= 1 digit group).
+        await expect(totalWidget.getByText('$', { exact: true })).toBeVisible();
+        await expect(totalWidget.locator('span.text-gray-900')).toHaveText(/^\d{1,3}(,\d{3})*$/);
     });
 
     test('Native row is labelled GRAM with the /gram.svg icon', async ({ page }) => {

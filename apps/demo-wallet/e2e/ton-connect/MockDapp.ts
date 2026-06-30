@@ -7,6 +7,7 @@
  */
 
 import type { Page } from '@playwright/test';
+import { step } from 'allure-js-commons';
 
 /**
  * Page-object over the QA Mock dApp (`e2e/mock-dapp/`, served on :5175) — the raw
@@ -62,6 +63,33 @@ export class MockDapp {
             return !!el && el.textContent !== null && el.textContent.length > 0;
         });
         return (await this.page.getByTestId('dapp-result').textContent()) ?? '';
+    }
+
+    /**
+     * Fire TWO requests back-to-back (signData then signMessage) WITHOUT awaiting the first, to
+     * exercise the wallet's request queue. Returns immediately after the click; the requests settle
+     * asynchronously (track via {@link settledCount}).
+     */
+    async fireTwoRequests(): Promise<void> {
+        await step('Fire two TON Connect requests without awaiting the first', async () => {
+            await this.page.getByTestId('dapp-two-requests').click();
+        });
+    }
+
+    /** Current number of requests that have settled since `fireTwoRequests()` (`#dapp-settled-count`). */
+    async settledCount(): Promise<number> {
+        const text = (await this.page.getByTestId('dapp-settled-count').textContent()) ?? '0';
+        return Number.parseInt(text, 10) || 0;
+    }
+
+    /** Wait until exactly `n` of the fired requests have settled. */
+    async waitForSettledCount(n: number): Promise<void> {
+        await step(`Wait until ${n} request(s) have settled on the dApp`, async () => {
+            await this.page.waitForFunction(
+                (expected) => document.getElementById('dapp-settled-count')?.textContent === String(expected),
+                n,
+            );
+        });
     }
 
     /** Wait for and return the last error text (`#dapp-error`). */

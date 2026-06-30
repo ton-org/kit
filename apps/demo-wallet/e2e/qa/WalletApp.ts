@@ -73,6 +73,15 @@ export abstract class WalletApp {
         } catch {
             if (!(await hasContent())) {
                 await page.reload({ waitUntil: 'domcontentloaded' });
+                // `domcontentloaded` only means the shell HTML parsed — React hasn't necessarily
+                // mounted yet. Wait for `#root` to actually have child content before returning, so
+                // callers never receive an unmounted page (mirrors the first-load mount gate above).
+                // Best-effort: swallow a timeout so a non-dev build that mounts instantly is unaffected.
+                try {
+                    await page.locator('#root > *').first().waitFor({ state: 'attached', timeout: 4000 });
+                } catch {
+                    // leave the page as-is; the caller's own first interaction will surface any failure
+                }
             }
         }
     }
